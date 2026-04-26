@@ -20,7 +20,7 @@ export function getUserStatistics() {
 }
 
 export async function getCustomerById(id: string) {
-  const response = await getCustomers({ query: id, size: 20 })
+  const response = await getCustomers({ search: id, size: 20 })
   const rawCustomer = response.items.find((customer) => String(customer.id) === id)
 
   if (!rawCustomer) return null

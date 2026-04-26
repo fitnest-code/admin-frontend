@@ -38,7 +38,7 @@ export function CustomersList() {
   const customersQuery = useCustomersQuery({
     page: page - 1,
     size: PAGE_SIZE,
-    query: debouncedSearch || undefined,
+    search: debouncedSearch || undefined,
     packageID: pkg ?? undefined,
     durationMonths: duration ?? undefined,
     type: subStatus ?? undefined,

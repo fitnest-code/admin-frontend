@@ -33,7 +33,7 @@ export interface CustomersResponse {
 export interface GetCustomersParams {
   page?: number
   size?: number
-  query?: string
+  search?: string
   packageID?: number
   durationMonths?: number
   type?: CustomerSubscriptionType
