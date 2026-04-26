@@ -54,7 +54,7 @@ jobs:
       - name: Checkout chart repository
         uses: actions/checkout@v4
         with:
-          repository: fitnest-chart/frontend
+          repository: fitnest-chart/admin-frontend
           ref: development
           path: helm-repo
           ssh-key: ${{ secrets.CHART_REPO_SSH_PRIVATE_KEY }}
