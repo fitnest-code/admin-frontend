@@ -11,7 +11,7 @@ function StatCard({ icon: Icon, label, value, active }: { icon: React.ElementTyp
   return (
     <div
       className={cn(
-        'flex flex-1 min-w-[140px] flex-col gap-2 rounded-xl border px-4 py-3 transition-colors',
+        'flex flex-1 min-w-35 flex-col gap-2 rounded-xl border px-4 py-3 transition-colors',
         active ? 'border-[#00B4CC] bg-[#00B4CC0D]' : 'border-border bg-card',
       )}
     >
@@ -201,7 +201,7 @@ export function CustomerFilters({
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <div className="relative flex-1 min-w-[200px]">
+      <div className="relative flex-1 min-w-50">
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <input
           value={search}

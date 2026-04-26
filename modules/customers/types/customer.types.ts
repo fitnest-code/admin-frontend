@@ -4,15 +4,30 @@ export type CustomerSubscriptionType = 'all' | 'active' | 'expired' | 'upgraded'
 
 export interface CustomerListItem {
   id: number
-  name: string | null
-  surname: string | null
+  fullName: string | null
   phoneNumber?: string | null
   email?: string | null
-  status: CustomerStatus
+  userStatus: CustomerStatus
   subscriptionStatus?: string | null
 }
 
+export interface CustomerDetailApiResponse {
+  userId: number
+  fullName: string
+  registrationDate: string
+  platform: string
+  phoneNumber: string
+  email: string
+  birthDate: string
+  goalTitle: string
+  height: number
+  weight: number
+  bmiIndex: number
+}
+
 export interface CustomerProfile extends CustomerListItem {
+  name?: string | null
+  surname?: string | null
   registeredAt?: string | null
   birthDate?: string | null
   platform?: string | null

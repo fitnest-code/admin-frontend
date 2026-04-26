@@ -53,11 +53,11 @@ export function sortCustomers(customers: CustomerListItem[], sortBy: CustomerSor
   const list = [...customers]
 
   if (sortBy === 'name_az') {
-    list.sort((a, b) => `${a.name ?? ''}${a.surname ?? ''}`.localeCompare(`${b.name ?? ''}${b.surname ?? ''}`))
+    list.sort((a, b) => `${a.fullName ?? ''}${b.fullName ?? ''}`.localeCompare(`${b.fullName ?? ''}${b.fullName ?? ''}`))
   }
 
   if (sortBy === 'name_za') {
-    list.sort((a, b) => `${b.name ?? ''}${b.surname ?? ''}`.localeCompare(`${a.name ?? ''}${a.surname ?? ''}`))
+    list.sort((a, b) => `${b.fullName ?? ''}${b.fullName ?? ''}`.localeCompare(`${a.fullName ?? ''}${a.fullName ?? ''}`))
   }
 
   return list

@@ -1,5 +1,6 @@
 import { apiGet } from '@/lib/api/client'
 import type {
+  CustomerDetailApiResponse,
   CustomerProfile,
   CustomersResponse,
   GetCustomersParams,
@@ -19,21 +20,30 @@ export function getUserStatistics() {
   return apiGet<UserStatistics>('/api/v1/admin/users/statistics')
 }
 
-export async function getCustomerById(id: string) {
-  const response = await getCustomers({ search: id, size: 20 })
-  const rawCustomer = response.items.find((customer) => String(customer.id) === id)
-
-  if (!rawCustomer) return null
-
+export async function getCustomerById(id: string): Promise<CustomerProfile> {
+  const data = await apiGet<CustomerDetailApiResponse>(`/api/v1/admin/users/${id}`)
+  
+  // Parse fullName into name and surname
+  const nameParts = (data.fullName || '').split(' ')
+  const name = nameParts[0] || null
+  const surname = nameParts.slice(1).join(' ') || null
+  
   return {
-    ...rawCustomer,
-    registeredAt: null,
-    birthDate: null,
-    platform: null,
-    goal: null,
-    height: null,
-    weight: null,
-    bmi: null,
+    id: data.userId,
+    name,
+    surname,
+    fullName: data.fullName || null,
+    phoneNumber: data.phoneNumber || null,
+    email: data.email || null,
+    userStatus: 'ACTIVE',
+    subscriptionStatus: null,
+    registeredAt: data.registrationDate,
+    birthDate: data.birthDate,
+    platform: data.platform === 'N/A' ? null : data.platform,
+    goal: data.goalTitle,
+    height: data.height,
+    weight: data.weight,
+    bmi: data.bmiIndex,
     photoUrl: null,
-  } satisfies CustomerProfile
+  }
 }

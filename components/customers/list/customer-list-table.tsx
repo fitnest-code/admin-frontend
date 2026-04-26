@@ -126,7 +126,7 @@ export function CustomerTable({
         <span className="text-xs font-semibold text-foreground">Ətraflı</span>
       </div>
       {customers.map((customer) => {
-        const customerStatus = normalizeCustomerStatus(customer.status)
+        const customerStatus = normalizeCustomerStatus(customer.userStatus)
         const subscriptionStatus = normalizeSubscriptionStatus(customer.subscriptionStatus)
 
         return (
@@ -143,7 +143,7 @@ export function CustomerTable({
             />
             <span className="text-xs text-muted-foreground font-mono truncate">{customer.id}</span>
             <span className="text-sm font-medium text-foreground truncate">
-              {[customer.name, customer.surname].filter(Boolean).join(' ') || '-'}
+              {customer.fullName ?? '-'}
             </span>
             <span className="text-sm text-muted-foreground truncate">{customer.phoneNumber ?? '-'}</span>
             <span className="text-sm text-muted-foreground truncate">{customer.email ?? '-'}</span>

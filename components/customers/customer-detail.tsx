@@ -72,7 +72,7 @@ function OpsBtn({
 export function CustomerDetail({ customer }: { customer: CustomerProfile }) {
   const router = useRouter()
   const [tab, setTab] = useState('profile')
-  const status = normalizeCustomerStatus(customer.status)
+  const status = normalizeCustomerStatus(customer.userStatus)
   const initials = `${customer.name?.[0] ?? ''}${customer.surname?.[0] ?? ''}`.toUpperCase()
 
   return (
