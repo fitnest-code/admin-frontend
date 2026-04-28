@@ -43,22 +43,32 @@ async function fetchSecrets() {
 
     const clientToken = loginRes.auth.client_token;
 
-    // 2. Fetch secrets (Try KV v2 path first, then KV v1)
+    // 2. Fetch secrets (Try plural 'secrets' mount first, then singular 'secret')
     console.log(`Fetching secrets from ${secretPath}...`);
     let secrets;
-    try {
-      const secretRes = await request(`${vaultAddr}/v1/secret/data/${secretPath}`, {
-        method: 'GET',
-        headers: { 'X-Vault-Token': clientToken }
-      });
-      secrets = secretRes.data.data;
-    } catch (e) {
-      console.log('KV v2 fetch failed, trying KV v1...');
-      const secretRes = await request(`${vaultAddr}/v1/secret/${secretPath}`, {
-        method: 'GET',
-        headers: { 'X-Vault-Token': clientToken }
-      });
-      secrets = secretRes.data;
+    const mounts = ['secrets', 'secret'];
+    
+    for (const mount of mounts) {
+      try {
+        console.log(`Trying mount: ${mount}...`);
+        const secretRes = await request(`${vaultAddr}/v1/${mount}/data/${secretPath}`, {
+          method: 'GET',
+          headers: { 'X-Vault-Token': clientToken }
+        });
+        secrets = secretRes.data.data;
+        if (secrets) break;
+      } catch (e) {
+        try {
+          const secretRes = await request(`${vaultAddr}/v1/${mount}/${secretPath}`, {
+            method: 'GET',
+            headers: { 'X-Vault-Token': clientToken }
+          });
+          secrets = secretRes.data;
+          if (secrets) break;
+        } catch (e2) {
+          // Continue to next mount
+        }
+      }
     }
     
     if (!secrets) {
