@@ -43,20 +43,32 @@ async function fetchSecrets() {
 
     const clientToken = loginRes.auth.client_token;
 
-    // 2. Fetch secrets
+    // 2. Fetch secrets (Try KV v2 path first, then KV v1)
     console.log(`Fetching secrets from ${secretPath}...`);
-    const secretRes = await request(`${vaultAddr}/v1/secret/data/${secretPath}`, {
-      method: 'GET',
-      headers: { 'X-Vault-Token': clientToken }
-    });
-
-    const secrets = secretRes.data.data;
+    let secrets;
+    try {
+      const secretRes = await request(`${vaultAddr}/v1/secret/data/${secretPath}`, {
+        method: 'GET',
+        headers: { 'X-Vault-Token': clientToken }
+      });
+      secrets = secretRes.data.data;
+    } catch (e) {
+      console.log('KV v2 fetch failed, trying KV v1...');
+      const secretRes = await request(`${vaultAddr}/v1/secret/${secretPath}`, {
+        method: 'GET',
+        headers: { 'X-Vault-Token': clientToken }
+      });
+      secrets = secretRes.data;
+    }
     
-    // 3. Output as .env file or env variables
+    if (!secrets) {
+      throw new Error('No secrets found in response');
+    }
+
+    // 3. Output as .env.local file
     let envContent = '';
     for (const [key, value] of Object.entries(secrets)) {
       envContent += `${key}="${value}"\n`;
-      process.env[key] = value;
     }
 
     fs.writeFileSync('.env.local', envContent);
