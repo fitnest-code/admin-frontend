@@ -2,7 +2,7 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 
-const vaultAddr = process.env.VAULT_ADDR || 'http://100.94.253.21:8200';
+const vaultAddr = process.env.VAULT_ADDR || 'http://10.0.0.4:8200';
 const roleId = process.env.VAULT_ROLE_ID;
 const secretId = process.env.VAULT_SECRET_ID;
 const secretPath = process.env.VAULT_SECRET_PATH || 'admin-frontend/development';
