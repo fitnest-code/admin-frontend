@@ -82,7 +82,7 @@ async function fetchSecrets() {
     }
 
     fs.writeFileSync('.env.local', envContent);
-    console.log('Secrets written to .env.local');
+    console.log(`Secrets written to ${require('path').resolve('.env.local')}`);
 
   } catch (err) {
     console.error('Error fetching secrets from Vault:', err.message);
