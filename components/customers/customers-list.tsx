@@ -39,9 +39,9 @@ export function CustomersList() {
     page: page - 1,
     size: PAGE_SIZE,
     search: debouncedSearch || undefined,
-    packageID: pkg ?? undefined,
-    durationMonths: duration ?? undefined,
-    type: subStatus ?? undefined,
+    packageId: pkg ?? undefined,
+    packageDuration: duration ?? undefined,
+    subscriptionStatus: subStatus ?? undefined,
   })
   const packageNamesQuery = useSubscriptionPackageNamesQuery()
   const statisticsQuery = useUserStatisticsQuery()
