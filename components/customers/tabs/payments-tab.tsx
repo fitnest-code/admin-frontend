@@ -3,38 +3,49 @@
 import { useState, useRef, useEffect } from 'react'
 import { MoreVertical, Copy, Download, RefreshCw, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { MOCK_PAYMENTS, type Payment, type PaymentStatus, type PaymentMethod } from '@/lib/customers-data'
+import { useCustomerPaymentsQuery } from '@/modules/customers/hooks/use-customers-query'
+import type { UserPaymentHistoryItem } from '@/modules/customers/types/customer.types'
 
 const PAGE_SIZE = 5
 
 type ModalState = 'detail' | 'refund-confirm' | 'refund-success' | null
 
-const STATUS_BADGE: Record<PaymentStatus, string> = {
-  success:  'bg-green-600 text-white',
-  pending:  'bg-orange-500 text-white',
-  error:    'bg-red-500 text-white',
-  refunded: 'bg-purple-500 text-white',
-}
-const STATUS_LABEL: Record<PaymentStatus, string> = {
-  success:  'Uğurlu',
-  pending:  'İcradadır',
-  error:    'Xəta',
-  refunded: 'Geri qaytarıldı',
+const STATUS_BADGE: Record<string, string> = {
+  'Uğurlu':         'bg-green-600 text-white',
+  'İcradadır':      'bg-orange-500 text-white',
+  'Xata':           'bg-red-500 text-white',
+  'Xəta':           'bg-red-500 text-white',
+  'Geri qaytarıldı':'bg-purple-500 text-white',
 }
 
-const METHOD_ICON: Record<PaymentMethod, React.ReactNode> = {
-  'Apple Pay':    <span className="inline-flex items-center rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-bold tracking-tight">Pay</span>,
-  'Kapital Bank': <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">K</span>,
-  'Google Pay':   <span className="inline-flex items-center rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-bold tracking-tight text-blue-600">GPay</span>,
+function statusBadgeClass(status: string) {
+  return STATUS_BADGE[status] ?? 'bg-secondary text-foreground'
 }
 
-export function PaymentsTab() {
-  const [page, setPage]               = useState(1)
-  const [selected, setSelected]       = useState<Payment | null>(null)
-  const [menuOpen, setMenuOpen]       = useState<string | null>(null)
-  const [modalState, setModalState]   = useState<ModalState>(null)
-  const [copied, setCopied]           = useState(false)
+function MethodIcon({ method }: { method: string }) {
+  const lower = method.toLowerCase()
+  if (lower.includes('apple'))
+    return <span className="inline-flex items-center rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-bold tracking-tight">Pay</span>
+  if (lower.includes('google'))
+    return <span className="inline-flex items-center rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-bold tracking-tight text-blue-600">GPay</span>
+  if (lower.includes('kapital'))
+    return <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">K</span>
+  if (lower.includes('visa'))
+    return <span className="inline-flex items-center rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-bold tracking-tight text-blue-700">VISA</span>
+  if (lower.includes('master'))
+    return <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[9px] font-bold text-white">M</span>
+  return null
+}
+
+export function PaymentsTab({ userId }: { userId: string }) {
+  const [page, setPage]             = useState(1)
+  const [selected, setSelected]     = useState<UserPaymentHistoryItem | null>(null)
+  const [menuOpen, setMenuOpen]     = useState<string | null>(null)
+  const [modalState, setModalState] = useState<ModalState>(null)
+  const [copied, setCopied]         = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+
+  const { data = [], isLoading, isError } = useCustomerPaymentsQuery(userId)
 
   useEffect(() => {
     function h(e: MouseEvent) {
@@ -44,11 +55,11 @@ export function PaymentsTab() {
     return () => document.removeEventListener('mousedown', h)
   }, [])
 
-  const totalPages = Math.max(1, Math.ceil(MOCK_PAYMENTS.length / PAGE_SIZE))
-  const rows = MOCK_PAYMENTS.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const totalPages = Math.max(1, Math.ceil(data.length / PAGE_SIZE))
+  const rows = data.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
-  function openDetail(p: Payment) {
-    setSelected(p)
+  function openDetail(row: UserPaymentHistoryItem) {
+    setSelected(row)
     setModalState('detail')
     setMenuOpen(null)
   }
@@ -60,14 +71,6 @@ export function PaymentsTab() {
     setMenuOpen(null)
   }
 
-  function handleRefund() {
-    setModalState('refund-confirm')
-  }
-
-  function confirmRefund() {
-    setModalState('refund-success')
-  }
-
   function closeModal() {
     setModalState(null)
     setSelected(null)
@@ -77,7 +80,6 @@ export function PaymentsTab() {
     <div className="flex flex-col gap-4">
       <h2 className="text-base font-semibold text-foreground">Ödəniş məlumatları</h2>
 
-      {/* Table */}
       <div className="overflow-x-auto rounded-xl border border-border">
         <table className="w-full text-sm">
           <thead>
@@ -91,32 +93,57 @@ export function PaymentsTab() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {rows.map((row) => (
-              <tr key={row.id} className="bg-card hover:bg-secondary/30 transition-colors">
-                <td className="px-4 py-3 whitespace-nowrap font-mono text-xs text-foreground">{row.id}</td>
-                <td className="px-4 py-3 whitespace-nowrap text-foreground">{row.datetime}</td>
-                <td className="px-4 py-3 whitespace-nowrap text-foreground">{row.amount} AZN</td>
+            {isLoading && (
+              Array.from({ length: 4 }).map((_, i) => (
+                <tr key={i} className="bg-card">
+                  {Array.from({ length: 6 }).map((_, j) => (
+                    <td key={j} className="px-4 py-3">
+                      <div className="h-4 w-full animate-pulse rounded bg-secondary" />
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
+            {isError && (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                  Ödəniş məlumatları yüklənmədi.
+                </td>
+              </tr>
+            )}
+            {!isLoading && !isError && rows.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                  Ödəniş tapılmadı.
+                </td>
+              </tr>
+            )}
+            {!isLoading && !isError && rows.map((row) => (
+              <tr key={row.transactionId} className="bg-card hover:bg-secondary/30 transition-colors">
+                <td className="px-4 py-3 whitespace-nowrap font-mono text-xs text-foreground">{row.transactionId}</td>
+                <td className="px-4 py-3 whitespace-nowrap text-foreground">{row.dateTime}</td>
+                <td className="px-4 py-3 whitespace-nowrap text-foreground">{row.amount}</td>
                 <td className="px-4 py-3 whitespace-nowrap">
                   <div className="flex items-center gap-1.5 text-foreground">
-                    {METHOD_ICON[row.method]}
-                    <span>{row.method}</span>
+                    <MethodIcon method={row.paymentMethod} />
+                    <span>{row.paymentMethod}</span>
                   </div>
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap">
-                  <span className={cn('rounded-full px-3 py-1 text-xs font-semibold', STATUS_BADGE[row.status])}>
-                    {STATUS_LABEL[row.status]}
+                  <span className={cn('rounded-full px-3 py-1 text-xs font-semibold', statusBadgeClass(row.status))}>
+                    {row.status}
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  <div className="relative inline-block" ref={menuOpen === row.id ? menuRef : undefined}>
+                  <div className="relative inline-block" ref={menuOpen === row.transactionId ? menuRef : undefined}>
                     <button
-                      onClick={() => setMenuOpen(menuOpen === row.id ? null : row.id)}
+                      onClick={() => setMenuOpen(menuOpen === row.transactionId ? null : row.transactionId)}
                       className="flex items-center justify-center rounded p-1 hover:bg-secondary transition-colors"
                       aria-label="Ətraflı"
                     >
                       <MoreVertical size={16} className="text-muted-foreground" />
                     </button>
-                    {menuOpen === row.id && (
+                    {menuOpen === row.transactionId && (
                       <div className="absolute right-0 top-full z-50 mt-1 min-w-44 rounded-xl border border-border bg-card shadow-xl overflow-hidden">
                         <button
                           onClick={() => openDetail(row)}
@@ -125,7 +152,7 @@ export function PaymentsTab() {
                           Bax
                         </button>
                         <button
-                          onClick={() => copyId(row.id)}
+                          onClick={() => copyId(row.transactionId)}
                           className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors"
                         >
                           {copied ? <Check size={13} className="text-[#00B4CC]" /> : <Copy size={13} />}
@@ -147,22 +174,20 @@ export function PaymentsTab() {
         </table>
       </div>
 
-      {/* Pagination */}
       <Pagination page={page} totalPages={totalPages} onChange={setPage} />
 
-      {/* Detail modal */}
       {selected && modalState === 'detail' && (
         <PaymentDetailModal
           payment={selected}
           onClose={closeModal}
-          onRefund={handleRefund}
+          onRefund={() => setModalState('refund-confirm')}
         />
       )}
       {selected && modalState === 'refund-confirm' && (
         <ConfirmModal
           message="Ödənişi geri qaytarmaq istədiyinizə əminsiniz?"
           onCancel={() => setModalState('detail')}
-          onConfirm={confirmRefund}
+          onConfirm={() => setModalState('refund-success')}
         />
       )}
       {selected && modalState === 'refund-success' && (
@@ -176,18 +201,17 @@ export function PaymentsTab() {
   )
 }
 
-// ── Payment detail modal ──────────────────────────────────────────────────────
 function PaymentDetailModal({
   payment, onClose, onRefund,
 }: {
-  payment: Payment; onClose: () => void; onRefund: () => void
+  payment: UserPaymentHistoryItem; onClose: () => void; onRefund: () => void
 }) {
   function downloadReceipt() {
-    const content = `Qəbz\nID: ${payment.id}\nTarix: ${payment.datetime}\nMəbləğ: ${payment.amount} AZN\nMetod: ${payment.method}\nStatus: ${STATUS_LABEL[payment.status]}`
+    const content = `Qəbz\nID: ${payment.transactionId}\nTarix: ${payment.dateTime}\nMəbləğ: ${payment.amount}\nMetod: ${payment.paymentMethod}\nStatus: ${payment.status}`
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
-    const url  = URL.createObjectURL(blob)
-    const a    = document.createElement('a')
-    a.href = url; a.download = `qebz-${payment.id}.txt`; a.click()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = `qebz-${payment.transactionId}.txt`; a.click()
     URL.revokeObjectURL(url)
   }
 
@@ -201,28 +225,22 @@ function PaymentDetailModal({
           </button>
         </div>
 
-        <DetailRow label="ID:"             value={payment.id} mono />
-        <DetailRow label="Tarix:"          value={payment.datetime} />
-        <DetailRow label="Məbləğ:"         value={`${payment.amount} Azn`} bold />
+        <DetailRow label="ID:"             value={payment.transactionId} mono />
+        <DetailRow label="Tarix:"          value={payment.dateTime} />
+        <DetailRow label="Məbləğ:"         value={payment.amount} bold />
         <DetailRow
           label="Ödəniş metodu:"
-          value={payment.method}
-          prefix={METHOD_ICON[payment.method]}
+          value={payment.paymentMethod}
+          prefix={<MethodIcon method={payment.paymentMethod} />}
         />
         <div className="flex items-baseline gap-2">
           <span className="text-sm font-semibold text-foreground">Status :</span>
-          <span className={cn('rounded-full px-3 py-1 text-xs font-semibold', STATUS_BADGE[payment.status])}>
-            {STATUS_LABEL[payment.status]}
+          <span className={cn('rounded-full px-3 py-1 text-xs font-semibold', statusBadgeClass(payment.status))}>
+            {payment.status}
           </span>
         </div>
 
-        {payment.status === 'error' && payment.errorReason && (
-          <div className="rounded-lg border border-red-300 px-3 py-2 text-sm text-foreground">
-            <span className="font-semibold">Xəta səbəbi : </span>{payment.errorReason}
-          </div>
-        )}
-
-        {payment.status === 'success' && (
+        {payment.status === 'Uğurlu' && (
           <button
             onClick={onRefund}
             className="w-full rounded-xl bg-[#00B4CC] py-3 text-sm font-semibold text-white hover:bg-[#008799] transition-colors"
@@ -247,7 +265,6 @@ function DetailRow({ label, value, mono, bold, prefix }: {
   )
 }
 
-// ── Confirm / Result modals ───────────────────────────────────────────────────
 function ConfirmModal({ message, onCancel, onConfirm }: { message: string; onCancel: () => void; onConfirm: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -275,7 +292,6 @@ function ResultModal({ success, message, onClose }: { success: boolean; message:
   )
 }
 
-// ── Pagination ────────────────────────────────────────────────────────────────
 function Pagination({ page, totalPages, onChange }: { page: number; totalPages: number; onChange: (p: number) => void }) {
   if (totalPages <= 1) return null
   function pages(): (number | '...')[] {

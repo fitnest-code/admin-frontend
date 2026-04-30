@@ -6,6 +6,9 @@ import { ArrowLeft, Ban, Bell, Mail, MessageSquare, Upload } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CustomerProfile } from '@/modules/customers'
 import { getCustomerStatusLabel, normalizeCustomerStatus, type UiCustomerStatus } from './list/customer-list-utils'
+import { SubscriptionTab } from './tabs/subscription-tab'
+import { PaymentsTab } from './tabs/payments-tab'
+import { AccessTab } from './tabs/access-tab'
 
 const CUSTOMER_TABS = [
   { key: 'profile', label: 'Profil məlumatları' },
@@ -167,22 +170,13 @@ export function CustomerDetail({ customer }: { customer: CustomerProfile }) {
       )}
 
       {tab === 'subscription' && (
-        <PlaceholderTab
-          title="Abunəlik məlumatları"
-          description="Bu hissə artıq mock data istifadə etmir. Abunəlik endpoint-i inteqrasiya olunanda burada real məlumat göstəriləcək."
-        />
+        <SubscriptionTab userId={String(customer.id)} />
       )}
       {tab === 'payments' && (
-        <PlaceholderTab
-          title="Ödəniş məlumatları"
-          description="Ödəniş tarixçəsi üçün real endpoint hələ qoşulmayıb. Endpoint hazır olan kimi bu tab API ilə doldurulacaq."
-        />
+        <PaymentsTab userId={String(customer.id)} />
       )}
       {tab === 'access' && (
-        <PlaceholderTab
-          title="Giriş / QR scan tarixi"
-          description="Giriş tarixçəsi üçün real endpoint hələ qoşulmayıb. Hazırda mock məlumat göstərilmir."
-        />
+        <AccessTab userId={String(customer.id)} />
       )}
     </div>
   )

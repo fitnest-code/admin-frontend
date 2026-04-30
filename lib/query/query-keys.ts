@@ -13,6 +13,9 @@ export const queryKeys = {
     packageNames: ['customers', 'package-names'] as const,
     statistics: ['customers', 'statistics'] as const,
     byId: (id: string) => ['customers', id] as const,
+    subscription: (userId: string) => ['customers', userId, 'subscription'] as const,
+    payments: (userId: string) => ['customers', userId, 'payments'] as const,
+    qrHistory: (userId: string) => ['customers', userId, 'qr-history'] as const,
   },
   stores: {
     all: ['stores'] as const,

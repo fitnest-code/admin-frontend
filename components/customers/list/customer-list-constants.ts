@@ -13,9 +13,9 @@ export const DURATION_OPTIONS = [
   { value: 3, label: '3 aylıq' },
 ] as const
 
-export const SUBSCRIPTION_STATUS_OPTIONS: { value: Exclude<CustomerSubscriptionType, 'all'>; label: string }[] = [
-  { value: 'active', label: 'Aktiv Abunəlik' },
-  { value: 'expired', label: 'Bitmiş Abunəlik' },
-  { value: 'upgraded', label: 'Dəyişdirilmiş Abunəlik' },
-  { value: 'last_7_days', label: 'Abunəlikdə son 7 gün' },
+export const SUBSCRIPTION_STATUS_OPTIONS: { value: Exclude<CustomerSubscriptionType, 'ALL'>; label: string }[] = [
+  { value: 'ACTIVE', label: 'Aktiv Abunəlik' },
+  { value: 'FINISHED', label: 'Bitmiş Abunəlik' },
+  { value: 'FROZEN', label: 'Donmuş Abunəlik' },
+  { value: 'LAST_7_DAYS', label: 'Abunəlikdə son 7 gün' },
 ]

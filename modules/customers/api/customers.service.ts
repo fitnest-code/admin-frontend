@@ -1,10 +1,13 @@
 import { apiGet } from '@/lib/api/client'
 import type {
+  CustomerCurrentSubscription,
   CustomerDetailApiResponse,
   CustomerProfile,
   CustomersResponse,
   GetCustomersParams,
+  QrHistoryItem,
   SubscriptionPackageName,
+  UserPaymentHistoryItem,
   UserStatistics,
 } from '@/modules/customers/types/customer.types'
 
@@ -18,6 +21,18 @@ export function getSubscriptionPackageNames() {
 
 export function getUserStatistics() {
   return apiGet<UserStatistics>('/api/v1/admin/users/statistics')
+}
+
+export function getUserQrHistory(userId: string) {
+  return apiGet<QrHistoryItem[]>(`/api/v1/admin/gyms/users/${userId}/qr-history`)
+}
+
+export function getUserPaymentHistory(userId: string) {
+  return apiGet<UserPaymentHistoryItem[]>(`/api/v1/admin/payments/user/${userId}/history`)
+}
+
+export function getCustomerCurrentSubscription(userId: string) {
+  return apiGet<CustomerCurrentSubscription>(`/api/v1/admin/subscriptions/users/${userId}/current`)
 }
 
 export async function getCustomerById(id: string): Promise<CustomerProfile> {

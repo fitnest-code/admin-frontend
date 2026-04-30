@@ -65,3 +65,32 @@ export interface UserStatistics {
   finishedSubscriptions: number
   activeOrFrozenSubscriptions: number
 }
+
+export interface QrHistoryItem {
+  dateTime: string
+  gymName: string
+  status: string
+  failedReason?: string
+  platform: string
+}
+
+export interface UserPaymentHistoryItem {
+  transactionId: string
+  dateTime: string
+  amount: string
+  paymentMethod: string
+  status: string
+}
+
+export interface CustomerCurrentSubscription {
+  packageId: number
+  packageName: string
+  optionId: number
+  optionDuration: number
+  price: number
+  discountedPrice: number
+  startDate: string
+  endDate: string
+  totalEntryLimit: number
+  userRemainingLimit: number
+}
