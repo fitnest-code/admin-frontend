@@ -27,9 +27,9 @@ export function ZalDetail({ zal, isNew = false }: ZalDetailProps) {
   function renderTab() {
     switch (activeTab) {
       case 'melumatlar': return <ZalMelumatlarTab zal={zal} isNew={isNew} />
-      case 'mesqciler':  return <MesqcilerTab mesqciler={zal.mesqciler} zalName={zal.name} />
+      // case 'mesqciler':  return <MesqcilerTab mesqciler={zal.mesqciler} zalName={zal.name} />
       case 'qr':         return <GirisQrTab zalName={zal.name} />
-      case 'admin':      return <ZalAdminiTab admins={zal.admins} />
+      // case 'admin':      return <ZalAdminiTab admins={zal.admins} />
       case 'abunelik':
       case 'reyting':
         return (
@@ -57,9 +57,9 @@ export function ZalDetail({ zal, isNew = false }: ZalDetailProps) {
         <h1 className="text-xl font-bold text-foreground">{isNew ? 'Yeni Zal' : zal.name}</h1>
         {!isNew && (
           <>
-            <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-semibold', STATUS_STYLES[zal.status])}>
+            {/* <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-semibold', STATUS_STYLES[zal.status])}>
               {zal.status === 'aktiv' ? 'Aktiv' : 'Deaktiv'}
-            </span>
+            </span> */}
             <button className="flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:border-[#00B4CC] transition-colors">
               Ödəniş
               <ChevronDown size={12} />

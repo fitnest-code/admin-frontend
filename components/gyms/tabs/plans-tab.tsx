@@ -203,11 +203,11 @@ export function PlansTab({ subscriptionTiers: initial = [], services: initialSer
 function TierIcon({ tier }: { tier: SubscriptionTier }) {
   const base = 'h-7 w-7 rounded-full flex items-center justify-center shrink-0'
   if (tier === 'Bronze')
-    return <span className={cn(base, 'bg-gradient-to-br from-amber-400 to-amber-700')} />
+    return <span className={cn(base, 'bg-linear-to-br from-amber-400 to-amber-700')} />
   if (tier === 'Silver')
-    return <span className={cn(base, 'bg-gradient-to-br from-slate-300 to-slate-500')} />
+    return <span className={cn(base, 'bg-linear-to-br from-slate-300 to-slate-500')} />
   if (tier === 'Gold')
-    return <span className={cn(base, 'bg-gradient-to-br from-yellow-300 to-yellow-600')} />
+    return <span className={cn(base, 'bg-linear-to-br from-yellow-300 to-yellow-600')} />
   // Platinum
-  return <span className={cn(base, 'bg-gradient-to-br from-zinc-600 to-zinc-900 ring-2 ring-[#00B4CC]/50')} />
+  return <span className={cn(base, 'bg-linear-to-br from-zinc-600 to-zinc-900 ring-2 ring-[#00B4CC]/50')} />
 }

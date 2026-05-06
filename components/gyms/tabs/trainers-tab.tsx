@@ -46,7 +46,7 @@ export function TrainersTab({ gymId, trainers: initial, gymName, isNew = false }
     <div className="flex flex-col gap-5 py-4">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex flex-1 min-w-[200px] items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
+        <div className="flex flex-1 min-w-50 items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
           <Search size={13} className="shrink-0 text-muted-foreground" />
           <input
             type="search"

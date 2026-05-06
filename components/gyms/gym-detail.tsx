@@ -1,8 +1,7 @@
 'use client'
-
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ChevronDown } from 'lucide-react'
+import { ArrowLeft, ChevronDown, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { GYM_TABS, type Gym } from '@/lib/gyms-data'
 import { GymInfoTab }       from './tabs/gym-info-tab'
@@ -22,9 +21,12 @@ const STATUS_STYLES = {
   inactive: 'bg-red-100 text-red-500',
 }
 
+
 export function GymDetail({ gym, isNew = false }: GymDetailProps) {
-  const router     = useRouter()
+  const router = useRouter()
   const [tab, setTab] = useState(GYM_TABS[0].key)
+
+  const currentIndex = GYM_TABS.findIndex((t) => t.key === tab)
 
   function renderTab() {
     switch (tab) {
@@ -51,7 +53,9 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
 
       {/* Title row */}
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-xl font-bold text-foreground">{isNew ? 'Yeni Zal' : gym.name}</h1>
+        <h1 className="text-xl font-bold text-foreground">
+          {isNew ? 'Yeni Zal' : gym.name}
+        </h1>
         {!isNew && (
           <>
             <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-semibold', STATUS_STYLES[gym.status])}>
@@ -67,29 +71,70 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
         )}
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-border">
-        <nav className="-mb-px flex overflow-x-auto" aria-label="Zal bölmələri">
-          {GYM_TABS.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={cn(
-                'shrink-0 border-b-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors',
-                tab === t.key
-                  ? 'border-[#00B4CC] text-[#00B4CC]'
-                  : 'border-transparent text-muted-foreground hover:text-foreground',
-              )}
-              aria-current={tab === t.key ? 'page' : undefined}
-            >
-              {t.label}
-            </button>
-          ))}
-        </nav>
-      </div>
+      {/* Layout: Sidebar + Content */}
+      <div className="flex gap-6 items-start">
 
-      {/* Content */}
-      <div>{renderTab()}</div>
+        {/* Step Sidebar */}
+        <nav
+          aria-label="Zal bölmələri"
+          className="w-65 shrink-0 rounded-[12px] border border-border bg-card p-3 flex flex-col gap-1"
+        >
+          {GYM_TABS.map((t, index) => {
+            const isActive    = tab === t.key
+            const isCompleted = index < currentIndex
+
+            return (
+              <div key={t.key} className="flex flex-col">
+                <button
+                  onClick={() => setTab(t.key)}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={cn(
+                    'flex items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors w-full'
+                   
+                  )}
+                >
+                  {/* Step number / check */}
+                  <span
+                    className={cn(
+                      'flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[18px] font-semibold transition-colors',
+                      isActive
+                        ? 'bg-[#00B4CC] text-white'
+                        : isCompleted
+                          ? 'bg-[#00B4CC]/20 text-[#00B4CC]'
+                          : 'bg-muted text-muted-foreground border border-border',
+                    )}
+                  >
+                    {isCompleted ? <Check size={12} /> : index + 1}
+                  </span>
+
+                  {/* Label */}
+                  <div className="flex flex-col min-w-0">
+                    <span
+                      className={cn(
+                        'text-[18px] font-medium text-[#C9C9C9]',
+                        isActive ? 'text-[#000000]' : 'text-foreground',
+                      )}
+                    >
+                      {t.label}
+                    </span>
+                   
+                  </div>
+                </button>
+
+                {/* Connector line between steps */}
+                {index < GYM_TABS.length - 1 && (
+                  <div className="ml-7.5 w-1 h-4 bg-border" />
+                )}
+              </div>
+            )
+          })}
+        </nav>
+
+        {/* Tab Content */}
+        <div className="flex-1 min-w-0">
+          {renderTab()}
+        </div>
+      </div>
     </div>
   )
 }
