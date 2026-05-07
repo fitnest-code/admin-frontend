@@ -61,7 +61,6 @@ export function GymInfoTab({ onNext }: { onNext?: () => void }) {
     try {
       const result = await createStep1.mutateAsync(buildPayload());
       
-      // 2. Cavab gələn kimi konsola çıxarırıq
       if (result?.id) {
         console.log( result);
         console.log( result.id);
