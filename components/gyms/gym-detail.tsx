@@ -30,7 +30,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
 
   function renderTab() {
     switch (tab) {
-      case 'info':      return <GymInfoTab />
+      case 'info':      return <GymInfoTab onNext={() => setTab(GYM_TABS[currentIndex + 1].key)} />
       case 'trainers':  return <TrainersTab trainers={gym.trainers} gymName={gym.name} isNew={isNew} gymId={0} />
       case 'admins':    return <GymAdminsTab admins={gym.admins} />
       case 'plans':     return <PlansTab subscriptionTiers={gym.subscriptionTiers} services={gym.services} />

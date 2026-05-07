@@ -148,30 +148,26 @@ export function GymInfoTab({ onNext }: { onNext?: () => void }) {
         </div>
       </div>
 
-      <div className="flex justify-end gap-3 mt-4">
-        {!gymId && (
-          <button
-            onClick={handleSaveOnly}
-            disabled={!canSubmit || isSaving}
-            className="px-10 py-3 rounded-2xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-50 flex items-center gap-2"
-          >
-            {isSaving && <Loader2 className="h-4 w-4 animate-spin text-[#00B4CC]" />}
-            Yadda saxla
-          </button>
-        )}
+      <div className="flex justify-end gap-3 mt-6">
+        <button
+          onClick={handleSaveOnly}
+          disabled={!canSubmit || isSaving}
+          className="px-10 py-3 rounded-xl border-2 border-[#00B4CC] font-bold text-[#00B4CC] hover:bg-[#00B4CC0A] transition-all disabled:opacity-50 flex items-center gap-2"
+        >
+          {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+          Yadda saxla
+        </button>
         
         <button
           onClick={handleNext}
           disabled={isSaving || (!gymId && !canSubmit)} 
           className={cn(
-            "px-10 py-3 rounded-2xl font-bold transition-all flex items-center gap-2 shadow-lg",
-            gymId 
-              ? "bg-slate-800 text-white hover:bg-slate-900 shadow-slate-200" 
-              : "bg-[#00B4CC] text-white hover:bg-[#009DB3] shadow-[#00B4CC20]"
+            "px-10 py-3 rounded-xl font-bold transition-all flex items-center gap-2 shadow-lg shadow-[#00B4CC20]",
+            "bg-[#00B4CC] text-white hover:bg-[#009DB3]"
           )}
         >
           {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
-          {gymId ? "Növbəti →" : "Yarat və keç"}
+          {gymId ? "Növbəti" : "Növbəti"}
         </button>
       </div>
     </div>
