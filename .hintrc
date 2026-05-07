@@ -22,6 +22,12 @@
       {
         "aria-valid-attr-value": "off"
       }
+    ],
+    "axe/text-alternatives": [
+      "default",
+      {
+        "image-alt": "off"
+      }
     ]
   }
 }

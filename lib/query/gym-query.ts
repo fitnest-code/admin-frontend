@@ -1,45 +1,41 @@
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { apiGet, apiPost } from "@/lib/api/client" 
+import { 
+  CategoriesResponse, 
+  GymStep1Payload, 
+  GymStep1Response 
+} from '../types/gym'
+import { useGymStore } from '../store/gym-store'
 
-export interface Category {
-  id: number
-  name: string
-  photoUrl: string
-  iconUrl: string
-}
-
-interface CategoriesResponse {
-  items: Category[]
-  total: number
-  page: number
-  pageSize: number
-}
-
-export interface GymStep1Payload {
-  categoryId: number
-  name: string
-  dailyPrice: number
-  contractPrice: number
-  description: string
-  phone: string
-  email: string
-}
-
-export interface GymStep1Response {
-  id: string
-}
-
+// 1. Kateqoriyaları çəkmək üçün
 export function useCategories() {
   return useQuery({
     queryKey: ['categories'],
-    queryFn: () => apiGet<CategoriesResponse>('/categories', { params: { page: 1, size: 10 } }),
+    queryFn: () => apiGet<CategoriesResponse>('/categories', { 
+      params: { page: 1, size: 10 } 
+    }),
     staleTime: 5 * 60 * 1000,
   })
 }
 
+// 2. Step 1: Zalı yaratmaq üçün
 export function useCreateGymStep1() {
+  const setGymId = useGymStore((state) => state.setGymId);
+
   return useMutation({
     mutationFn: (payload: GymStep1Payload) =>
       apiPost<GymStep1Response>('/admin/gyms/step1', payload),
+    
+    onSuccess: (data) => {
+      // Backend-dən gələn ID-ni dərhal mərkəzi yaddaşa yazırıq
+      if (data?.id) {
+        setGymId(Number(data.id));
+        console.log("Zal uğurla yaradıldı, ID Store-a yazıldı:", data.id);
+      }
+    },
+    
+    onError: (error: any) => {
+      console.error('Gym step1 error:', error);
+    },
   })
 }

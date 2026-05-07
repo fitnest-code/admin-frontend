@@ -1,123 +1,195 @@
-'use client'
+"use client";
 
-import { useState, useRef } from 'react'
-import { X, Upload } from 'lucide-react'
-import type { Trainer } from '@/lib/gyms-data'
+import { useState, useRef } from "react";
+import { X, Upload, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { useAddTrainer, useProfessionsQuery } from "@/lib/query/add-trainer-query";
+import { useGymStore } from "@/lib/store/gym-store"; 
+import { InputField } from "../components/InputField";
 
-interface AddTrainerModalProps {
-  gymName: string
-  showGym?: boolean
-  onSave: (t: Omit<Trainer, 'id'>) => void
-  onClose: () => void
-}
+export function AddTrainerModal({ onClose }: { onClose: () => void }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  
+  // Store-dan gymId-ni alırıq (Step 1-də set etdiyimiz ID)
+  const gymId = useGymStore((state) => state.gymId); 
+  
+  // Backend-den ixtisasları çəkirik
+  const { data: professions, isLoading: professionsLoading } = useProfessionsQuery();
+  const { mutate, isPending } = useAddTrainer();
 
-export function AddTrainerModal({ gymName, showGym = true, onSave, onClose }: AddTrainerModalProps) {
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName]   = useState('')
-  const [role, setRole]           = useState('')
-  const [phone, setPhone]         = useState('')
-  const [email, setEmail]         = useState('')
-  const [photo, setPhoto]         = useState<string | null>(null)
-  const fileRef = useRef<HTMLInputElement>(null)
+  const [form, setForm] = useState({
+    name: "",
+    surname: "",
+    professionId: "",
+    phone: "",
+    email: "",
+  });
+  
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
 
-  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (file) setPhoto(URL.createObjectURL(file))
-  }
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) return toast.error("Şəkil ölçüsü maksimum 2MB olmalıdır");
+      setSelectedFile(file);
+      setPreview(URL.createObjectURL(file));
+    }
+  };
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    onSave({ firstName, lastName, role, phone, email, gymId: '1', photo: photo ?? undefined })
-  }
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validasiyalar
+    if (!gymId) {
+      return toast.error("Zal ID tapılmadı. Zəhmət olmasa Step 1-i tamamlayın.");
+    }
+
+    if (!form.name || !form.surname || !form.professionId || !selectedFile) {
+      return toast.error("Zəhmət olmasa ulduzlu (*) sahələri doldurun və foto yükləyin");
+    }
+
+    // Payload-u Swagger-dəki struktura uyğun hazırlayırıq
+    // Qeyd: Mutation daxilində URLSearchParams istifadə edərək query-yə çeviririk
+    mutate({
+      gymId: Number(gymId),
+      names: [form.name],
+      surnames: [form.surname],
+      professionIds: [Number(form.professionId)],
+      emails: form.email ? [form.email] : [],
+      phones: form.phone ? [form.phone] : [],
+      photos: [selectedFile],
+    }, {
+      onSuccess: () => {
+        toast.success("Məşqçi uğurla əlavə edildi");
+        onClose(); // Modalı bağla
+      },
+      onError: (err: any) => {
+        toast.error(err.message || "Məşqçi əlavə edilərkən xəta baş verdi");
+      }
+    });
+  };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-      role="dialog"
-      aria-modal="true"
-    >
-      <div className="w-full max-w-lg rounded-2xl bg-card border border-border shadow-2xl">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="w-full max-w-2xl rounded-[32px] bg-white shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <h2 className="text-sm font-semibold text-foreground">Məşqçi əlavə et</h2>
-          <button onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary transition-colors">
-            <X size={15} />
+        <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100">
+          <div>
+            <h2 className="text-xl font-bold text-slate-800">Məşqçi əlavə et</h2>
+            <p className="text-xs text-slate-400 mt-1 uppercase tracking-wider font-medium">Zal ID: {gymId || "Gözlənilir..."}</p>
+          </div>
+          <button 
+            onClick={onClose}
+            className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600"
+          >
+            <X size={20} />
           </button>
         </div>
 
-        {/* Body */}
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5 p-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
-            {/* Photo upload */}
-            <div className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium text-muted-foreground">Məşqçi şəkli</span>
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                className="flex h-28 w-28 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-secondary hover:border-[#00B4CC] transition-colors group"
+        <form onSubmit={handleSave} className="p-8">
+          <div className="flex flex-col md:flex-row gap-8">
+            {/* Foto Yükləmə Bölməsi */}
+            <div className="flex flex-col items-center gap-3">
+              <input 
+                ref={fileRef} 
+                type="file" 
+                className="hidden" 
+                accept="image/*" 
+                onChange={handlePhotoChange} 
+              />
+              <div 
+                onClick={() => fileRef.current?.click()} 
+                className={`group relative h-[200px] w-[200px] cursor-pointer rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden
+                  ${preview ? 'border-transparent' : 'border-slate-200 bg-slate-50 hover:border-[#00B4CC] hover:bg-[#00B4CC05]'}`}
               >
-                {photo ? (
-                  <img src={photo} alt="Məşqçi" className="h-full w-full rounded-xl object-cover" />
-                ) : (
+                {preview ? (
                   <>
-                    <Upload size={18} className="text-muted-foreground group-hover:text-[#00B4CC]" />
-                    <span className="text-[10px] text-muted-foreground">Yüklə</span>
+                    <img src={preview} className="h-full w-full object-cover" alt="preview" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                      <Upload className="text-white" size={24} />
+                    </div>
                   </>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="p-3 bg-white rounded-full shadow-sm text-[#00B4CC]">
+                      <Upload size={24} />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Foto seçin</span>
+                  </div>
                 )}
-              </button>
-              <span className="text-[10px] text-muted-foreground">JPG or PNG • max 5MB</span>
+              </div>
+              <p className="text-[10px] text-slate-400 font-medium">Məşqçi fotosu * (Max. 2MB)</p>
             </div>
 
-            {/* Fields */}
-            <div className="flex flex-1 flex-col gap-3">
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Ad"     value={firstName} onChange={setFirstName} placeholder="Məşqçinin adı" />
-                <Field label="Soyad"  value={lastName}  onChange={setLastName}  placeholder="Məşqçi soyadı" />
+            {/* İnputlar Bölməsi */}
+            <div className="flex-1 space-y-5">
+              <div className="grid grid-cols-2 gap-4">
+                <InputField 
+                  label="Ad *" 
+                  value={form.name} 
+                  onChange={(v) => setForm({ ...form, name: v })} 
+                  placeholder="Məs: Nəzrin"
+                />
+                <InputField 
+                  label="Soyad *" 
+                  value={form.surname} 
+                  onChange={(v) => setForm({ ...form, surname: v })} 
+                  placeholder="Məs: Məmmədova"
+                />
               </div>
-              <Field label="Vəzifə" value={role} onChange={setRole} placeholder="Məşqçinin vəzifəsi" />
-              {showGym && (
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Zal</label>
-                  <div className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-muted-foreground">
-                    {gymName}
-                  </div>
-                </div>
-              )}
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Telefon nömrəsi" value={phone} onChange={setPhone} placeholder="Əlaqə nömrəsi" />
-                <Field label="E-Poçt"          value={email} onChange={setEmail} placeholder="Mail" />
+              
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-semibold text-slate-700">İxtisas *</label>
+                <select 
+                  className="w-full p-3 border border-slate-200 rounded-xl outline-none focus:border-[#00B4CC] focus:ring-2 focus:ring-[#00B4CC10] bg-white text-sm transition-all shadow-sm disabled:opacity-50"
+                  value={form.professionId}
+                  onChange={(e) => setForm({...form, professionId: e.target.value})}
+                  disabled={professionsLoading}
+                >
+                  <option value="">{professionsLoading ? "İxtisaslar yüklənir..." : "İxtisas seçin"}</option>
+                  {professions?.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <InputField 
+                  label="Telefon" 
+                  value={form.phone} 
+                  onChange={(v) => setForm({ ...form, phone: v })} 
+                  placeholder="055XXXXXXX"
+                />
+                <InputField 
+                  label="E-poçt" 
+                  value={form.email} 
+                  onChange={(v) => setForm({ ...form, email: v })} 
+                  placeholder="n@example.com"
+                />
               </div>
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="flex justify-center border-t border-border pt-4">
-            <button
+          {/* Footer Düymə */}
+          <div className="mt-10 flex justify-center border-t border-slate-100 pt-6">
+            <button 
               type="submit"
-              className="rounded-lg bg-[#00B4CC] px-8 py-2.5 text-sm font-semibold text-white hover:bg-[#008799] transition-colors"
+              disabled={isPending || professionsLoading} 
+              className="w-full md:w-[280px] bg-[#00B4CC] text-white py-4 rounded-2xl font-bold hover:bg-[#009DB3] hover:shadow-lg hover:shadow-[#00B4CC30] transition-all active:scale-[0.98] disabled:bg-slate-300 disabled:shadow-none flex items-center justify-center gap-2"
             >
-              Yadda saxla
+              {isPending ? (
+                <>
+                  <Loader2 className="animate-spin" size={20} />
+                  <span>Yadda saxlanılır...</span>
+                </>
+              ) : (
+                "Yadda saxla"
+              )}
             </button>
           </div>
         </form>
       </div>
     </div>
-  )
-}
-
-function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-medium text-muted-foreground">{label}</label>
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-[#00B4CC] transition-colors"
-      />
-    </div>
-  )
+  );
 }

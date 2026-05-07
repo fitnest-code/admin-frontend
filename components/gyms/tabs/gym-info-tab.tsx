@@ -1,87 +1,123 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Loader2 } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { useGymStore } from '@/lib/store/gym-store'
-import { useCategories, useCreateGymStep1 } from '@/lib/query/gym-query'
-import { toast } from 'sonner'
-import { CategorySelect } from '../components/CategorySelect'
-import { InputField } from '../components/InputField'
+import { useState, useEffect } from "react"; // useEffect əlavə etdik
+import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useGymStore } from "@/lib/store/gym-store";
+import { useCategories, useCreateGymStep1 } from "@/lib/query/gym-query";
+import { toast } from "sonner";
+import { CategorySelect } from "../components/CategorySelect";
+import { InputField } from "../components/InputField";
 
+type Lang = "Az" | "Ru" | "En";
 
-type Lang = 'Az' | 'Ru' | 'En'
+export function GymInfoTab({ onNext }: { onNext?: () => void }) {
+  const [lang, setLang] = useState<Lang>("Az");
+  const [categoryId, setCategoryId] = useState<number | null>(null);
+  const [name, setName] = useState("");
+  const [dailyPrice, setDailyPrice] = useState("");
+  const [contractPrice, setContractPrice] = useState("");
+  const [about, setAbout] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
 
-interface GymInfoTabProps {
-  isNew?: boolean
-  onNext?: () => void
-}
+  const { gymId, setGymId } = useGymStore();
+  const { data: categoriesData, isLoading: categoriesLoading } = useCategories();
+  const createStep1 = useCreateGymStep1();
 
-export function GymInfoTab({ isNew = false, onNext }: GymInfoTabProps) {
-  const [lang, setLang] = useState<Lang>('Az')
+  useEffect(() => {
+    if (gymId) {
+      console.log( gymId);
+    }
+  }, [gymId]);
 
-  const [categoryId, setCategoryId] = useState<number | null>(null)
-  const [name, setName] = useState('')
-  const [dailyPrice, setDailyPrice] = useState('')
-  const [contractPrice, setContractPrice] = useState('')
-  const [about, setAbout] = useState('')
-  const [phone, setPhone] = useState('')
-  const [email, setEmail] = useState('')
+  const buildPayload = () => ({
+    categoryId: categoryId!,
+    name,
+    dailyPrice: Number(dailyPrice),
+    contractPrice: Number(contractPrice),
+    description: about,
+    phone,
+    email,
+  });
 
-  const setGymId = useGymStore((s) => s.setGymId)
+  const validate = () => {
+    if (!categoryId || !name || !phone) {
+      toast.error("Zəhmət olmasa ulduzlu məlumatları doldurun");
+      return false;
+    }
+    return true;
+  };
 
-  const { data: categoriesData, isLoading: categoriesLoading } =
-    useCategories()
+  const handleSaveOnly = async () => {
+    if (gymId) {
+      console.log(gymId);
+      toast.success("Məlumatlar artıq yadda saxlanılıb");
+      return;
+    }
 
-  const createStep1 = useCreateGymStep1()
-
-  async function handleSave() {
-    if (!categoryId || !name) return
+    if (!validate()) return;
 
     try {
-      const result = await createStep1.mutateAsync({
-        categoryId,
-        name,
-        dailyPrice: Number(dailyPrice),
-        contractPrice: Number(contractPrice),
-        description: about,
-        phone,
-        email,
-      })
-
-      setGymId(result.id)
-    } catch {
-      toast.error('Zal məlumatları yadda saxlanarkən xəta baş verdi.')
+      const result = await createStep1.mutateAsync(buildPayload());
+      
+      // 2. Cavab gələn kimi konsola çıxarırıq
+      if (result?.id) {
+        console.log( result);
+        console.log( result.id);
+        
+        setGymId(Number(result.id));
+        toast.success("Zal uğurla yaradıldı");
+      }
+    } catch (err: any) {
+      console.error("%cAPI XƏTASI:", "color: #ef4444; font-weight: bold;", err);
+      toast.error(err?.message || "Xəta baş verdi");
     }
-  }
+  };
 
-  async function handleNext() {
-    await handleSave()
-    onNext?.()
-  }
+  const handleNext = async () => {
+    if (gymId) {
+      console.log("%cKEÇİD EDİLİR (ID VAR):", "color: #00B4CC; font-weight: bold;", gymId);
+      onNext?.();
+      return;
+    }
 
-  const isSaving = createStep1.isPending
-  const canSubmit = !!categoryId && !!name && !isSaving
+    if (!validate()) return;
+
+    try {
+      const result = await createStep1.mutateAsync(buildPayload());
+      
+      // 3. Növbətiyə basanda da konsolda görək
+      if (result?.id) {
+        console.log("%cYARADILDI VƏ KEÇİD EDİLİR. ID:", "color: #22c55e; font-weight: bold;", result.id);
+        setGymId(Number(result.id));
+        onNext?.();
+      }
+    } catch (err: any) {
+      console.error("%cKEÇİD XƏTASI:", "color: #ef4444; font-weight: bold;", err);
+      toast.error("Zal yaradılarkən xəta baş verdi");
+    }
+  };
+
+  const isSaving = createStep1.isPending;
+  const canSubmit = !!categoryId && !!name && !!phone && !isSaving;
 
   return (
     <div className="flex flex-col gap-4">
-
-      <div className="rounded-xl border bg-white overflow-hidden">
-
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 pt-4 pb-3">
-          <h2 className="text-[20px] font-semibold">Zal məlumatları</h2>
-
+      <div className="rounded-xl border bg-white overflow-hidden shadow-sm">
+        <div className="flex items-center justify-between px-4 pt-4 pb-3 bg-slate-50/50">
+          <h2 className="text-[18px] font-bold text-slate-800">
+            Zal məlumatları {gymId && <span className="text-[#00B4CC] text-xs font-bold bg-[#00B4CC10] px-2 py-0.5 rounded-md ml-2">ID: {gymId}</span>}
+          </h2>
+          {/* Dillər hissəsi eynidir */}
           <div className="flex gap-3">
-            {(['Az', 'Ru', 'En'] as Lang[]).map((l) => (
+            {(["Az", "Ru", "En"] as Lang[]).map((l) => (
               <button
                 key={l}
                 onClick={() => setLang(l)}
                 className={cn(
-                  'text-sm font-medium pb-0.5',
-                  lang === l
-                    ? 'border-b-2 border-black'
-                    : 'text-muted-foreground',
+                  "text-sm font-semibold pb-0.5 transition-all outline-none",
+                  lang === l ? "border-b-2 border-[#00B4CC] text-[#00B4CC]" : "text-slate-400"
                 )}
               >
                 {l}
@@ -90,91 +126,54 @@ export function GymInfoTab({ isNew = false, onNext }: GymInfoTabProps) {
           </div>
         </div>
 
-        <div className="px-4 pb-4 divide-y">
-
-          <CategorySelect
-            value={categoryId}
-            onChange={setCategoryId}
-            data={categoriesData}
-            loading={categoriesLoading}
-          />
-
-          <InputField
-            label="Zal adı"
-            value={name}
-            onChange={setName}
-            placeholder="Zal adı"
-          />
-
-          <InputField
-            label="Zalın günlük qiyməti"
-            type="number"
-            value={dailyPrice}
-            onChange={setDailyPrice}
-            placeholder="20 AZN"
-          />
-
-          <InputField
-            label="Müqavilə"
-            type="number"
-            value={contractPrice}
-            onChange={setContractPrice}
-            placeholder="Müqavilə qiyməti"
-          />
-
-          <div className="flex flex-col gap-1.5 py-3">
-            <label className="text-xs text-muted-foreground">Haqqında</label>
-
+        <div className="px-4 pb-4 divide-y border-t border-slate-100">
+          <CategorySelect value={categoryId} onChange={setCategoryId} data={categoriesData} loading={categoriesLoading} />
+          <InputField label="Zal adı *" value={name} onChange={setName} placeholder="Məs: FitNest" />
+          <InputField label="Günlük qiymət" type="number" value={dailyPrice} onChange={setDailyPrice} placeholder="20 AZN" />
+          <InputField label="Müqavilə qiyməti" type="number" value={contractPrice} onChange={setContractPrice} placeholder="50 AZN" />
+          
+          <div className="flex flex-col gap-1.5 py-4">
+            <label className="text-xs text-slate-500 font-bold uppercase tracking-wider">Haqqında</label>
             <textarea
               value={about}
               onChange={(e) => setAbout(e.target.value)}
               rows={4}
-              className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-[#00B4CC]"
+              placeholder="Zal haqqında qısa məlumat..."
+              className="w-full resize-none rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#00B4CC] transition-all"
             />
           </div>
-        </div>
-        <div className="px-4 pt-3 pb-2">
-          <h2 className="text-sm font-semibold">Əlaqə</h2>
-        </div>
 
-        <div className="px-4 pb-4 divide-y">
-
-          <InputField
-            label="Telefon"
-            type="tel"
-            value={phone}
-            onChange={setPhone}
-            placeholder="+994 00 000 00 00"
-          />
-
-          <InputField
-            label="E-poçt"
-            type="email"
-            value={email}
-            onChange={setEmail}
-            placeholder="example@gmail.com"
-          />
+          <InputField label="Telefon *" type="tel" value={phone} onChange={setPhone} placeholder="+994 50 000 00 00" />
+          <InputField label="E-poçt" type="email" value={email} onChange={setEmail} placeholder="gym@info.az" />
         </div>
       </div>
 
-      <div className="flex justify-end gap-3">
-        <button
-          onClick={handleSave}
-          disabled={!canSubmit}
-          className="px-6 py-2 rounded-lg border"
-        >
-          {isSaving && <Loader2 className="inline mr-1 animate-spin" />}
-          Yadda saxla
-        </button>
-
+      <div className="flex justify-end gap-3 mt-4">
+        {!gymId && (
+          <button
+            onClick={handleSaveOnly}
+            disabled={!canSubmit || isSaving}
+            className="px-10 py-3 rounded-2xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-50 flex items-center gap-2"
+          >
+            {isSaving && <Loader2 className="h-4 w-4 animate-spin text-[#00B4CC]" />}
+            Yadda saxla
+          </button>
+        )}
+        
         <button
           onClick={handleNext}
-          disabled={!canSubmit}
-          className="px-6 py-2 rounded-lg bg-[#00B4CC] text-white"
+          disabled={isSaving || (!gymId && !canSubmit)} 
+          className={cn(
+            "px-10 py-3 rounded-2xl font-bold transition-all flex items-center gap-2 shadow-lg",
+            gymId 
+              ? "bg-slate-800 text-white hover:bg-slate-900 shadow-slate-200" 
+              : "bg-[#00B4CC] text-white hover:bg-[#009DB3] shadow-[#00B4CC20]"
+          )}
         >
-          Növbəti
+          {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+          {gymId ? "Növbəti →" : "Yarat və keç"}
         </button>
       </div>
     </div>
-  )
+  );
 }

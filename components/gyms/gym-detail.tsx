@@ -30,8 +30,8 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
 
   function renderTab() {
     switch (tab) {
-      case 'info':      return <GymInfoTab gym={gym} gymId={gym.id} isNew={isNew} />
-      case 'trainers':  return <TrainersTab gymId={gym.id} trainers={gym.trainers} gymName={gym.name} isNew={isNew} />
+      case 'info':      return <GymInfoTab />
+      case 'trainers':  return <TrainersTab trainers={gym.trainers} gymName={gym.name} isNew={isNew} gymId={0} />
       case 'admins':    return <GymAdminsTab admins={gym.admins} />
       case 'plans':     return <PlansTab subscriptionTiers={gym.subscriptionTiers} services={gym.services} />
       case 'reviews':   return <ReviewsTab gymId={gym.id} />

@@ -228,7 +228,7 @@ export function ZallarList() {
 interface ZalTableRowProps {
   zal: Zal
   openMenuId: string | null
-  menuRef: React.RefObject<HTMLDivElement>
+  menuRef: React.RefObject<HTMLDivElement | null>
   onToggleMenu: (id: string) => void
   onView: () => void
   onDelete: () => void

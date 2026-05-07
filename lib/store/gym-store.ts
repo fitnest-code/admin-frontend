@@ -1,33 +1,21 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 
-export interface GymStep1Data {
-  categoryId: number | null
-  name: string
-  dailyPrice: string
-  contractPrice: string
-  description: string
-  phone: string
-  email: string
+interface GymState {
+  gymId: number | null;
+  setGymId: (id: number) => void;
+  resetGym: () => void;
 }
 
-interface GymStore {
-  step1: GymStep1Data
-  gymId: string | null
-  setStep1: (data: Partial<GymStep1Data>) => void
-  setGymId: (id: string) => void
-}
-
-export const useGymStore = create<GymStore>((set) => ({
-  gymId: null,
-  step1: {
-    categoryId: null,
-    name: '',
-    dailyPrice: '',
-    contractPrice: '',
-    description: '',
-    phone: '',
-    email: '',
-  },
-  setStep1: (data) => set((s) => ({ step1: { ...s.step1, ...data } })),
-  setGymId: (id) => set({ gymId: id }),
-}))
+export const useGymStore = create<GymState>()(
+  persist(
+    (set) => ({
+      gymId: null, // Başlanğıcda null olması normaldır
+      setGymId: (id) => set({ gymId: id }),
+      resetGym: () => set({ gymId: null }),
+    }),
+    {
+      name: 'gym-storage', // Brauzerin yaddaşında bu adla saxlanacaq
+    }
+  )
+)
