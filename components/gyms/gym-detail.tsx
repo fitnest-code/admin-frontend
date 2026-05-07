@@ -10,6 +10,7 @@ import { PlansTab }         from './tabs/plans-tab'
 import { GymAdminsTab }     from './tabs/gym-admins-tab'
 import { ReviewsTab }       from './tabs/reviews-tab'
 import { GymCustomersTab }  from './tabs/gym-customers-tab'
+import WorkingHoursPanel from './tabs/gym-working-hours-tab'
 
 interface GymDetailProps {
   gym: Gym
@@ -31,8 +32,8 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
   function renderTab() {
     switch (tab) {
       case 'info':      return <GymInfoTab onNext={() => setTab(GYM_TABS[currentIndex + 1].key)} />
-      case 'trainers':  return <TrainersTab trainers={gym.trainers} gymName={gym.name} isNew={isNew} gymId={0} />
-      case 'admins':    return <GymAdminsTab admins={gym.admins} />
+      case 'trainers':  return <TrainersTab />
+      case 'workhours': return <WorkingHoursPanel />
       case 'plans':     return <PlansTab subscriptionTiers={gym.subscriptionTiers} services={gym.services} />
       case 'reviews':   return <ReviewsTab gymId={gym.id} />
       case 'customers': return <GymCustomersTab />

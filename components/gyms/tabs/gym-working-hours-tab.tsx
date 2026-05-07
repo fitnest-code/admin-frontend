@@ -88,7 +88,7 @@ function TimeSelect({
 
 // ─── BusinessHoursPanel ──────────────────────────────────────────────────────
 
-function BusinessHoursPanel() {
+export function BusinessHoursPanel() {
   const [schedule, setSchedule] = useState<ScheduleMap>(makeDefaultSchedule);
   const [restDays, setRestDays] = useState<Set<DayKey>>(new Set(["B"]));
   const [editing, setEditing] = useState<{
@@ -300,7 +300,7 @@ function BusinessHoursPanel() {
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
-export default function ZalMelumatlari() {
+export default function WorkingHoursPanel() {
   const [activeTab, setActiveTab] = useState<GenderTab>("umumi");
   const [activeLang, setActiveLang] = useState("Az");
 

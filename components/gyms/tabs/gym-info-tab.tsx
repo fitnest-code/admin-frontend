@@ -69,14 +69,14 @@ export function GymInfoTab({ onNext }: { onNext?: () => void }) {
         toast.success("Zal uğurla yaradıldı");
       }
     } catch (err: any) {
-      console.error("%cAPI XƏTASI:", "color: #ef4444; font-weight: bold;", err);
+      console.error(err);
       toast.error(err?.message || "Xəta baş verdi");
     }
   };
 
   const handleNext = async () => {
     if (gymId) {
-      console.log("%cKEÇİD EDİLİR (ID VAR):", "color: #00B4CC; font-weight: bold;", gymId);
+      console.log(gymId);
       onNext?.();
       return;
     }
