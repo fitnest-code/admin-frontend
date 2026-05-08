@@ -6,7 +6,8 @@ export interface ICoordinates {
 
 
 export interface IReverseGeocodingResponse {
-  address: string; 
+  addressText: string;
+  city: string;
 }
 
 

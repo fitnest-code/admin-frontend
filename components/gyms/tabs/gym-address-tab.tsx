@@ -70,11 +70,6 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
     }
   };
 
-  const handleSaveOnly = async () => {
-    const success = await performSave();
-    if (success) toast.success("Məkan məlumatları uğurla yadda saxlanıldı");
-  };
-
   const handleNext = async () => {
     const success = await performSave();
     if (success) {
@@ -118,7 +113,7 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
           <div className="relative">
             <input
               readOnly
-              value={isAddressFetching ? "Ünvan axtarılır..." : addressData?.address || "Koordinat daxil edin və ya xəritəni yeniləyin"}
+              value={isAddressFetching ? "Ünvan axtarılır..." : addressData?.addressText || "Koordinat daxil edin və ya xəritəni yeniləyin"}
               className="w-full bg-[#F9FAFB] border border-[#ECECED] rounded-xl px-4 py-4 text-sm font-semibold text-[#1F2937] outline-none"
             />
             {isAddressFetching && <Loader2 className="absolute right-4 top-4 animate-spin text-[#00B4D8]" size={20} />}
@@ -173,17 +168,7 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
           />
         </div>
 
-        {/* Action Buttons */}
         <div className="flex gap-4 pt-2">
-          <button 
-            type="button"
-            disabled={isPending}
-            onClick={handleSaveOnly}
-            className="flex-1 py-4 rounded-xl border-2 border-[#ECECED] text-sm font-bold text-[#4B5563] hover:bg-gray-50 transition disabled:opacity-50"
-          >
-            {isPending ? <Loader2 className="animate-spin mx-auto" size={20} /> : t.save}
-          </button>
-          
           <button 
             type="button"
             disabled={isPending}

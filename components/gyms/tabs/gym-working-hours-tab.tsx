@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Trash2, Pencil, Plus, Loader2, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { useGymStore } from "@/lib/store/gym-store";
-import { useAddGymWorkHours, useValidateGymWorkHours } from "@/lib/query/gym-work-hours";
+import { useAddGymWorkHours } from "@/lib/query/gym-work-hours";
 import { AddClassTimeModal, ClassTimeData } from "../modals/add-hours-modal";
 import { IGymWorkHoursPayload, IWorkHour, IRestDay } from "@/lib/types/working-hours";
 
@@ -39,7 +39,7 @@ export default function WorkingHoursPanel({ onNext }: { onNext?: () => void }) {
   const [activeTab, setActiveTab] = useState<GenderTab>("generalWorkHours");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [isDataSaved, setIsDataSaved] = useState(false);
+
   const [enabledTabs, setEnabledTabs] = useState<Set<GenderTab>>(new Set(["generalWorkHours"]));
 
   const [slots, setSlots] = useState<Record<GenderTab, SavedSlot[]>>({
@@ -52,21 +52,17 @@ export default function WorkingHoursPanel({ onNext }: { onNext?: () => void }) {
 
   const gymId = useGymStore((state) => state.gymId);
   const { mutateAsync: submitMutateAsync, isPending: isSubmitting } = useAddGymWorkHours();
-  const { mutateAsync: validateMutateAsync, isPending: isValidating } = useValidateGymWorkHours();
 
   useEffect(() => { setMounted(true); }, []);
 
   const handleNext = async () => {
-    if (isDataSaved) {
-      if (!gymId) return toast.error("Zal ID tapılmadı");
-      try {
-        await submitMutateAsync(buildPayload());
-        onNext?.();
-      } catch (error: any) {
-        toast.error(error?.message || "Server xətası baş verdi (Növbəti)");
-      }
-    } else {
-      toast.info("Əvvəl məlumatları yadda saxlayın (Yoxlayın)");
+    if (!gymId) return toast.error("Zal ID tapılmadı");
+    try {
+      await submitMutateAsync(buildPayload());
+      toast.success("Məlumatlar uğurla yadda saxlanıldı");
+      onNext?.();
+    } catch (error: any) {
+      toast.error(error?.message || "Server xətası baş verdi (Növbəti)");
     }
   };
 
@@ -89,18 +85,7 @@ export default function WorkingHoursPanel({ onNext }: { onNext?: () => void }) {
     };
   };
 
-  const handleSubmit = async () => {
-    if (!gymId) return toast.error("Zal ID tapılmadı");
 
-    const payload = buildPayload();
-    try {
-      await validateMutateAsync(payload);
-      toast.success("Məlumatlar uğurla yoxlanıldı");
-      setIsDataSaved(true);
-    } catch (error: any) {
-      toast.error(error?.message || "Server xətası baş verdi");
-    }
-  };
 
   if (!mounted) return null;
 
@@ -135,7 +120,6 @@ export default function WorkingHoursPanel({ onNext }: { onNext?: () => void }) {
                     const newSet = new Set(enabledTabs);
                     newSet.add(tab.id as GenderTab);
                     setEnabledTabs(newSet);
-                    setIsDataSaved(false);
                   }
                   setActiveTab(tab.id as GenderTab);
                 }}
@@ -153,7 +137,6 @@ export default function WorkingHoursPanel({ onNext }: { onNext?: () => void }) {
                       if (e.target.checked) newSet.add(tab.id as GenderTab);
                       else newSet.delete(tab.id as GenderTab);
                       setEnabledTabs(newSet);
-                      setIsDataSaved(false);
                     }}
                     className="w-4 h-4 accent-[#00B4D8]"
                   />
@@ -229,7 +212,7 @@ export default function WorkingHoursPanel({ onNext }: { onNext?: () => void }) {
                       </div>
                       <div className="flex gap-1.5">
                          <button type="button" onClick={() => { setEditingId(slot.id); setModalOpen(true); }} className="p-2 text-[#00B4D8] bg-[#E0F7FA] rounded-lg hover:bg-[#B2EBF2] transition-colors"><Pencil size={14}/></button>
-                         <button type="button" onClick={() => { setSlots(p => ({...p, [activeTab]: p[activeTab].filter(s => s.id !== slot.id)})); setIsDataSaved(false); }} className="p-2 text-[#EF4444] bg-[#FEE2E2] rounded-lg hover:bg-[#FECACA] transition-colors"><Trash2 size={14}/></button>
+                         <button type="button" onClick={() => setSlots(p => ({...p, [activeTab]: p[activeTab].filter(s => s.id !== slot.id)}))} className="p-2 text-[#EF4444] bg-[#FEE2E2] rounded-lg hover:bg-[#FECACA] transition-colors"><Trash2 size={14}/></button>
                       </div>
                     </div>
                   ))}
@@ -251,7 +234,6 @@ export default function WorkingHoursPanel({ onNext }: { onNext?: () => void }) {
                 const newRest = new Set(restDays);
                 newRest.has(day.key) ? newRest.delete(day.key) : newRest.add(day.key);
                 setRestDays(newRest);
-                setIsDataSaved(false);
               }}
               className={`w-10 h-10 flex items-center justify-center rounded-lg text-xs font-bold border transition-all duration-200 ${
                 restDays.has(day.key) 
@@ -266,14 +248,6 @@ export default function WorkingHoursPanel({ onNext }: { onNext?: () => void }) {
       </div>
 
       <div className="flex gap-4 pt-4">
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={isValidating || isSubmitting}
-          className="flex-1 py-4 rounded-xl border border-[#D1D5DB] text-[#4B5563] font-bold text-sm hover:bg-slate-50 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-        >
-          {isValidating ? <Loader2 className="animate-spin" size={20} /> : "Yadda saxla"}
-        </button>
         <button
           type="button"
           onClick={handleNext}
@@ -317,7 +291,6 @@ export default function WorkingHoursPanel({ onNext }: { onNext?: () => void }) {
           } else {
             setSlots(prev => ({...prev, [activeTab]: [...prev[activeTab], { id: Math.random().toString(), ...data }]}));
           }
-          setIsDataSaved(false);
           setModalOpen(false);
         }}
       />

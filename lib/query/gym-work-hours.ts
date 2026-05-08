@@ -20,21 +20,3 @@ export const useAddGymWorkHours = () => {
     },
   });
 };
-
-export const useValidateGymWorkHours = () => {
-  return useMutation({
-    mutationFn: async (data: IGymWorkHoursPayload) => {
-      const { gymId, ...body } = data;
-
-      if (!gymId) {
-        throw new Error("Zal ID tapılmadı (Step 1 və ya 2 tamamlanmayıb)");
-      }
-
-      return apiRequest<IWorkHoursResponse>(`/admin/gyms/${gymId}/step3/validate`, {
-        method: "POST",
-        body: body,
-        auth: true,
-      });
-    },
-  });
-};

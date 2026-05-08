@@ -47,11 +47,7 @@ export function useDeleteGym() {
   return useMutation({
     mutationFn: (id: number) => apiDelete(`/admin/gyms/${id}`),
     onSuccess: () => {
-      toast.success('İdman zalı silindi');
       queryClient.invalidateQueries({ queryKey: ['gyms'] });
-    },
-    onError: (err: any) => {
-      toast.error(err.message || 'Xəta baş verdi');
     }
   });
 }

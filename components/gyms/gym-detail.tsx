@@ -62,7 +62,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       case 'info':         return <GymInfoTab onNext={() => setTab(GYM_TABS[currentIndex + 1].key)} />
       case 'trainers':     return <TrainersTab isNew={isNew} onNext={() => setTab(GYM_TABS[currentIndex + 1].key)} />
       case 'workingHours': return <WorkingHoursPanel onNext={() => setTab(GYM_TABS[currentIndex + 1].key)} />
-      case 'address':      return <AddressTab />
+      case 'address':      return <AddressTab onNext={() => setTab(GYM_TABS[currentIndex + 1].key)} />
       case 'admins':       return <GymAdminsTab admins={gym.admins} />
       case 'reviews':      return <ReviewsTab gymId={gym.id} />
       case 'customers':    return <GymCustomersTab />
