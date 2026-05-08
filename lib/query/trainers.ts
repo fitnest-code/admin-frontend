@@ -6,7 +6,8 @@ export const useGymTrainersQuery = (
   gymId: number, 
   page: number, 
   pageSize: number, 
-  sortDir: string
+  sortDir: string,
+  options: any = {}
 ) => {
   return useQuery({
     queryKey: ["gym-trainers", gymId, page, pageSize, sortDir],
@@ -18,5 +19,6 @@ export const useGymTrainersQuery = (
           sort_dir: sortDir,
         },
       }),
+    ...options
   });
 };

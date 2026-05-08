@@ -18,32 +18,22 @@ export const useAddTrainer = () => {
       }
 
       const formData = new FormData();
-
-      // Dataları FormData-ya append edirik
-      data.names.forEach((v) => formData.append("names", v));
-      data.surnames.forEach((v) => formData.append("surnames", v));
-      data.professionIds.forEach((v) =>
-        formData.append("professionIds", String(v)),
-      );
-
-      data.emails.filter(Boolean).forEach((v) => formData.append("emails", v));
-      data.phones.filter(Boolean).forEach((v) => formData.append("phones", v));
-
-     data.photos.forEach((file) => {
-  if (file instanceof File) {
-    console.log("PHOTO DEBUG:", {
-      name: file.name,
-      type: file.type,
-      size: file.size,
-    });
-
-    formData.append("photos", file, file.name);
-  }
-});
+      data.photos.forEach((file) => {
+        if (file instanceof File) {
+          formData.append("photos", file, file.name);
+        }
+      });
 
       return apiRequest<ITrainersResponse>(`/admin/gyms/${data.id}/step2`, {
         method: "POST",
         body: formData,
+        params: {
+          names: data.names,
+          surnames: data.surnames,
+          professionIds: data.professionIds,
+          emails: data.emails,
+          phones: data.phones,
+        },
         auth: true,
       });
     },

@@ -19,16 +19,43 @@ interface SidebarProps {
   onCollapseChange?: (collapsed: boolean) => void
 }
 
+import { useGymStore } from '@/lib/store/gym-store'
+import { useRouter } from 'next/navigation'
+import { ExitConfirmationModal } from '../gyms/modals/exit-confirmation-modal'
+
 export function Sidebar({ className, onCollapseChange }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [showExitConfirm, setShowExitConfirm] = useState(false)
+  const [pendingHref, setPendingHref] = useState<string | null>(null)
+
+  const { gymId, resetGym } = useGymStore()
+  const router = useRouter()
+  const pathname = usePathname()
 
   function handleCollapseToggle() {
     const next = !collapsed
     setCollapsed(next)
     onCollapseChange?.(next)
   }
-  const pathname = usePathname()
+
+  const handleLinkClick = (e: React.MouseEvent, href: string) => {
+    if (pathname === '/gyms/new' && gymId && href !== '/gyms/new') {
+      e.preventDefault()
+      setPendingHref(href)
+      setShowExitConfirm(true)
+      return
+    }
+    setMobileOpen(false)
+  }
+
+  const handleConfirmExit = () => {
+    resetGym()
+    setShowExitConfirm(false)
+    if (pendingHref) {
+      router.push(pendingHref)
+    }
+  }
 
   return (
     <>
@@ -107,7 +134,7 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
                 const linkContent = (
                   <Link
                     href={item.href}
-                    onClick={() => setMobileOpen(false)}
+                    onClick={(e) => handleLinkClick(e, item.href)}
                     className={cn(
                       'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150',
                       isActive
@@ -160,6 +187,13 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
         {/* Bottom: active indicator stripe */}
         <div className="h-px w-full bg-gradient-to-r from-[#624DE3] to-[#87CBF1] opacity-60" />
       </aside>
+
+      {showExitConfirm && (
+        <ExitConfirmationModal
+          onConfirm={handleConfirmExit}
+          onCancel={() => setShowExitConfirm(false)}
+        />
+      )}
     </>
   )
 }

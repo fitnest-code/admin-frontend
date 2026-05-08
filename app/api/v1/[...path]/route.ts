@@ -45,13 +45,13 @@ async function forward(request: NextRequest, context: RouteContext) {
     targetUrl.search = request.nextUrl.search
 
     const method = request.method.toUpperCase()
-    const body = method === 'GET' || method === 'HEAD' ? undefined : await request.text()
-
     const backendResponse = await fetch(targetUrl.toString(), {
       method,
       headers: pickForwardHeaders(request),
-      body,
+      body: method === 'GET' || method === 'HEAD' ? undefined : request.body,
       cache: 'no-store',
+      // @ts-ignore
+      duplex: 'half',
     })
 
     const responseBody = await backendResponse.text()

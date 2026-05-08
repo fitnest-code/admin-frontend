@@ -1,5 +1,6 @@
 'use client'
-import { useState } from 'react'
+
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, ChevronDown, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -12,6 +13,8 @@ import { ReviewsTab }       from './tabs/reviews-tab'
 import { GymCustomersTab }  from './tabs/gym-customers-tab'
 import WorkingHoursPanel from './tabs/gym-working-hours-tab'
 import { StepNavigationWarningModal } from './modals/step-navigation-warning-modal'
+import { ExitConfirmationModal } from './modals/exit-confirmation-modal'
+import { useGymStore } from '@/lib/store/gym-store'
 
 interface GymDetailProps {
   gym: Gym
@@ -26,15 +29,37 @@ const STATUS_STYLES = {
 
 export function GymDetail({ gym, isNew = false }: GymDetailProps) {
   const router = useRouter()
+  const { gymId, resetGym } = useGymStore()
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isNew && gymId) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [isNew, gymId])
+
+  useEffect(() => {
+    return () => {
+      if (isNew) {
+        resetGym()
+      }
+    }
+  }, [isNew, resetGym])
+
   const [tab, setTab] = useState(GYM_TABS[0].key)
   const [showWarning, setShowWarning] = useState(false)
+  const [showExitConfirm, setShowExitConfirm] = useState(false)
 
   const currentIndex = GYM_TABS.findIndex((t) => t.key === tab)
 
   function renderTab() {
     switch (tab) {
       case 'info':         return <GymInfoTab onNext={() => setTab(GYM_TABS[currentIndex + 1].key)} />
-      case 'trainers':     return <TrainersTab />
+      case 'trainers':     return <TrainersTab isNew={isNew} onNext={() => setTab(GYM_TABS[currentIndex + 1].key)} />
       case 'workingHours': return <WorkingHoursPanel />
       case 'plans':        return <PlansTab subscriptionTiers={gym.subscriptionTiers} services={gym.services} />
       case 'admins':       return <GymAdminsTab admins={gym.admins} />
@@ -43,8 +68,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       default: 
         return (
           <div className="flex flex-col items-center justify-center py-24 text-sm text-muted-foreground bg-white rounded-3xl border-2 border-dashed border-slate-100">
-            <p>Bu bölmə tezliklə əlavə ediləcək.</p>
-            <p className="text-xs mt-1">(Bölmə: {tab})</p>
+            <p>Bu bölmə tezliklə əlavə ediləcək ({tab})</p>
           </div>
         )
     }
@@ -63,10 +87,24 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
     setTab(key)
   }
 
+  const handleBackClick = () => {
+    if (isNew && gymId) {
+      setShowExitConfirm(true)
+    } else {
+      if (isNew) resetGym()
+      router.push('/gyms')
+    }
+  }
+
+  const handleConfirmExit = () => {
+    resetGym()
+    router.push('/gyms')
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <button
-        onClick={() => router.push('/gyms')}
+        onClick={handleBackClick}
         className="flex w-fit items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft size={15} aria-hidden />
@@ -153,6 +191,13 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
 
       {showWarning && (
         <StepNavigationWarningModal onClose={() => setShowWarning(false)} />
+      )}
+
+      {showExitConfirm && (
+        <ExitConfirmationModal 
+          onConfirm={handleConfirmExit} 
+          onCancel={() => setShowExitConfirm(false)} 
+        />
       )}
     </div>
   )

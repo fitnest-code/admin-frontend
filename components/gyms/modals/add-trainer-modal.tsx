@@ -31,7 +31,6 @@ export function AddTrainerModal({ onClose }: { onClose: () => void }) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
-  // Memory leak-in qarşısını almaq üçün URL-i təmizləyirik
   useEffect(() => {
     return () => {
       if (preview) URL.revokeObjectURL(preview);
@@ -40,11 +39,9 @@ export function AddTrainerModal({ onClose }: { onClose: () => void }) {
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-
     if (!file) return;
 
     const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-
     if (!allowedTypes.includes(file.type)) {
       toast.error("Yalnız JPG, PNG və WEBP formatında şəkil seçə bilərsiniz");
       e.target.value = "";
@@ -58,12 +55,12 @@ export function AddTrainerModal({ onClose }: { onClose: () => void }) {
     }
 
     setSelectedFile(file);
-
     const objectUrl = URL.createObjectURL(file);
     setPreview(objectUrl);
-
     toast.success("Şəkil seçildi");
   };
+
+  const { addStep2Trainer } = useGymStore();
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,25 +71,17 @@ export function AddTrainerModal({ onClose }: { onClose: () => void }) {
       );
     }
 
-    mutate(
-      {
-        id: id,
-        names: [form.name],
-        surnames: [form.surname],
-        professionIds: [Number(form.professionId)],
-        emails: form.email ? [form.email] : [],
-        phones: form.phone ? [form.phone] : [],
-        photos: [selectedFile],
-      },
-      {
-        onSuccess: () => {
-          toast.success("Məşqçi uğurla əlavə edildi");
-          queryClient.invalidateQueries({ queryKey: ["gym-trainers", id] });
-          onClose();
-        },
-        onError: (err: any) => toast.error(err.message || "Xəta baş verdi"),
-      },
-    );
+    const professionName = professions?.find(p => String(p.id) === form.professionId)?.name;
+
+    addStep2Trainer({
+      ...form,
+      photo: selectedFile,
+      preview: preview!,
+      professionName
+    });
+
+    toast.success("Məşqçi siyahıya əlavə edildi");
+    onClose();
   };
 
   return (
