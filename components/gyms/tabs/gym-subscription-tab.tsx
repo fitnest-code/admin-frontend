@@ -53,6 +53,14 @@ export default function GymSubscriptionTab({ onNext }: { onNext?: () => void }) 
     }
   };
 
+  const toggleServiceInPackage = (svcName: string) => {
+    if (packageServices[activePackage].includes(svcName)) {
+      removeService(activePackage, svcName);
+    } else {
+      setPackageServices((prev) => ({ ...prev, [activePackage]: [...prev[activePackage], svcName] }));
+    }
+  };
+
   const { mutate: createStep6, isPending: savingStep6 } = useCreateGymStep6();
 
   const handleNext = () => {
@@ -112,14 +120,14 @@ export default function GymSubscriptionTab({ onNext }: { onNext?: () => void }) 
               const isSelected = selectedPackages.includes(pkg);
               const isActive = activePackage === pkg;
               return (
-                <button
+                <div
                   key={pkg}
                   onClick={() => {
                     if (isSelected) setActivePackage(pkg);
                     togglePackage(pkg);
                   }}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all
-                    ${isSelected ? `${ps.bg} ${ps.text}` : "bg-gray-100 text-gray-500"}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all cursor-pointer
+                    ${isSelected ? `${ps.bg} ${ps.text}` : "bg-gray-100 text-gray-500 hover:bg-gray-200"}
                     ${isActive && isSelected ? "ring-2 ring-offset-2 ring-gray-400" : ""}
                   `}
                 >
@@ -136,7 +144,7 @@ export default function GymSubscriptionTab({ onNext }: { onNext?: () => void }) 
                     </Checkbox.Indicator>
                   </Checkbox.Root>
                   {pkg}
-                </button>
+                </div>
               );
             })}
           </div>
