@@ -1,4 +1,4 @@
-import { apiGet } from '@/lib/api/client'
+import { apiGet, apiPatch, apiRequest } from '@/lib/api/client'
 import { DEFAULT_WORKING_HOURS, type Gym, type Review, type Trainer } from '@/lib/gyms-data'
 import type {
   AdminGymsResponse,
@@ -143,4 +143,11 @@ export async function getGymLocation(gymId: string) {
 
 export async function getGymReservationRules(gymId: string) {
   return apiGet<GymReservationRulesResponse>(`/api/v1/gyms/${gymId}/reservation-rules`)
+}
+
+export function toggleGymStatus(id: string, enabled: boolean) {
+  return apiRequest<void>(`/admin/gyms/${id}/status`, {
+    method: 'PATCH',
+    params: { enabled }
+  })
 }

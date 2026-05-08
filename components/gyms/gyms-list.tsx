@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Search, Plus, ChevronDown, Eye, Trash2, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { SORT_OPTIONS } from '@/lib/gyms-data'
-import { useAdminGymsQuery, type AdminGymListItem, type AdminGymSort } from '@/modules/gyms'
+import { useAdminGymsQuery, useToggleGymStatus, type AdminGymListItem, type AdminGymSort } from '@/modules/gyms'
 import { GymStatusToggle } from './gym-status-toggle'
 import { ConfirmDeleteModal } from './modals/confirm-delete-modal'
 import { useDeleteGym } from '@/lib/query/gym-query'
@@ -16,13 +16,13 @@ const PER_PAGE = 10
 export function GymsList() {
   const router = useRouter()
   const deleteGym = useDeleteGym()
+  const toggleStatus = useToggleGymStatus()
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [sortValue, setSortValue] = useState<AdminGymSort>('newest')
   const [sortOpen, setSortOpen] = useState(false)
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
-  const [readonlyNotice, setReadonlyNotice] = useState('')
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQuery(query.trim()), 350)
@@ -50,8 +50,8 @@ export function GymsList() {
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE))
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
 
-  function handleToggle() {
-    setReadonlyNotice('Status dəyişmə endpoint-i paylaşılmayıb, bu əməliyyat hələ read-only saxlanılıb.')
+  function handleToggle(id: number, currentEnabled: boolean) {
+    toggleStatus.mutate({ id: String(id), enabled: !currentEnabled })
   }
 
   function handleDelete() {
@@ -156,7 +156,7 @@ export function GymsList() {
                 gym={gym}
                 onView={() => router.push(`/gyms/${gym.id}`)}
                 onDelete={() => setDeleteId(gym.id)}
-                onToggle={handleToggle}
+                onToggle={() => handleToggle(gym.id, gym.status === 'ACTIVE')}
               />
             ))}
 
@@ -188,9 +188,6 @@ export function GymsList() {
         />
       )}
 
-      {readonlyNotice && (
-        <p className="text-sm text-amber-600">{readonlyNotice}</p>
-      )}
 
       {gymsQuery.isError && (
         <p className="text-sm text-red-500">Zal siyahısı yüklənmədi. Yenidən cəhd edin.</p>

@@ -11,8 +11,26 @@ import {
   getGymReviews,
   getGyms,
   getGymTrainers,
+  toggleGymStatus,
 } from '@/modules/gyms/api/gyms.service'
 import type { GetAdminGymsParams, GetGymsParams } from '@/modules/gyms/types/gym.types'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
+export function useToggleGymStatus() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) => 
+      toggleGymStatus(id, enabled),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.gyms.all })
+      toast.success('Zal statusu dəyişdirildi')
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || 'Xəta baş verdi')
+    }
+  })
+}
 
 export function useAdminGymsQuery(params?: GetAdminGymsParams) {
   return useQuery({
