@@ -66,6 +66,7 @@ export const useGymStore = create<GymState>()(
       partialize: (state) => ({ 
         gymId: state.gymId,
         currentTab: state.currentTab,
+        step2Trainers: state.step2Trainers,
         step7Admins: state.step7Admins
       }),
     }

@@ -7,7 +7,7 @@ import { useGymStore } from "@/lib/store/gym-store";
 import { useSupportedServices, useCreateSupportedService, useCreateGymStep6 } from "@/lib/query/gym-query";
 import { toast } from "sonner";
 
-import { AddServiceModal } from "../modals/add-service-modal";
+import { ServiceSelectorModal } from "../modals/service-selector-modal";
 
 type Package = "Bronze" | "Silver" | "Gold" | "Platinum";
 
@@ -26,14 +26,12 @@ export default function GymSubscriptionTab({ onNext }: { onNext?: () => void }) 
   const [activePackage, setActivePackage] = useState<Package>("Platinum");
   const [prices, setPrices] = useState<Record<Package, string>>({ Bronze: "", Silver: "", Gold: "", Platinum: "50" });
   
-  // Local state for which services are assigned to which package
   const [packageServices, setPackageServices] = useState<Record<Package, string[]>>({
     Bronze: [], Silver: [], Gold: [], Platinum: []
   });
 
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [showSelectorModal, setShowSelectorModal] = useState(false);
 
-  // Fetch all available services
   const { data: allServices, isLoading: servicesLoading } = useSupportedServices(gymId ? Number(gymId) : undefined);
 
   const togglePackage = (pkg: Package) => {
@@ -47,35 +45,16 @@ export default function GymSubscriptionTab({ onNext }: { onNext?: () => void }) 
     setPackageServices((prev) => ({ ...prev, [pkg]: prev[pkg].filter((s) => s !== svcName) }));
   };
 
-  const handleAddServiceSuccess = (serviceName: string) => {
-    if (!packageServices[activePackage].includes(serviceName)) {
-      setPackageServices((prev) => ({ ...prev, [activePackage]: [...prev[activePackage], serviceName] }));
-    }
-  };
-
-  const toggleServiceInPackage = (svcName: string) => {
-    if (packageServices[activePackage].includes(svcName)) {
-      removeService(activePackage, svcName);
-    } else {
-      setPackageServices((prev) => ({ ...prev, [activePackage]: [...prev[activePackage], svcName] }));
-    }
-  };
-
   const { mutate: createStep6, isPending: savingStep6 } = useCreateGymStep6();
 
   const handleNext = () => {
     if (!gymId) return toast.error("Zal ID tapılmadı");
     
-    // Construct the payload for Step 6
     const PACKAGE_IDS: Record<Package, number> = {
-      Bronze: 1,
-      Silver: 2,
-      Gold: 3,
-      Platinum: 4,
+      Bronze: 1, Silver: 2, Gold: 3, Platinum: 4,
     };
 
-    const subscriptions: GymCreateStep6SubscriptionRequest[] = selectedPackages.map(pkg => {
-      // Find service IDs for this package
+    const subscriptions = selectedPackages.map(pkg => {
       const serviceNames = packageServices[pkg];
       const serviceIds = serviceNames.map(name => {
         const found = allServices?.find(s => s.name === name);
@@ -124,14 +103,16 @@ export default function GymSubscriptionTab({ onNext }: { onNext?: () => void }) 
                   key={pkg}
                   onClick={() => {
                     if (isSelected) setActivePackage(pkg);
-                    togglePackage(pkg);
+                    else {
+                      togglePackage(pkg);
+                      setActivePackage(pkg);
+                    }
                   }}
                   className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all cursor-pointer
                     ${isSelected ? `${ps.bg} ${ps.text}` : "bg-gray-100 text-gray-500 hover:bg-gray-200"}
                     ${isActive && isSelected ? "ring-2 ring-offset-2 ring-gray-400" : ""}
                   `}
                 >
-                  {/* Checkbox */}
                   <Checkbox.Root
                     checked={isSelected}
                     onCheckedChange={() => togglePackage(pkg)}
@@ -150,91 +131,66 @@ export default function GymSubscriptionTab({ onNext }: { onNext?: () => void }) 
           </div>
         </div>
 
-        {/* Price */}
-        <div className="p-6 border-b border-dashed border-gray-200">
-          <h2 className="text-base font-semibold text-gray-900 mb-3">Giriş qiyməti</h2>
-          <label className="text-sm text-gray-500 mb-1.5 block">Giriş qiyməti</label>
-          <input
-            type="number"
-            value={prices[activePackage]}
-            onChange={(e) => setPrices((prev) => ({ ...prev, [activePackage]: e.target.value }))}
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800
-              focus:outline-none focus:ring-2 focus:ring-teal-400 transition"
-          />
-        </div>
-
-        {/* Services */}
-        <div className="p-6 border-b border-dashed border-gray-200">
-          <div className="flex items-center justify-between mb-4">
+        {/* Price & Services Header */}
+        <div className="p-6 space-y-6">
+          <div className="flex flex-col gap-1.5">
             <h2 className="text-base font-semibold text-gray-900">
-              {activePackage} paketə daxil olan xidmətlər
+              {activePackage} paketinin parametrləri
             </h2>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-[#00B4D8] hover:bg-[#0096B4]
-                text-white text-sm font-medium rounded-xl transition active:scale-95"
-            >
-              <Plus className="w-4 h-4 stroke-[2.5]" />
-              Xidmət əlavə et
-            </button>
+            <p className="text-xs text-gray-400">Bu paket üçün giriş qiyməti və daxil olan xidmətləri tənzimləyin</p>
           </div>
 
-          {/* Assigned Service chips */}
-          <div className="flex flex-wrap gap-2 mb-6">
-            {packageServices[activePackage].length === 0 ? (
-              <p className="text-sm text-gray-400 italic py-2">Hələ ki xidmət seçilməyib</p>
-            ) : (
-              packageServices[activePackage].map((svc, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-2 bg-teal-50 border border-teal-100 rounded-full px-4 py-1.5 text-sm text-teal-700"
-                >
-                  <span>{svc}</span>
-                  <button
-                    onClick={() => removeService(activePackage, svc)}
-                    className="shrink-0 text-teal-400 hover:text-teal-600 transition"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))
-            )}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-700">Giriş qiyməti (AZN)</label>
+            <input
+              type="number"
+              value={prices[activePackage]}
+              onChange={(e) => setPrices((prev) => ({ ...prev, [activePackage]: e.target.value }))}
+              placeholder="0.00"
+              className="w-full max-w-[200px] border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800
+                focus:outline-none focus:ring-2 focus:ring-teal-400 transition"
+            />
           </div>
 
-          {/* Available Global/Gym Services Pool */}
-          <div>
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-tight mb-3 block">Sistemdə olan xidmətlər (Seçmək üçün üzərinə basın)</label>
-            <div className="flex flex-wrap gap-2">
-              {servicesLoading ? (
-                <div className="flex items-center gap-2 text-gray-400 text-sm">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Yüklənir...
-                </div>
-              ) : allServices?.length === 0 ? (
-                <p className="text-sm text-gray-400 italic">Hələ ki heç bir xidmət yoxdur</p>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-gray-700">Daxil olan xidmətlər</label>
+              <button
+                onClick={() => setShowSelectorModal(true)}
+                className="flex items-center gap-1.5 px-4 py-2 bg-[#00B4D815] hover:bg-[#00B4D825]
+                  text-[#00B4D8] text-sm font-bold rounded-xl transition"
+              >
+                <Plus className="w-4 h-4 stroke-[2.5]" />
+                Xidmət seç / əlavə et
+              </button>
+            </div>
+
+            {/* Selected services chips */}
+            <div className="flex flex-wrap gap-2 min-h-[45px] p-3 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+              {packageServices[activePackage].length === 0 ? (
+                <p className="text-sm text-gray-400 italic self-center">Hələ ki xidmət seçilməyib</p>
               ) : (
-                allServices?.map((s) => {
-                  const isSelected = packageServices[activePackage].includes(s.name);
-                  return (
+                packageServices[activePackage].map((svc, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 shadow-sm animate-in fade-in zoom-in duration-200"
+                  >
+                    <span>{svc}</span>
                     <button
-                      key={s.id}
-                      onClick={() => toggleServiceInPackage(s.name)}
-                      className={`px-4 py-2 rounded-xl text-sm font-medium transition-all border
-                        ${isSelected 
-                          ? "bg-[#00B4D8] border-[#00B4D8] text-white shadow-md" 
-                          : "bg-white border-gray-200 text-gray-600 hover:border-[#00B4D8] hover:text-[#00B4D8]"}`}
+                      onClick={() => removeService(activePackage, svc)}
+                      className="shrink-0 text-slate-300 hover:text-red-400 transition"
                     >
-                      {s.name}
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
-                  );
-                })
+                  </div>
+                ))
               )}
             </div>
           </div>
         </div>
 
         {/* Footer buttons */}
-        <div className="flex gap-3 px-6 py-4">
+        <div className="flex gap-3 px-6 py-4 mt-auto border-t">
           <button 
             type="button"
             onClick={handleNext}
@@ -249,10 +205,12 @@ export default function GymSubscriptionTab({ onNext }: { onNext?: () => void }) 
 
       </div>
 
-      {showAddModal && (
-        <AddServiceModal 
-          onClose={() => setShowAddModal(false)} 
-          onSuccess={handleAddServiceSuccess}
+      {showSelectorModal && (
+        <ServiceSelectorModal 
+          onClose={() => setShowSelectorModal(false)}
+          activePackageName={activePackage}
+          selectedServiceNames={packageServices[activePackage]}
+          onSelectionChange={(names) => setPackageServices(prev => ({ ...prev, [activePackage]: names }))}
         />
       )}
     </div>
