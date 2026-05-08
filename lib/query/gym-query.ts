@@ -5,7 +5,9 @@ import {
   GymStep1Payload, 
   GymStep1Response,
   SupportedServiceResponse,
-  SupportedServiceRequest
+  SupportedServiceRequest,
+  GymCreateStep6Request,
+  GymCreateStep7Request
 } from '../types/gym'
 import { useGymStore } from '../store/gym-store'
 import { toast } from 'sonner'

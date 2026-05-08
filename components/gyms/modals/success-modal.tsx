@@ -33,7 +33,7 @@ export function SuccessModal({ onClose, title, message }: SuccessModalProps) {
             <div className="h-20 w-20 rounded-full bg-green-50 flex items-center justify-center">
               <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center animate-pulse">
                 <div className="h-12 w-12 rounded-full bg-green-500 flex items-center justify-center shadow-lg shadow-green-200">
-                  <Check className="h-7 w-7 text-white stroke-[3] animate-[check_0.5s_ease-out_forwards]" />
+                  <Check className="h-7 w-7 text-white stroke-[3] animate-bounce" />
                 </div>
               </div>
             </div>
@@ -58,14 +58,7 @@ export function SuccessModal({ onClose, title, message }: SuccessModalProps) {
           </button>
         </div>
       </div>
-
-      <style jsx global>{`
-        @keyframes check {
-          0% { transform: scale(0); opacity: 0; }
-          50% { transform: scale(1.2); }
-          100% { transform: scale(1); opacity: 1; }
-        }
-      `}</style>
     </div>
   );
 }
+
