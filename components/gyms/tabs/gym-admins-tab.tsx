@@ -8,6 +8,8 @@ import { useCreateGymStep7 } from '@/lib/query/gym-query'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
+import { SuccessModal } from '../modals/success-modal'
+
 const ROLE_STYLES = {
   'Super admin': 'bg-[#00B4CC] text-white',
 }
@@ -18,6 +20,7 @@ export function GymAdminsTab({ onNext }: { onNext?: () => void }) {
   const router = useRouter()
   const { gymId, step7Admins: admins, addStep7Admin, removeStep7Admin, resetGym } = useGymStore()
   const [modalOpen, setModalOpen] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
   const [form, setForm]           = useState<LocalAdmin>(EMPTY_FORM)
   const [showPwd, setShowPwd]     = useState(false)
 
@@ -27,12 +30,6 @@ export function GymAdminsTab({ onNext }: { onNext?: () => void }) {
     if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim() || !form.password.trim()) {
       return toast.error("Zəhmət olmasa bütün xanaları doldurun")
     }
-    
-    // Simple phone validation for Azerbaijani format if needed
-    // const phoneRegex = /^(050|051|010|055|099|070|077|060)\d{7}$/
-    // if (!phoneRegex.test(form.phone)) {
-    //   return toast.error("Yanlış telefon nömrəsi formatı")
-    // }
 
     addStep7Admin({ ...form })
     setForm(EMPTY_FORM)
@@ -58,14 +55,18 @@ export function GymAdminsTab({ onNext }: { onNext?: () => void }) {
       payload
     }, {
       onSuccess: () => {
-        toast.success("Təbriklər! İdman zalı uğurla yaradıldı və aktivləşdirildi.")
+        setShowSuccess(true)
         resetGym()
-        router.push('/gyms')
       },
       onError: (err: any) => {
         toast.error(err?.message || "Xəta baş verdi")
       }
     })
+  }
+
+  function handleSuccessClose() {
+    setShowSuccess(false)
+    router.push('/gyms')
   }
 
   function update(field: keyof LocalAdmin, val: string) {
@@ -163,6 +164,15 @@ export function GymAdminsTab({ onNext }: { onNext?: () => void }) {
           Növbəti
         </button>
       </div>
+
+      {/* Success Modal */}
+      {showSuccess && (
+        <SuccessModal 
+          onClose={handleSuccessClose}
+          title="Təbriklər!"
+          message="İdman zalı uğurla yaradıldı və aktivləşdirildi. İndi zalı idarə etməyə başlaya bilərsiniz."
+        />
+      )}
 
       {/* Modal */}
       {modalOpen && (
