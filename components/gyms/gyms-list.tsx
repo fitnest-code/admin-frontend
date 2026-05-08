@@ -8,11 +8,14 @@ import { SORT_OPTIONS } from '@/lib/gyms-data'
 import { useAdminGymsQuery, type AdminGymListItem, type AdminGymSort } from '@/modules/gyms'
 import { GymStatusToggle } from './gym-status-toggle'
 import { ConfirmDeleteModal } from './modals/confirm-delete-modal'
+import { useDeleteGym } from '@/lib/query/gym-query'
+import { toast } from 'sonner'
 
 const PER_PAGE = 10
 
 export function GymsList() {
   const router = useRouter()
+  const deleteGym = useDeleteGym()
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [sortValue, setSortValue] = useState<AdminGymSort>('newest')
@@ -52,8 +55,10 @@ export function GymsList() {
   }
 
   function handleDelete() {
-    setReadonlyNotice('Silmə endpoint-i paylaşılmayıb, bu əməliyyat hələ read-only saxlanılıb.')
-    setDeleteId(null)
+    if (!deleteId) return
+    deleteGym.mutate(deleteId, {
+      onSuccess: () => setDeleteId(null),
+    })
   }
 
   return (

@@ -18,7 +18,7 @@ export function ConfirmDeleteModal({ name, onConfirm, onCancel }: ConfirmDeleteM
     >
       <div className="w-full max-w-sm rounded-2xl bg-card border border-border shadow-2xl">
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <h2 className="text-sm font-semibold text-foreground">Zalı sil</h2>
+          <h2 className="text-sm font-semibold text-foreground">İdman zalını silin</h2>
           <button onClick={onCancel} className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary transition-colors">
             <X size={15} />
           </button>

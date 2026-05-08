@@ -54,8 +54,13 @@ async function forward(request: NextRequest, context: RouteContext) {
       duplex: 'half',
     })
 
+    const status = backendResponse.status
+    if (status === 204) {
+      return new NextResponse(null, { status: 204 })
+    }
+
     const responseBody = await backendResponse.text()
-    const response = new NextResponse(responseBody, { status: backendResponse.status })
+    const response = new NextResponse(responseBody, { status })
 
     const responseType = backendResponse.headers.get('content-type')
     if (responseType) {

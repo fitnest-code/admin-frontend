@@ -1,11 +1,12 @@
-import { useQuery, useMutation } from '@tanstack/react-query'
-import { apiGet, apiPost } from "@/lib/api/client" 
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { apiGet, apiPost, apiDelete } from "@/lib/api/client" 
 import { 
   CategoriesResponse, 
   GymStep1Payload, 
   GymStep1Response 
 } from '../types/gym'
 import { useGymStore } from '../store/gym-store'
+import { toast } from 'sonner'
 
 // 1. Kateqoriyaları çəkmək üçün
 export function useCategories() {
@@ -37,4 +38,20 @@ export function useCreateGymStep1() {
       console.error('Gym step1 error:', error);
     },
   })
+}
+
+// 3. Zalı silmək üçün
+export function useDeleteGym() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => apiDelete(`/admin/gyms/${id}`),
+    onSuccess: () => {
+      toast.success('İdman zalı silindi');
+      queryClient.invalidateQueries({ queryKey: ['gyms'] });
+    },
+    onError: (err: any) => {
+      toast.error(err.message || 'Xəta baş verdi');
+    }
+  });
 }
