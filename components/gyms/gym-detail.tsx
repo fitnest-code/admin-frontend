@@ -11,6 +11,7 @@ import { GymAdminsTab }     from './tabs/gym-admins-tab'
 import { ReviewsTab }       from './tabs/reviews-tab'
 import { GymCustomersTab }  from './tabs/gym-customers-tab'
 import WorkingHoursPanel from './tabs/gym-working-hours-tab'
+import { StepNavigationWarningModal } from './modals/step-navigation-warning-modal'
 
 interface GymDetailProps {
   gym: Gym
@@ -26,24 +27,44 @@ const STATUS_STYLES = {
 export function GymDetail({ gym, isNew = false }: GymDetailProps) {
   const router = useRouter()
   const [tab, setTab] = useState(GYM_TABS[0].key)
+  const [showWarning, setShowWarning] = useState(false)
 
   const currentIndex = GYM_TABS.findIndex((t) => t.key === tab)
 
   function renderTab() {
     switch (tab) {
-      case 'info':      return <GymInfoTab onNext={() => setTab(GYM_TABS[currentIndex + 1].key)} />
-      case 'trainers':  return <TrainersTab />
-      case 'workhours': return <WorkingHoursPanel />
-      case 'plans':     return <PlansTab subscriptionTiers={gym.subscriptionTiers} services={gym.services} />
-      case 'reviews':   return <ReviewsTab gymId={gym.id} />
-      case 'customers': return <GymCustomersTab />
-      default: return null
+      case 'info':         return <GymInfoTab onNext={() => setTab(GYM_TABS[currentIndex + 1].key)} />
+      case 'trainers':     return <TrainersTab />
+      case 'workingHours': return <WorkingHoursPanel />
+      case 'plans':        return <PlansTab subscriptionTiers={gym.subscriptionTiers} services={gym.services} />
+      case 'admins':       return <GymAdminsTab admins={gym.admins} />
+      case 'reviews':      return <ReviewsTab gymId={gym.id} />
+      case 'customers':    return <GymCustomersTab />
+      default: 
+        return (
+          <div className="flex flex-col items-center justify-center py-24 text-sm text-muted-foreground bg-white rounded-3xl border-2 border-dashed border-slate-100">
+            <p>Bu bölmə tezliklə əlavə ediləcək.</p>
+            <p className="text-xs mt-1">(Bölmə: {tab})</p>
+          </div>
+        )
     }
+  }
+
+  const handleStepClick = (key: string, index: number) => {
+    if (isNew) {
+      if (index < currentIndex) {
+        setShowWarning(true)
+        return
+      }
+      if (index > currentIndex) {
+        return
+      }
+    }
+    setTab(key)
   }
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Back */}
       <button
         onClick={() => router.push('/gyms')}
         className="flex w-fit items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -52,7 +73,6 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
         Geri qayıt
       </button>
 
-      {/* Title row */}
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-xl font-bold text-foreground">
           {isNew ? 'Yeni Zal' : gym.name}
@@ -72,10 +92,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
         )}
       </div>
 
-      {/* Layout: Sidebar + Content */}
       <div className="flex gap-6 items-start">
-
-        {/* Step Sidebar */}
         <nav
           aria-label="Zal bölmələri"
           className="w-65 shrink-0 rounded-[12px] border border-border bg-card p-3 flex flex-col gap-1"
@@ -83,18 +100,18 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
           {GYM_TABS.map((t, index) => {
             const isActive    = tab === t.key
             const isCompleted = index < currentIndex
+            const isFuture    = index > currentIndex
 
             return (
               <div key={t.key} className="flex flex-col">
                 <button
-                  onClick={() => setTab(t.key)}
+                  onClick={() => handleStepClick(t.key, index)}
                   aria-current={isActive ? 'page' : undefined}
                   className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors w-full'
-                   
+                    'flex items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors w-full',
+                    isNew && isFuture && 'cursor-not-allowed'
                   )}
                 >
-                  {/* Step number / check */}
                   <span
                     className={cn(
                       'flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[18px] font-semibold transition-colors',
@@ -108,7 +125,6 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
                     {isCompleted ? <Check size={12} /> : index + 1}
                   </span>
 
-                  {/* Label */}
                   <div className="flex flex-col min-w-0">
                     <span
                       className={cn(
@@ -122,7 +138,6 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
                   </div>
                 </button>
 
-                {/* Connector line between steps */}
                 {index < GYM_TABS.length - 1 && (
                   <div className="ml-7.5 w-1 h-4 bg-border" />
                 )}
@@ -131,11 +146,14 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
           })}
         </nav>
 
-        {/* Tab Content */}
         <div className="flex-1 min-w-0">
           {renderTab()}
         </div>
       </div>
+
+      {showWarning && (
+        <StepNavigationWarningModal onClose={() => setShowWarning(false)} />
+      )}
     </div>
   )
 }
