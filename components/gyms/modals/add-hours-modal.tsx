@@ -8,6 +8,7 @@ import {
   DialogTitle,
   DialogClose,
 } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 import {
   Select,
   SelectContent,
@@ -51,8 +52,19 @@ export function AddClassTimeModal({
   const [endTime, setEndTime] = useState<string>('10:00');
 
   const handleSubmit = () => {
-    if (!selectedDay || !startTime || !endTime) {
-      return;
+    if (!selectedDay) {
+      return toast.error("Zəhmət olmasa günü seçin");
+    }
+
+    if (!startTime || !endTime) {
+      return toast.error("Zəhmət olmasa saatları daxil edin");
+    }
+
+    const [startH, startM] = startTime.split(':').map(Number);
+    const [endH, endM] = endTime.split(':').map(Number);
+    
+    if (endH < startH || (endH === startH && endM <= startM)) {
+      return toast.error("Bitiş vaxtı başlama vaxtından sonra olmalıdır");
     }
 
     onSubmit?.({

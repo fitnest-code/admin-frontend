@@ -8,7 +8,7 @@ export const useGetAddressByCoords = (lat: number, lng: number, enabled: boolean
   return useQuery({
     queryKey: ["reverse-geocoding", lat, lng],
     queryFn: () => 
-      apiGet<IReverseGeocodingResponse>("/gyms/geocoding/reverse", {
+      apiGet<IReverseGeocodingResponse>("/admin/gyms/geocoding/reverse", {
         params: { lat, lng }
       }),
     enabled: enabled && !!lat && !!lng,
@@ -20,7 +20,7 @@ export const useGetAddressByCoords = (lat: number, lng: number, enabled: boolean
 export const useAddGymLocation = () => {
   return useMutation({
     mutationFn: (payload: IGymStep4Payload) => 
-      apiPost(`/gyms/${payload.gymId}/step4`, {
+      apiPost(`/admin/gyms/${payload.gymId}/step4`, {
         latitude: payload.latitude,
         longitude: payload.longitude,
       })

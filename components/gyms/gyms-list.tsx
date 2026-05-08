@@ -57,7 +57,13 @@ export function GymsList() {
   function handleDelete() {
     if (!deleteId) return
     deleteGym.mutate(deleteId, {
-      onSuccess: () => setDeleteId(null),
+      onSuccess: () => {
+        setDeleteId(null)
+        toast.success("Zal uğurla silindi")
+      },
+      onError: (error: any) => {
+        toast.error(error?.message || "Zalı silmək mümkün olmadı")
+      }
     })
   }
 
