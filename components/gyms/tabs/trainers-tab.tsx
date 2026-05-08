@@ -23,7 +23,7 @@ export function TrainersTab({ isNew, onNext }: { isNew?: boolean, onNext?: () =>
     { enabled: !isNew && !!gymId }
   );
 
-  const apiTrainers = apiData?.items ?? [];
+  const apiTrainers = (apiData as { items?: any[] })?.items ?? [];
   
   const source = [
     ...apiTrainers, 

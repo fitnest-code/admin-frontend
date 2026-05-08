@@ -15,6 +15,7 @@ import WorkingHoursPanel from './tabs/gym-working-hours-tab'
 import { StepNavigationWarningModal } from './modals/step-navigation-warning-modal'
 import { ExitConfirmationModal } from './modals/exit-confirmation-modal'
 import { useGymStore } from '@/lib/store/gym-store'
+import AddressTab from './tabs/gym-address-tab'
 
 interface GymDetailProps {
   gym: Gym
@@ -60,8 +61,8 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
     switch (tab) {
       case 'info':         return <GymInfoTab onNext={() => setTab(GYM_TABS[currentIndex + 1].key)} />
       case 'trainers':     return <TrainersTab isNew={isNew} onNext={() => setTab(GYM_TABS[currentIndex + 1].key)} />
-      case 'workingHours': return <WorkingHoursPanel />
-      case 'plans':        return <PlansTab subscriptionTiers={gym.subscriptionTiers} services={gym.services} />
+      case 'workingHours': return <WorkingHoursPanel onNext={() => setTab(GYM_TABS[currentIndex + 1].key)} />
+      case 'address':      return <AddressTab />
       case 'admins':       return <GymAdminsTab admins={gym.admins} />
       case 'reviews':      return <ReviewsTab gymId={gym.id} />
       case 'customers':    return <GymCustomersTab />

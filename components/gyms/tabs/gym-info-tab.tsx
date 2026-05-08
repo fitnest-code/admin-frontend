@@ -28,8 +28,8 @@ export function GymInfoTab({ onNext }: { onNext?: () => void }) {
   const buildPayload = () => ({
     categoryId: categoryId!,
     name,
-    dailyPrice: Number(dailyPrice),
-    contractPrice: Number(contractPrice),
+    // dailyPrice: Number(dailyPrice),
+    // contractPrice: Number(contractPrice),
     description: about,
     phone,
     email,
@@ -65,7 +65,6 @@ export function GymInfoTab({ onNext }: { onNext?: () => void }) {
 
   const handleNext = async () => {
     console.log("next")
-    // Əgər zal artıq yaradılıbsa, birbaşa Step 2-yə keç
     if (gymId) {
       onNext?.();
       return;

@@ -51,8 +51,6 @@ interface TrainerState {
 export interface GymStep1Data {
   categoryId: number | null
   name: string
-  dailyPrice: string
-  contractPrice: string
   description: string
   phone: string
   email: string
@@ -86,8 +84,6 @@ export interface GymStep1Response {
 export interface GymStep1Payload {
   categoryId: number
   name: string
-  dailyPrice: number
-  contractPrice: number
   description: string
   phone: string
   email: string

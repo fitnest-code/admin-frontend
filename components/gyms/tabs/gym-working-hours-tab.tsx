@@ -1,360 +1,251 @@
 "use client";
 
-import { useState } from "react";
-import { Trash2, Pencil, Plus, Check, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Trash2, Pencil, Plus, Loader2, Clock } from "lucide-react";
+import { toast } from "sonner";
+import { useGymStore } from "@/lib/store/gym-store";
+import { useAddGymWorkHours } from "@/lib/query/gym-work-hours";
+import { AddClassTimeModal, ClassTimeData } from "../modals/add-hours-modal";
+import { IGymWorkHoursPayload, IWorkHour, IRestDay } from "@/lib/types/working-hours";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+type GenderTab = "generalWorkHours" | "workHoursMan" | "workHoursWoman";
 
-type GenderTab = "umumi" | "kisiler" | "qadinlar";
-type DayKey = "Be" | "Ca" | "C" | "Ca2" | "C2" | "S" | "B";
-
-interface TimeSlot {
-  id: number;
-  from: string;
-  to: string;
+interface SavedSlot extends ClassTimeData {
+  id: string;
 }
 
-type ScheduleMap = Record<DayKey, TimeSlot[]>;
-
-// ─── Constants ───────────────────────────────────────────────────────────────
-
-const DAY_SHORT: Record<DayKey, string> = {
-  Be: "B.e",
-  Ca: "Ç.a",
-  C: "Ç",
-  Ca2: "C.a",
-  C2: "C",
-  S: "Ş",
-  B: "B",
+const BACKEND_DAY_MAP: Record<string, string> = {
+  monday: "Monday", tuesday: "Tuesday", wednesday: "Wednesday",
+  thursday: "Thursday", friday: "Friday", saturday: "Saturday", sunday: "Sunday",
 };
 
-const ALL_DAYS: DayKey[] = ["Be", "Ca", "C", "Ca2", "C2", "S", "B"];
-
-const SECTIONS: { label: string; days: DayKey[] }[] = [
-  { label: "Bazar ertəsi – Cümə", days: ["Be", "Ca", "C", "Ca2", "C2"] },
-  { label: "Şənbə", days: ["S"] },
-  { label: "Bazar günü", days: ["B"] },
+const DAY_SHORT_LABELS = [
+  { key: "monday", label: "B.e" },
+  { key: "tuesday", label: "Ç.a" },
+  { key: "wednesday", label: "Ç" },
+  { key: "thursday", label: "C.a" },
+  { key: "friday", label: "C" },
+  { key: "saturday", label: "Ş" },
+  { key: "sunday", label: "B" },
 ];
 
-const GENDER_TABS: { key: GenderTab; label: string }[] = [
-  { key: "umumi", label: "Ümumi zal" },
-  { key: "kisiler", label: "Yalnız kişilər" },
-  { key: "qadinlar", label: "Yalnız qadınlar" },
-];
+const DAY_FULL_LABELS: Record<string, string> = {
+  monday: "Bazar ertəsi", tuesday: "Çərşənbə axşamı", wednesday: "Çərşənbə",
+  thursday: "Cümə axşamı", friday: "Cümə", saturday: "Şənbə", sunday: "Bazar"
+};
 
-function generateHours(): string[] {
-  const h: string[] = [];
-  for (let i = 0; i < 24; i++) {
-    h.push(`${String(i).padStart(2, "0")}:00`);
-    h.push(`${String(i).padStart(2, "0")}:30`);
-  }
-  return h;
-}
-const HOURS = generateHours();
+export default function WorkingHoursPanel({ onNext }: { onNext?: () => void }) {
+  const [mounted, setMounted] = useState(false);
+  const [activeTab, setActiveTab] = useState<GenderTab>("generalWorkHours");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [isDataSaved, setIsDataSaved] = useState(false);
 
-function makeDefaultSchedule(): ScheduleMap {
-  return {
-    Be: [{ id: 1, from: "12:00", to: "18:00" }],
-    Ca: [{ id: 1, from: "12:00", to: "18:00" }],
-    C:  [{ id: 1, from: "12:00", to: "18:00" }],
-    Ca2:[{ id: 1, from: "12:00", to: "18:00" }],
-    C2: [{ id: 1, from: "12:00", to: "18:00" }],
-    S:  [{ id: 1, from: "12:00", to: "18:00" }],
-    B:  [],
-  };
-}
+  const [slots, setSlots] = useState<Record<GenderTab, SavedSlot[]>>({
+    generalWorkHours: [],
+    workHoursMan: [],
+    workHoursWoman: [],
+  });
 
-// ─── TimeSelect ──────────────────────────────────────────────────────────────
+  const [restDays, setRestDays] = useState<Set<string>>(new Set(["sunday"]));
 
-function TimeSelect({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="border border-teal-400 rounded-lg px-2 py-1 text-sm font-semibold text-slate-800 bg-white outline-none cursor-pointer min-w-[82px] focus:ring-2 focus:ring-teal-300"
-    >
-      {HOURS.map((h) => (
-        <option key={h}>{h}</option>
-      ))}
-    </select>
-  );
-}
+  const gymId = useGymStore((state) => state.gymId);
+  const { mutateAsync, isPending } = useAddGymWorkHours();
 
-// ─── BusinessHoursPanel ──────────────────────────────────────────────────────
+  useEffect(() => { setMounted(true); }, []);
 
-export function BusinessHoursPanel() {
-  const [schedule, setSchedule] = useState<ScheduleMap>(makeDefaultSchedule);
-  const [restDays, setRestDays] = useState<Set<DayKey>>(new Set(["B"]));
-  const [editing, setEditing] = useState<{
-    day: DayKey;
-    id: number;
-    from: string;
-    to: string;
-  } | null>(null);
-
-  const addSlot = (days: DayKey[]) =>
-    setSchedule((p) => {
-      const next = { ...p };
-      days.forEach((d) => {
-        next[d] = [
-          ...p[d],
-          { id: Date.now() + Math.random(), from: "09:00", to: "18:00" },
-        ];
-      });
-      return next;
-    });
-
-  const removeSlot = (days: DayKey[], id: number) =>
-    setSchedule((p) => {
-      const next = { ...p };
-      days.forEach((d) => {
-        next[d] = p[d].filter((s) => s.id !== id);
-      });
-      return next;
-    });
-
-  const confirmEdit = () => {
-    if (!editing) return;
-    setSchedule((p) => ({
-      ...p,
-      [editing.day]: p[editing.day].map((s) =>
-        s.id === editing.id ? { ...s, from: editing.from, to: editing.to } : s
-      ),
-    }));
-    setEditing(null);
+  const handleNext = () => {
+    console.log("next");
+    
+    if (isDataSaved) {
+      onNext?.();
+    } else {
+      toast.info("Əvvəl məlumatları yadda saxlayın");
+    }
   };
 
-  const toggleRest = (day: DayKey) =>
-    setRestDays((p) => {
-      const n = new Set(p);
-      n.has(day) ? n.delete(day) : n.add(day);
-      return n;
-    });
+  const buildPayload = (): IGymWorkHoursPayload => {
+    const mapToWorkHour = (items: SavedSlot[]): IWorkHour[] => 
+      items.map(s => ({
+        period: BACKEND_DAY_MAP[s.day] || s.day,
+        from: s.startTime,
+        to: s.endTime,
+      }));
+
+    return {
+      gymId: Number(gymId),
+      generalWorkHours: mapToWorkHour(slots.generalWorkHours),
+      workHoursMan: mapToWorkHour(slots.workHoursMan),
+      workHoursWoman: mapToWorkHour(slots.workHoursWoman),
+      restDays: Array.from(restDays).map(d => ({ period: BACKEND_DAY_MAP[d] || d })),
+    };
+  };
+
+  // Yadda saxla funksiyası
+  const handleSubmit = async () => {
+    if (!gymId) return toast.error("Zal ID tapılmadı");
+
+    const payload = buildPayload();
+    const hasData = 
+      payload.generalWorkHours.length > 0 || 
+      payload.workHoursMan.length > 0 || 
+      payload.workHoursWoman.length > 0;
+
+    if (!hasData) {
+      return toast.info("Heç bir məlumat daxil edilməyib");
+    }
+
+    try {
+      // Async sorğunu gözləyirik
+      await mutateAsync(payload);
+      toast.success("Məlumatlar uğurla sinxronlaşdırıldı");
+      setIsDataSaved(true); // Yadda saxlandı qeyd olunur
+    } catch (error: any) {
+      console.error("Xəta baş verdi:", error);
+      toast.error(error?.message || "Server xətası baş verdi (500)");
+      setIsDataSaved(false); // Uğursuz oldu
+    }
+  };
+
+  if (!mounted) return null;
 
   return (
-    <div className="px-8 py-7 space-y-6">
-      {/* ── Time sections ── */}
-      {SECTIONS.map((sec) => {
-        const active = sec.days.filter((d) => !restDays.has(d));
-        if (!active.length) return null;
-        const rep = active[0];
-        const slots = schedule[rep];
+    <div className="w-full max-w-[783px] mx-auto bg-white rounded-xl border border-[#ECECED] p-[28px] space-y-8 shadow-sm">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold text-[#1F2937]">Zal məlumatları</h2>
+        <div className="flex gap-4 text-sm font-medium text-[#6B7280]">
+          <span className="text-[#00B4D8] border-b-2 border-[#00B4D8] cursor-pointer">Az</span>
+          <span className="hover:text-[#00B4D8] cursor-pointer transition-colors">Ru</span>
+          <span className="hover:text-[#00B4D8] cursor-pointer transition-colors">En</span>
+        </div>
+      </div>
 
-        return (
-          <div key={sec.label} className="space-y-2">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-                {sec.label}
-              </span>
-              <button
-                onClick={() => addSlot(active)}
-                className="flex items-center gap-1.5 bg-teal-400 hover:bg-teal-500 active:scale-95 text-white text-xs font-bold px-3.5 py-1.5 rounded-lg transition-all duration-150"
-              >
-                <Plus size={13} strokeWidth={2.8} />
-                Əlavə et
-              </button>
-            </div>
+      <div className="flex gap-3">
+        {[
+          { id: "generalWorkHours", label: "Ümumi zal" },
+          { id: "workHoursMan", label: "Yalnız kişilər" },
+          { id: "workHoursWoman", label: "Yalnız qadınlar" },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id as GenderTab)}
+            className={`px-6 py-2 rounded-full text-sm font-medium border transition-all duration-200 ${
+              activeTab === tab.id 
+                ? "bg-[#00B4D8] text-white border-[#00B4D8] shadow-md shadow-cyan-100" 
+                : "bg-white text-[#6B7280] border-[#ECECED] hover:bg-slate-50"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-            {slots.length === 0 ? (
-              <div className="bg-slate-50 border border-dashed border-slate-200 rounded-xl py-4 text-center text-slate-400 text-sm">
-                Saat əlavə edilməyib
-              </div>
-            ) : (
-              slots.map((slot, i) => {
-                const isEd = editing?.day === rep && editing?.id === slot.id;
-                return (
-                  <div
-                    key={slot.id}
-                    className="flex items-center gap-3 bg-slate-50 border border-slate-200 hover:border-slate-300 hover:shadow-sm rounded-xl px-4 py-2.5 transition-all duration-150"
-                  >
-                    <span className="text-xs font-bold text-slate-300 w-4 text-center shrink-0">
-                      {i + 1}
-                    </span>
-
-                    <div className="flex items-center gap-2.5 flex-1">
-                      {isEd ? (
-                        <>
-                          <TimeSelect
-                            value={editing.from}
-                            onChange={(v) =>
-                              setEditing((e) => e && { ...e, from: v })
-                            }
-                          />
-                          <span className="text-slate-300 text-sm">—</span>
-                          <TimeSelect
-                            value={editing.to}
-                            onChange={(v) =>
-                              setEditing((e) => e && { ...e, to: v })
-                            }
-                          />
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-[15px] font-semibold text-slate-800 min-w-[46px]">
-                            {slot.from}
-                          </span>
-                          <span className="text-slate-300 text-sm">—</span>
-                          <span className="text-[15px] font-semibold text-slate-800 min-w-[46px]">
-                            {slot.to}
-                          </span>
-                        </>
-                      )}
-                    </div>
-
-                    <div className="flex gap-1.5 ml-auto">
-                      {isEd ? (
-                        <>
-                          <button
-                            onClick={confirmEdit}
-                            className="flex items-center justify-center w-8 h-8 rounded-lg border border-transparent text-slate-400 hover:bg-green-50 hover:border-green-200 hover:text-green-500 transition-all duration-150"
-                          >
-                            <Check size={14} />
-                          </button>
-                          <button
-                            onClick={() => setEditing(null)}
-                            className="flex items-center justify-center w-8 h-8 rounded-lg border border-transparent text-slate-400 hover:bg-red-50 hover:border-red-200 hover:text-red-400 transition-all duration-150"
-                          >
-                            <X size={14} />
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() =>
-                              setEditing({
-                                day: rep,
-                                id: slot.id,
-                                from: slot.from,
-                                to: slot.to,
-                              })
-                            }
-                            className="flex items-center justify-center w-8 h-8 rounded-lg border border-transparent text-slate-400 hover:bg-sky-50 hover:border-sky-200 hover:text-sky-500 transition-all duration-150"
-                          >
-                            <Pencil size={13} />
-                          </button>
-                          <button
-                            onClick={() => removeSlot(active, slot.id)}
-                            className="flex items-center justify-center w-8 h-8 rounded-lg border border-transparent text-slate-400 hover:bg-red-50 hover:border-red-200 hover:text-red-400 transition-all duration-150"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            )}
+      <div className="flex gap-2">
+        {DAY_SHORT_LABELS.map((day) => (
+          <div key={day.key} className="w-10 h-10 flex items-center justify-center rounded-lg bg-[#F9FAFB] text-[#6B7280] text-xs border border-[#ECECED]">
+            {day.label}
           </div>
-        );
-      })}
+        ))}
+      </div>
 
-      {/* ── Divider ── */}
-      <div className="h-px bg-slate-100" />
+      <div className="space-y-4">
+        <div className="flex justify-between items-center border-b border-[#F3F4F6] pb-2">
+          <span className="text-sm font-bold text-[#1F2937] uppercase tracking-tight">İş saatları</span>
+          <button 
+            type="button"
+            onClick={() => { setEditingId(null); setModalOpen(true); }} 
+            className="flex items-center gap-1.5 bg-[#00B4D8] text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95"
+          >
+            <Plus size={14} strokeWidth={3} /> Əlavə et
+          </button>
+        </div>
 
-      {/* ── Rest days ── */}
-      <div className="space-y-3">
-        <span className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-          İstirahət günü
-        </span>
-        <div className="flex flex-wrap gap-2">
-          {ALL_DAYS.map((d) => (
+        <div className="min-h-[120px] space-y-4">
+          {slots[activeTab].length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-[#9CA3AF] border-2 border-dashed border-[#F3F4F6] rounded-2xl">
+              <Clock size={24} className="mb-2 opacity-20" />
+              <p className="text-xs italic">Hələ ki, saat əlavə edilməyib</p>
+            </div>
+          ) : (
+            slots[activeTab].map((slot, index) => (
+              <div key={slot.id} className="animate-in fade-in slide-in-from-top-2">
+                <p className="text-sm font-semibold text-[#374151] mb-2">{DAY_FULL_LABELS[slot.day]}</p>
+                <div className="flex items-center gap-4 bg-[#F9FAFB] p-3 rounded-xl border border-[#ECECED]">
+                  <div className="bg-white w-8 h-8 flex items-center justify-center rounded border border-[#ECECED] text-xs font-bold text-[#9CA3AF]">
+                    {index + 1}
+                  </div>
+                  <div className="flex items-center gap-3 flex-1">
+                     <div className="bg-white px-4 py-2 rounded-lg border border-[#ECECED] text-sm font-medium">🕒 {slot.startTime}</div>
+                     <span className="text-[#D1D5DB]">—</span>
+                     <div className="bg-white px-4 py-2 rounded-lg border border-[#ECECED] text-sm font-medium">🕒 {slot.endTime}</div>
+                  </div>
+                  <div className="flex gap-2">
+                     <button type="button" onClick={() => { setEditingId(slot.id); setModalOpen(true); }} className="p-2.5 text-[#00B4D8] bg-[#E0F7FA] rounded-lg hover:bg-[#B2EBF2] transition-colors"><Pencil size={16}/></button>
+                     <button type="button" onClick={() => setSlots(p => ({...p, [activeTab]: p[activeTab].filter(s => s.id !== slot.id)}))} className="p-2.5 text-[#EF4444] bg-[#FEE2E2] rounded-lg hover:bg-[#FECACA] transition-colors"><Trash2 size={16}/></button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-4 pt-6 border-t border-[#F3F4F6]">
+        <span className="text-sm font-bold text-[#1F2937] uppercase tracking-tight">İstirahət günü</span>
+        <div className="flex gap-2">
+          {DAY_SHORT_LABELS.map((day) => (
             <button
-              key={d}
-              onClick={() => toggleRest(d)}
-              className={`text-[13px] font-bold px-4 py-1.5 rounded-lg border transition-all duration-150 ${
-                restDays.has(d)
-                  ? "bg-red-50 border-red-300 text-red-400"
-                  : "bg-white border-slate-200 text-slate-500 hover:border-teal-400 hover:text-teal-500"
+              key={day.key}
+              type="button"
+              onClick={() => {
+                const newRest = new Set(restDays);
+                newRest.has(day.key) ? newRest.delete(day.key) : newRest.add(day.key);
+                setRestDays(newRest);
+              }}
+              className={`w-10 h-10 flex items-center justify-center rounded-lg text-xs font-bold border transition-all duration-200 ${
+                restDays.has(day.key) 
+                  ? "border-[#EF4444] text-[#EF4444] bg-[#FFF1F2]" 
+                  : "border-[#ECECED] text-[#6B7280] bg-[#F9FAFB]"
               }`}
             >
-              {DAY_SHORT[d]}
+              {day.label}
             </button>
           ))}
         </div>
-        {restDays.size > 0 && (
-          <p className="text-xs text-slate-400">
-            İstirahət günündə saat əlavə edilə bilməz
-          </p>
-        )}
       </div>
 
-      {/* ── Footer ── */}
-      <div className="flex gap-3 pt-2">
-        <button className="flex-1 py-3 rounded-xl border border-slate-200 bg-white text-slate-500 text-sm font-semibold hover:bg-slate-50 hover:border-slate-300 transition-all duration-150">
-          Yadda saxla
+      <div className="flex gap-4 pt-4">
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={isPending}
+          className="flex-1 py-4 rounded-xl border border-[#D1D5DB] text-[#4B5563] font-bold text-sm hover:bg-slate-50 transition-all disabled:opacity-50"
+        >
+          {isPending ? <Loader2 className="animate-spin mx-auto" size={20} /> : "Yadda saxla"}
         </button>
-        <button className="flex-1 py-3 rounded-xl bg-gradient-to-r from-teal-400 to-teal-500 text-white text-sm font-bold shadow-[0_4px_16px_rgba(14,200,200,0.3)] hover:opacity-90 active:scale-[0.98] transition-all duration-150">
+        <button
+          type="button"
+          onClick={handleNext}
+          className="flex-1 py-4 rounded-xl bg-[#00B4D8] text-white font-bold text-sm hover:bg-[#0096B4] shadow-lg shadow-cyan-100 flex items-center justify-center"
+        >
           Növbəti
         </button>
       </div>
-    </div>
-  );
-}
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
-
-export default function WorkingHoursPanel() {
-  const [activeTab, setActiveTab] = useState<GenderTab>("umumi");
-  const [activeLang, setActiveLang] = useState("Az");
-
-  return (
-    <div className="min-h-screen bg-slate-100 flex items-start justify-center py-10 px-4">
-      <div className="w-full max-w-[760px] bg-white rounded-2xl shadow-[0_2px_28px_rgba(0,0,0,0.07)] overflow-hidden">
-
-        {/* ── Card header ── */}
-        <div className="px-8 pt-7 pb-0 border-b border-slate-100">
-          {/* Top row */}
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-[17px] font-bold text-slate-900 tracking-tight">
-              Zal məlumatları
-            </h2>
-            <div className="flex gap-1">
-              {["Az", "Ru", "En"].map((l) => (
-                <button
-                  key={l}
-                  onClick={() => setActiveLang(l)}
-                  className={`text-xs font-semibold px-3 py-1 rounded-lg border transition-all duration-150 ${
-                    activeLang === l
-                      ? "bg-teal-400 text-white border-teal-400"
-                      : "bg-transparent text-slate-400 border-transparent hover:bg-slate-100 hover:text-slate-700"
-                  }`}
-                >
-                  {l}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Tab bar */}
-          <div className="flex">
-            {GENDER_TABS.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`relative text-[13.5px] font-semibold px-5 py-3 border-b-2 transition-all duration-150 whitespace-nowrap ${
-                  activeTab === tab.key
-                    ? "text-teal-400 border-teal-400"
-                    : "text-slate-400 border-transparent hover:text-slate-600"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* ── Tab panels — each isolated with its own state ── */}
-        {activeTab === "umumi" && <BusinessHoursPanel key="umumi" />}
-        {activeTab === "kisiler" && <BusinessHoursPanel key="kisiler" />}
-        {activeTab === "qadinlar" && <BusinessHoursPanel key="qadinlar" />}
-      </div>
+      <AddClassTimeModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        onSubmit={(data) => {
+          if (editingId) {
+            setSlots(prev => ({...prev, [activeTab]: prev[activeTab].map(s => s.id === editingId ? {...s, ...data} : s)}));
+            setEditingId(null);
+          } else {
+            setSlots(prev => ({...prev, [activeTab]: [...prev[activeTab], { id: Math.random().toString(), ...data }]}));
+          }
+          setModalOpen(false);
+        }}
+      />
     </div>
   );
 }
