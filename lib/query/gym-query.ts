@@ -84,3 +84,11 @@ export function useCreateGymStep6() {
       apiPost(`/admin/gyms/${id}/step6`, payload),
   });
 }
+
+// 7. Step 7: Zal admini yarat və aktivləşdir
+export function useCreateGymStep7() {
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: number, payload: GymCreateStep7Request }) =>
+      apiPost(`/admin/gyms/${id}/step7`, payload),
+  });
+}

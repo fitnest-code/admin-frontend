@@ -1,56 +1,74 @@
 'use client'
 
 import { useState } from 'react'
-import { Trash2, X, Eye, EyeOff } from 'lucide-react'
+import { Trash2, X, Eye, EyeOff, Loader2, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { GymAdmin } from '@/lib/gyms-data'
+import { useGymStore, LocalAdmin } from '@/lib/store/gym-store'
+import { useCreateGymStep7 } from '@/lib/query/gym-query'
+import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
 
-const ROLE_STYLES: Record<GymAdmin['role'], string> = {
+const ROLE_STYLES = {
   'Super admin': 'bg-[#00B4CC] text-white',
-  'Admin':       'bg-[#624DE3] text-white',
-  'Support':     'bg-[#F59E0B] text-white',
-  'Accountant':  'bg-[#10B981] text-white',
 }
 
-interface GymAdminsTabProps {
-  admins: GymAdmin[]
-}
+const EMPTY_FORM: LocalAdmin = { firstName: '', lastName: '', phone: '', email: '', password: '' }
 
-interface NewAdmin {
-  firstName: string
-  lastName: string
-  phone: string
-  email: string
-  password: string
-}
-
-const EMPTY_FORM: NewAdmin = { firstName: '', lastName: '', phone: '', email: '', password: '' }
-
-export function GymAdminsTab({ admins: initial }: GymAdminsTabProps) {
-  const [admins, setAdmins]     = useState<GymAdmin[]>(initial)
+export function GymAdminsTab({ onNext }: { onNext?: () => void }) {
+  const router = useRouter()
+  const { gymId, step7Admins: admins, addStep7Admin, removeStep7Admin, resetGym } = useGymStore()
   const [modalOpen, setModalOpen] = useState(false)
-  const [form, setForm]           = useState<NewAdmin>(EMPTY_FORM)
+  const [form, setForm]           = useState<LocalAdmin>(EMPTY_FORM)
   const [showPwd, setShowPwd]     = useState(false)
 
-  function handleDelete(id: string) {
-    setAdmins((prev) => prev.filter((a) => a.id !== id))
-  }
+  const { mutate: createStep7, isPending: isCompleting } = useCreateGymStep7()
 
-  function handleSave() {
-    if (!form.firstName.trim() || !form.email.trim()) return
-    const newAdmin: GymAdmin = {
-      id:       `adm-${Date.now()}`,
-      role:     'Admin',
-      fullName: `${form.firstName.trim()} ${form.lastName.trim()}`,
-      phone:    form.phone.trim(),
-      email:    form.email.trim(),
+  function handleAddAdmin() {
+    if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim() || !form.password.trim()) {
+      return toast.error("Zəhmət olmasa bütün xanaları doldurun")
     }
-    setAdmins((prev) => [...prev, newAdmin])
+    
+    // Simple phone validation for Azerbaijani format if needed
+    // const phoneRegex = /^(050|051|010|055|099|070|077|060)\d{7}$/
+    // if (!phoneRegex.test(form.phone)) {
+    //   return toast.error("Yanlış telefon nömrəsi formatı")
+    // }
+
+    addStep7Admin({ ...form })
     setForm(EMPTY_FORM)
     setModalOpen(false)
   }
 
-  function update(field: keyof NewAdmin, val: string) {
+  function handleComplete() {
+    if (!gymId) return toast.error("Zal ID tapılmadı")
+    if (admins.length === 0) return toast.error("Ən azı bir admin əlavə edilməlidir")
+
+    const payload = {
+      admins: admins.map(a => ({
+        name: a.firstName,
+        surname: a.lastName,
+        phoneNumber: a.phone,
+        email: a.email,
+        password: a.password
+      }))
+    }
+
+    createStep7({
+      id: Number(gymId),
+      payload
+    }, {
+      onSuccess: () => {
+        toast.success("Təbriklər! İdman zalı uğurla yaradıldı və aktivləşdirildi.")
+        resetGym()
+        router.push('/gyms')
+      },
+      onError: (err: any) => {
+        toast.error(err?.message || "Xəta baş verdi")
+      }
+    })
+  }
+
+  function update(field: keyof LocalAdmin, val: string) {
     setForm((f) => ({ ...f, [field]: val }))
   }
 
@@ -76,9 +94,9 @@ export function GymAdminsTab({ admins: initial }: GymAdminsTabProps) {
               Admin əlavə edilməyib
             </div>
           ) : (
-            admins.map((admin) => (
+            admins.map((admin, index) => (
               <div
-                key={admin.id}
+                key={index}
                 className="grid grid-cols-[140px_120px_1fr_1fr_1fr_40px] items-center gap-3 border-b border-border px-4 py-3 last:border-0"
               >
                 {/* Role badge */}
@@ -86,21 +104,21 @@ export function GymAdminsTab({ admins: initial }: GymAdminsTabProps) {
                   <span
                     className={cn(
                       'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold',
-                      ROLE_STYLES[admin.role],
+                      ROLE_STYLES['Super admin'],
                     )}
                   >
                     <span className="h-1.5 w-1.5 rounded-full bg-white/70" />
-                    {admin.role}
+                    Super admin
                   </span>
                 </div>
 
                 {/* ID */}
                 <span className="text-sm text-muted-foreground font-mono">
-                  {admin.id.replace('a', '00000')}
+                  000000
                 </span>
 
                 {/* Full name */}
-                <span className="text-sm text-foreground">{admin.fullName}</span>
+                <span className="text-sm text-foreground">{admin.firstName} {admin.lastName}</span>
 
                 {/* Phone */}
                 <span className="text-sm text-foreground">{admin.phone || '+994 00 000 00 00'}</span>
@@ -110,7 +128,7 @@ export function GymAdminsTab({ admins: initial }: GymAdminsTabProps) {
 
                 {/* Delete */}
                 <button
-                  onClick={() => handleDelete(admin.id)}
+                  onClick={() => removeStep7Admin(index)}
                   className="flex h-7 w-7 items-center justify-center rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors"
                   aria-label="Admini sil"
                 >
@@ -131,6 +149,19 @@ export function GymAdminsTab({ admins: initial }: GymAdminsTabProps) {
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-base font-bold leading-none">+</span>
           </button>
         </div>
+      </div>
+
+      {/* Complete Button */}
+      <div className="flex justify-center mt-4">
+        <button
+          onClick={handleComplete}
+          disabled={isCompleting || admins.length === 0}
+          className="w-full max-w-[783px] py-4 rounded-xl bg-[#00B4D8] text-white text-sm font-bold
+            hover:bg-[#0096B4] transition shadow-lg shadow-cyan-100 flex items-center justify-center disabled:opacity-70"
+        >
+          {isCompleting ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
+          Növbəti
+        </button>
       </div>
 
       {/* Modal */}
@@ -157,7 +188,7 @@ export function GymAdminsTab({ admins: initial }: GymAdminsTabProps) {
             {/* Fields */}
             <ModalField label="Ad"     value={form.firstName} onChange={(v) => update('firstName', v)} placeholder="Adminin adı" />
             <ModalField label="Soyad"  value={form.lastName}  onChange={(v) => update('lastName', v)}  placeholder="Adminin soyadı" />
-            <ModalField label="Telefon" value={form.phone}    onChange={(v) => update('phone', v)}     placeholder="Adminin nömrəsi" />
+            <ModalField label="Telefon" value={form.phone}    onChange={(v) => update('phone', v)}     placeholder="0501234567" />
             <ModalField label="Email"  value={form.email}     onChange={(v) => update('email', v)}     placeholder="Adminin emaili" />
 
             {/* Password */}
@@ -183,9 +214,8 @@ export function GymAdminsTab({ admins: initial }: GymAdminsTabProps) {
 
             {/* Save */}
             <button
-              onClick={handleSave}
-              disabled={!form.firstName.trim() || !form.email.trim()}
-              className="mt-1 w-full rounded-lg bg-[#00B4CC] py-2.5 text-sm font-semibold text-white hover:bg-[#008799] disabled:opacity-40 transition-colors"
+              onClick={handleAddAdmin}
+              className="mt-1 w-full rounded-lg bg-[#00B4CC] py-2.5 text-sm font-semibold text-white hover:bg-[#008799] transition-colors"
             >
               Yadda saxla
             </button>

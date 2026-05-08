@@ -109,3 +109,15 @@ export interface GymCreateStep6SubscriptionRequest {
 export interface GymCreateStep6Request {
   subscriptions: GymCreateStep6SubscriptionRequest[]
 }
+
+export interface GymAdminCreateRequest {
+  name: string
+  surname: string
+  phoneNumber: string
+  email: string
+  password: string
+}
+
+export interface GymCreateStep7Request {
+  admins: GymAdminCreateRequest[]
+}
