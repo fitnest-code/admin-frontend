@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
 
 interface GymState {
   gymId: number | null;
@@ -10,12 +10,18 @@ interface GymState {
 export const useGymStore = create<GymState>()(
   persist(
     (set) => ({
-      gymId: null, // Başlanğıcda null olması normaldır
+      gymId: null, 
       setGymId: (id) => set({ gymId: id }),
-      resetGym: () => set({ gymId: null }),
+      resetGym: () => {
+        set({ gymId: null });
+        // Ehtiyat variant kimi localStorage-ı manual da silə bilərik
+        localStorage.removeItem('gym-storage');
+      },
     }),
     {
-      name: 'gym-storage', // Brauzerin yaddaşında bu adla saxlanacaq
+      name: 'gym-storage',
+      // Əgər sessionStorage etsən, tab bağlanan kimi 67 ID-si silinəcək
+      storage: createJSONStorage(() => sessionStorage), 
     }
   )
 )

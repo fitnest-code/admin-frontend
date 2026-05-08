@@ -5,7 +5,7 @@ interface TrainerState {
 }
 
 export interface ITrainerPayload {
-  gymId: number;
+  id: number;
   names: string[];
   surnames: string[];
   professionIds: number[];
@@ -80,7 +80,7 @@ export interface CategoriesResponse {
 }
 
 export interface GymStep1Response {
-  id: string
+  gymId: number
 }
 
 export interface GymStep1Payload {

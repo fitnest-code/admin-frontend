@@ -1,44 +1,51 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { apiRequest, apiGet } from '@/lib/api/client'
-import { ITrainerPayload, IProfession } from '../types/gym'
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest, apiGet } from "../api/client"; // apiGet-i də əlavə etdim
+import { ITrainerPayload, IProfession, ITrainersResponse } from "../types/gym";
 
-// Ixtisaslar (Professions) Query
+// 1. BU HİSSƏDƏ EXPORT VARMI DEYƏ YOXLA:
 export const useProfessionsQuery = () => {
   return useQuery({
-    queryKey: ['professions'],
-    queryFn: () => apiGet<IProfession[]>('/professions'),
-  })
-}
+    queryKey: ["professions"],
+    queryFn: () => apiGet<IProfession[]>("/professions"),
+  });
+};
 
-// Add Trainer Mutation
 export const useAddTrainer = () => {
   return useMutation({
     mutationFn: async (data: ITrainerPayload) => {
-      if (!data.gymId) {
-        throw new Error('Zal ID tapılmadı (Step 1 tamamlanmayıb)')
+      if (!data.id) {
+        throw new Error("Zal ID tapılmadı");
       }
 
-      // Swagger-də names, surnames və s. query parameter kimi göründüyü üçün:
-      const params = new URLSearchParams()
-      data.names.forEach((v) => params.append('names', v))
-      data.surnames.forEach((v) => params.append('surnames', v))
-      data.professionIds.forEach((v) => params.append('professionIds', String(v)))
-      data.emails.filter(Boolean).forEach((v) => params.append('emails', v))
-      data.phones.filter(Boolean).forEach((v) => params.append('phones', v))
+      const formData = new FormData();
 
-      // Şəkillər isə Multipart (Body) olaraq göndərilməlidir
-      const formData = new FormData()
-      data.photos.forEach((file) => formData.append('photos', file))
+      // Dataları FormData-ya append edirik
+      data.names.forEach((v) => formData.append("names", v));
+      data.surnames.forEach((v) => formData.append("surnames", v));
+      data.professionIds.forEach((v) =>
+        formData.append("professionIds", String(v)),
+      );
 
-      // API: /admin/gyms/{id}/step2?names=...&surnames=...
-      return apiRequest(
-        `/admin/gyms/${data.gymId}/step2?${params.toString()}`,
-        {
-          method: 'POST',
-          body: formData, // Şəkillər Body-də
-          auth: true,
-        }
-      )
+      data.emails.filter(Boolean).forEach((v) => formData.append("emails", v));
+      data.phones.filter(Boolean).forEach((v) => formData.append("phones", v));
+
+     data.photos.forEach((file) => {
+  if (file instanceof File) {
+    console.log("PHOTO DEBUG:", {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+    });
+
+    formData.append("photos", file, file.name);
+  }
+});
+
+      return apiRequest<ITrainersResponse>(`/admin/gyms/${data.id}/step2`, {
+        method: "POST",
+        body: formData,
+        auth: true,
+      });
     },
-  })
-}
+  });
+};

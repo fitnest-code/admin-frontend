@@ -22,12 +22,17 @@ let refreshPromise: Promise<boolean> | null = null;
 
 function makeUrl(path: string, isAuthRoute: boolean) {
   const normalized = path.startsWith("/") ? path : `/${path}`;
-  if (isAuthRoute || normalized.startsWith("/api/")) return normalized;
+
+  if (isAuthRoute || normalized.startsWith("/api/")) {
+    return normalized;
+  }
+
   return `/api/v1${normalized}`;
 }
 
 function makeQueryString(params: RequestOptions["params"]) {
   if (!params) return "";
+
   const searchParams = new URLSearchParams();
 
   Object.entries(params as Record<string, unknown>).forEach(([key, value]) => {
@@ -55,7 +60,9 @@ function isJsonResponse(res: Response) {
 
 function extractApiErrorMessage(payload: unknown, fallback: string) {
   if (typeof payload === "object" && payload !== null) {
-    if ("message" in payload) return String((payload as any).message);
+    if ("message" in payload) {
+      return String((payload as any).message);
+    }
 
     if (
       "error" in payload &&
@@ -63,11 +70,13 @@ function extractApiErrorMessage(payload: unknown, fallback: string) {
       (payload as any).error !== null
     ) {
       const errorObj = (payload as any).error;
+
       if ("message" in errorObj && errorObj.message) {
         return String(errorObj.message);
       }
     }
   }
+
   return fallback;
 }
 
@@ -105,10 +114,18 @@ export async function apiRequest<T>(
   const requestUrl = `${makeUrl(path, isAuthRoute)}${makeQueryString(params)}`;
   const requestHeaders = new Headers(headers);
 
-  // 🔥 FORM DATA DETECTION
   const isFormData = body instanceof FormData;
 
-  // ✔ Content-Type yalnız JSON üçün qoyulur
+  /**
+   * Səndə token localStorage-da deyil.
+   * Token cookie-dədir:
+   * - fn_admin_access_token
+   * - fn_admin_refresh_token
+   *
+   * Ona görə Authorization header manual əlavə edilmir.
+   * Cookie credentials: "include" ilə göndərilir.
+   */
+
   if (
     !isFormData &&
     body !== undefined &&
@@ -117,14 +134,30 @@ export async function apiRequest<T>(
     requestHeaders.set("Content-Type", "application/json");
   }
 
-  // ✔ Accept default
   if (!requestHeaders.has("Accept")) {
     requestHeaders.set("Accept", "application/json");
   }
 
-  // ✔ FormData varsa Content-Type silinir (browser özü qoyur)
   if (isFormData) {
     requestHeaders.delete("Content-Type");
+  }
+
+  console.log("API REQUEST URL:", requestUrl);
+  console.log("API METHOD:", init.method);
+  console.log("IS FORM DATA:", isFormData);
+
+  if (isFormData && body instanceof FormData) {
+    for (const [key, value] of body.entries()) {
+      if (value instanceof File) {
+        console.log("FORMDATA FILE:", key, {
+          name: value.name,
+          type: value.type,
+          size: value.size,
+        });
+      } else {
+        console.log("FORMDATA FIELD:", key, value);
+      }
+    }
   }
 
   const response = await fetch(requestUrl, {
@@ -137,12 +170,16 @@ export async function apiRequest<T>(
           ? (body as FormData)
           : JSON.stringify(body),
     cache: "no-store",
-
-    // 🔥 ALWAYS INCLUDE (fix)
     credentials: "include",
   });
 
-  // 🔁 refresh logic
+  const payload = isJsonResponse(response)
+    ? await response.json().catch(() => null)
+    : await response.text();
+
+  console.log("API RESPONSE STATUS:", response.status);
+  console.log("API RESPONSE PAYLOAD:", payload);
+
   if (response.status === 401 && auth && !_retried && !isAuthRoute) {
     const refreshed = await refreshAccessToken();
 
@@ -151,15 +188,12 @@ export async function apiRequest<T>(
     }
   }
 
-  const payload = isJsonResponse(response)
-    ? await response.json().catch(() => null)
-    : await response.text();
-
   if (!response.ok) {
     const message = extractApiErrorMessage(
       payload,
       `API request failed with status ${response.status}`,
     );
+
     throw new ApiError(message, response.status, payload);
   }
 

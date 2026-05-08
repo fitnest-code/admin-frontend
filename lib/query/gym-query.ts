@@ -27,10 +27,9 @@ export function useCreateGymStep1() {
       apiPost<GymStep1Response>('/admin/gyms/step1', payload),
     
     onSuccess: (data) => {
-      // Backend-dən gələn ID-ni dərhal mərkəzi yaddaşa yazırıq
-      if (data?.id) {
-        setGymId(Number(data.id));
-        console.log("Zal uğurla yaradıldı, ID Store-a yazıldı:", data.id);
+      if (data?.gymId) {
+        setGymId(Number(data.gymId));
+        console.log("Zal uğurla yaradıldı, ID Store-a yazıldı:", data.gymId);
       }
     },
     
