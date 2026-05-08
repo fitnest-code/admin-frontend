@@ -43,26 +43,6 @@ export function GymInfoTab({ onNext }: { onNext?: () => void }) {
     return true;
   };
 
-  const handleSaveOnly = async () => {
-    // Əgər artıq ID varsa, təkrar yaratmağa ehtiyac yoxdur (və ya Update API olmalıdır)
-    if (gymId) {
-      toast.success("Zal artıq yaradılıb (ID: " + gymId + ")");
-      return;
-    }
-
-    if (!validate()) return;
-
-    try {
-      const result = await createStep1.mutateAsync(buildPayload());
-      if (result?.gymId) {
-        setGymId(Number(result.gymId));
-        toast.success("Zal uğurla yaradıldı");
-      }
-    } catch (err: any) {
-      toast.error(err?.message || "Xəta baş verdi");
-    }
-  };
-
   const handleNext = async () => {
     console.log("next")
     if (gymId) {
@@ -92,7 +72,7 @@ export function GymInfoTab({ onNext }: { onNext?: () => void }) {
       <div className="rounded-xl border bg-white overflow-hidden shadow-sm">
         <div className="flex items-center justify-between px-4 pt-4 pb-3 bg-slate-50/50">
           <h2 className="text-[18px] font-bold text-slate-800">
-            Zal məlumatları {gymId && <span className="text-[#00B4CC] text-xs font-bold bg-[#00B4CC10] px-2 py-0.5 rounded-md ml-2">ID: {gymId}</span>}
+            Zal məlumatları
           </h2>
           <div className="flex gap-3">
             {(["Az", "Ru", "En"] as Lang[]).map((l) => (
@@ -121,11 +101,11 @@ export function GymInfoTab({ onNext }: { onNext?: () => void }) {
       </div>
 
       <div className="flex justify-end gap-3 mt-6">
-        <button onClick={handleSaveOnly} disabled={!canSubmit} className="px-10 py-3 rounded-xl border-2 border-[#00B4CC] font-bold text-[#00B4CC] hover:bg-[#00B4CC0A] disabled:opacity-50 flex items-center gap-2">
-          {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
-          Yadda saxla
-        </button>
-        <button onClick={handleNext} className="px-10 py-3 rounded-xl font-bold bg-[#00B4CC] text-white hover:bg-[#009DB3] flex items-center gap-2">
+        <button 
+          onClick={handleNext} 
+          disabled={!canSubmit}
+          className="w-full py-4 rounded-xl font-bold bg-[#00B4CC] text-white hover:bg-[#009DB3] transition flex items-center justify-center gap-2 disabled:opacity-50"
+        >
           {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
           Növbəti
         </button>

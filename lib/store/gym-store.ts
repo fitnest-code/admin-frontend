@@ -14,8 +14,10 @@ export interface LocalTrainer {
 
 interface GymState {
   gymId: number | null;
+  currentTab: string | null;
   step2Trainers: LocalTrainer[];
   setGymId: (id: number) => void;
+  setCurrentTab: (tab: string) => void;
   addStep2Trainer: (trainer: LocalTrainer) => void;
   removeStep2Trainer: (index: number) => void;
   resetGym: () => void;
@@ -25,8 +27,10 @@ export const useGymStore = create<GymState>()(
   persist(
     (set) => ({
       gymId: null, 
+      currentTab: null,
       step2Trainers: [],
       setGymId: (id) => set({ gymId: id }),
+      setCurrentTab: (tab) => set({ currentTab: tab }),
       addStep2Trainer: (trainer) => set((state) => ({ 
         step2Trainers: [...state.step2Trainers, trainer] 
       })),
@@ -34,14 +38,17 @@ export const useGymStore = create<GymState>()(
         step2Trainers: state.step2Trainers.filter((_, i) => i !== index)
       })),
       resetGym: () => {
-        set({ gymId: null, step2Trainers: [] });
+        set({ gymId: null, currentTab: null, step2Trainers: [] });
         sessionStorage.removeItem('gym-storage');
       },
     }),
     {
       name: 'gym-storage',
       storage: createJSONStorage(() => sessionStorage),
-      partialize: (state) => ({ gymId: state.gymId }),
+      partialize: (state) => ({ 
+        gymId: state.gymId,
+        currentTab: state.currentTab 
+      }),
     }
   )
 )

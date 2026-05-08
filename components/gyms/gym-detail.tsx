@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, ChevronDown, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -17,6 +17,7 @@ import { ExitConfirmationModal } from './modals/exit-confirmation-modal'
 import { useGymStore } from '@/lib/store/gym-store'
 import AddressTab from './tabs/gym-address-tab'
 import GymImagesTab from './tabs/gym-images-tab'
+import GymSubscriptionTab from './tabs/gym-subscription-tab'
 
 interface GymDetailProps {
   gym: Gym
@@ -31,28 +32,51 @@ const STATUS_STYLES = {
 
 export function GymDetail({ gym, isNew = false }: GymDetailProps) {
   const router = useRouter()
-  const { gymId, resetGym } = useGymStore()
+  const { gymId, currentTab, setCurrentTab, resetGym } = useGymStore()
+
+  const isCompletedRef = useRef(false)
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isNew && gymId) {
+      if (isNew && gymId && !isCompletedRef.current) {
         e.preventDefault()
         e.returnValue = ''
       }
     }
+    
+    const handleUnload = () => {
+      if (isNew && gymId && !isCompletedRef.current) {
+        fetch(`/api/v1/admin/gyms/${gymId}`, { method: 'DELETE', keepalive: true }).catch(() => {})
+      }
+    }
+
     window.addEventListener('beforeunload', handleBeforeUnload)
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+    window.addEventListener('unload', handleUnload)
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      window.removeEventListener('unload', handleUnload)
+    }
   }, [isNew, gymId])
 
   useEffect(() => {
     return () => {
-      if (isNew) {
+      if (isNew && !isCompletedRef.current) {
+        if (gymId) {
+          fetch(`/api/v1/admin/gyms/${gymId}`, { method: 'DELETE', keepalive: true }).catch(() => {})
+        }
         resetGym()
       }
     }
-  }, [isNew, resetGym])
+  }, [isNew, gymId, resetGym])
 
-  const [tab, setTab] = useState(GYM_TABS[0].key)
+  const [tab, setTab] = useState(isNew && currentTab ? currentTab : GYM_TABS[0].key)
+
+  useEffect(() => {
+    if (isNew) {
+      setCurrentTab(tab)
+    }
+  }, [tab, isNew, setCurrentTab])
   const [showWarning, setShowWarning] = useState(false)
   const [showExitConfirm, setShowExitConfirm] = useState(false)
 
@@ -65,6 +89,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       case 'workingHours': return <WorkingHoursPanel onNext={() => setTab(GYM_TABS[currentIndex + 1].key)} />
       case 'address':      return <AddressTab onNext={() => setTab(GYM_TABS[currentIndex + 1].key)} />
       case 'images':       return <GymImagesTab onNext={() => setTab(GYM_TABS[currentIndex + 1].key)} />
+      case 'plans':        return <GymSubscriptionTab onNext={() => setTab(GYM_TABS[currentIndex + 1].key)} />
       case 'admins':       return <GymAdminsTab admins={gym.admins} />
       case 'reviews':      return <ReviewsTab gymId={gym.id} />
       case 'customers':    return <GymCustomersTab />
@@ -99,7 +124,13 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
     }
   }
 
-  const handleConfirmExit = () => {
+  const handleConfirmExit = async () => {
+    if (isNew && gymId) {
+      isCompletedRef.current = true // Prevent unmount hook from firing duplicate delete
+      try {
+        await fetch(`/api/v1/admin/gyms/${gymId}`, { method: 'DELETE' })
+      } catch (e) {}
+    }
     resetGym()
     router.push('/gyms')
   }

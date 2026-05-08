@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import * as Checkbox from "@radix-ui/react-checkbox";
-import { CheckIcon, TrashIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { Check, Trash2, Plus } from "lucide-react";
 
 type Package = "Bronze" | "Silver" | "Gold" | "Platinum";
 
@@ -22,7 +22,7 @@ const defaultServices: Record<Package, string[]> = {
   Platinum: ["Spa", "Masaj", "Hovuz", "Hamam", "Sauna", "Kafe", "Fen", "Daraq"],
 };
 
-export default function SubscriptionPage() {
+export default function GymSubscriptionTab({ onNext }: { onNext?: () => void }) {
   const [selectedPackages, setSelectedPackages] = useState<Package[]>(["Platinum"]);
   const [activePackage, setActivePackage] = useState<Package>("Platinum");
   const [prices, setPrices] = useState<Record<Package, string>>({ Bronze: "", Silver: "", Gold: "", Platinum: "50" });
@@ -50,8 +50,8 @@ export default function SubscriptionPage() {
   const s = packageStyles[activePackage];
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-md w-full max-w-xl flex flex-col">
+    <div className="w-full flex justify-center py-6">
+      <div className="bg-white rounded-2xl border border-[#ECECED] w-full max-w-[783px] flex flex-col shadow-sm">
 
         {/* Package selector */}
         <div className="p-6 border-b border-dashed border-gray-200">
@@ -82,7 +82,7 @@ export default function SubscriptionPage() {
                       ${isSelected ? "bg-white/30 border-white" : "bg-white border-gray-300"}`}
                   >
                     <Checkbox.Indicator>
-                      <CheckIcon className="w-3 h-3 text-white stroke-[3]" />
+                      <Check className="w-3 h-3 text-white stroke-[3]" />
                     </Checkbox.Indicator>
                   </Checkbox.Root>
                   {pkg}
@@ -113,10 +113,10 @@ export default function SubscriptionPage() {
             </h2>
             <button
               onClick={addService}
-              className="flex items-center gap-1.5 px-4 py-2 bg-teal-500 hover:bg-teal-600
+              className="flex items-center gap-1.5 px-4 py-2 bg-[#00B4D8] hover:bg-[#0096B4]
                 text-white text-sm font-medium rounded-xl transition active:scale-95"
             >
-              Xidmət əlavə et <PlusIcon className="w-4 h-4 stroke-[2.5]" />
+              Xidmət əlavə et <Plus className="w-4 h-4 stroke-[2.5]" />
             </button>
           </div>
 
@@ -132,7 +132,7 @@ export default function SubscriptionPage() {
                   onClick={() => removeService(activePackage, i)}
                   className="shrink-0 text-red-400 hover:text-red-600 transition"
                 >
-                  <TrashIcon className="w-4 h-4" />
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             ))}
@@ -145,18 +145,17 @@ export default function SubscriptionPage() {
             onKeyDown={(e) => e.key === "Enter" && addService()}
             placeholder="Yeni xidmət adı..."
             className="w-full border border-dashed border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-700
-              placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400 transition"
+              placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4D8] transition"
           />
         </div>
 
         {/* Footer buttons */}
         <div className="flex gap-3 px-6 py-4">
-          <button className="flex-1 py-3 rounded-xl border border-gray-300 text-sm font-medium
-            text-gray-700 hover:bg-gray-50 transition active:scale-95">
-            Yadda saxla
-          </button>
-          <button className="flex-1 py-3 rounded-xl bg-teal-500 text-white text-sm font-medium
-            hover:bg-teal-600 transition active:scale-95">
+          <button 
+            type="button"
+            onClick={onNext}
+            className="w-full py-4 rounded-xl bg-[#00B4D8] text-white text-sm font-bold
+            hover:bg-[#0096B4] transition shadow-lg shadow-cyan-100 flex items-center justify-center">
             Növbəti
           </button>
         </div>
