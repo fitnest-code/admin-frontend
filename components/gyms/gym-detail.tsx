@@ -36,17 +36,22 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
 
   const isCompletedRef = useRef(false)
 
+  const gymIdRef = useRef(gymId)
+  useEffect(() => {
+    gymIdRef.current = gymId
+  }, [gymId])
+
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isNew && gymId && !isCompletedRef.current) {
+      if (isNew && gymIdRef.current && !isCompletedRef.current) {
         e.preventDefault()
         e.returnValue = ''
       }
     }
     
     const handleUnload = () => {
-      if (isNew && gymId && !isCompletedRef.current) {
-        fetch(`/api/v1/admin/gyms/${gymId}`, { method: 'DELETE', keepalive: true }).catch(() => {})
+      if (isNew && gymIdRef.current && !isCompletedRef.current) {
+        fetch(`/api/v1/admin/gyms/${gymIdRef.current}`, { method: 'DELETE', keepalive: true }).catch(() => {})
       }
     }
 
@@ -57,18 +62,19 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       window.removeEventListener('beforeunload', handleBeforeUnload)
       window.removeEventListener('unload', handleUnload)
     }
-  }, [isNew, gymId])
+  }, [isNew])
 
   useEffect(() => {
     return () => {
       if (isNew && !isCompletedRef.current) {
-        if (gymId) {
-          fetch(`/api/v1/admin/gyms/${gymId}`, { method: 'DELETE', keepalive: true }).catch(() => {})
+        if (gymIdRef.current) {
+          fetch(`/api/v1/admin/gyms/${gymIdRef.current}`, { method: 'DELETE', keepalive: true }).catch(() => {})
         }
         resetGym()
       }
     }
-  }, [isNew, gymId, resetGym])
+  }, [isNew, resetGym])
+ // Removed gymId from dependencies to ensure it only runs on unmount
 
   const [tab, setTab] = useState(isNew && currentTab ? currentTab : GYM_TABS[0].key)
 

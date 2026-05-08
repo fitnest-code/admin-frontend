@@ -88,3 +88,24 @@ export interface GymStep1Payload {
   phone: string
   email: string
 }
+
+export interface SupportedServiceResponse {
+  id: number
+  name: string
+  gymId?: number
+}
+
+export interface SupportedServiceRequest {
+  name: string
+  gymId?: number
+}
+
+export interface GymCreateStep6SubscriptionRequest {
+  packageId: number
+  dailyPrice: number
+  supportedServicesId: number[]
+}
+
+export interface GymCreateStep6Request {
+  subscriptions: GymCreateStep6SubscriptionRequest[]
+}

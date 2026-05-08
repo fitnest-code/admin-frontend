@@ -3,7 +3,9 @@ import { apiGet, apiPost, apiDelete } from "@/lib/api/client"
 import { 
   CategoriesResponse, 
   GymStep1Payload, 
-  GymStep1Response 
+  GymStep1Response,
+  SupportedServiceResponse,
+  SupportedServiceRequest
 } from '../types/gym'
 import { useGymStore } from '../store/gym-store'
 import { toast } from 'sonner'
@@ -49,5 +51,36 @@ export function useDeleteGym() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gyms'] });
     }
+  });
+}
+
+// 4. Dəstəklənən xidmətləri çəkmək üçün
+export function useSupportedServices(gymId?: number) {
+  return useQuery({
+    queryKey: ['supported-services', gymId],
+    queryFn: () => apiGet<SupportedServiceResponse[]>('/admin/gyms/services', {
+      params: gymId ? { gymId } : {}
+    }),
+  });
+}
+
+// 5. Yeni xidmət əlavə etmək üçün
+export function useCreateSupportedService() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: SupportedServiceRequest) =>
+      apiPost('/admin/gyms/services', payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['supported-services'] });
+    }
+  });
+}
+
+// 6. Step 6: Abunəlik və xidmətləri aktivləşdirin
+export function useCreateGymStep6() {
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: number, payload: GymCreateStep6Request }) =>
+      apiPost(`/admin/gyms/${id}/step6`, payload),
   });
 }
