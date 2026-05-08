@@ -46,7 +46,7 @@ export default function GymImagesTab({ onNext }: { onNext?: () => void }) {
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) return toast.error("Şəkil ölçüsü max 2MB ola bilər");
+      if (file.size > 10 * 1024 * 1024) return toast.error("Şəkil ölçüsü max 10MB ola bilər");
       setCoverPhoto(file);
       setCoverPreview(URL.createObjectURL(file));
     }
@@ -55,7 +55,7 @@ export default function GymImagesTab({ onNext }: { onNext?: () => void }) {
   const handleRoomPhotoChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) return toast.error("Şəkil ölçüsü max 2MB ola bilər");
+      if (file.size > 10 * 1024 * 1024) return toast.error("Şəkil ölçüsü max 10MB ola bilər");
       setRoomPhotos(prev => {
         const newPhotos = [...prev];
         newPhotos[index] = { ...newPhotos[index], photo: file, previewUrl: URL.createObjectURL(file) };
@@ -156,7 +156,7 @@ export default function GymImagesTab({ onNext }: { onNext?: () => void }) {
               </div>
             )}
           </div>
-          <span className="text-xs text-[#9CA3AF]">JPG or PNG • Max size 2MB</span>
+          <span className="text-xs text-[#9CA3AF]">JPG or PNG • Max size 10MB</span>
         </div>
 
         {/* Room Photos */}

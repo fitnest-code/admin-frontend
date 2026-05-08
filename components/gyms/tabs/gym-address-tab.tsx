@@ -25,6 +25,12 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
   const [coords, setCoords] = useState({ lat: 40.4093, lng: 49.8671 });
   const [copied, setCopied] = useState<"lat" | "lng" | null>(null);
 
+  // Axtarış üçün state-lər
+  const [searchQuery, setSearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+
   // 1. Koordinat dəyişdikcə ünvanı gətirən query
   const { data: addressData, isFetching: isAddressFetching } = useGetAddressByCoords(
     coords.lat, 
@@ -38,6 +44,44 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Backend-dən gələn ünvanı input-a sinxronizasiya et
+  useEffect(() => {
+    if (addressData?.addressText && !isSearching) {
+      setSearchQuery(addressData.addressText);
+    }
+  }, [addressData, isSearching]);
+
+  // Forward Geocoding (Axtarış)
+  const debouncedSearch = (query: string) => {
+    if (searchTimeout) clearTimeout(searchTimeout);
+    if (!query || query.length < 3) {
+      setSuggestions([]);
+      return;
+    }
+
+    const timeout = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1&countrycodes=az`);
+        const data = await res.json();
+        setSuggestions(data);
+      } catch (error) {
+        console.error("Geocoding error:", error);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 600);
+    setSearchTimeout(timeout);
+  };
+
+  const handleSelectSuggestion = (s: any) => {
+    const lat = parseFloat(s.lat);
+    const lng = parseFloat(s.lon);
+    setCoords({ lat, lng });
+    setSearchQuery(s.display_name);
+    setSuggestions([]);
+  };
 
   const t = labels[lang];
 
@@ -107,17 +151,40 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
           </Tabs.Root>
         </div>
 
-        {/* Ünvan (Backend-dən gələn data) */}
-        <div className="flex flex-col gap-2">
+        {/* Ünvan (Axtarış və Seçim) */}
+        <div className="flex flex-col gap-2 relative">
           <label className="text-sm font-medium text-[#6B7280]">{t.address}</label>
           <div className="relative">
             <input
-              readOnly
-              value={isAddressFetching ? "Ünvan axtarılır..." : addressData?.addressText || "Koordinat daxil edin və ya xəritəni yeniləyin"}
-              className="w-full bg-[#F9FAFB] border border-[#ECECED] rounded-xl px-4 py-4 text-sm font-semibold text-[#1F2937] outline-none"
+              placeholder="Ünvanı daxil edin (Məs: Heydər Əliyev pr. 101)"
+              value={isAddressFetching ? "Ünvan təyin edilir..." : searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                debouncedSearch(e.target.value);
+              }}
+              className="w-full bg-[#F9FAFB] border border-[#ECECED] rounded-xl px-4 py-4 text-sm font-semibold text-[#1F2937] outline-none focus:border-[#00B4D8] transition-all"
             />
-            {isAddressFetching && <Loader2 className="absolute right-4 top-4 animate-spin text-[#00B4D8]" size={20} />}
+            {(isAddressFetching || isSearching) && (
+              <Loader2 className="absolute right-4 top-4 animate-spin text-[#00B4D8]" size={20} />
+            )}
           </div>
+
+          {/* Suggestions Dropdown */}
+          {suggestions.length > 0 && (
+            <div className="absolute top-[100%] left-0 right-0 z-50 mt-1 bg-white border border-[#ECECED] rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2">
+              {suggestions.map((s, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => handleSelectSuggestion(s)}
+                  className="w-full text-left px-4 py-3 text-sm font-medium hover:bg-slate-50 border-b border-slate-50 last:border-0 transition-colors flex flex-col gap-0.5"
+                >
+                  <span className="text-slate-800">{s.display_name.split(',')[0]}</span>
+                  <span className="text-xs text-slate-400 truncate">{s.display_name}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Koordinat Girişləri */}

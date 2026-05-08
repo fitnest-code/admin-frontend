@@ -41,11 +41,6 @@ export function TrainersTab({ isNew, onNext }: { isNew?: boolean, onNext?: () =>
   ];
 
   const handleNext = () => {
-    if (step2Trainers.length === 0) {
-      onNext?.();
-      return;
-    }
-
     if (!gymId) {
       toast.error("Zal ID tapılmadı");
       return;

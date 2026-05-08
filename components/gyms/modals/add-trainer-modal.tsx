@@ -48,8 +48,8 @@ export function AddTrainerModal({ onClose }: { onClose: () => void }) {
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("Şəkil ölçüsü maksimum 2MB olmalıdır");
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Şəkil ölçüsü maksimum 10MB olmalıdır");
       e.target.value = "";
       return;
     }

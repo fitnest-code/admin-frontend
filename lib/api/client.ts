@@ -189,11 +189,12 @@ export async function apiRequest<T>(
   }
 
   if (!response.ok) {
-    const message = extractApiErrorMessage(
-      payload,
-      `API request failed with status ${response.status}`,
-    );
+    let fallback = `API request failed with status ${response.status}`;
+    if (response.status === 413) {
+      fallback = "Yüklənilən məlumat çox böyükdür (Maksimum limit keçilib)";
+    }
 
+    const message = extractApiErrorMessage(payload, fallback);
     throw new ApiError(message, response.status, payload);
   }
 
