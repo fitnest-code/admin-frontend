@@ -237,11 +237,13 @@ export const SORT_OPTIONS = [
 ]
 
 export const GYM_TABS = [
+  { key: 'analitika',   label: 'Analitika' },
   { key: 'info',        label: 'Zal məlumatları' },
   { key: 'trainers',    label: 'Məşqçilər' },
+  { key: 'plans',       label: 'Abunəlik / Xidmətlər' },
   { key: 'workingHours',label: 'İş saatları' },
   { key: 'address',     label: 'Ünvan' },
   { key: 'images',      label: 'Şəkillər' },
-  { key: 'plans',       label: 'Abunəlik / Xidmətlər' },
   { key: 'admins',      label: 'Zal Admini' },
+  { key: 'reviews',     label: 'Reytinq' },
 ];

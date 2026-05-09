@@ -158,10 +158,10 @@ export const SORT_OPTIONS = [
 ]
 
 export const ZAL_TABS = [
+  { key: 'analitika',   label: 'Analitika' },
   { key: 'melumatlar',  label: 'Zal məlumatları' },
   { key: 'mesqciler',   label: 'Məşqçilər' },
   { key: 'abunelik',    label: 'Abunəlik / Xidmətlər' },
-  { key: 'qr',          label: 'Giriş / QR' },
   { key: 'admin',       label: 'Zal Admini' },
   { key: 'reyting',     label: 'Reytinq' },
 ]

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, Plus, ChevronDown, Eye, Trash2, Check } from 'lucide-react'
+import { Search, Plus, ChevronDown, Eye, Trash2, Check, MoreVertical } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { SORT_OPTIONS } from '@/lib/gyms-data'
 import { useAdminGymsQuery, useToggleGymStatus, type AdminGymListItem, type AdminGymSort } from '@/modules/gyms'
@@ -23,6 +23,8 @@ export function GymsList() {
   const [sortOpen, setSortOpen] = useState(false)
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQuery(query.trim()), 350)
@@ -40,6 +42,7 @@ export function GymsList() {
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (sortRef.current && !sortRef.current.contains(e.target as Node)) setSortOpen(false)
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpenMenuId(null)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -125,14 +128,14 @@ export function GymsList() {
         </button>
       </div>
 
-      {/* Table */}
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
-        <div className="grid grid-cols-[1fr_1fr_1fr_6rem_5rem] items-center gap-4 border-b border-border bg-[#00B4CC14] px-4 py-3">
-          <span className="text-xs font-semibold text-foreground">Zal adı</span>
-          <span className="text-xs font-semibold text-foreground">Ünvan</span>
-          <span className="text-xs font-semibold text-foreground">Məsul şəxs</span>
-          <span className="text-xs font-semibold text-foreground text-center">Status</span>
-          <span className="text-xs font-semibold text-foreground text-right">Ətraflı</span>
+      {/* Table - removed overflow-hidden to prevent dropdown clipping */}
+      <div className="rounded-xl border border-border bg-card">
+        <div className="grid grid-cols-[1fr_1fr_1fr_6rem_5rem] items-center gap-4 border-b border-border bg-[#00B4CC14] px-4 py-3 rounded-t-xl">
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Zal adı</span>
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Ünvan</span>
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Məsul şəxs</span>
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider text-center">Status</span>
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider text-right">Ətraflı</span>
         </div>
 
         {gymsQuery.isLoading ? (
@@ -154,8 +157,11 @@ export function GymsList() {
               <GymRow
                 key={gym.id}
                 gym={gym}
+                openMenuId={openMenuId}
+                menuRef={menuRef}
+                onToggleMenu={(id) => setOpenMenuId(openMenuId === id ? null : id)}
                 onView={() => router.push(`/gyms/${gym.id}`)}
-                onDelete={() => setDeleteId(gym.id)}
+                onDelete={() => { setDeleteId(gym.id); setOpenMenuId(null) }}
                 onToggle={() => handleToggle(gym.id, gym.status === 'ACTIVE')}
               />
             ))}
@@ -200,38 +206,70 @@ export function GymsList() {
 
 function GymRow({
   gym,
+  openMenuId,
+  menuRef,
+  onToggleMenu,
   onView,
   onDelete,
   onToggle,
 }: {
   gym: AdminGymListItem
+  openMenuId: number | null
+  menuRef: React.RefObject<HTMLDivElement | null>
+  onToggleMenu: (id: number) => void
   onView: () => void
   onDelete: () => void
   onToggle: () => void
 }) {
+  const isMenuOpen = openMenuId === gym.id
+
   return (
-    <div className="grid grid-cols-[1fr_1fr_1fr_6rem_5rem] items-center gap-4 border-b border-border px-4 py-3.5 last:border-0 hover:bg-secondary/40 transition-colors">
+    <div 
+      className={cn(
+        "grid grid-cols-[1fr_1fr_1fr_6rem_5rem] items-center gap-4 border-b border-border px-4 py-3.5 last:border-0 hover:bg-secondary/40 transition-colors relative",
+        isMenuOpen ? "z-50 shadow-sm" : "z-0"
+      )}
+    >
       <span className="text-sm font-medium text-foreground truncate">{gym.name}</span>
       <span className="text-sm text-muted-foreground truncate">{gym.fullAddress || '-'}</span>
       <span className="text-sm text-muted-foreground truncate">{gym.ownerName === 'N/A' ? '-' : gym.ownerName}</span>
       <div className="flex justify-center">
         <GymStatusToggle active={gym.status === 'ACTIVE'} onToggle={onToggle} />
       </div>
-      <div className="flex items-center justify-end gap-1">
+      
+      {/* Action menu */}
+      <div className="relative flex justify-end" ref={isMenuOpen ? menuRef : undefined}>
         <button
-          onClick={onView}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-[#00B4CC] hover:bg-[#00B4CC14] transition-colors"
-          aria-label="Detallı bax"
+          onClick={() => onToggleMenu(gym.id)}
+          className={cn(
+            "flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200",
+            isMenuOpen ? "bg-secondary text-[#00B4CC]" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+          )}
+          aria-label="Ətraflı seçimlər"
+          aria-haspopup="true"
+          aria-expanded={isMenuOpen}
         >
-          <Eye size={15} />
+          <MoreVertical size={20} />
         </button>
-        <button
-          onClick={onDelete}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-red-500 hover:bg-red-50 transition-colors"
-          aria-label="Sil"
-        >
-          <Trash2 size={15} />
-        </button>
+
+        {isMenuOpen && (
+          <div className="absolute right-0 top-11 z-50 w-[180px] flex flex-col gap-3 rounded-[12px] border border-[#ECECED] bg-white p-3 shadow-lg animate-in fade-in zoom-in-95 duration-100">
+            <button
+              onClick={onView}
+              className="flex w-full items-center gap-2 border-b border-[#ECECED] pb-3 text-base font-normal text-black hover:opacity-70 transition-opacity"
+            >
+              <Eye size={16} className="text-[#333333]" />
+              <span className="leading-none">Detallı bax</span>
+            </button>
+            <button
+              onClick={onDelete}
+              className="flex w-full items-center gap-2 text-base font-normal text-[#F10303] hover:opacity-70 transition-opacity"
+            >
+              <Trash2 size={16} />
+              <span className="leading-none">Sil</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -146,16 +146,16 @@ export function ZallarList() {
         </button>
       </div>
 
-      {/* Table */}
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
+      {/* Table - removed overflow-hidden to prevent dropdown clipping */}
+      <div className="rounded-xl border border-border bg-card">
         {/* Table header */}
-        <div className="grid grid-cols-[2rem_1fr_1fr_1fr_6rem_4rem] items-center gap-4 border-b border-border bg-[#00B4CC14] px-4 py-3">
-          <input type="checkbox" className="h-4 w-4 rounded accent-[#00B4CC]" aria-label="Hamısını seç" />
-          <span className="text-xs font-semibold text-foreground">Zal adı</span>
-          <span className="text-xs font-semibold text-foreground">Şəhər/Ünvan</span>
-          <span className="text-xs font-semibold text-foreground">Məsul şəxs</span>
-          <span className="text-xs font-semibold text-foreground text-center">Status</span>
-          <span className="text-xs font-semibold text-foreground text-right">Ətraflı</span>
+        <div className="grid grid-cols-[2rem_1fr_1fr_1fr_6rem_4rem] items-center gap-4 border-b border-border bg-[#00B4CC14] px-4 py-3 rounded-t-xl">
+          <input type="checkbox" className="h-4 w-4 rounded accent-[#00B4CC]" aria-label="Bütün zalları seç" />
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Zal adı</span>
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Ünvan</span>
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Məsul şəxs</span>
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider text-center">Status</span>
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider text-right">Ətraflı</span>
         </div>
 
         {/* Empty state */}
@@ -247,7 +247,12 @@ function ZalTableRow({
   const isMenuOpen = openMenuId === zal.id
 
   return (
-    <div className="grid grid-cols-[2rem_1fr_1fr_1fr_6rem_4rem] items-center gap-4 border-b border-border px-4 py-3.5 last:border-0 hover:bg-secondary/40 transition-colors">
+    <div 
+      className={cn(
+        "grid grid-cols-[2rem_1fr_1fr_1fr_6rem_4rem] items-center gap-4 border-b border-border px-4 py-3.5 last:border-0 hover:bg-secondary/40 transition-colors relative",
+        isMenuOpen ? "z-50 shadow-sm" : "z-0"
+      )}
+    >
       <input type="checkbox" className="h-4 w-4 rounded accent-[#00B4CC]" aria-label={`${zal.name} seç`} />
       <span className="text-sm font-medium text-foreground truncate">{zal.name}</span>
       <span className="text-sm text-muted-foreground truncate">{zal.city}, {zal.address}</span>
@@ -258,33 +263,36 @@ function ZalTableRow({
         <ZalStatusToggle active={zal.status === 'aktiv'} onToggle={onToggleStatus} />
       </div>
 
-      {/* Three-dot menu */}
+      {/* Action menu */}
       <div className="relative flex justify-end" ref={isMenuOpen ? menuRef : undefined}>
         <button
           onClick={() => onToggleMenu(zal.id)}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+          className={cn(
+            "flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200",
+            isMenuOpen ? "bg-secondary text-[#00B4CC]" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+          )}
           aria-label="Ətraflı seçimlər"
           aria-haspopup="true"
           aria-expanded={isMenuOpen}
         >
-          <MoreVertical size={15} />
+          <MoreVertical size={20} />
         </button>
 
         {isMenuOpen && (
-          <div className="absolute right-0 top-8 z-50 w-40 overflow-hidden rounded-xl border border-border bg-card shadow-lg">
+          <div className="absolute right-0 top-11 z-50 w-[180px] flex flex-col gap-3 rounded-[12px] border border-[#ECECED] bg-white p-3 shadow-lg animate-in fade-in zoom-in-95 duration-100">
             <button
               onClick={onView}
-              className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors"
+              className="flex w-full items-center gap-2 border-b border-[#ECECED] pb-3 text-base font-normal text-black hover:opacity-70 transition-opacity"
             >
-              <Eye size={14} className="text-[#00B4CC]" aria-hidden />
-              Detallı bax
+              <Eye size={16} className="text-[#333333]" />
+              <span className="leading-none">Detallı bax</span>
             </button>
             <button
               onClick={onDelete}
-              className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+              className="flex w-full items-center gap-2 text-base font-normal text-[#F10303] hover:opacity-70 transition-opacity"
             >
-              <Trash2 size={14} aria-hidden />
-              Sil
+              <Trash2 size={16} />
+              <span className="leading-none">Sil</span>
             </button>
           </div>
         )}

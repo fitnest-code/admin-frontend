@@ -9,6 +9,7 @@ import { ZalMelumatlarTab } from './tabs/zal-melumatlar-tab'
 import { MesqcilerTab } from './tabs/mesqciler-tab'
 import { GirisQrTab } from './tabs/giris-qr-tab'
 import { ZalAdminiTab } from './tabs/zal-admini-tab'
+import { AnalitikaTab } from './tabs/analitika-tab'
 
 interface ZalDetailProps {
   zal: Zal
@@ -22,14 +23,14 @@ const STATUS_STYLES = {
 
 export function ZalDetail({ zal, isNew = false }: ZalDetailProps) {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState(ZAL_TABS[0].key)
+  const [activeTab, setActiveTab] = useState(ZAL_TABS[0].key) // 'analitika' is now the first tab
 
   function renderTab() {
     switch (activeTab) {
+      case 'analitika':  return <AnalitikaTab />
       case 'melumatlar': return <ZalMelumatlarTab zal={zal} isNew={isNew} />
-      // case 'mesqciler':  return <MesqcilerTab mesqciler={zal.mesqciler} zalName={zal.name} />
-      case 'qr':         return <GirisQrTab zalName={zal.name} />
-      // case 'admin':      return <ZalAdminiTab admins={zal.admins} />
+      case 'mesqciler':  return <MesqcilerTab mesqciler={zal.mesqciler} zalName={zal.name} />
+      case 'admin':      return <ZalAdminiTab admins={zal.admins} />
       case 'abunelik':
       case 'reyting':
         return (
@@ -42,47 +43,38 @@ export function ZalDetail({ zal, isNew = false }: ZalDetailProps) {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Back button */}
-      <button
-        onClick={() => router.push('/zallar')}
-        className="flex w-fit items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowLeft size={15} aria-hidden />
-        Geri qayıt
-      </button>
-
-      {/* Title row */}
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-xl font-bold text-foreground">{isNew ? 'Yeni Zal' : zal.name}</h1>
-        {!isNew && (
-          <>
-            {/* <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-semibold', STATUS_STYLES[zal.status])}>
-              {zal.status === 'aktiv' ? 'Aktiv' : 'Deaktiv'}
-            </span> */}
-            <button className="flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:border-[#00B4CC] transition-colors">
-              Ödəniş
-              <ChevronDown size={12} />
-            </button>
-            <button className="ml-1 text-red-400 hover:text-red-600 transition-colors text-xs font-medium">
-              — Sil
-            </button>
-          </>
-        )}
+    <div className="flex flex-col gap-6">
+      {/* Sub-header / Breadcrumb */}
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+          Super admin- Zal Detail - Analitika
+        </span>
       </div>
 
-      {/* Tabs */}
+      {/* Title row */}
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">{isNew ? 'Yeni Zal' : zal.name}</h1>
+          {!isNew && (
+            <span className="flex items-center gap-1 rounded-full bg-green-500 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm shadow-green-500/20">
+              <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+              Aktiv
+            </span>
+          )}
+        </div>
+      </div>
+
       <div className="border-b border-border">
-        <nav className="-mb-px flex gap-0 overflow-x-auto" aria-label="Zal bölmələri">
+        <nav className="-mb-px flex gap-8 overflow-x-auto" aria-label="Zal bölmələri">
           {ZAL_TABS.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={cn(
-                'shrink-0 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors whitespace-nowrap',
+                'shrink-0 border-b-2 pb-4 text-sm font-semibold transition-all duration-200 whitespace-nowrap',
                 activeTab === tab.key
-                  ? 'border-[#00B4CC] text-[#00B4CC]'
-                  : 'border-transparent text-muted-foreground hover:text-foreground',
+                  ? 'border-[#00B4CC] text-foreground'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border',
               )}
               aria-current={activeTab === tab.key ? 'page' : undefined}
             >

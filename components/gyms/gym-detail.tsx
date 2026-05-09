@@ -17,17 +17,22 @@ import { useGymStore } from '@/lib/store/gym-store'
 import AddressTab from './tabs/gym-address-tab'
 import GymImagesTab from './tabs/gym-images-tab'
 import GymSubscriptionTab from './tabs/gym-subscription-tab'
+import { AnalitikaTab } from '@/components/zallar/tabs/analitika-tab'
+
+const WIZARD_TABS = [
+  { key: 'info',         label: 'Zal məlumatları' },
+  { key: 'trainers',     label: 'Məşqçilər' },
+  { key: 'workingHours', label: 'İş saatları' },
+  { key: 'address',      label: 'Ünvan' },
+  { key: 'images',       label: 'Şəkillər' },
+  { key: 'plans',        label: 'Abunəlik / Xidmətlər' },
+  { key: 'admins',       label: 'Zal Admini' },
+]
 
 interface GymDetailProps {
   gym: Gym
   isNew?: boolean
 }
-
-const STATUS_STYLES = {
-  active:   'bg-green-100 text-green-700',
-  inactive: 'bg-red-100 text-red-500',
-}
-
 
 export function GymDetail({ gym, isNew = false }: GymDetailProps) {
   const router = useRouter()
@@ -73,51 +78,33 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       }
     }
   }, [isNew, resetGym])
- // Removed gymId from dependencies to ensure it only runs on unmount
 
-  const [tab, setTab] = useState(isNew && currentTab ? currentTab : GYM_TABS[0].key)
+  const [activeTab, setActiveTab] = useState(isNew && currentTab ? currentTab : (isNew ? WIZARD_TABS[0].key : 'analitika'))
 
   useEffect(() => {
     if (isNew) {
-      setCurrentTab(tab)
+      setCurrentTab(activeTab)
     }
-  }, [tab, isNew, setCurrentTab])
-  const [showWarning, setShowWarning] = useState(false)
+  }, [activeTab, isNew, setCurrentTab])
   const [showExitConfirm, setShowExitConfirm] = useState(false)
+  const [showWarning, setShowWarning] = useState(false)
 
-  const currentIndex = GYM_TABS.findIndex((t) => t.key === tab)
+  const currentIndex = WIZARD_TABS.findIndex((t) => t.key === activeTab)
 
   function renderTab() {
-    switch (tab) {
-      case 'info':         return <GymInfoTab onNext={() => setTab(GYM_TABS[currentIndex + 1].key)} />
-      case 'trainers':     return <TrainersTab isNew={isNew} onNext={() => setTab(GYM_TABS[currentIndex + 1].key)} />
-      case 'workingHours': return <WorkingHoursPanel onNext={() => setTab(GYM_TABS[currentIndex + 1].key)} />
-      case 'address':      return <AddressTab onNext={() => setTab(GYM_TABS[currentIndex + 1].key)} />
-      case 'images':       return <GymImagesTab onNext={() => setTab(GYM_TABS[currentIndex + 1].key)} />
-      case 'plans':        return <GymSubscriptionTab onNext={() => setTab(GYM_TABS[currentIndex + 1].key)} />
+    switch (activeTab) {
+      case 'analitika':    return <AnalitikaTab />
+      case 'info':         return <GymInfoTab onNext={() => setActiveTab('trainers')} />
+      case 'trainers':     return <TrainersTab isNew={isNew} onNext={() => setActiveTab('workingHours')} />
+      case 'workingHours': return <WorkingHoursPanel onNext={() => setActiveTab('address')} />
+      case 'address':      return <AddressTab onNext={() => setActiveTab('images')} />
+      case 'images':       return <GymImagesTab onNext={() => setActiveTab('plans')} />
+      case 'plans':        return <GymSubscriptionTab onNext={() => setActiveTab('admins')} />
       case 'admins':       return <GymAdminsTab />
       case 'reviews':      return <ReviewsTab gymId={gym.id} />
       case 'customers':    return <GymCustomersTab />
-      default: 
-        return (
-          <div className="flex flex-col items-center justify-center py-24 text-sm text-muted-foreground bg-white rounded-3xl border-2 border-dashed border-slate-100">
-            <p>Bu bölmə tezliklə əlavə ediləcək ({tab})</p>
-          </div>
-        )
+      default: return null
     }
-  }
-
-  const handleStepClick = (key: string, index: number) => {
-    if (isNew) {
-      if (index < currentIndex) {
-        setShowWarning(true)
-        return
-      }
-      if (index > currentIndex) {
-        return
-      }
-    }
-    setTab(key)
   }
 
   const handleBackClick = () => {
@@ -131,7 +118,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
 
   const handleConfirmExit = async () => {
     if (isNew && gymId) {
-      isCompletedRef.current = true // Prevent unmount hook from firing duplicate delete
+      isCompletedRef.current = true
       try {
         await fetch(`/api/v1/admin/gyms/${gymId}`, { method: 'DELETE' })
       } catch (e) {}
@@ -140,97 +127,123 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
     router.push('/gyms')
   }
 
-  return (
-    <div className="flex flex-col gap-4">
-      <button
-        onClick={handleBackClick}
-        className="flex w-fit items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowLeft size={15} aria-hidden />
-        Geri qayıt
-      </button>
+  const handleStepClick = (key: string, index: number) => {
+    if (isNew) {
+      if (index < currentIndex) {
+        setShowWarning(true)
+        return
+      }
+      if (index > currentIndex) {
+        return
+      }
+    }
+    setActiveTab(key)
+  }
 
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-xl font-bold text-foreground">
-          {isNew ? 'Yeni Zal' : gym.name}
-        </h1>
-        {!isNew && (
-          <>
-            <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-semibold', STATUS_STYLES[gym.status])}>
-              {gym.status === 'active' ? 'Aktiv' : 'Deaktiv'}
-            </span>
-            <button className="flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:border-[#00B4CC] transition-colors">
-              Ödəniş <ChevronDown size={12} />
-            </button>
-            <button className="ml-1 text-red-400 hover:text-red-600 transition-colors text-xs font-medium">
-              — Sil
-            </button>
-          </>
-        )}
-      </div>
-
-      <div className="flex gap-6 items-start">
-        <nav
-          aria-label="Zal bölmələri"
-          className="w-65 shrink-0 rounded-[12px] border border-border bg-card p-3 flex flex-col gap-1"
+  if (isNew) {
+    return (
+      <div className="flex flex-col gap-4">
+        <button
+          onClick={handleBackClick}
+          className="flex w-fit items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
         >
-          {GYM_TABS.map((t, index) => {
-            const isActive    = tab === t.key
-            const isCompleted = index < currentIndex
-            const isFuture    = index > currentIndex
+          <ArrowLeft size={15} aria-hidden />
+          Geri qayıt
+        </button>
 
-            return (
-              <div key={t.key} className="flex flex-col">
-                <button
-                  onClick={() => handleStepClick(t.key, index)}
-                  aria-current={isActive ? 'page' : undefined}
-                  className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors w-full',
-                    isNew && isFuture && 'cursor-not-allowed'
-                  )}
-                >
-                  <span
+        <h1 className="text-xl font-bold text-foreground">Yeni Zal</h1>
+
+        <div className="flex gap-6 items-start">
+          <nav aria-label="Zal bölmələri" className="w-65 shrink-0 rounded-[12px] border border-border bg-card p-3 flex flex-col gap-1">
+            {WIZARD_TABS.map((t, index) => {
+              const isActive    = activeTab === t.key
+              const isCompleted = index < currentIndex
+              const isFuture    = index > currentIndex
+
+              return (
+                <div key={t.key} className="flex flex-col">
+                  <button
+                    onClick={() => handleStepClick(t.key, index)}
                     className={cn(
-                      'flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[18px] font-semibold transition-colors',
-                      isActive
-                        ? 'bg-[#00B4CC] text-white'
-                        : isCompleted
-                          ? 'bg-[#00B4CC]/20 text-[#00B4CC]'
-                          : 'bg-muted text-muted-foreground border border-border',
+                      'flex items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors w-full',
+                      isFuture && 'cursor-not-allowed'
                     )}
                   >
-                    {isCompleted ? <Check size={12} /> : index + 1}
-                  </span>
-
-                  <div className="flex flex-col min-w-0">
-                    <span
-                      className={cn(
-                        'text-[18px] font-medium text-[#C9C9C9]',
-                        isActive ? 'text-[#000000]' : 'text-foreground',
-                      )}
-                    >
+                    <span className={cn(
+                      'flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[18px] font-semibold transition-colors',
+                      isActive ? 'bg-[#00B4CC] text-white' : isCompleted ? 'bg-[#00B4CC]/20 text-[#00B4CC]' : 'bg-muted text-muted-foreground border border-border'
+                    )}>
+                      {isCompleted ? <Check size={12} /> : index + 1}
+                    </span>
+                    <span className={cn('text-[18px] font-medium', isActive ? 'text-black' : 'text-muted-foreground')}>
                       {t.label}
                     </span>
-                   
-                  </div>
-                </button>
+                  </button>
+                  {index < WIZARD_TABS.length - 1 && (
+                    <div className="ml-7.5 w-1 h-4 bg-border" />
+                  )}
+                </div>
+              )
+            })}
+          </nav>
+          <div className="flex-1 min-w-0">{renderTab()}</div>
+        </div>
 
-                {index < GYM_TABS.length - 1 && (
-                  <div className="ml-7.5 w-1 h-4 bg-border" />
-                )}
-              </div>
-            )
-          })}
-        </nav>
+        {showWarning && <StepNavigationWarningModal onClose={() => setShowWarning(false)} />}
+        {showExitConfirm && <ExitConfirmationModal onConfirm={handleConfirmExit} onCancel={() => setShowExitConfirm(false)} />}
+      </div>
+    )
+  }
 
-        <div className="flex-1 min-w-0">
-          {renderTab()}
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => router.push('/gyms')}
+            className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors flex items-center gap-1"
+          >
+            <ArrowLeft size={10} />
+            Zallar
+          </button>
+          <span className="text-[10px] text-muted-foreground">/</span>
+          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+            {gym.name} - Detallı
+          </span>
         </div>
       </div>
 
-      {showWarning && (
-        <StepNavigationWarningModal onClose={() => setShowWarning(false)} />
-      )}
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">{gym.name}</h1>
+          <span className="flex items-center gap-1 rounded-full bg-green-500 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm shadow-green-500/20">
+            <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+            Aktiv
+          </span>
+        </div>
+      </div>
+
+      <div className="border-b border-border">
+        <nav className="-mb-px flex gap-8 overflow-x-auto" aria-label="Zal bölmələri">
+          {GYM_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={cn(
+                'shrink-0 border-b-2 pb-4 text-sm font-semibold transition-all duration-200 whitespace-nowrap',
+                activeTab === tab.key
+                  ? 'border-[#00B4CC] text-foreground'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border',
+              )}
+              aria-current={activeTab === tab.key ? 'page' : undefined}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      <div className="min-h-[400px]">{renderTab()}</div>
 
       {showExitConfirm && (
         <ExitConfirmationModal 
