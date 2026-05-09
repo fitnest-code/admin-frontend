@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Trash2, Check, X, ChevronDown, Search, Star } from 'lucide-react'
+import { Trash2, Check, X, ChevronDown, Search, Star, Eye } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useGymReviewsQuery } from '@/modules/gyms'
 import { MOCK_REVIEWS, type Review, type ReviewStatus } from '@/lib/gyms-data'
