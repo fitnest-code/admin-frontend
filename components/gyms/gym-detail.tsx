@@ -96,7 +96,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       case 'address':      return <AddressTab onNext={() => setTab(GYM_TABS[currentIndex + 1].key)} />
       case 'images':       return <GymImagesTab onNext={() => setTab(GYM_TABS[currentIndex + 1].key)} />
       case 'plans':        return <GymSubscriptionTab onNext={() => setTab(GYM_TABS[currentIndex + 1].key)} />
-      case 'admins':       return <GymAdminsTab admins={gym.admins} />
+      case 'admins':       return <GymAdminsTab />
       case 'reviews':      return <ReviewsTab gymId={gym.id} />
       case 'customers':    return <GymCustomersTab />
       default: 

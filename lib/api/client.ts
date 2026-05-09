@@ -22,16 +22,15 @@ let refreshPromise: Promise<boolean> | null = null;
 
 function makeUrl(path: string, isAuthRoute: boolean) {
   const normalized = path.startsWith("/") ? path : `/${path}`;
-
   if (isAuthRoute || normalized.startsWith("/api/")) {
     return normalized;
   }
-
   return `/api/v1${normalized}`;
 }
 
+// URLSearchParams avtomatik olaraq simvolları (ə, ö, ğ və s.) encode edir
 function makeQueryString(params: RequestOptions["params"]) {
-  if (!params) return "";
+  if (!params || Object.keys(params).length === 0) return "";
 
   const searchParams = new URLSearchParams();
 
@@ -40,8 +39,9 @@ function makeQueryString(params: RequestOptions["params"]) {
 
     if (Array.isArray(value)) {
       value.forEach((item) => {
-        if (item === null || item === undefined) return;
-        searchParams.append(key, String(item));
+        if (item !== null && item !== undefined) {
+          searchParams.append(key, String(item));
+        }
       });
       return;
     }
@@ -60,23 +60,11 @@ function isJsonResponse(res: Response) {
 
 function extractApiErrorMessage(payload: unknown, fallback: string) {
   if (typeof payload === "object" && payload !== null) {
-    if ("message" in payload) {
-      return String((payload as any).message);
-    }
-
-    if (
-      "error" in payload &&
-      typeof (payload as any).error === "object" &&
-      (payload as any).error !== null
-    ) {
-      const errorObj = (payload as any).error;
-
-      if ("message" in errorObj && errorObj.message) {
-        return String(errorObj.message);
-      }
+    if ("message" in payload) return String((payload as any).message);
+    if ("error" in payload && (payload as any).error?.message) {
+      return String((payload as any).error.message);
     }
   }
-
   return fallback;
 }
 
@@ -93,7 +81,6 @@ async function refreshAccessToken() {
         refreshPromise = null;
       });
   }
-
   return refreshPromise;
 }
 
@@ -112,77 +99,45 @@ export async function apiRequest<T>(
 
   const isAuthRoute = path.startsWith("/api/auth/");
   const requestUrl = `${makeUrl(path, isAuthRoute)}${makeQueryString(params)}`;
+  
+  // Headers obyektini yaradırıq
   const requestHeaders = new Headers(headers);
-
   const isFormData = body instanceof FormData;
 
-  /**
-   * Səndə token localStorage-da deyil.
-   * Token cookie-dədir:
-   * - fn_admin_access_token
-   * - fn_admin_refresh_token
-   *
-   * Ona görə Authorization header manual əlavə edilmir.
-   * Cookie credentials: "include" ilə göndərilir.
-   */
+  // Əgər FormData deyilsə və body varsa, Content-Type-ı JSON təyin et
+  if (!isFormData && body !== undefined) {
+    if (!requestHeaders.has("Content-Type")) {
+      requestHeaders.set("Content-Type", "application/json");
+    }
+  }
 
-  if (
-    !isFormData &&
-    body !== undefined &&
-    !requestHeaders.has("Content-Type")
-  ) {
-    requestHeaders.set("Content-Type", "application/json");
+  // FormData olduqda Content-Type manual təyin EDİLMƏMƏLİDİR.
+  // Brauzer boundary-ni özü əlavə etməlidir.
+  if (isFormData) {
+    requestHeaders.delete("Content-Type");
   }
 
   if (!requestHeaders.has("Accept")) {
     requestHeaders.set("Accept", "application/json");
   }
 
-  if (isFormData) {
-    requestHeaders.delete("Content-Type");
-  }
-
-  console.log("API REQUEST URL:", requestUrl);
-  console.log("API METHOD:", init.method);
-  console.log("IS FORM DATA:", isFormData);
-
-  if (isFormData && body instanceof FormData) {
-    for (const [key, value] of body.entries()) {
-      if (value instanceof File) {
-        console.log("FORMDATA FILE:", key, {
-          name: value.name,
-          type: value.type,
-          size: value.size,
-        });
-      } else {
-        console.log("FORMDATA FIELD:", key, value);
-      }
-    }
-  }
-
   const response = await fetch(requestUrl, {
     ...init,
     headers: requestHeaders,
-    body:
-      body === undefined
-        ? undefined
-        : isFormData
-          ? (body as FormData)
-          : JSON.stringify(body),
+    body: isFormData 
+      ? (body as FormData) 
+      : (body === undefined ? undefined : JSON.stringify(body)),
     cache: "no-store",
-    credentials: "include",
+    credentials: "include", // Cookie-lər üçün vacibdir
   });
 
   const payload = isJsonResponse(response)
     ? await response.json().catch(() => null)
     : await response.text();
 
-  console.log("API RESPONSE STATUS:", response.status);
-  console.log("API RESPONSE PAYLOAD:", payload);
-
+  // 401 halında token yeniləmə məntiqi
   if (response.status === 401 && auth && !_retried && !isAuthRoute) {
     const refreshed = await refreshAccessToken();
-
     if (refreshed) {
       return apiRequest<T>(path, { ...options, _retried: true });
     }
@@ -190,10 +145,8 @@ export async function apiRequest<T>(
 
   if (!response.ok) {
     let fallback = `API request failed with status ${response.status}`;
-    if (response.status === 413) {
-      fallback = "Yüklənilən məlumat çox böyükdür (Maksimum limit keçilib)";
-    }
-
+    if (response.status === 413) fallback = "Fayl ölçüsü çox böyükdür.";
+    
     const message = extractApiErrorMessage(payload, fallback);
     throw new ApiError(message, response.status, payload);
   }
@@ -201,40 +154,18 @@ export async function apiRequest<T>(
   return payload as T;
 }
 
-export function apiGet<T>(
-  path: string,
-  options: Omit<RequestOptions, "method" | "body"> = {},
-) {
-  return apiRequest<T>(path, { ...options, method: "GET" });
-}
+// Yardımçı metodlar
+export const apiGet = <T>(path: string, options: Omit<RequestOptions, "method" | "body"> = {}) => 
+  apiRequest<T>(path, { ...options, method: "GET" });
 
-export function apiPost<T>(
-  path: string,
-  body?: unknown,
-  options: Omit<RequestOptions, "method" | "body"> = {},
-) {
-  return apiRequest<T>(path, { ...options, method: "POST", body });
-}
+export const apiPost = <T>(path: string, body?: unknown, options: Omit<RequestOptions, "method" | "body"> = {}) => 
+  apiRequest<T>(path, { ...options, method: "POST", body });
 
-export function apiPut<T>(
-  path: string,
-  body?: unknown,
-  options: Omit<RequestOptions, "method" | "body"> = {},
-) {
-  return apiRequest<T>(path, { ...options, method: "PUT", body });
-}
+export const apiPut = <T>(path: string, body?: unknown, options: Omit<RequestOptions, "method" | "body"> = {}) => 
+  apiRequest<T>(path, { ...options, method: "PUT", body });
 
-export function apiPatch<T>(
-  path: string,
-  body?: unknown,
-  options: Omit<RequestOptions, "method" | "body"> = {},
-) {
-  return apiRequest<T>(path, { ...options, method: "PATCH", body });
-}
+export const apiPatch = <T>(path: string, body?: unknown, options: Omit<RequestOptions, "method" | "body"> = {}) => 
+  apiRequest<T>(path, { ...options, method: "PATCH", body });
 
-export function apiDelete<T>(
-  path: string,
-  options: Omit<RequestOptions, "method" | "body"> = {},
-) {
-  return apiRequest<T>(path, { ...options, method: "DELETE" });
-}
+export const apiDelete = <T>(path: string, options: Omit<RequestOptions, "method" | "body"> = {}) => 
+  apiRequest<T>(path, { ...options, method: "DELETE" });
