@@ -30,7 +30,7 @@ export default function GymImagesTab({ onNext }: { onNext?: () => void }) {
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
 
   const [roomPhotos, setRoomPhotos] = useState<RoomPhotoState[]>(
-    Array.from({ length: 20 }).map((_, i) => ({ id: `rp-${i}`, photo: null, name: "", previewUrl: null }))
+    Array.from({ length: 9 }).map((_, i) => ({ id: `rp-${i}`, photo: null, name: "", previewUrl: null }))
   );
 
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -46,7 +46,7 @@ export default function GymImagesTab({ onNext }: { onNext?: () => void }) {
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) return toast.error("Şəkil ölçüsü max 10MB ola bilər");
+      if (file.size > 50 * 1024 * 1024) return toast.error("Şəkil ölçüsü max 50MB ola bilər");
       setCoverPhoto(file);
       setCoverPreview(URL.createObjectURL(file));
     }
@@ -55,7 +55,7 @@ export default function GymImagesTab({ onNext }: { onNext?: () => void }) {
   const handleRoomPhotoChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) return toast.error("Şəkil ölçüsü max 10MB ola bilər");
+      if (file.size > 50 * 1024 * 1024) return toast.error("Şəkil ölçüsü max 50MB ola bilər");
       setRoomPhotos(prev => {
         const newPhotos = [...prev];
         newPhotos[index] = { ...newPhotos[index], photo: file, previewUrl: URL.createObjectURL(file) };
@@ -156,12 +156,12 @@ export default function GymImagesTab({ onNext }: { onNext?: () => void }) {
               </div>
             )}
           </div>
-          <span className="text-xs text-[#9CA3AF]">JPG or PNG • Max size 10MB</span>
+          <span className="text-xs text-[#9CA3AF]">JPG or PNG • Max size 50MB</span>
         </div>
 
         {/* Room Photos */}
         <div className="flex flex-col gap-3 mt-4">
-          <label className="text-sm font-bold text-[#1F2937]">{t.others} ( {activePhotosCount}/20 )</label>
+          <label className="text-sm font-bold text-[#1F2937]">{t.others} ( {activePhotosCount}/9 )</label>
           
           <div className="grid grid-cols-3 gap-4">
             {roomPhotos.map((room, index) => (
