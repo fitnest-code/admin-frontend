@@ -30,7 +30,7 @@ export default function GymImagesTab({ onNext }: { onNext?: () => void }) {
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
 
   const [roomPhotos, setRoomPhotos] = useState<RoomPhotoState[]>(
-    Array.from({ length: 9 }).map((_, i) => ({ id: `rp-${i}`, photo: null, name: "", previewUrl: null }))
+    Array.from({ length: 20 }).map((_, i) => ({ id: `rp-${i}`, photo: null, name: "", previewUrl: null }))
   );
 
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -161,7 +161,7 @@ export default function GymImagesTab({ onNext }: { onNext?: () => void }) {
 
         {/* Room Photos */}
         <div className="flex flex-col gap-3 mt-4">
-          <label className="text-sm font-bold text-[#1F2937]">{t.others} ( {activePhotosCount}/9 )</label>
+          <label className="text-sm font-bold text-[#1F2937]">{t.others} ( {activePhotosCount}/20 )</label>
           
           <div className="grid grid-cols-3 gap-4">
             {roomPhotos.map((room, index) => (
