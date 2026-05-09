@@ -8,6 +8,7 @@ interface InputFieldProps {
   value: string
   placeholder?: string
   onChange: (value: string) => void
+  autoFocus?: boolean
 }
 
 export function InputField({
@@ -16,6 +17,7 @@ export function InputField({
   value,
   placeholder,
   onChange,
+  autoFocus,
 }: InputFieldProps) {
   return (
     <div className="flex flex-col gap-1.5 py-3">
@@ -26,6 +28,7 @@ export function InputField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        autoFocus={autoFocus}
         className={cn(
           'w-full rounded-[12px] border border-border bg-background px-3 py-2.5 text-sm font-semibold text-foreground placeholder:font-normal placeholder:text-muted-foreground outline-none focus:border-[#00B4CC] transition-colors',
         )}
