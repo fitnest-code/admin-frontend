@@ -57,7 +57,7 @@ const RESULT_LABELS: Record<EntryResult, string> = {
   error:   'Xəta',
 }
 
-export function GymCustomersTab() {
+export function CustomersTab() {
   const [query,      setQuery]      = useState('')
   const [filter,     setFilter]     = useState<EntryResult | 'all'>('all')
   const [sort,       setSort]       = useState('date_desc')

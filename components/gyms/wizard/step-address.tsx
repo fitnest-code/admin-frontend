@@ -16,11 +16,11 @@ const labels: Record<Lang, any> = {
   En: { title: "Address Details", address: "Address", coords: "Coordinates", lat: "Latitude", lng: "Longitude", save: "Save", next: "Next" },
 };
 
-export default function AddressTab({ onNext }: { onNext?: () => void }) {
+export function StepAddress({ onNext }: { onNext?: () => void }) {
   const [mounted, setMounted] = useState(false);
   const [lang, setLang] = useState<Lang>("Az");
   const { gymId } = useGymStore();
-  
+
   // Koordinatlar
   const [coords, setCoords] = useState({ lat: 40.4093, lng: 49.8671 });
   const [copied, setCopied] = useState<"lat" | "lng" | null>(null);
@@ -33,8 +33,8 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
 
   // 1. Koordinat dəyişdikcə ünvanı gətirən query
   const { data: addressData, isFetching: isAddressFetching } = useGetAddressByCoords(
-    coords.lat, 
-    coords.lng, 
+    coords.lat,
+    coords.lng,
     mounted
   );
 
@@ -103,7 +103,7 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
     try {
       await submitStep4({
         gymId: Number(gymId),
-        latitude: Number(coords.lat), 
+        latitude: Number(coords.lat),
         longitude: Number(coords.lng)
       });
       return true;
@@ -130,7 +130,7 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
   return (
     <div className="w-full flex justify-center py-6">
       <div className="bg-white rounded-2xl border border-[#ECECED] w-full max-w-[783px] p-7 flex flex-col gap-6 shadow-sm">
-        
+
         {/* Dil Seçimi və Başlıq */}
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-[#1F2937]">{t.title}</h1>
@@ -236,7 +236,7 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
         </div>
 
         <div className="flex gap-4 pt-2">
-          <button 
+          <button
             type="button"
             disabled={isPending}
             onClick={handleNext}

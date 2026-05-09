@@ -11,12 +11,10 @@ import { InputField } from "../components/InputField";
 
 type Lang = "Az" | "Ru" | "En";
 
-export function GymInfoTab({ onNext }: { onNext?: () => void }) {
+export function StepInfo({ onNext }: { onNext: () => void }) {
   const [lang, setLang] = useState<Lang>("Az");
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [name, setName] = useState("");
-  const [dailyPrice, setDailyPrice] = useState("");
-  const [contractPrice, setContractPrice] = useState("");
   const [about, setAbout] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -28,8 +26,6 @@ export function GymInfoTab({ onNext }: { onNext?: () => void }) {
   const buildPayload = () => ({
     categoryId: categoryId!,
     name,
-    // dailyPrice: Number(dailyPrice),
-    // contractPrice: Number(contractPrice),
     description: about,
     phone,
     email,
@@ -44,20 +40,18 @@ export function GymInfoTab({ onNext }: { onNext?: () => void }) {
   };
 
   const handleNext = async () => {
-    console.log("next")
     if (gymId) {
-      onNext?.();
+      onNext();
       return;
     }
 
-    // Yaradılmayıbsa, əvvəl yarat, sonra keç
     if (!validate()) return;
 
     try {
       const result = await createStep1.mutateAsync(buildPayload());
       if (result?.gymId) {
         setGymId(Number(result.gymId));
-        onNext?.();
+        onNext();
       }
     } catch (err: any) {
       toast.error("Zal yaradılarkən xəta baş verdi");
@@ -101,8 +95,8 @@ export function GymInfoTab({ onNext }: { onNext?: () => void }) {
       </div>
 
       <div className="flex justify-end gap-3 mt-6">
-        <button 
-          onClick={handleNext} 
+        <button
+          onClick={handleNext}
           disabled={!canSubmit}
           className="w-full py-4 rounded-xl font-bold bg-[#00B4CC] text-white hover:bg-[#009DB3] transition flex items-center justify-center gap-2 disabled:opacity-50"
         >

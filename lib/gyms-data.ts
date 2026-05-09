@@ -241,9 +241,7 @@ export const GYM_TABS = [
   { key: 'info',        label: 'Zal məlumatları' },
   { key: 'trainers',    label: 'Məşqçilər' },
   { key: 'plans',       label: 'Abunəlik / Xidmətlər' },
-  { key: 'workingHours',label: 'İş saatları' },
-  { key: 'address',     label: 'Ünvan' },
-  { key: 'images',      label: 'Şəkillər' },
   { key: 'admins',      label: 'Zal Admini' },
   { key: 'reviews',     label: 'Reytinq' },
+  { key: 'reservations',label: 'Rezervlər' },
 ];

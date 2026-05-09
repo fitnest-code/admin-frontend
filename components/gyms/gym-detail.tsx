@@ -5,28 +5,35 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, ChevronDown, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { GYM_TABS, type Gym } from '@/lib/gyms-data'
-import { GymInfoTab }       from './tabs/gym-info-tab'
-import { TrainersTab }      from './tabs/trainers-tab'
-import { GymAdminsTab }     from './tabs/gym-admins-tab'
-import { ReviewsTab }       from './tabs/reviews-tab'
-import { GymCustomersTab }  from './tabs/gym-customers-tab'
-import WorkingHoursPanel from './tabs/gym-working-hours-tab'
+import { StepInfo } from './wizard/step-info'
+import { StepTrainers } from './wizard/step-trainers'
+import { StepAdmins } from './wizard/step-admins'
+import { StepAddress } from './wizard/step-address'
+import { StepImages } from './wizard/step-images'
+import { StepPlans } from './wizard/step-plans'
+import { StepWorkingHours } from './wizard/step-working-hours'
+
+import { InfoTab } from './dashboard/info-tab'
+import { TrainersTab } from './dashboard/trainers-tab'
+import { AdminsTab } from './dashboard/admins-tab'
+import { PlansTab } from './dashboard/plans-tab'
+import { ReviewsTab } from './dashboard/reviews-tab'
+import { ReservationsTab } from './dashboard/reservations-tab'
+import { CustomersTab } from './dashboard/customers-tab'
+
+import { AnalitikaTab } from '@/components/zallar/tabs/analitika-tab'
 import { StepNavigationWarningModal } from './modals/step-navigation-warning-modal'
 import { ExitConfirmationModal } from './modals/exit-confirmation-modal'
 import { useGymStore } from '@/lib/store/gym-store'
-import AddressTab from './tabs/gym-address-tab'
-import GymImagesTab from './tabs/gym-images-tab'
-import GymSubscriptionTab from './tabs/gym-subscription-tab'
-import { AnalitikaTab } from '@/components/zallar/tabs/analitika-tab'
 
 const WIZARD_TABS = [
-  { key: 'info',         label: 'Zal məlumatları' },
-  { key: 'trainers',     label: 'Məşqçilər' },
+  { key: 'info', label: 'Zal məlumatları' },
+  { key: 'trainers', label: 'Məşqçilər' },
   { key: 'workingHours', label: 'İş saatları' },
-  { key: 'address',      label: 'Ünvan' },
-  { key: 'images',       label: 'Şəkillər' },
-  { key: 'plans',        label: 'Abunəlik / Xidmətlər' },
-  { key: 'admins',       label: 'Zal Admini' },
+  { key: 'address', label: 'Ünvan' },
+  { key: 'images', label: 'Şəkillər' },
+  { key: 'plans', label: 'Abunəlik / Xidmətlər' },
+  { key: 'admins', label: 'Zal Admini' },
 ]
 
 interface GymDetailProps {
@@ -52,16 +59,16 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
         e.returnValue = ''
       }
     }
-    
+
     const handleUnload = () => {
       if (isNew && gymIdRef.current && !isCompletedRef.current) {
-        fetch(`/api/v1/admin/gyms/${gymIdRef.current}`, { method: 'DELETE', keepalive: true }).catch(() => {})
+        fetch(`/api/v1/admin/gyms/${gymIdRef.current}`, { method: 'DELETE', keepalive: true }).catch(() => { })
       }
     }
 
     window.addEventListener('beforeunload', handleBeforeUnload)
     window.addEventListener('unload', handleUnload)
-    
+
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload)
       window.removeEventListener('unload', handleUnload)
@@ -72,7 +79,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
     return () => {
       if (isNew && !isCompletedRef.current) {
         if (gymIdRef.current) {
-          fetch(`/api/v1/admin/gyms/${gymIdRef.current}`, { method: 'DELETE', keepalive: true }).catch(() => {})
+          fetch(`/api/v1/admin/gyms/${gymIdRef.current}`, { method: 'DELETE', keepalive: true }).catch(() => { })
         }
         resetGym()
       }
@@ -92,17 +99,28 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
   const currentIndex = WIZARD_TABS.findIndex((t) => t.key === activeTab)
 
   function renderTab() {
+    if (isNew) {
+      switch (activeTab) {
+        case 'info': return <StepInfo onNext={() => setActiveTab('trainers')} />
+        case 'trainers': return <StepTrainers onNext={() => setActiveTab('workingHours')} />
+        case 'workingHours': return <StepWorkingHours onNext={() => setActiveTab('address')} />
+        case 'address': return <StepAddress onNext={() => setActiveTab('images')} />
+        case 'images': return <StepImages onNext={() => setActiveTab('plans')} />
+        case 'plans': return <StepPlans onNext={() => setActiveTab('admins')} />
+        case 'admins': return <StepAdmins />
+        default: return null
+      }
+    }
+
     switch (activeTab) {
-      case 'analitika':    return <AnalitikaTab />
-      case 'info':         return <GymInfoTab onNext={() => setActiveTab('trainers')} />
-      case 'trainers':     return <TrainersTab isNew={isNew} onNext={() => setActiveTab('workingHours')} />
-      case 'workingHours': return <WorkingHoursPanel onNext={() => setActiveTab('address')} />
-      case 'address':      return <AddressTab onNext={() => setActiveTab('images')} />
-      case 'images':       return <GymImagesTab onNext={() => setActiveTab('plans')} />
-      case 'plans':        return <GymSubscriptionTab onNext={() => setActiveTab('admins')} />
-      case 'admins':       return <GymAdminsTab />
-      case 'reviews':      return <ReviewsTab gymId={gym.id} />
-      case 'customers':    return <GymCustomersTab />
+      case 'analitika': return <AnalitikaTab />
+      case 'info': return <InfoTab />
+      case 'trainers': return <TrainersTab />
+      case 'plans': return <PlansTab />
+      case 'admins': return <AdminsTab />
+      case 'reviews': return <ReviewsTab gymId={gym.id} />
+      case 'reservations': return <ReservationsTab />
+      case 'customers': return <CustomersTab />
       default: return null
     }
   }
@@ -121,7 +139,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       isCompletedRef.current = true
       try {
         await fetch(`/api/v1/admin/gyms/${gymId}`, { method: 'DELETE' })
-      } catch (e) {}
+      } catch (e) { }
     }
     resetGym()
     router.push('/gyms')
@@ -156,9 +174,9 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
         <div className="flex gap-6 items-start">
           <nav aria-label="Zal bölmələri" className="w-65 shrink-0 rounded-[12px] border border-border bg-card p-3 flex flex-col gap-1">
             {WIZARD_TABS.map((t, index) => {
-              const isActive    = activeTab === t.key
+              const isActive = activeTab === t.key
               const isCompleted = index < currentIndex
-              const isFuture    = index > currentIndex
+              const isFuture = index > currentIndex
 
               return (
                 <div key={t.key} className="flex flex-col">
@@ -199,7 +217,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <button 
+          <button
             onClick={() => router.push('/gyms')}
             className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors flex items-center gap-1"
           >
@@ -246,9 +264,9 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       <div className="min-h-[400px]">{renderTab()}</div>
 
       {showExitConfirm && (
-        <ExitConfirmationModal 
-          onConfirm={handleConfirmExit} 
-          onCancel={() => setShowExitConfirm(false)} 
+        <ExitConfirmationModal
+          onConfirm={handleConfirmExit}
+          onCancel={() => setShowExitConfirm(false)}
         />
       )}
     </div>

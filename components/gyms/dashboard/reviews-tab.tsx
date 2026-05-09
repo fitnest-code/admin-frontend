@@ -102,11 +102,11 @@ export function ReviewsTab({ gymId }: Props) {
   const activeStatusLabel = STATUS_FILTER_OPTIONS.find((o) => o.value === statusFilter)?.label ?? 'Bütün statuslar'
   const activeSortLabel   = SORT_OPTIONS.find((o) => o.value === sortBy)?.label ?? 'Sırala'
 
-  // grid template: global = user | gym | rating | comment | status | actions
-  //               per-gym = user | rating | comment | status | actions
+  // grid template: global = user | gym | date | rating | status | actions
+  //               per-gym = user | date | rating | status | actions
   const gridCols = isGlobal
-    ? 'grid-cols-[1.6fr_1.4fr_0.8fr_2.5fr_1fr_auto]'
-    : 'grid-cols-[2fr_1fr_3fr_1fr_auto]'
+    ? 'grid-cols-[1.2fr_1.2fr_1fr_1fr_1fr_0.5fr]'
+    : 'grid-cols-[1.5fr_1fr_1fr_1fr_0.5fr]'
 
   return (
     <div className="flex flex-col gap-4">
@@ -180,15 +180,15 @@ export function ReviewsTab({ gymId }: Props) {
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
         {/* Header */}
         <div className={cn('grid items-center gap-4 border-b border-border bg-[#00B4CC14] px-4 py-3', gridCols)}>
-          <span className="text-xs font-semibold text-foreground">İstifadəçi</span>
-          {isGlobal && <span className="text-xs font-semibold text-foreground">Zal adı</span>}
-          <span className="text-xs font-semibold text-foreground">Reytinq</span>
-          <span className="text-xs font-semibold text-foreground">Şərh</span>
-          <span className="text-xs font-semibold text-foreground">Status</span>
-          <span className="w-[156px]" />
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">İstifadəçi</span>
+          {isGlobal && <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Zal adı</span>}
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Tarix</span>
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Reytinq</span>
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Status</span>
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider text-right">Detallı</span>
         </div>
 
         {gymId && gymReviewsQuery.isLoading ? (
@@ -247,8 +247,7 @@ function ReviewRow({
 }) {
   return (
     <div
-      className={cn('grid items-center gap-4 border-b border-border px-4 py-3.5 last:border-0 hover:bg-secondary/30 transition-colors cursor-pointer', gridCols)}
-      onClick={() => onSelect(review)}
+      className={cn('grid items-center gap-4 border-b border-border px-4 py-3.5 last:border-0 hover:bg-secondary/30 transition-colors')}
     >
       {/* User */}
       <div className="flex items-center gap-2.5">
@@ -263,52 +262,37 @@ function ReviewRow({
         <span className="text-sm text-foreground truncate">{review.gymName}</span>
       )}
 
+      {/* Date */}
+      <span className="text-sm text-muted-foreground">{review.date}</span>
+
       {/* Stars */}
       <StarRating rating={review.rating} />
 
-      {/* Comment */}
-      <span className="text-sm text-muted-foreground truncate">{review.comment}</span>
-
       {/* Status badge */}
-      <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap', STATUS_STYLES[review.status])}>
-        {STATUS_LABELS[review.status]}
-      </span>
+      <div>
+        <span className={cn('rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-tight', STATUS_STYLES[review.status])}>
+          {STATUS_LABELS[review.status]}
+        </span>
+      </div>
 
       {/* Actions */}
       <div
-        className="flex items-center gap-1.5 w-[156px]"
+        className="flex items-center justify-end gap-1.5"
         onClick={(e) => e.stopPropagation()}
       >
-        {review.status !== 'approved' && (
-          <button
-            onClick={() => onApprove(review.id)}
-            className="flex items-center gap-1 rounded-lg bg-green-500 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-green-600 transition-colors"
-          >
-            <Check size={12} /> Approve
-          </button>
-        )}
-        {review.status !== 'rejected' && (
-          <button
-            onClick={() => onReject(review.id)}
-            className="flex items-center gap-1 rounded-lg border border-red-300 px-2.5 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors"
-          >
-            <X size={12} /> Reject
-          </button>
-        )}
-        {review.status === 'rejected' && (
-          <button
-            onClick={() => onApprove(review.id)}
-            className="flex items-center gap-1 rounded-lg bg-green-500 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-green-600 transition-colors"
-          >
-            <Check size={12} /> Approve
-          </button>
-        )}
+        <button
+          onClick={() => onSelect(review)}
+          className="p-1.5 text-muted-foreground hover:text-[#00B4CC] transition-colors"
+          title="Detallı bax"
+        >
+          <Eye size={16} />
+        </button>
         <button
           onClick={() => onDelete(review.id)}
-          className="ml-1 rounded-lg p-1.5 text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors"
-          aria-label="Sil"
+          className="p-1.5 text-muted-foreground hover:text-red-500 transition-colors"
+          title="Sil"
         >
-          <Trash2 size={14} />
+          <Trash2 size={16} />
         </button>
       </div>
     </div>
