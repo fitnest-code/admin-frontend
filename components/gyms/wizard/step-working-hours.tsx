@@ -93,7 +93,7 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
   const activeDays = new Set(slots[activeTab].map(s => s.day));
 
   return (
-    <div className="w-full max-w-[783px] mx-auto bg-white rounded-[32px] border border-[#ECECED] p-10 space-y-10 shadow-sm">
+    <div className="w-full bg-white rounded-[32px] border border-[#ECECED] p-10 space-y-10 shadow-sm">
       <div className="flex justify-between items-center pb-2 border-b border-[#ECECED]">
         <h2 className="text-2xl font-bold text-[#101828]">Zal məlumatları</h2>
         <div className="flex gap-6 text-sm font-bold text-[#9CA3AF]">
@@ -103,36 +103,57 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
         </div>
       </div>
 
-      {/* Gender Tabs */}
+      {/* Gender Tabs – Checkbox-style: enable any combination */}
       <div className="space-y-5">
-        <label className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-widest">İş rejimini seçin</label>
         <div className="flex items-center justify-between gap-5">
           {[
-            { id: "generalWorkHours", label: "Ümumi zal" },
-            { id: "workHoursMan", label: "Yalnız kişilər" },
-            { id: "workHoursWoman", label: "Yalnız qadınlar" },
+            { id: "generalWorkHours" as GenderTab, label: "Ümumi zal" },
+            { id: "workHoursMan" as GenderTab, label: "Yalnız kişilər" },
+            { id: "workHoursWoman" as GenderTab, label: "Yalnız qadınlar" },
           ].map((tab) => {
-            const isEnabled = enabledTabs.has(tab.id as GenderTab);
+            const isEnabled = enabledTabs.has(tab.id);
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => {
-                  if (!isEnabled) {
-                    const newSet = new Set(enabledTabs);
-                    newSet.add(tab.id as GenderTab);
+                  const newSet = new Set(enabledTabs);
+                  if (isEnabled) {
+                    // Unchecking — toggle off (but keep at least awareness)
+                    newSet.delete(tab.id);
                     setEnabledTabs(newSet);
+                    // If this was the active view, switch to another enabled tab
+                    if (isActive) {
+                      const remaining = Array.from(newSet);
+                      if (remaining.length > 0) setActiveTab(remaining[0]);
+                    }
+                  } else {
+                    // Checking — toggle on and switch view to it
+                    newSet.add(tab.id);
+                    setEnabledTabs(newSet);
+                    setActiveTab(tab.id);
                   }
-                  setActiveTab(tab.id as GenderTab);
                 }}
                 className={cn(
-                  "flex-1 h-[52px] rounded-[32px] text-sm font-bold transition-all duration-300 border",
-                  isActive 
-                    ? "bg-[#00B4CC] text-white border-[#00B4CC] shadow-md" 
-                    : "bg-white text-[#00B4CC] border-[#00B4CC] hover:bg-[#00B4CC08]"
+                  "flex-1 h-[52px] rounded-[32px] text-sm font-bold transition-all duration-300 border flex items-center justify-center gap-2",
+                  isEnabled
+                    ? isActive
+                      ? "bg-[#00B4CC] text-white border-[#00B4CC] shadow-md"
+                      : "bg-[#00B4CC15] text-[#00B4CC] border-[#00B4CC] hover:bg-[#00B4CC25]"
+                    : "bg-white text-[#6B7280] border-[#E5E7EB] hover:border-[#00B4CC80] hover:text-[#00B4CC]"
                 )}
               >
+                <span className={cn(
+                  "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all",
+                  isEnabled
+                    ? isActive
+                      ? "border-white/50 bg-white/25"
+                      : "border-[#00B4CC] bg-[#00B4CC]"
+                    : "border-[#D1D5DB] bg-transparent"
+                )}>
+                  {isEnabled && <Check size={12} strokeWidth={3} className={isActive ? "text-white" : "text-white"} />}
+                </span>
                 {tab.label}
               </button>
             );
