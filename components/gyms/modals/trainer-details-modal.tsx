@@ -8,6 +8,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import { useProfessionsQuery } from "@/lib/query/add-trainer-query"
 import { useUpdateTrainer } from "@/lib/query/trainers"
 import { InputField } from "../components/InputField"
+import { useGymStore } from "@/lib/store/gym-store"
 
 interface TrainerDetailsModalProps {
   trainer: any
@@ -15,6 +16,8 @@ interface TrainerDetailsModalProps {
 }
 
 export function TrainerDetailsModal({ trainer, onClose }: TrainerDetailsModalProps) {
+  const { gymId } = useGymStore()
+  
   const [data, setData] = useState({
     name: trainer.name || '',
     surname: trainer.surname || '',
@@ -29,7 +32,7 @@ export function TrainerDetailsModal({ trainer, onClose }: TrainerDetailsModalPro
 
   const queryClient = useQueryClient()
   const { data: professions } = useProfessionsQuery()
-  const { mutate: updateTrainer, isPending } = useUpdateTrainer(trainer.gym_id || trainer.gymId || 1) // Using 1 as fallback or get from store
+  const { mutate: updateTrainer, isPending } = useUpdateTrainer(gymId || 1) // Using 1 as fallback or get from store
 
   useEffect(() => {
     return () => {

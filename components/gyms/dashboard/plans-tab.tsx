@@ -28,6 +28,7 @@ const DEFAULT_SERVICES = [
 ];
 
 export function PlansTab({ gym }: { gym?: any }) {
+  const { gymId } = useGymStore();
   const { data: adminSubs, isLoading: subsLoading } = useGymSubscriptionsAdmin(gymId);
   const { data: allServices } = useSupportedServices(gymId ? Number(gymId) : undefined);
   const createServiceMutation = useCreateSupportedService();
@@ -66,6 +67,7 @@ export function PlansTab({ gym }: { gym?: any }) {
   const [prices, setPrices] = useState<Record<Package, string>>(initialData.prices);
   const [packageServices, setPackageServices] = useState<Record<Package, string[]>>(initialData.services);
   const [hasSynced, setHasSynced] = useState(false);
+  const [pendingService, setPendingService] = useState<string | null>(null);
 
   // Sync state when gym data arrives
   useEffect(() => {

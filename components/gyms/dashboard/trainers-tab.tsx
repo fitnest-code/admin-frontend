@@ -10,7 +10,7 @@ import { useGymTrainers, useDeleteTrainer } from "@/lib/query/gym-query";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-export function TrainersTab({ gym }: { gym?: any }) {
+export function TrainersTab() {
   const [showAdd, setShowAdd] = useState(false);
   const [showDetails, setShowDetails] = useState<any>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -19,18 +19,6 @@ export function TrainersTab({ gym }: { gym?: any }) {
   const menuRef = useRef<HTMLDivElement>(null);
 
   const { gymId } = useGymStore();
-
-  const initialTrainers = useMemo(() => {
-    if (gym?.trainers) {
-      return {
-        items: gym.trainers,
-        totalItems: gym.trainers.length,
-        totalPages: 1,
-        currentPage: 1
-      };
-    }
-    return undefined;
-  }, [gym]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -44,8 +32,7 @@ export function TrainersTab({ gym }: { gym?: any }) {
 
   const { data: apiData, isLoading: apiLoading } = useGymTrainers(
     gymId || '',
-    { page: currentPage, pageSize: pageSize, sort_dir: "DESC" },
-    initialTrainers
+    { page: currentPage, pageSize: pageSize, sort_dir: "DESC" }
   );
 
   const { mutate: deleteTrainerMutate } = useDeleteTrainer();
@@ -58,7 +45,7 @@ export function TrainersTab({ gym }: { gym?: any }) {
   };
 
   const trainers = apiData?.items ?? [];
-  const totalPages = apiData?.totalPages ?? 1;
+  const totalPages = apiData ? Math.ceil(apiData.total / pageSize) : 1;
 
   return (
     <div className="flex flex-col gap-6 py-4 w-full font-sans">

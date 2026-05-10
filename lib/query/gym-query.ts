@@ -257,3 +257,47 @@ export function useProfessions() {
     staleTime: 10 * 60 * 1000,
   });
 }
+
+// 15. Zal adminlərini çəkmək üçün
+export function useGymAdmins(gymId: number | string | null | undefined) {
+  return useQuery({
+    queryKey: ['gym-admins', gymId ? Number(gymId) : null],
+    queryFn: () => {
+      if (!gymId) return Promise.resolve([])
+      return apiGet<any[]>(`/admin/gyms/${gymId}/admins`)
+    },
+    enabled: !!gymId,
+  })
+}
+
+// 16. Zal admini əlavə etmək üçün
+export function useAddGymAdmin() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ gymId, payload }: { gymId: number, payload: any }) =>
+      apiPost(`/admin/gyms/${gymId}/admins`, payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-admins', variables.gymId] });
+      toast.success('Admin uğurla əlavə edildi');
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Xəta baş verdi');
+    }
+  });
+}
+
+// 17. Zal admini silmək üçün
+export function useDeleteGymAdmin() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ gymId, adminId }: { gymId: number, adminId: number }) =>
+      apiDelete(`/admin/gyms/${gymId}/admins/${adminId}`),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-admins', variables.gymId] });
+      toast.success('Admin silindi');
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Silinmə zamanı xəta baş verdi');
+    }
+  });
+}
