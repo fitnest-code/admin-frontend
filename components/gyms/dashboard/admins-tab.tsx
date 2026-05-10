@@ -98,16 +98,22 @@ export function AdminsTab() {
               admins?.map((admin: any) => (
                 <div key={admin.id} className="grid grid-cols-[160px_100px_1fr_1.2fr_1.5fr_60px] gap-4 px-5 py-4 items-center border-b border-[#ececed] last:border-0 hover:bg-slate-50 transition-colors">
                   <div>
-                    <div className={cn(
-                      "flex items-center justify-center gap-2 h-8 px-3 rounded-md text-[12px] font-bold",
-                      admin.role === "Super admin" ? "bg-[#00B4CC] text-white" : "bg-[#f2f4f7] text-[#344054]"
-                    )}>
+                    <div className="flex items-center justify-center bg-[#00B4CC] border border-[#ececed] rounded-[4px] px-2 py-1 gap-2 text-white font-['SF_Pro',sans-serif] text-[16px]">
                       {admin.role === "Super admin" ? (
-                        <Image src="/superAdmin.svg" width={18} height={18} alt="Super" className="brightness-0 invert" />
+                        <>
+                          <div className="w-5 h-5 flex items-center justify-center">
+                            <Image src="/superAdmin.svg" width={20} height={20} alt="Super" />
+                          </div>
+                          <span className="font-medium leading-6">Super admin</span>
+                        </>
                       ) : (
-                        <Image src="/admin.svg" width={16} height={16} alt="Admin" />
+                        <>
+                          <div className="w-5 h-5 flex items-center justify-center">
+                            <Image src="/admin.svg" width={20} height={20} alt="Admin" />
+                          </div>
+                          <span className="font-medium leading-6">Admin</span>
+                        </>
                       )}
-                      {admin.role}
                     </div>
                   </div>
                   <div className="text-[14px] text-slate-600 font-mono">#{String(admin.id).padStart(6, '0')}</div>

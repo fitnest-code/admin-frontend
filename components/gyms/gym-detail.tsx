@@ -47,7 +47,8 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
   const { gymId, currentTab, setCurrentTab, resetGym, setGymId } = useGymStore()
 
   useEffect(() => {
-    if (gym?.id && gymId !== gym.id) {
+    // Only update store gymId from props if it's an existing gym (not 'new')
+    if (gym?.id && gym.id !== 'new' && gymId !== gym.id) {
       setGymId(gym.id)
     }
   }, [gym?.id, gymId, setGymId])

@@ -301,3 +301,61 @@ export function useDeleteGymAdmin() {
     }
   });
 }
+
+// 18. Zal rəylərini çəkmək üçün
+export function useGymReviews(gymId: number | string | null | undefined, params?: { status?: string, page?: number, pageSize?: number, sort?: string }) {
+  return useQuery({
+    queryKey: ['gym-reviews', gymId, params],
+    queryFn: () => {
+      if (!gymId) return Promise.resolve(null)
+      const searchParams = new URLSearchParams()
+      if (params?.status) searchParams.append('status', params.status)
+      if (params?.page) searchParams.append('page', params.page.toString())
+      if (params?.pageSize) searchParams.append('pageSize', params.pageSize.toString())
+      if (params?.sort) searchParams.append('sort', params.sort)
+      
+      return apiGet<any>(`/admin/gyms/${gymId}/reviews?${searchParams.toString()}`)
+    },
+    enabled: !!gymId,
+  })
+}
+
+// 19. Rəy detallarını çəkmək üçün
+export function useReviewDetail(reviewId: number | string | null) {
+  return useQuery({
+    queryKey: ['review-detail', reviewId],
+    queryFn: () => {
+      if (!reviewId) return Promise.resolve(null)
+      return apiGet<any>(`/admin/gyms/reviews/${reviewId}`)
+    },
+    enabled: !!reviewId,
+  })
+}
+
+// 20. Rəyi təsdiqləmək üçün
+export function useApproveReview() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (reviewId: number | string) =>
+      apiPost(`/admin/gyms/reviews/${reviewId}/approve`, {}),
+    onSuccess: (_, reviewId) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-reviews'] });
+      queryClient.invalidateQueries({ queryKey: ['review-detail', reviewId] });
+      toast.success('Rəy təsdiq edildi');
+    },
+  });
+}
+
+// 21. Rəyi rədd etmək üçün
+export function useRejectReview() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (reviewId: number | string) =>
+      apiPost(`/admin/gyms/reviews/${reviewId}/reject`, {}),
+    onSuccess: (_, reviewId) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-reviews'] });
+      queryClient.invalidateQueries({ queryKey: ['review-detail', reviewId] });
+      toast.success('Rəy rədd edildi');
+    },
+  });
+}

@@ -1,386 +1,311 @@
-'use client'
+"use client";
 
-import { useState, useRef, useEffect } from 'react'
-import { Trash2, Check, X, ChevronDown, Search, Star, Eye } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { useGymReviewsQuery } from '@/modules/gyms'
-import { MOCK_REVIEWS, type Review, type ReviewStatus } from '@/lib/gyms-data'
+import { useState } from "react";
+import Image from "next/image";
+import { Loader2, Search, ChevronDown, Star, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useGymStore } from "@/lib/store/gym-store";
+import { useGymReviews, useApproveReview, useRejectReview } from "@/lib/query/gym-query";
+import { format } from "date-fns";
+import { az } from "date-fns/locale";
 
-const STATUS_LABELS: Record<ReviewStatus, string> = {
-  pending:  'Gözləmədir',
-  approved: 'Təsdiq edildi',
-  rejected: 'Rədd edildi',
-}
-
-const STATUS_STYLES: Record<ReviewStatus, string> = {
-  pending:  'bg-amber-50  text-amber-600  border border-amber-200',
-  approved: 'bg-green-50  text-green-700  border border-green-200',
-  rejected: 'bg-red-50    text-red-500    border border-red-200',
-}
+const STATUS_OPTIONS = [
+  { key: "", label: "Bütün statuslar", color: "#4b5563" },
+  { key: "ACCEPTED", label: "Təsdiq edilmiş", color: "#166728" },
+  { key: "PENDING", label: "Gözləmədə", color: "#3b82f6" },
+  { key: "REJECTED", label: "Rədd edilmiş", color: "#ff5255" },
+];
 
 const SORT_OPTIONS = [
-  { value: 'date-desc',   label: 'Tarixa (yeni → köhnə)' },
-  { value: 'date-asc',    label: 'Tarix (Köhnə → yeni)' },
-  { value: 'rating-desc', label: 'Reytinq (yüksək → aşağı)' },
-  { value: 'rating-asc',  label: 'Reytinq (aşağı → yüksək)' },
-]
+  { key: "newest", label: "Tarixə (yeni → köhnə)" },
+  { key: "oldest", label: "Tarix (Köhnə → yeni)" },
+  { key: "highest", label: "Reytinq (yeni → köhnə)" },
+  { key: "lowest", label: "Reytinq (Köhnə → yeni)" },
+  { key: "gym_asc", label: "Zal : A-Z" },
+  { key: "gym_desc", label: "Zal : Z-A" },
+];
 
-const STATUS_FILTER_OPTIONS = [
-  { value: 'all',      label: 'Bütün statuslar', color: '#4B5563' },
-  { value: 'approved', label: 'Təsdiq edilmiş',  color: '#16a34a' },
-  { value: 'pending',  label: 'Gözləmə',         color: '#d97706' },
-  { value: 'rejected', label: 'Rədd edilmiş',    color: '#ef4444' },
-]
+const STATUS_BADGE_MAP: Record<string, { label: string, color: string, bgColor: string, dotColor: string }> = {
+  PENDING: { 
+    label: "Gözləmədədir", 
+    color: "#ffb543", 
+    bgColor: "#fff6e7", 
+    dotColor: "#ffb543" 
+  },
+  ACCEPTED: { 
+    label: "Təsdiq edildi", 
+    color: "#00a43d", 
+    bgColor: "#e6ffef", 
+    dotColor: "#00a43d" 
+  },
+  REJECTED: { 
+    label: "Rədd edildi", 
+    color: "#ff5255", 
+    bgColor: "#ffe1e1", 
+    dotColor: "#ff5255" 
+  },
+};
 
-interface Props {
-  /** When provided, only shows reviews for this gym. When absent, shows all reviews (global page). */
-  gymId?: string
-}
+export function ReviewsTab() {
+  const { gymId } = useGymStore();
+  const [status, setStatus] = useState<string>("");
+  const [sort, setSort] = useState<string>("newest");
+  const [page, setPage] = useState(1);
+  const [selectedReview, setSelectedReview] = useState<any | null>(null);
 
-export function ReviewsTab({ gymId }: Props) {
-  const isGlobal = !gymId
-  const gymReviewsQuery = useGymReviewsQuery(gymId ?? '', { page: 1, page_size: 50 })
-  const initial  = gymId
-    ? MOCK_REVIEWS.filter((r) => r.gymId === gymId)
-    : MOCK_REVIEWS
+  const { data: reviewsData, isLoading } = useGymReviews(gymId, { 
+    status, 
+    page, 
+    pageSize: 10,
+    sort 
+  });
 
-  const [reviews, setReviews]       = useState<Review[]>(initial)
-  const [query, setQuery]           = useState('')
-  const [statusFilter, setStatus]   = useState<string>('all')
-  const [sortBy, setSortBy]         = useState<string>('date-desc')
-  const [selected, setSelected]     = useState<Review | null>(null)
-  const [showSort, setShowSort]     = useState(false)
-  const [showStatus, setShowStatus] = useState(false)
-  const sortRef   = useRef<HTMLDivElement>(null)
-  const statusRef = useRef<HTMLDivElement>(null)
+  const { mutate: approve, isPending: isApproving } = useApproveReview();
+  const { mutate: reject, isPending: isRejecting } = useRejectReview();
 
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (sortRef.current   && !sortRef.current.contains(e.target as Node))   setShowSort(false)
-      if (statusRef.current && !statusRef.current.contains(e.target as Node)) setShowStatus(false)
+  const handleAction = (reviewId: number, type: 'approve' | 'reject') => {
+    if (type === 'approve') {
+      approve(reviewId, { onSuccess: () => setSelectedReview(null) });
+    } else {
+      reject(reviewId, { onSuccess: () => setSelectedReview(null) });
     }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
+  };
 
-  useEffect(() => {
-    if (!gymId || !gymReviewsQuery.data?.items) return
-    setReviews(gymReviewsQuery.data.items)
-  }, [gymId, gymReviewsQuery.data?.items])
-
-  function approve(id: string) {
-    setReviews((p) => p.map((r) => r.id === id ? { ...r, status: 'approved' } : r))
-    if (selected?.id === id) setSelected((p) => p ? { ...p, status: 'approved' } : p)
+  if (isLoading) {
+    return (
+      <div className="flex-1 py-20 flex flex-col justify-center items-center text-slate-400 gap-3">
+        <Loader2 className="animate-spin" size={32} />
+        <span className="font-medium font-sans">Rəylər yüklənir...</span>
+      </div>
+    );
   }
 
-  function reject(id: string) {
-    setReviews((p) => p.map((r) => r.id === id ? { ...r, status: 'rejected' } : r))
-    if (selected?.id === id) setSelected((p) => p ? { ...p, status: 'rejected' } : p)
-  }
-
-  function remove(id: string) {
-    setReviews((p) => p.filter((r) => r.id !== id))
-    if (selected?.id === id) setSelected(null)
-  }
-
-  const filtered = reviews
-    .filter((r) => {
-      const matchQuery  = r.userName.toLowerCase().includes(query.toLowerCase())
-        || r.comment.toLowerCase().includes(query.toLowerCase())
-        || (isGlobal && r.gymName.toLowerCase().includes(query.toLowerCase()))
-      const matchStatus = statusFilter === 'all' || r.status === statusFilter
-      return matchQuery && matchStatus
-    })
-    .sort((a, b) => {
-      if (sortBy === 'date-desc')   return b.date.localeCompare(a.date)
-      if (sortBy === 'date-asc')    return a.date.localeCompare(b.date)
-      if (sortBy === 'rating-desc') return b.rating - a.rating
-      if (sortBy === 'rating-asc')  return a.rating - b.rating
-      return 0
-    })
-
-  const activeStatusLabel = STATUS_FILTER_OPTIONS.find((o) => o.value === statusFilter)?.label ?? 'Bütün statuslar'
-  const activeSortLabel   = SORT_OPTIONS.find((o) => o.value === sortBy)?.label ?? 'Sırala'
-
-  // grid template: global = user | gym | date | rating | status | actions
-  //               per-gym = user | date | rating | status | actions
-  const gridCols = isGlobal
-    ? 'grid-cols-[1.2fr_1.2fr_1fr_1fr_1fr_0.5fr]'
-    : 'grid-cols-[1.5fr_1fr_1fr_1fr_0.5fr]'
+  const reviews = reviewsData?.items || [];
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[220px]">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={isGlobal ? 'Ad/Soyad, Zal adı, şərh...' : 'Ad/Soyad, şərh...'}
-            className="w-full rounded-lg border border-border bg-card pl-8 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-[#00B4CC] transition-colors"
+    <div className="flex flex-col gap-6 py-2 font-sans text-black">
+      {/* Search & Filters */}
+      <div className="flex items-center gap-6">
+        <div className="flex-1 h-[48px] bg-white border border-[#ececed] rounded-xl flex items-center px-6 gap-3 shadow-sm">
+          <Search size={20} className="text-slate-400" />
+          <input 
+            type="text" 
+            placeholder="Ad/Soyad , Zal adı , Status....." 
+            className="flex-1 bg-transparent outline-none text-[14px] text-[#94979c]"
           />
         </div>
 
-        {/* Status filter */}
-        <div ref={statusRef} className="relative">
-          <button
-            onClick={() => { setShowStatus((p) => !p); setShowSort(false) }}
-            className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground hover:border-[#00B4CC] transition-colors"
-          >
-            <span className="max-w-[140px] truncate">{activeStatusLabel}</span>
-            <ChevronDown size={14} className="shrink-0 text-muted-foreground" />
-          </button>
-          {showStatus && (
-            <div className="absolute right-0 top-[calc(100%+4px)] z-20 min-w-[180px] rounded-xl border border-border bg-card shadow-lg py-1">
-              {STATUS_FILTER_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => { setStatus(opt.value); setShowStatus(false) }}
-                  className={cn(
-                    'flex w-full items-center gap-2.5 px-4 py-2 text-sm hover:bg-secondary transition-colors',
-                    statusFilter === opt.value ? 'text-[#00B4CC] font-medium' : 'text-foreground',
-                  )}
-                >
-                  <span className="h-2 w-2 rounded-full shrink-0" style={{ background: opt.color }} />
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Sort */}
-        <div ref={sortRef} className="relative">
-          <button
-            onClick={() => { setShowSort((p) => !p); setShowStatus(false) }}
-            className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground hover:border-[#00B4CC] transition-colors"
-          >
-            <span className="max-w-[180px] truncate">{activeSortLabel}</span>
-            <ChevronDown size={14} className="shrink-0 text-muted-foreground" />
-          </button>
-          {showSort && (
-            <div className="absolute right-0 top-[calc(100%+4px)] z-20 min-w-[220px] rounded-xl border border-border bg-card shadow-lg py-1">
-              {SORT_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => { setSortBy(opt.value); setShowSort(false) }}
-                  className={cn(
-                    'flex w-full items-center justify-between px-4 py-2 text-sm hover:bg-secondary transition-colors',
-                    sortBy === opt.value ? 'text-[#00B4CC] font-medium' : 'text-foreground',
-                  )}
-                >
-                  {opt.label}
-                  {sortBy === opt.value && <Check size={13} className="text-[#00B4CC]" />}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-        {/* Header */}
-        <div className={cn('grid items-center gap-4 border-b border-border bg-[#00B4CC14] px-4 py-3', gridCols)}>
-          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">İstifadəçi</span>
-          {isGlobal && <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Zal adı</span>}
-          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Tarix</span>
-          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Reytinq</span>
-          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Status</span>
-          <span className="text-xs font-semibold text-foreground uppercase tracking-wider text-right">Detallı</span>
-        </div>
-
-        {gymId && gymReviewsQuery.isLoading ? (
-          <div className="flex flex-col items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
-            Reytinqlər yüklənir...
+        {/* Status Dropdown */}
+        <div className="relative group">
+          <div className="h-[48px] w-[200px] bg-white border border-[#ececed] rounded-xl flex items-center justify-between px-4 cursor-pointer hover:border-[#00B4CC] transition-all shadow-sm">
+            <span className="text-[14px] font-medium">
+              {status ? STATUS_OPTIONS.find(o => o.key === status)?.label : "Bütün statuslar"}
+            </span>
+            <ChevronDown size={18} className="text-slate-400" />
           </div>
-        ) : gymId && gymReviewsQuery.isError ? (
-          <div className="flex flex-col items-center justify-center gap-2 py-16 text-sm text-red-500">
-            Reytinqlər yüklənmədi
+          <div className="absolute top-full right-0 mt-2 w-[220px] bg-white border border-[#d9d9d9] rounded-xl shadow-xl hidden group-hover:flex flex-col p-4 gap-3 z-50 animate-in fade-in slide-in-from-top-1 duration-200">
+            {STATUS_OPTIONS.map((opt) => (
+              <button 
+                key={opt.key}
+                onClick={() => setStatus(opt.key)}
+                className="flex items-center gap-2 hover:opacity-70 transition-opacity"
+              >
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: opt.color }} />
+                <span className="text-[14px] font-medium text-[#001028]">{opt.label}</span>
+              </button>
+            ))}
           </div>
-        ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
-            <Star size={28} className="opacity-30" />
-            Reytinq tapılmadı
-          </div>
-        ) : (
-          filtered.map((r) => (
-            <ReviewRow
-              key={r.id}
-              review={r}
-              isGlobal={isGlobal}
-              gridCols={gridCols}
-              onSelect={setSelected}
-              onApprove={approve}
-              onReject={reject}
-              onDelete={remove}
-            />
-          ))
-        )}
-      </div>
-
-      {/* Detail modal */}
-      {selected && (
-        <ReviewDetailModal
-          review={selected}
-          onClose={() => setSelected(null)}
-          onApprove={() => approve(selected.id)}
-          onReject={() => reject(selected.id)}
-        />
-      )}
-    </div>
-  )
-}
-
-/* ── Review row ──────────────────────────────────────────────────────────── */
-function ReviewRow({
-  review, isGlobal, gridCols, onSelect, onApprove, onReject, onDelete,
-}: {
-  review: Review
-  isGlobal: boolean
-  gridCols: string
-  onSelect:  (r: Review) => void
-  onApprove: (id: string) => void
-  onReject:  (id: string) => void
-  onDelete:  (id: string) => void
-}) {
-  return (
-    <div
-      className={cn('grid items-center gap-4 border-b border-border px-4 py-3.5 last:border-0 hover:bg-secondary/30 transition-colors')}
-    >
-      {/* User */}
-      <div className="flex items-center gap-2.5">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#00B4CC26] text-xs font-bold text-[#00B4CC]">
-          {review.userName[0]}
         </div>
-        <span className="text-sm font-medium text-foreground truncate">{review.userName}</span>
+
+        {/* Sort Dropdown */}
+        <div className="relative group">
+          <div className="h-[48px] w-[200px] bg-white border border-[#ececed] rounded-xl flex items-center justify-between px-4 cursor-pointer hover:border-[#00B4CC] transition-all shadow-sm">
+            <span className="text-[14px] font-medium">
+              {SORT_OPTIONS.find(o => o.key === sort)?.label || "Sırala"}
+            </span>
+            <ChevronDown size={18} className="text-slate-400" />
+          </div>
+          <div className="absolute top-full right-0 mt-2 w-[220px] bg-white border border-[#ececed] rounded-xl shadow-xl hidden group-hover:flex flex-col p-3 gap-1 z-50 animate-in fade-in slide-in-from-top-1 duration-200">
+            {SORT_OPTIONS.map((opt) => (
+              <button 
+                key={opt.key}
+                onClick={() => setSort(opt.key)}
+                className="w-full text-left p-2 rounded-lg hover:bg-slate-50 transition-colors border-b border-[#ececed] last:border-0"
+              >
+                <span className="text-[14px] leading-[20px] font-medium whitespace-pre-wrap">{opt.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Gym name (global only) */}
-      {isGlobal && (
-        <span className="text-sm text-foreground truncate">{review.gymName}</span>
-      )}
+      {/* Table Content */}
+      <div className="w-full bg-white rounded-2xl border border-[#ececed] overflow-hidden shadow-sm">
+        <div className="grid grid-cols-[1fr_180px_180px_180px_60px] items-center bg-[#00B4CC]/15 border-b border-[#cecfd2] px-6 py-5">
+          <div className="text-[16px] font-semibold">Müştəri</div>
+          <div className="text-[16px] font-semibold">Tarix</div>
+          <div className="text-[16px] font-semibold">Zalın adı</div>
+          <div className="text-[16px] font-semibold">Status</div>
+          <div className="text-[16px] font-semibold text-center">Detallı</div>
+        </div>
 
-      {/* Date */}
-      <span className="text-sm text-muted-foreground">{review.date}</span>
+        <div className="flex flex-col">
+          {reviews.length === 0 ? (
+            <div className="py-20 text-center text-slate-400">Rəy tapılmadı</div>
+          ) : (
+            reviews.map((review: any) => (
+              <div key={review.id} className="grid grid-cols-[1fr_180px_180px_180px_60px] items-center px-6 py-4 border-b border-[#ececed] last:border-0 hover:bg-slate-50 transition-colors">
+                {/* Customer */}
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-full bg-[#d5f0f3] border border-[#ececed] flex items-center justify-center text-[18px] font-bold">
+                    {review.author?.full_name?.[0] || "N"}
+                  </div>
+                  <span className="text-[14px] font-semibold">{review.author?.full_name}</span>
+                </div>
 
-      {/* Stars */}
-      <StarRating rating={review.rating} />
+                {/* Date */}
+                <div className="text-[14px] font-medium">
+                  {review.created_at ? format(new Date(review.created_at), "dd MMM, yyyy", { locale: az }) : "—"}
+                </div>
 
-      {/* Status badge */}
-      <div>
-        <span className={cn('rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-tight', STATUS_STYLES[review.status])}>
-          {STATUS_LABELS[review.status]}
-        </span>
-      </div>
+                {/* Gym Name */}
+                <div className="text-[14px] font-medium text-[#535353] truncate pr-4 uppercase">
+                  {review.gym_name || "FIT CLUB"}
+                </div>
 
-      {/* Actions */}
-      <div
-        className="flex items-center justify-end gap-1.5"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          onClick={() => onSelect(review)}
-          className="p-1.5 text-muted-foreground hover:text-[#00B4CC] transition-colors"
-          title="Detallı bax"
-        >
-          <Eye size={16} />
-        </button>
-        <button
-          onClick={() => onDelete(review.id)}
-          className="p-1.5 text-muted-foreground hover:text-red-500 transition-colors"
-          title="Sil"
-        >
-          <Trash2 size={16} />
-        </button>
-      </div>
-    </div>
-  )
-}
+                {/* Status */}
+                <div>
+                  <div 
+                    className="w-fit rounded-[20px] px-3 py-1.5 flex items-center gap-2 text-[12px] font-bold"
+                    style={{ backgroundColor: STATUS_BADGE_MAP[review.status]?.bgColor, color: STATUS_BADGE_MAP[review.status]?.color }}
+                  >
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: STATUS_BADGE_MAP[review.status]?.dotColor }} />
+                    {STATUS_BADGE_MAP[review.status]?.label}
+                  </div>
+                </div>
 
-/* ── Star rating ─────────────────────────────────────────────────────────── */
-function StarRating({ rating, size = 14 }: { rating: number; size?: number }) {
-  return (
-    <div className="flex items-center gap-0.5">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Star
-          key={i}
-          size={size}
-          className={i < rating ? 'fill-amber-400 text-amber-400' : 'fill-muted text-muted-foreground/30'}
-        />
-      ))}
-    </div>
-  )
-}
-
-/* ── Detail modal ────────────────────────────────────────────────────────── */
-function ReviewDetailModal({
-  review, onClose, onApprove, onReject,
-}: {
-  review: Review
-  onClose:   () => void
-  onApprove: () => void
-  onReject:  () => void
-}) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-      <div
-        className="relative z-10 w-full max-w-md rounded-2xl bg-card shadow-2xl border border-border"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-start justify-between p-5 pb-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#00B4CC26] text-sm font-bold text-[#00B4CC]">
-              {review.userName[0]}
-            </div>
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-semibold text-foreground">{review.userName}</span>
-              <div className="flex items-center gap-2">
-                <StarRating rating={review.rating} size={13} />
-                <span className="text-xs text-muted-foreground">{review.gymName}</span>
+                {/* Detail */}
+                <div className="flex justify-center">
+                  <button 
+                    onClick={() => setSelectedReview(review)}
+                    className="p-2 text-slate-400 hover:text-[#00B4CC] transition-colors"
+                  >
+                    <Image src="/more.png" width={28} height={18} alt="View" className="opacity-60 hover:opacity-100 transition-opacity" />
+                  </button>
+                </div>
               </div>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-            aria-label="Bağla"
-          >
-            <X size={16} />
-          </button>
-        </div>
-
-        {/* Status */}
-        <div className="px-5 pb-2">
-          <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-medium', STATUS_STYLES[review.status])}>
-            {STATUS_LABELS[review.status]}
-          </span>
-        </div>
-
-        {/* Comment */}
-        <div className="px-5 pb-5">
-          <p className="text-sm leading-relaxed text-foreground">{review.comment}</p>
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-3 border-t border-border px-5 py-4">
-          <button
-            onClick={() => { onReject(); onClose() }}
-            className="rounded-lg border border-border px-5 py-2 text-sm font-medium text-foreground hover:bg-secondary transition-colors"
-          >
-            Rədd et
-          </button>
-          <button
-            onClick={() => { onApprove(); onClose() }}
-            className="rounded-lg bg-[#00B4CC] px-5 py-2 text-sm font-semibold text-white hover:bg-[#008799] transition-colors"
-          >
-            Təsdiq et
-          </button>
+            ))
+          )}
         </div>
       </div>
+
+      {/* Review Detail Modal (Container UI) */}
+      {selectedReview && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4 font-sans text-black">
+          <div className="w-full max-w-[744px] bg-white rounded-[14px] shadow-2xl flex flex-col animate-in fade-in zoom-in duration-200 overflow-hidden">
+            {/* Header */}
+            <div className="px-6 py-6 border-b border-black/10 flex items-center justify-between">
+              <h2 className="text-[18px] font-bold text-[#101828]">Reytinq detalları</h2>
+              <button 
+                onClick={() => setSelectedReview(null)}
+                className="w-6 h-6 flex items-center justify-center hover:bg-slate-100 rounded-md transition-colors"
+              >
+                 <X size={16} className="text-[#101828]" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 flex flex-col gap-6">
+               {/* User Info & Status Row */}
+               <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                     <div className="w-11 h-11 rounded-full bg-[#d5f0f3] border border-[#ececed] flex items-center justify-center text-[18px] font-bold">
+                        {selectedReview.author?.full_name?.[0] || "N"}
+                     </div>
+                     <div className="flex flex-col text-left">
+                        <span className="text-[16px] font-medium leading-[24px]">{selectedReview.author?.full_name}</span>
+                        <span className="text-[14px] text-[#4a5565] leading-[20px]">
+                           {selectedReview.created_at ? format(new Date(selectedReview.created_at), "dd MMM, yyyy", { locale: az }) : "—"}
+                        </span>
+                     </div>
+                  </div>
+
+                  <div className="flex flex-col items-start gap-1.5">
+                     <span className="text-[14px] font-medium text-[#364153]">Status</span>
+                     <div 
+                       className="w-fit rounded-[20px] px-3 py-1.5 flex items-center gap-2 text-[12px] font-bold"
+                       style={{ backgroundColor: STATUS_BADGE_MAP[selectedReview.status]?.bgColor, color: STATUS_BADGE_MAP[selectedReview.status]?.color }}
+                     >
+                       <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: STATUS_BADGE_MAP[selectedReview.status]?.dotColor }} />
+                       {STATUS_BADGE_MAP[selectedReview.status]?.label}
+                     </div>
+                  </div>
+               </div>
+
+               {/* Gym Row */}
+               <div className="flex flex-col items-start gap-1.5">
+                  <span className="text-[14px] font-medium text-[#364153]">Zal</span>
+                  <span className="text-[16px] leading-[24px] text-black font-medium">{selectedReview.gym_name || "FIT CLUB"}</span>
+               </div>
+
+               {/* Comment Row */}
+               <div className="flex flex-col items-start gap-1.5 w-full">
+                  <span className="text-[14px] font-medium text-[#364153]">Şərh</span>
+                  <div className="w-full min-h-[48px] p-[10px] rounded-[12px] border border-[#dddcdc] text-[14px] font-medium text-[#535353] leading-[20px] text-left">
+                     {selectedReview.comment || "Rəy mətni daxil edilməyib."}
+                  </div>
+               </div>
+
+               {/* Rating Row */}
+               <div className="flex flex-col items-start gap-1.5">
+                  <span className="text-[14px] font-medium text-[#364153]">Reytinq</span>
+                  <div className="flex items-center gap-3">
+                     <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                           <Star 
+                             key={s} 
+                             size={16} 
+                             className={cn(s <= selectedReview.rating ? "fill-[#FFB543] text-[#FFB543]" : "text-slate-200")} 
+                           />
+                        ))}
+                     </div>
+                     <span className="text-[18px] font-semibold text-black leading-[28px]">
+                        {selectedReview.rating}/5
+                     </span>
+                  </div>
+               </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-6 border-t border-black/10 flex items-center gap-3">
+               <button 
+                 onClick={() => setSelectedReview(null)}
+                 className="flex-1 h-12 rounded-[10px] border border-[#00B4CC] text-black text-[16px] font-medium hover:bg-slate-50 transition-colors"
+               >
+                  Bağla
+               </button>
+               {selectedReview.status === 'PENDING' && (
+                 <>
+                   <button 
+                     onClick={() => handleAction(selectedReview.id, 'reject')}
+                     disabled={isRejecting || isApproving}
+                     className="flex-1 h-12 rounded-[10px] bg-[#ff004f] border border-[#ececed] text-white text-[16px] font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                   >
+                     {isRejecting ? <Loader2 size={20} className="animate-spin mx-auto" /> : "Rədd et"}
+                   </button>
+                   <button 
+                     onClick={() => handleAction(selectedReview.id, 'approve')}
+                     disabled={isRejecting || isApproving}
+                     className="flex-1 h-12 rounded-[10px] bg-[#00B4CC] text-white text-[16px] font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                   >
+                     {isApproving ? <Loader2 size={20} className="animate-spin mx-auto" /> : "Təsdiq et"}
+                   </button>
+                 </>
+               )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  )
+  );
 }
