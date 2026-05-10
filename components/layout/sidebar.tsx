@@ -150,18 +150,16 @@ export function Sidebar({ className }: SidebarProps) {
                       )}
                       aria-current={isActive ? 'page' : undefined}
                     >
-                      <div className={cn(
-                        "shrink-0 transition-all duration-300",
-                        isActive ? "text-[#00b4cc]" : "text-black opacity-80"
-                      )}>
-                        <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
-                      </div>
+                      <div className="shrink-0 transition-all duration-300 text-black w-6 h-6 relative">
+                      {item.iconPath ? (
+                        <Image src={item.iconPath} fill alt={item.label} className="object-contain" />
+                      ) : (
+                        <Icon size={24} strokeWidth={2} />
+                      )}
+                    </div>
                       
                       {!collapsed && (
-                        <span className={cn(
-                          "text-[16px] leading-[24px] font-medium transition-all duration-300 whitespace-nowrap overflow-hidden",
-                          isActive ? "font-semibold" : "font-normal"
-                        )}>
+                        <span className="text-[16px] leading-[24px] font-medium transition-all duration-300 whitespace-nowrap overflow-hidden">
                           {item.label}
                         </span>
                       )}
