@@ -183,7 +183,7 @@ export function useGymTrainers(gymId: number | string | null | undefined, params
   };
 
   return useQuery({
-    queryKey: ['gym-trainers', gymId, normalizedParams],
+    queryKey: ['gym-trainers', gymId ? Number(gymId) : null, normalizedParams],
     queryFn: () => {
       if (!gymId) return Promise.resolve(null)
       return apiGet<PaginatedResponse<ITrainer>>(`/admin/gyms/${gymId}/trainers`, { params: normalizedParams })

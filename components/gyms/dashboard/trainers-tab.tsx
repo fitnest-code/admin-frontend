@@ -14,6 +14,8 @@ export function TrainersTab({ gym }: { gym?: any }) {
   const [showAdd, setShowAdd] = useState(false);
   const [showDetails, setShowDetails] = useState<any>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
   const menuRef = useRef<HTMLDivElement>(null);
 
   const { gymId } = useGymStore();
@@ -42,7 +44,7 @@ export function TrainersTab({ gym }: { gym?: any }) {
 
   const { data: apiData, isLoading: apiLoading } = useGymTrainers(
     gymId || '',
-    { page: 1, pageSize: 100, sort_dir: "DESC" },
+    { page: currentPage, pageSize: pageSize, sort_dir: "DESC" },
     initialTrainers
   );
 
@@ -56,6 +58,7 @@ export function TrainersTab({ gym }: { gym?: any }) {
   };
 
   const trainers = apiData?.items ?? [];
+  const totalPages = apiData?.totalPages ?? 1;
 
   return (
     <div className="flex flex-col gap-6 py-4 w-full font-sans">
@@ -82,7 +85,7 @@ export function TrainersTab({ gym }: { gym?: any }) {
       </div>
 
       {/* Table / Empty State */}
-      <div className="w-full rounded-[12px] bg-white border border-[#ececed] min-h-[175px] flex flex-col">
+      <div className="w-full rounded-[12px] bg-white border border-[#ececed] min-h-[350px] flex flex-col shadow-sm">
         {apiLoading ? (
           <div className="flex-1 py-20 flex justify-center items-center text-slate-400">
             <Loader2 className="animate-spin mr-2" /> Məşqçilər yüklənir...
@@ -100,7 +103,7 @@ export function TrainersTab({ gym }: { gym?: any }) {
             </div>
           </div>
         ) : (
-          <div className="w-full overflow-x-auto">
+          <div className="w-full">
             <table className="w-full border-separate border-spacing-0">
               {/* Header */}
               <thead>
@@ -115,63 +118,82 @@ export function TrainersTab({ gym }: { gym?: any }) {
               {/* Body */}
               <tbody className="bg-white">
                 {trainers.length > 0 ? (
-                  trainers.map((t: any, i: number) => (
-                    <tr key={t.trainer_id || t.id || i} className="h-[100px] hover:bg-slate-50/80 transition-colors group font-sans">
-                      {/* Name Section */}
-                      <td className={cn(
-                        "border-b border-l border-[#ececed] pl-10",
-                        i === trainers.length - 1 && "rounded-bl-[12px]"
-                      )}>
-                        <div className="flex items-center gap-[14px]">
-                          <div className="h-[54px] w-[54px] relative rounded-full overflow-hidden shrink-0">
-                            {t.picture ? (
-                              <img src={t.picture} className="object-cover w-full h-full" alt="Trainer" />
-                            ) : (
-                              <div className="w-full h-full bg-[#00B4CC10] text-[#00B4CC] flex items-center justify-center font-bold text-xl italic uppercase">
-                                {t.name?.[0]}
+                  trainers.map((t: any, i: number) => {
+                    const firstName = t.name || t.firstName || "Bilinmir";
+                    const lastName = t.surname || t.lastName || "";
+                    const pictureUrl = t.picture || t.photo;
+                    const email = t.email || "";
+                    const phone = t.phone || "";
+                    const role = t.profession?.name || t.role || "Məşqçi";
+                    const trainerUid = String(t.trainer_id || t.id || i);
+                    
+                    const fullPicUrl = pictureUrl 
+                      ? (pictureUrl.startsWith('http') ? pictureUrl : `${process.env.NEXT_PUBLIC_API_URL || ''}${pictureUrl}`) 
+                      : null;
+
+                    return (
+                      <tr key={trainerUid} className="h-[100px] hover:bg-slate-50/80 transition-colors group font-sans">
+                        {/* Name Section */}
+                        <td className={cn(
+                          "border-b border-l border-[#ececed] pl-10",
+                          i === trainers.length - 1 && "rounded-bl-[12px]"
+                        )}>
+                          <div className="flex items-center gap-[14px]">
+                            <div className="h-[54px] w-[54px] relative rounded-full overflow-hidden shrink-0 bg-[#00B4CC10] flex items-center justify-center">
+                              {fullPicUrl ? (
+                                <img src={fullPicUrl} className="object-cover w-full h-full" alt="Trainer" />
+                              ) : (
+                                <div className="text-[#00B4CC] font-bold text-xl italic uppercase">
+                                  {firstName[0]}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex flex-col justify-center overflow-hidden">
+                              <div className="text-black leading-[24px] group-hover:text-[#00B4CC] transition-colors whitespace-nowrap">
+                                {firstName} {lastName}
                               </div>
-                            )}
-                          </div>
-                          <div className="flex flex-col justify-center overflow-hidden">
-                            <div className="text-black leading-[24px] group-hover:text-[#00B4CC] transition-colors whitespace-nowrap">
-                              {t.name} {t.surname}
-                            </div>
-                            <div className="text-[14px] leading-[24px] text-[#94979c] whitespace-nowrap">
-                              {t.profession?.name || "Məşqçi"}
+                              <div className="text-[14px] leading-[24px] text-[#94979c] whitespace-nowrap">
+                                {role}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Phone */}
-                      <td className="border-b border-[#ececed] px-10">
-                        <div className="text-black leading-[24px] whitespace-nowrap">
-                          {t.phone || "+994 ** *** ** **"}
-                        </div>
-                      </td>
+                        {/* Phone */}
+                        <td className="border-b border-[#ececed] px-10">
+                          <div className="text-black leading-[24px] whitespace-nowrap">
+                            {phone || "—"}
+                          </div>
+                        </td>
 
-                      {/* Email */}
-                      <td className="border-b border-[#ececed] px-10">
-                        <div className="text-black leading-[24px] whitespace-nowrap">
-                          {t.email || "fitnest@gmail.com"}
-                        </div>
-                      </td>
+                        {/* Email */}
+                        <td className="border-b border-[#ececed] px-10">
+                          <div className="text-black leading-[24px] whitespace-nowrap">
+                            {email || "—"}
+                          </div>
+                        </td>
 
-                      {/* Actions */}
+                        {/* Actions */}
                       <td className={cn(
                         "border-b border-r border-[#ececed] px-10 text-center",
                         i === trainers.length - 1 && "rounded-br-[12px]"
                       )}>
                         <div className="flex justify-center relative">
                           <button
-                            onClick={() => setOpenMenuId(openMenuId === t.trainer_id ? null : t.trainer_id)}
+                            onClick={() => setOpenMenuId(openMenuId === trainerUid ? null : trainerUid)}
                             className="w-8 h-8 flex items-center justify-center transition-opacity hover:opacity-70"
                           >
                             <Image src="/more.png" width={24} height={24} alt="more" />
                           </button>
 
-                          {openMenuId === t.trainer_id && (
-                            <div ref={menuRef} className="absolute right-0 top-10 z-[100] w-[180px] bg-white rounded-xl shadow-2xl border border-slate-100 py-2 animate-in fade-in zoom-in duration-200">
+                          {openMenuId === trainerUid && (
+                            <div 
+                              ref={menuRef} 
+                              className={cn(
+                                "absolute right-0 z-[100] w-[180px] bg-white rounded-xl shadow-2xl border border-slate-100 py-2 animate-in fade-in zoom-in duration-200",
+                                (i === trainers.length - 1 && trainers.length > 1) ? "bottom-full mb-2" : "top-10"
+                              )}
+                            >
                               <button
                                 onClick={() => { setShowDetails(t); setOpenMenuId(null); }}
                                 className="w-full h-11 flex items-center px-4 hover:bg-slate-50 transition-colors gap-3 font-medium text-slate-700 whitespace-nowrap"
@@ -181,7 +203,7 @@ export function TrainersTab({ gym }: { gym?: any }) {
                               </button>
                               <div className="h-px bg-slate-100 mx-2" />
                               <button
-                                onClick={() => handleDelete(t.trainer_id)}
+                                onClick={() => handleDelete(t.trainer_id || t.id)}
                                 className="w-full h-11 flex items-center px-4 text-red-600 hover:bg-red-50 transition-colors gap-3 font-medium whitespace-nowrap"
                               >
                                 <Image src="/trash.png" width={18} height={18} alt="Delete" />
@@ -192,7 +214,8 @@ export function TrainersTab({ gym }: { gym?: any }) {
                         </div>
                       </td>
                     </tr>
-                  ))
+                  );
+                })
                 ) : (
                   <tr>
                     <td colSpan={4} className="h-[200px] text-center border-b border-x border-[#ececed] rounded-b-[12px]">
@@ -208,6 +231,83 @@ export function TrainersTab({ gym }: { gym?: any }) {
           </div>
         )}
       </div>
+
+      {/* Pagination Section */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-[18px] mt-8 select-none">
+          {/* Page 1 */}
+          <button 
+            onClick={() => setCurrentPage(1)}
+            className={cn(
+              "h-8 w-8 rounded flex items-center justify-center text-[16px] font-semibold transition-all",
+              currentPage === 1 ? "bg-[#00b4cc] text-white" : "bg-white border border-[#ececed] text-black hover:bg-slate-50"
+            )}
+          >
+            1
+          </button>
+          
+          {/* Page 2 */}
+          {totalPages >= 2 && (
+            <button 
+              onClick={() => setCurrentPage(2)}
+              className={cn(
+                "h-8 w-8 rounded flex items-center justify-center text-[16px] font-semibold transition-all",
+                currentPage === 2 ? "bg-[#00b4cc] text-white" : "bg-white border border-[#ececed] text-black hover:bg-slate-50"
+              )}
+            >
+              2
+            </button>
+          )}
+
+          {/* Page 3 */}
+          {totalPages >= 3 && (
+            <button 
+              onClick={() => setCurrentPage(3)}
+              className={cn(
+                "h-8 w-8 rounded flex items-center justify-center text-[16px] font-semibold transition-all",
+                currentPage === 3 ? "bg-[#00b4cc] text-white" : "bg-white border border-[#ececed] text-black hover:bg-slate-50"
+              )}
+            >
+              3
+            </button>
+          )}
+
+          {/* Page 4 */}
+          {totalPages >= 4 && (
+            <button 
+              onClick={() => setCurrentPage(4)}
+              className={cn(
+                "h-8 w-8 rounded flex items-center justify-center text-[16px] font-semibold transition-all",
+                currentPage === 4 ? "bg-[#00b4cc] text-white" : "bg-white border border-[#ececed] text-black hover:bg-slate-50"
+              )}
+            >
+              4
+            </button>
+          )}
+
+          {/* Ellipsis */}
+          {totalPages > 5 && (
+            <div className="h-8 w-8 rounded bg-white border border-[#ececed] flex items-center justify-center gap-[1px]">
+              <div className="h-[3px] w-[3px] rounded-full bg-black" />
+              <div className="h-[3px] w-[3px] rounded-full bg-black" />
+              <div className="h-[3px] w-[3px] rounded-full bg-black" />
+            </div>
+          )}
+
+          {/* Last Page */}
+          {totalPages > 4 && (
+            <button 
+              onClick={() => setCurrentPage(totalPages)}
+              className={cn(
+                "h-8 w-8 rounded flex items-center justify-center text-[16px] font-semibold transition-all",
+                currentPage === totalPages ? "bg-[#00b4cc] text-white" : "bg-white border border-[#ececed] text-black hover:bg-slate-50"
+              )}
+            >
+              {totalPages}
+            </button>
+          )}
+        </div>
+      )}
 
       {showAdd && <AddTrainerModal onClose={() => setShowAdd(false)} isDashboard={true} />}
       {showDetails && <TrainerDetailsModal trainer={showDetails} onClose={() => setShowDetails(null)} />}

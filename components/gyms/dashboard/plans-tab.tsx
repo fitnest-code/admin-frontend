@@ -303,14 +303,14 @@ export function PlansTab({ gym }: { gym?: any }) {
                   key={svc.id}
                   onClick={() => toggleServiceSelection(svc.name)}
                   className={cn(
-                    "w-[160px] h-[72px] rounded-lg px-3 py-5 flex items-center justify-between cursor-pointer transition-all border",
+                    "w-fit h-[72px] rounded-lg px-4 py-5 flex items-center justify-between gap-4 cursor-pointer transition-all border",
                     isSelected
                       ? "bg-[#00b4cc0a] border-[#00b4cc]"
                       : "bg-[#fafafa] border-[#ececed]"
                   )}
                 >
-                  <div className="flex items-center overflow-hidden">
-                    <span className="text-[16px] font-medium text-black truncate leading-[24px]">
+                  <div className="flex items-center">
+                    <span className="text-[16px] font-medium text-black whitespace-nowrap leading-[24px]">
                       {svc.name}
                     </span>
                   </div>
@@ -327,16 +327,16 @@ export function PlansTab({ gym }: { gym?: any }) {
 
             {/* Inline Add Input */}
             {pendingService !== null && (
-              <div className="w-[160px] h-[72px] border-2 border-dashed border-[#00B4CC] rounded-lg px-3 flex items-center justify-between animate-in slide-in-from-left duration-300">
+              <div className="w-fit h-[72px] border-2 border-dashed border-[#00B4CC] rounded-lg px-4 flex items-center justify-between gap-4 animate-in slide-in-from-left duration-300">
                 <input
                   autoFocus
                   value={pendingService}
                   onChange={(e) => setPendingService(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleConfirmService()}
                   placeholder="..."
-                  className="bg-transparent border-none outline-none text-[14px] font-medium w-full"
+                  className="bg-transparent border-none outline-none text-[14px] font-medium min-w-[100px]"
                 />
-                <div className="flex items-center ml-1">
+                <div className="flex items-center flex-shrink-0">
                   <button onClick={handleConfirmService} className="text-green-500">
                     <Check size={18} strokeWidth={3} />
                   </button>
