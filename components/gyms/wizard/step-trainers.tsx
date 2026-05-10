@@ -66,7 +66,7 @@ export function StepTrainers({ onNext }: { onNext: () => void }) {
         <h2 className="text-[20px] font-semibold leading-[30px]">Məşqçilər</h2>
         <button
           onClick={() => setShowAdd(true)}
-          className="h-12 w-[193px] bg-[#00B4CC] rounded-[12px] flex items-center justify-center gap-3 px-6 text-white text-[16px] font-medium hover:opacity-90 transition-opacity"
+          className="h-12 px-6 bg-[#00B4CC] rounded-[12px] flex items-center justify-center gap-3 text-white text-[16px] font-medium hover:opacity-90 transition-opacity whitespace-nowrap"
         >
           <span>Məşqçi əlavə et</span>
           <Plus size={24} className="text-white" />

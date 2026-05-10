@@ -30,7 +30,7 @@ export function TrainersTab() {
 
   const { data: apiData, isLoading: apiLoading } = useGymTrainers(
     gymId || '',
-    { page: 1, size: 100, sortDir: "desc" }
+    { page: 1, pageSize: 100, sort_dir: "desc" }
   );
   
   const { mutate: deleteTrainerMutate } = useDeleteTrainer();

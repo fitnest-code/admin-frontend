@@ -21,8 +21,8 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
   const [lang, setLang] = useState<Lang>("Az");
   const { gymId } = useGymStore();
 
-  // Koordinatlar
-  const [coords, setCoords] = useState({ lat: 40.4093, lng: 49.8671 });
+  // Koordinatlar (Başlanğıcda boş olmalıdır)
+  const [coords, setCoords] = useState<{ lat: number | "", lng: number | "" }>({ lat: "", lng: "" });
   const [copied, setCopied] = useState<"lat" | "lng" | null>(null);
 
   // Axtarış üçün state-lər
@@ -31,11 +31,12 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
   const [isSearching, setIsSearching] = useState(false);
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  // 1. Koordinat dəyişdikcə ünvanı gətirən query
+  // 1. Koordinat dəyişdikcə ünvanı gətirən query (Yalnız koordinatlar olduqda)
+  const shouldFetchAddress = mounted && typeof coords.lat === "number" && typeof coords.lng === "number";
   const { data: addressData, isFetching: isAddressFetching } = useGetAddressByCoords(
-    coords.lat,
-    coords.lng,
-    mounted
+    typeof coords.lat === "number" ? coords.lat : 0,
+    typeof coords.lng === "number" ? coords.lng : 0,
+    shouldFetchAddress
   );
 
   // 2. Step 4 Mutation
@@ -47,10 +48,10 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
 
   // Backend-dən gələn ünvanı input-a sinxronizasiya et
   useEffect(() => {
-    if (addressData?.addressText && !isSearching) {
+    if (addressData?.addressText && !isSearching && shouldFetchAddress) {
       setSearchQuery(addressData.addressText);
     }
-  }, [addressData, isSearching]);
+  }, [addressData, isSearching, shouldFetchAddress]);
 
   // Forward Geocoding (Axtarış)
   const debouncedSearch = (query: string) => {
@@ -86,17 +87,23 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
   const t = labels[lang];
 
   // Kopyalama funksiyası
-  const copyToClipboard = (val: number, which: "lat" | "lng") => {
+  const copyToClipboard = (val: number | "", which: "lat" | "lng") => {
+    if (val === "") return;
     navigator.clipboard.writeText(val.toString());
     setCopied(which);
     setTimeout(() => setCopied(null), 1500);
     toast.success("Kopyalandı");
   };
 
-  // Əsas Saxlama Məntiqi (500 xətası olmaması üçün Number-ə çevrilir)
+  // Əsas Saxlama Məntiqi
   const performSave = async () => {
     if (!gymId) {
       toast.error("Zal ID tapılmadı (Store-u yoxlayın)");
+      return false;
+    }
+
+    if (coords.lat === "" || coords.lng === "") {
+      toast.error("Zəhmət olmasa xəritədən mütləq bir nöqtə seçin və ya koordinatları daxil edin");
       return false;
     }
 
@@ -108,7 +115,6 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
       });
       return true;
     } catch (error: any) {
-      // Sənin ApiError class-ın mesajı buraya ötürəcək
       toast.error(error.message || "Xəta baş verdi");
       return false;
     }
@@ -124,8 +130,10 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
 
   if (!mounted) return null;
 
-  // Google Maps Embed (Pulsuz və stabil variant)
-  const mapSrc = `https://maps.google.com/maps?q=${coords.lat},${coords.lng}&z=15&output=embed`;
+  // Xəritə linki: Əgər boşdursa Bakı mərkəzini göstərsin, amma datanı boş saxlasın
+  const displayLat = coords.lat === "" ? 40.4093 : coords.lat;
+  const displayLng = coords.lng === "" ? 49.8671 : coords.lng;
+  const mapSrc = `https://maps.google.com/maps?q=${displayLat},${displayLng}&z=15&output=embed`;
 
   return (
     <div className="w-full flex justify-center py-6">

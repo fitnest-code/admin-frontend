@@ -53,7 +53,7 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
         onNext();
       }
     } catch (err: any) {
-      toast.error("Zal yaradılarkən xəta baş verdi");
+      toast.error(err?.message || "Zal yaradılarkən xəta baş verdi");
     }
   };
 

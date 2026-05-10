@@ -148,14 +148,14 @@ export function useUpdateGymInfo() {
       queryClient.invalidateQueries({ queryKey: ['gym-info', variables.id] });
       toast.success('Məlumatlar uğurla yeniləndi');
     },
-    onError: () => {
-      toast.error('Məlumatların yenilənməsində xəta baş verdi');
+    onError: (err: any) => {
+      toast.error(err?.message || 'Məlumatların yenilənməsində xəta baş verdi');
     }
   });
 }
 
 // 11. Məşqçiləri çəkmək üçün
-export function useGymTrainers(gymId: number | string | null | undefined, params?: { page?: number, size?: number, sortDir?: string }) {
+export function useGymTrainers(gymId: number | string | null | undefined, params?: { page?: number, pageSize?: number, sort_dir?: string }) {
   return useQuery({
     queryKey: ['gym-trainers', gymId, params],
     queryFn: () => {
@@ -187,8 +187,8 @@ export function useAddTrainer() {
       queryClient.invalidateQueries({ queryKey: ['gym-trainers', variables.gymId] });
       toast.success('Məşqçi uğurla əlavə edildi');
     },
-    onError: () => {
-      toast.error('Məşqçi əlavə edilərkən xəta baş verdi');
+    onError: (err: any) => {
+      toast.error(err?.message || 'Məşqçi əlavə edilərkən xəta baş verdi');
     }
   });
 }
