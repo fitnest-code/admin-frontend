@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Upload, Trash2, ChevronDown, Pencil, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useGymInfoAdmin, useUpdateGymInfo, useCategories } from "@/lib/query/gym-query";
+import { useGymDetailsAdmin, useUpdateGymDetails, useCategories } from "@/lib/query/gym-query";
 
 interface InfoTabProps {
   gymId?: number | string
@@ -19,8 +19,8 @@ export function InfoTab({ gymId }: InfoTabProps) {
   const [activeLang, setActiveLang] = useState<"Az" | "Ru" | "En">("Az");
   const [isEditing, setIsEditing] = useState(false);
   
-  const { data: gymInfo, isLoading } = useGymInfoAdmin(gymId);
-  const { mutate: updateGymInfo, isPending } = useUpdateGymInfo();
+  const { data: gymInfo, isLoading } = useGymDetailsAdmin(gymId);
+  const { mutate: updateGymInfo, isPending } = useUpdateGymDetails();
   const { data: categoriesData } = useCategories();
   
   const [formData, setFormData] = useState({
