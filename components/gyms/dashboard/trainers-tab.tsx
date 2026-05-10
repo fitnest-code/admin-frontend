@@ -6,7 +6,7 @@ import { AddTrainerModal } from "../modals/add-trainer-modal";
 import { TrainerDetailsModal } from "../modals/trainer-details-modal";
 import { useState, useRef, useEffect } from "react";
 import { useGymStore } from "@/lib/store/gym-store";
-import { useGymTrainersQuery, useDeleteTrainer } from "@/lib/query/trainers";
+import { useGymTrainers, useDeleteTrainer } from "@/lib/query/gym-query";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -28,29 +28,21 @@ export function TrainersTab() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const { data: apiData, isLoading: apiLoading, refetch } = useGymTrainersQuery(
-    Number(gymId) || 0,
-    1,
-    100,
-    "DESC",
-    { enabled: !!gymId }
+  const { data: apiData, isLoading: apiLoading } = useGymTrainers(
+    gymId || '',
+    { page: 1, size: 100, sortDir: "desc" }
   );
+  
+  const { mutate: deleteTrainerMutate } = useDeleteTrainer();
 
-  const { mutate: deleteTrainer } = useDeleteTrainer(Number(gymId) || 1);
-
-  const handleDelete = (trainerId: string) => {
+  const handleDelete = (trainerId: string | number) => {
+    if (!gymId) return;
     if (!window.confirm("Bu məşqçini silmək istədiyinizə əminsiniz?")) return;
-    deleteTrainer(Number(trainerId), {
-      onSuccess: () => {
-        toast.success("Məşqçi silindi");
-        refetch();
-      },
-      onError: () => toast.error("Xəta baş verdi"),
-    });
+    deleteTrainerMutate({ gymId: Number(gymId), trainerId });
     setOpenMenuId(null);
   };
 
-  const trainers = (apiData as { items?: any[] })?.items ?? [];
+  const trainers = apiData?.items ?? [];
 
   return (
     <div className="flex flex-col gap-6 py-4 w-full font-sans">
@@ -98,47 +90,59 @@ export function TrainersTab() {
           <div className="w-full overflow-x-auto">
             <div className="min-w-[1000px] flex flex-col">
               {/* Header */}
-              <div className="grid grid-cols-[1fr_140px_220px_160px_80px] items-center px-8 py-5 bg-[rgba(0,180,204,0.15)] border-b border-[#ececed] text-sm font-bold text-[#101828]">
-                <span className="opacity-60 uppercase">Ad / Soyad</span>
-                <span className="opacity-60 uppercase">Telefon</span>
-                <span className="opacity-60 uppercase">Email</span>
-                <span className="opacity-60 uppercase text-center">Zal</span>
-                <span className="opacity-60 uppercase text-right">Ətraflı</span>
+              <div className="w-full flex items-center justify-between px-6 py-[20px] bg-[rgba(0,180,204,0.15)] border border-[#cecfd2] rounded-t-[12px] text-[16px] font-bold text-black font-sans">
+                <div className="w-[374px] flex justify-between">
+                  <span>Ad / Soyad</span>
+                  <span>Telefon</span>
+                </div>
+                <div className="w-[164px]">Email</div>
+                <div className="w-[164px]">Zal</div>
+                <div className="w-[24px]">Ətraflı</div>
               </div>
-
-              <div className="flex flex-col bg-white divide-y divide-[#f2f4f7]">
+              <div className="flex flex-col bg-white border-x border-b border-[#ececed] rounded-b-[12px] divide-y divide-[#ececed]">
                 {trainers.map((t: any) => (
-                  <div key={t.trainer_id} className="grid grid-cols-[1fr_140px_220px_160px_80px] items-center px-8 py-6 text-base hover:bg-slate-50/80 transition-colors group">
-                    <div className="flex items-center gap-4">
-                      <div className="h-14 w-14 relative rounded-full overflow-hidden shrink-0 border-2 border-white shadow-sm ring-1 ring-slate-100">
-                        {t.picture ? (
-                          <img src={t.picture} className="object-cover w-full h-full" alt="Trainer" />
-                        ) : (
-                          <div className="w-full h-full bg-[#00B4CC10] text-[#00B4CC] flex items-center justify-center font-bold text-xl uppercase italic">
-                            {t.name?.[0]}
-                          </div>
-                        )}
+                  <div key={t.trainer_id} className="w-full h-[100px] flex items-center justify-between px-6 py-[20px] text-[16px] hover:bg-slate-50/80 transition-colors group font-sans">
+                    {/* Name & Phone section */}
+                    <div className="w-[374px] flex items-center justify-between">
+                      <div className="flex items-center gap-[14px]">
+                        <div className="h-[54px] w-[54px] relative rounded-full overflow-hidden shrink-0">
+                          {t.picture ? (
+                            <img src={t.picture} className="object-cover w-full h-full" alt="Trainer" />
+                          ) : (
+                            <div className="w-full h-full bg-[#00B4CC10] text-[#00B4CC] flex items-center justify-center font-bold text-xl italic uppercase">
+                              {t.name?.[0]}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col justify-center">
+                          <div className="font-bold text-black leading-[24px] group-hover:text-[#00B4CC] transition-colors">{t.name} {t.surname}</div>
+                          <div className="text-[14px] leading-[24px] text-[#94979c]">{t.profession?.name || "Məşqçi"}</div>
+                        </div>
                       </div>
-                      <div className="flex flex-col">
-                        <div className="font-bold text-[#101828] group-hover:text-[#00B4CC] transition-colors">{t.name} {t.surname}</div>
-                        <div className="text-sm font-medium text-slate-400">{t.profession?.name || "Məşqçi"}</div>
-                      </div>
+                      <div className="font-medium text-black leading-[24px]">{t.phone || "+994 ** *** ** **"}</div>
                     </div>
                     
-                    <div className="font-medium text-slate-600">{t.phone || "—"}</div>
-                    <div className="font-medium text-slate-500 truncate pr-4">{t.email || "—"}</div>
-                    <div className="text-center font-bold text-slate-700">Test Gym</div>
+                    {/* Email */}
+                    <div className="w-[164px] font-medium text-black leading-[24px] truncate pr-4">
+                      {t.email || "fitnest@gmail.com"}
+                    </div>
 
-                    <div className="flex justify-end relative">
+                    {/* Gym */}
+                    <div className="w-[164px] font-bold text-black leading-[24px]">
+                      {gymId === 'test' ? 'FitZone Gym' : 'Test Gym'}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="w-[24px] flex justify-end relative">
                       <button 
                         onClick={() => setOpenMenuId(openMenuId === t.trainer_id ? null : t.trainer_id)}
-                        className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-colors"
+                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors rotate-90"
                       >
-                        <Image src="/more.png" width={24} height={24} alt="more" className="object-contain" />
+                         <Image src="/more.png" width={24} height={24} alt="more" className="object-contain -rotate-90" />
                       </button>
 
                       {openMenuId === t.trainer_id && (
-                        <div ref={menuRef} className="absolute right-0 top-12 z-[100] w-[180px] bg-white rounded-xl shadow-2xl border border-slate-100 py-2 overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div ref={menuRef} className="absolute right-0 top-10 z-[100] w-[180px] bg-white rounded-xl shadow-2xl border border-slate-100 py-2 overflow-hidden animate-in fade-in zoom-in duration-200">
                           <button 
                             onClick={() => { setShowDetails(t); setOpenMenuId(null); }}
                             className="w-full h-11 flex items-center px-4 hover:bg-slate-50 transition-colors gap-3 font-medium text-slate-700"

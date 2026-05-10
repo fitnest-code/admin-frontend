@@ -4,27 +4,26 @@ import { useState } from 'react'
 import { Sidebar } from './sidebar'
 import { Header } from './header'
 import { cn } from '@/lib/utils'
+import { useUIStore } from '@/lib/store/ui-store'
 
 interface AdminLayoutProps {
   children: React.ReactNode
 }
 
 export function AdminLayout({ children }: AdminLayoutProps) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const { sidebarCollapsed } = useUIStore()
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar */}
-      <Sidebar
-        onCollapseChange={setSidebarCollapsed}
-      />
+      <Sidebar />
 
       {/* Main content — offset by sidebar width */}
       <div
         className={cn(
-          'flex flex-1 flex-col overflow-hidden transition-all duration-300',
+          'flex flex-1 flex-col overflow-hidden transition-all duration-500 ease-in-out',
           // On desktop, push content right of sidebar
-          sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-[240px]',
+          sidebarCollapsed ? 'lg:pl-[110px]' : 'lg:pl-[272px]',
           // On mobile, no padding (sidebar overlays)
           'pl-0',
         )}

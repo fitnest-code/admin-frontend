@@ -29,22 +29,20 @@ export interface ITrainer {
   email: string;
 }
 
-export interface ITrainersResponse {
-  items: ITrainer[];
+export interface PaginatedResponse<T> {
+  items: T[];
   total: number;
   page: number;
   pageSize: number;
 }
 
-interface TrainerState {
-  searchQuery: string;
-  page: number;
-  pageSize: number;
-  sortDir: "ASC" | "DESC";
-  setSearchQuery: (q: string) => void;
-  setPage: (p: number) => void;
-  setPageSize: (s: number) => void;
-  setSortDir: (d: "ASC" | "DESC") => void;
+export interface TrainerRequest {
+  name: string;
+  surname: string;
+  professionId: number;
+  phone: string;
+  email: string;
+  photo?: File;
 }
 
 

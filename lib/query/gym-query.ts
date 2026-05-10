@@ -8,9 +8,12 @@ import {
   SupportedServiceRequest,
   GymCreateStep6Request,
   GymCreateStep7Request,
-  GymAnalyticsResponse,
   GymInfoAdminResponse,
-  GymInfoUpdateRequest
+  GymInfoUpdateRequest,
+  ITrainer,
+  IProfession,
+  PaginatedResponse,
+  TrainerRequest
 } from '../types/gym'
 import { useGymStore } from '../store/gym-store'
 import { toast } from 'sonner'
@@ -148,5 +151,67 @@ export function useUpdateGymInfo() {
     onError: () => {
       toast.error('Məlumatların yenilənməsində xəta baş verdi');
     }
+  });
+}
+
+// 11. Məşqçiləri çəkmək üçün
+export function useGymTrainers(gymId: number | string | null | undefined, params?: { page?: number, size?: number, sortDir?: string }) {
+  return useQuery({
+    queryKey: ['gym-trainers', gymId, params],
+    queryFn: () => {
+      if (!gymId) return Promise.resolve(null)
+      return apiGet<PaginatedResponse<ITrainer>>(`/admin/gyms/${gymId}/trainers`, { params })
+    },
+    enabled: !!gymId,
+  })
+}
+
+// 12. Yeni məşqçi əlavə etmək üçün
+export function useAddTrainer() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ gymId, payload }: { gymId: number, payload: TrainerRequest }) => {
+      const formData = new FormData();
+      formData.append('name', payload.name);
+      formData.append('surname', payload.surname);
+      formData.append('professionId', String(payload.professionId));
+      formData.append('phone', payload.phone);
+      formData.append('email', payload.email);
+      if (payload.photo) {
+        formData.append('photo', payload.photo);
+      }
+      return apiPost(`/admin/gyms/${gymId}/trainers`, formData);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-trainers', variables.gymId] });
+      toast.success('Məşqçi uğurla əlavə edildi');
+    },
+    onError: () => {
+      toast.error('Məşqçi əlavə edilərkən xəta baş verdi');
+    }
+  });
+}
+
+// 13. Məşqçi silmək üçün
+export function useDeleteTrainer() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ gymId, trainerId }: { gymId: number, trainerId: string | number }) => 
+      apiDelete(`/admin/gyms/${gymId}/trainers/${trainerId}`),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-trainers', variables.gymId] });
+      toast.success('Məşqçi silindi');
+    }
+  });
+}
+
+// 14. Peşələri (Professions) çəkmək üçün
+export function useProfessions() {
+  return useQuery({
+    queryKey: ['professions'],
+    queryFn: () => apiGet<IProfession[]>('/professions'),
+    staleTime: 10 * 60 * 1000,
   });
 }

@@ -1,6 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiGet, apiRequest } from "@/lib/api/client";
-import { ITrainersResponse } from "../types/gym";
+import { ITrainer, PaginatedResponse } from "../types/gym";
 
 export const useGymTrainersQuery = (
   gymId: number, 
@@ -12,11 +12,11 @@ export const useGymTrainersQuery = (
   return useQuery({
     queryKey: ["gym-trainers", gymId, page, pageSize, sortDir],
     queryFn: () =>
-      apiGet<ITrainersResponse>(`/admin/gyms/${gymId}/trainers`, {
+      apiGet<PaginatedResponse<ITrainer>>(`/admin/gyms/${gymId}/trainers`, {
         params: {
           page,
-          page_size: pageSize,
-          sort_dir: sortDir,
+          pageSize,
+          sortDir,
         },
       }),
     ...options
