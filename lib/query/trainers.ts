@@ -12,7 +12,7 @@ export const useGymTrainersQuery = (
   return useQuery({
     queryKey: ["gym-trainers", gymId, page, pageSize, sortDir],
     queryFn: () =>
-      apiGet<ITrainersResponse>(`/gyms/${gymId}/trainers`, {
+      apiGet<ITrainersResponse>(`/admin/gyms/${gymId}/trainers`, {
         params: {
           page,
           page_size: pageSize,

@@ -59,153 +59,106 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
         e.returnValue = ''
       }
     }
-
-    const handleUnload = () => {
-      if (isNew && gymIdRef.current && !isCompletedRef.current) {
-        fetch(`/api/v1/admin/gyms/${gymIdRef.current}`, { method: 'DELETE', keepalive: true }).catch(() => { })
-      }
-    }
-
     window.addEventListener('beforeunload', handleBeforeUnload)
-    window.addEventListener('unload', handleUnload)
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload)
-      window.removeEventListener('unload', handleUnload)
-    }
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [isNew])
 
-  useEffect(() => {
-    return () => {
-      if (isNew && !isCompletedRef.current) {
-        if (gymIdRef.current) {
-          fetch(`/api/v1/admin/gyms/${gymIdRef.current}`, { method: 'DELETE', keepalive: true }).catch(() => { })
-        }
-        resetGym()
-      }
-    }
-  }, [isNew, resetGym])
-
-  const [activeTab, setActiveTab] = useState(isNew && currentTab ? currentTab : (isNew ? WIZARD_TABS[0].key : 'analitika'))
-
-  useEffect(() => {
-    if (isNew) {
-      setCurrentTab(activeTab)
-    }
-  }, [activeTab, isNew, setCurrentTab])
+  const [activeTab, setActiveTab] = useState(currentTab || (isNew ? 'info' : 'analitika'))
   const [showExitConfirm, setShowExitConfirm] = useState(false)
   const [showWarning, setShowWarning] = useState(false)
 
-  const currentIndex = WIZARD_TABS.findIndex((t) => t.key === activeTab)
-
-  function renderTab() {
-    if (isNew) {
-      switch (activeTab) {
-        case 'info': return <StepInfo onNext={() => setActiveTab('trainers')} />
-        case 'trainers': return <StepTrainers onNext={() => setActiveTab('workingHours')} />
-        case 'workingHours': return <StepWorkingHours onNext={() => setActiveTab('address')} />
-        case 'address': return <StepAddress onNext={() => setActiveTab('images')} />
-        case 'images': return <StepImages onNext={() => setActiveTab('plans')} />
-        case 'plans': return <StepPlans onNext={() => setActiveTab('admins')} />
-        case 'admins': return <StepAdmins />
-        default: return null
-      }
+  useEffect(() => {
+    if (currentTab) {
+      setActiveTab(currentTab)
     }
+  }, [currentTab])
 
-    switch (activeTab) {
-      case 'analitika': return <AnalitikaTab gymId={gym.id} />
-      case 'info': return <InfoTab gymId={gym.id} />
-      case 'trainers': return <TrainersTab />
-      case 'plans': return <PlansTab />
-      case 'admins': return <AdminsTab />
-      case 'reviews': return <ReviewsTab gymId={gym.id} />
-      case 'reservations': return <ReservationsTab />
-      case 'customers': return <CustomersTab />
-      default: return null
-    }
-  }
-
-  const handleBackClick = () => {
-    if (isNew && gymId) {
-      setShowExitConfirm(true)
-    } else {
-      if (isNew) resetGym()
-      router.push('/gyms')
-    }
-  }
-
-  const handleConfirmExit = async () => {
-    if (isNew && gymId) {
-      isCompletedRef.current = true
-      try {
-        await fetch(`/api/v1/admin/gyms/${gymId}`, { method: 'DELETE' })
-      } catch (e) { }
-    }
+  const handleConfirmExit = () => {
     resetGym()
     router.push('/gyms')
   }
 
-  const handleStepClick = (key: string, index: number) => {
+  const renderTab = () => {
     if (isNew) {
-      if (index < currentIndex) {
-        setShowWarning(true)
-        return
-      }
-      if (index > currentIndex) {
-        return
+      switch (activeTab) {
+        case 'info':
+          return <StepInfo />
+        case 'trainers':
+          return <StepTrainers />
+        case 'workingHours':
+          return <StepWorkingHours />
+        case 'address':
+          return <StepAddress />
+        case 'images':
+          return <StepImages />
+        case 'plans':
+          return <StepPlans />
+        case 'admins':
+          return <StepAdmins />
+        default:
+          return <StepInfo />
       }
     }
-    setActiveTab(key)
+
+    switch (activeTab) {
+      case 'analitika':
+        return <AnalitikaTab gymId={gym.id} />
+      case 'info':
+        return <InfoTab gymId={gym.id} />
+      case 'trainers':
+        return <TrainersTab />
+      case 'plans':
+        return <PlansTab />
+      case 'reviews':
+        return <ReviewsTab />
+      case 'reservations':
+        return <ReservationsTab />
+      case 'customers':
+        return <CustomersTab />
+      case 'admins':
+        return <AdminsTab />
+      default:
+        return <AnalitikaTab gymId={gym.id} />
+    }
   }
 
   if (isNew) {
     return (
-      <div className="flex flex-col gap-4">
-        <button
-          onClick={handleBackClick}
-          className="flex w-fit items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft size={15} aria-hidden />
-          Geri qayıt
-        </button>
-
-        <h1 className="text-xl font-bold text-foreground">Yeni Zal</h1>
-
-        <div className="flex gap-6 items-start">
-          <nav aria-label="Zal bölmələri" className="w-65 shrink-0 rounded-[12px] border border-border bg-card p-3 flex flex-col gap-1">
-            {WIZARD_TABS.map((t, index) => {
-              const isActive = activeTab === t.key
-              const isCompleted = index < currentIndex
-              const isFuture = index > currentIndex
-
-              return (
-                <div key={t.key} className="flex flex-col">
-                  <button
-                    onClick={() => handleStepClick(t.key, index)}
-                    className={cn(
-                      'flex items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors w-full',
-                      isFuture && 'cursor-not-allowed'
-                    )}
-                  >
-                    <span className={cn(
-                      'flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[18px] font-semibold transition-colors',
-                      isActive ? 'bg-[#00B4CC] text-white' : isCompleted ? 'bg-[#00B4CC]/20 text-[#00B4CC]' : 'bg-muted text-muted-foreground border border-border'
-                    )}>
-                      {isCompleted ? <Check size={12} /> : index + 1}
-                    </span>
-                    <span className={cn('text-[18px] font-medium', isActive ? 'text-black' : 'text-muted-foreground')}>
-                      {t.label}
-                    </span>
-                  </button>
-                  {index < WIZARD_TABS.length - 1 && (
-                    <div className="ml-7.5 w-1 h-4 bg-border" />
-                  )}
-                </div>
-              )
-            })}
-          </nav>
-          <div className="flex-1 min-w-0">{renderTab()}</div>
+      <div className="flex flex-col gap-6 w-full">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowExitConfirm(true)}
+              className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors flex items-center gap-1"
+            >
+              <ArrowLeft size={10} />
+              Zallar
+            </button>
+            <span className="text-[10px] text-muted-foreground">/</span>
+            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Yeni Zal Əlavə Et</span>
+          </div>
         </div>
+
+        <div className="w-full border-b border-border">
+          <nav className="-mb-px flex w-full gap-0 overflow-x-auto no-scrollbar" aria-label="Zal yaratma mərhələləri">
+            {WIZARD_TABS.map((tab, index) => (
+              <button
+                key={tab.key}
+                disabled={true}
+                className={cn(
+                  'flex-1 min-w-[120px] border-b-2 pb-4 text-sm font-semibold transition-all duration-200 whitespace-nowrap opacity-100 text-center',
+                  activeTab === tab.key
+                    ? 'border-[#00B4CC] text-foreground'
+                    : 'border-transparent text-muted-foreground',
+                )}
+              >
+                {index + 1}. {tab.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        <div className="min-h-[400px] w-full">{renderTab()}</div>
 
         {showWarning && <StepNavigationWarningModal onClose={() => setShowWarning(false)} />}
         {showExitConfirm && <ExitConfirmationModal onConfirm={handleConfirmExit} onCancel={() => setShowExitConfirm(false)} />}
@@ -214,63 +167,60 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8 w-full font-sans">
+      {/* Breadcrumbs */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center">
           <button
             onClick={() => router.push('/gyms')}
-            className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors flex items-center gap-1"
+            className="text-[11px] font-bold text-slate-400 uppercase tracking-widest hover:text-[#00B4CC] transition-colors flex items-center gap-2"
           >
-            <ArrowLeft size={10} />
-            Zallar
+            <ArrowLeft size={14} strokeWidth={3} />
+            Geri qayıt
           </button>
-          <span className="text-[10px] text-muted-foreground">/</span>
-          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-            {gym.name} - Detallı
-          </span>
         </div>
       </div>
 
-      <div className="w-full flex items-center justify-between border-b border-[#ececed] pb-4">
-        <h1 className="text-2xl font-semibold text-[#101828]">{gym.name}</h1>
-        {gym.status === 'ACTIVE' && (
-          <div className="h-6 rounded-full bg-[#166728] flex items-center px-3 gap-1 shadow-sm">
-            <span className="h-1.5 w-1.5 rounded-full bg-white" />
-            <span className="text-xs font-medium text-white leading-[18px]">Aktiv</span>
-          </div>
-        )}
-        {gym.status === 'INACTIVE' && (
-          <div className="h-6 rounded-full bg-[#c9373a] flex items-center px-3 gap-1 shadow-sm">
-            <span className="h-1.5 w-1.5 rounded-full bg-white" />
-            <span className="text-xs font-medium text-white leading-[18px]">Deaktiv</span>
-          </div>
-        )}
-        {gym.status === 'DRAFT' && (
-          <div className="h-6 rounded-full bg-[#94979c] flex items-center px-3 gap-1 shadow-sm">
-            <span className="h-1.5 w-1.5 rounded-full bg-white" />
-            <span className="text-xs font-medium text-white leading-[18px]">Qaralama</span>
-          </div>
-        )}
-        {/* Fallback if status is null but gym exists */}
-        {!gym.status && !isNew && (
-          <div className="h-6 rounded-full bg-[#166728] flex items-center px-3 gap-1 shadow-sm">
-            <span className="h-1.5 w-1.5 rounded-full bg-white" />
-            <span className="text-xs font-medium text-white leading-[18px]">Aktiv</span>
-          </div>
-        )}
+      {/* Header with Status */}
+      <div className="w-full flex items-center justify-between border-b border-[#ececed] pb-6">
+        <div className="flex flex-col gap-1">
+           <h1 className="text-[28px] font-bold text-[#101828] tracking-tight">{gym.name}</h1>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {(gym.status?.toUpperCase() === 'ACTIVE' || !gym.status) && (
+            <div className="h-[28px] rounded-full bg-[#166728] flex items-center px-4 gap-2 shadow-sm border border-green-600/20">
+              <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+              <span className="text-[11px] font-bold text-white uppercase tracking-wider">Aktiv</span>
+            </div>
+          )}
+          {gym.status?.toUpperCase() === 'INACTIVE' && (
+            <div className="h-[28px] rounded-full bg-[#c9373a] flex items-center px-4 gap-2 shadow-sm border border-red-600/20">
+              <span className="h-1.5 w-1.5 rounded-full bg-white" />
+              <span className="text-[11px] font-bold text-white uppercase tracking-wider">Deaktiv</span>
+            </div>
+          )}
+          {gym.status?.toUpperCase() === 'DRAFT' && (
+            <div className="h-[28px] rounded-full bg-slate-400 flex items-center px-4 gap-2 shadow-sm">
+              <span className="h-1.5 w-1.5 rounded-full bg-white" />
+              <span className="text-[11px] font-bold text-white uppercase tracking-wider">Qaralama</span>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="border-b border-border">
-        <nav className="-mb-px flex gap-8 overflow-x-auto" aria-label="Zal bölmələri">
+      {/* STRETCHED TABS */}
+      <div className="w-full border-b border-[#ececed]">
+        <nav className="-mb-px flex w-full overflow-x-auto no-scrollbar" aria-label="Zal bölmələri">
           {GYM_TABS.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={cn(
-                'shrink-0 border-b-2 pb-4 text-sm font-semibold transition-all duration-200 whitespace-nowrap',
+                'flex-1 min-w-[150px] border-b-[3px] pb-5 text-[15px] font-bold transition-all duration-200 whitespace-nowrap tracking-wide text-center',
                 activeTab === tab.key
-                  ? 'border-[#00B4CC] text-foreground'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border',
+                  ? 'border-[#00B4CC] text-[#101828]'
+                  : 'border-transparent text-slate-400 hover:text-slate-600 hover:border-slate-200',
               )}
               aria-current={activeTab === tab.key ? 'page' : undefined}
             >
@@ -280,14 +230,8 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
         </nav>
       </div>
 
-      <div className="min-h-[400px]">{renderTab()}</div>
-
-      {showExitConfirm && (
-        <ExitConfirmationModal
-          onConfirm={handleConfirmExit}
-          onCancel={() => setShowExitConfirm(false)}
-        />
-      )}
+      {/* TAB CONTENT (BOX) */}
+      <div className="w-full min-h-[500px]">{renderTab()}</div>
     </div>
   )
 }

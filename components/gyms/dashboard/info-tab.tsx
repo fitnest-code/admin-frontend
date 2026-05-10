@@ -143,7 +143,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
       {/* Header & Languages */}
       <div className="self-stretch border-b border-[#ececed] flex items-center justify-between pb-4">
         <div className="flex items-center gap-3">
-          <div className="text-[24px] font-semibold text-[#101828] font-['SF_Pro']">Zal məlumatları</div>
+          <div className="text-[24px] font-bold text-[#101828] font-sans tracking-tight">Zal məlumatları</div>
           <button 
             onClick={() => setIsEditing(!isEditing)}
             className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors"
@@ -535,41 +535,43 @@ export function InfoTab({ gymId }: InfoTabProps) {
       </div>
 
       {/* Action Buttons */}
-      <div className="self-stretch flex items-center justify-end mt-10">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => {
-              setIsEditing(false);
-              if (gymInfo) {
-                setFormData({
-                  categoryId: gymInfo.categoryId || 0,
-                  name: gymInfo.name || "",
-                  description: gymInfo.description || "",
-                  phone: gymInfo.phone || "",
-                  email: gymInfo.email || "",
-                  city: gymInfo.city || "",
-                  address: gymInfo.address || "",
-                  latitude: gymInfo.latitude || 0,
-                  longitude: gymInfo.longitude || 0,
-                });
-              }
-            }}
-            className="h-12 px-10 rounded-[10px] border border-[#ececed] bg-white text-[16px] font-medium text-[#101828] hover:bg-slate-50 transition-colors"
-          >
-            Ləğv et
-          </button>
-          <button 
-            onClick={handleSave}
-            disabled={isPending || !hasChanges}
-            className={cn(
-              "h-12 w-[280px] rounded-[10px] flex items-center justify-center text-[16px] font-semibold text-white transition-all shadow-sm",
-              hasChanges ? "bg-[#00B4CC] hover:bg-[#009DB3]" : "bg-[#c1c1cc]"
-            )}
-          >
-            {isPending ? <Loader2 size={20} className="animate-spin" /> : "Yadda saxla"}
-          </button>
+      {isEditing && (
+        <div className="self-stretch flex items-center justify-end mt-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => {
+                setIsEditing(false);
+                if (gymInfo) {
+                  setFormData({
+                    categoryId: gymInfo.categoryId || 0,
+                    name: gymInfo.name || "",
+                    description: gymInfo.description || "",
+                    phone: gymInfo.phone || "",
+                    email: gymInfo.email || "",
+                    city: gymInfo.city || "",
+                    address: gymInfo.address || "",
+                    latitude: gymInfo.latitude || 0,
+                    longitude: gymInfo.longitude || 0,
+                  });
+                }
+              }}
+              className="h-12 px-10 rounded-[10px] border border-[#ececed] bg-white text-[16px] font-medium text-[#101828] hover:bg-slate-50 transition-colors"
+            >
+              Ləğv et
+            </button>
+            <button 
+              onClick={handleSave}
+              disabled={isPending || !hasChanges}
+              className={cn(
+                "h-12 w-[280px] rounded-[10px] flex items-center justify-center text-[16px] font-semibold text-white transition-all shadow-sm",
+                hasChanges ? "bg-[#00B4CC] hover:bg-[#009DB3]" : "bg-[#c1c1cc]"
+              )}
+            >
+              {isPending ? <Loader2 size={20} className="animate-spin" /> : "Yadda saxla"}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
     </div>
   );

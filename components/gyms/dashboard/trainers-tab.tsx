@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import { AddTrainerModal } from "../modals/add-trainer-modal";
 import { TrainerDetailsModal } from "../modals/trainer-details-modal";
@@ -8,6 +8,7 @@ import { useState, useRef, useEffect } from "react";
 import { useGymStore } from "@/lib/store/gym-store";
 import { useGymTrainersQuery, useDeleteTrainer } from "@/lib/query/trainers";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export function TrainersTab() {
   const [showAdd, setShowAdd] = useState(false);
@@ -52,111 +53,117 @@ export function TrainersTab() {
   const trainers = (apiData as { items?: any[] })?.items ?? [];
 
   return (
-    <div className="flex flex-col gap-5 py-4">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex-1 h-12 bg-white rounded-xl border border-[#ececed] flex items-center px-4 gap-3">
-          <Image src="/search.svg" width={24} height={24} alt="search" />
+    <div className="flex flex-col gap-6 py-4 w-full font-sans">
+      {/* Search & Add Button Header */}
+      <div className="w-full flex flex-col lg:flex-row items-center justify-between gap-5">
+        <div className="flex-1 w-full lg:w-[846px] h-12 bg-white rounded-xl border border-[#ececed] flex items-center px-6 py-1.5 gap-3 shadow-sm focus-within:border-[#00B4CC] transition-colors">
+          <Image src="/search.svg" width={24} height={24} alt="search" className="shrink-0 opacity-50" />
           <input 
             type="text" 
             placeholder="Ad/Soyad , Zal , Telefon üzrə axtarış....." 
-            className="flex-1 bg-transparent text-[14px] text-[#94979c] outline-none placeholder:text-[#94979c]" 
+            className="flex-1 bg-transparent text-[14px] text-black outline-none placeholder:text-[#94979c]" 
           />
         </div>
 
         <button 
           onClick={() => setShowAdd(true)} 
-          className="flex items-center gap-2 bg-[#00B4CC] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#009DB3] transition-colors"
+          className="h-12 w-full lg:w-[193px] flex items-center justify-center gap-3 bg-[#00B4CC] text-white px-6 rounded-xl text-base font-medium hover:bg-[#009DB3] transition-all shadow-sm active:scale-[0.98]"
         >
-          Məşqçi əlavə et 
-          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-base font-bold leading-none">+</span>
+          <span className="leading-[24px]">Məşqçi əlavə et</span>
+          <div className="h-6 w-6 relative">
+            <Image src="/trainer-add.svg" width={24} height={24} alt="plus" />
+          </div>
         </button>
       </div>
 
-      {trainers.length === 0 ? (
-        <div className="w-full h-[175px] rounded-xl bg-white flex flex-col items-center justify-center gap-2 text-center text-base text-[#6a7282]">
-          <div className="w-12 h-12 relative">
-            <Image src="/no-trainer.svg" alt="No Trainer" fill className="object-contain" />
+      {/* Table / Empty State */}
+      <div className="w-full rounded-[12px] bg-white border border-[#ececed] overflow-hidden min-h-[175px] flex flex-col">
+        {apiLoading ? (
+          <div className="flex-1 py-20 flex justify-center items-center text-slate-400">
+            <Loader2 className="animate-spin mr-2" /> Məşqçilər yüklənir...
           </div>
-          <div className="self-stretch relative leading-[24px] font-medium text-[#6a7282]">
-            Hələ ki, məşqçi yoxdur
+        ) : trainers.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-10 gap-2 text-center font-sans">
+            <div className="h-12 w-12 relative mb-2">
+              <Image src="/no-trainer.svg" fill className="opacity-20 object-contain" alt="No Trainer" />
+            </div>
+            <div className="self-stretch text-[16px] leading-[24px] font-medium text-[#6a7282]">
+              Hələ ki, məşqçi yoxdur
+            </div>
+            <div className="self-stretch text-[14px] leading-[18px] text-[#99a1af]">
+              Yeni məşqçi əlavə etmək üçün yuxarıdakı düyməni sıxın
+            </div>
           </div>
-          <div className="self-stretch relative text-sm leading-[18px] text-[#99a1af]">
-            Yeni məşqçi əlavə etmək üçün yuxarıdakı düyməni sıxın
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-col text-base text-black font-['SF_Pro'] rounded-xl shadow-sm">
-          <div className="w-full rounded-t-xl bg-[#00B4CC26] border border-[#cecfd2] flex items-center justify-between px-6 py-5 gap-5">
-            <div className="flex-1 leading-6">Ad / Soyad</div>
-            <div className="w-32 leading-6">Telefon</div>
-            <div className="w-48 leading-6 shrink-0">Email</div>
-            <div className="w-32 leading-6">Zal</div>
-            <div className="w-16 leading-6 text-right">Ətraflı</div>
-          </div>
-          <div className="flex flex-col w-full">
-            {apiLoading ? (
-              <div className="flex justify-center py-10 border-x border-b border-[#ececed] bg-white rounded-b-xl"><Loader2 className="animate-spin inline text-[#00B4CC]" /></div>
-            ) : (
-              trainers.map((t: any, index: number) => (
-                <div key={t.trainer_id} className={`w-full h-[100px] bg-white border-x border-b border-[#ececed] flex items-center px-6 py-5 ${index === trainers.length - 1 ? 'rounded-b-xl' : ''}`}>
-                  <div className="flex w-full items-center justify-between gap-5">
-                    <div className="flex-1 flex items-center gap-[14px]">
-                      <div className="h-[54px] w-[54px] relative rounded-full overflow-hidden shrink-0 border border-border">
-                        {t.picture ? <img src={t.picture} className="object-cover w-full h-full" alt="Trainer" /> : <div className="w-full h-full bg-secondary/50 flex items-center justify-center font-bold text-muted-foreground">{t.name?.[0]}</div>}
+        ) : (
+          <div className="w-full overflow-x-auto">
+            <div className="min-w-[1000px] flex flex-col">
+              {/* Header */}
+              <div className="grid grid-cols-[1fr_140px_220px_160px_80px] items-center px-8 py-5 bg-[rgba(0,180,204,0.15)] border-b border-[#ececed] text-sm font-bold text-[#101828]">
+                <span className="opacity-60 uppercase">Ad / Soyad</span>
+                <span className="opacity-60 uppercase">Telefon</span>
+                <span className="opacity-60 uppercase">Email</span>
+                <span className="opacity-60 uppercase text-center">Zal</span>
+                <span className="opacity-60 uppercase text-right">Ətraflı</span>
+              </div>
+
+              <div className="flex flex-col bg-white divide-y divide-[#f2f4f7]">
+                {trainers.map((t: any) => (
+                  <div key={t.trainer_id} className="grid grid-cols-[1fr_140px_220px_160px_80px] items-center px-8 py-6 text-base hover:bg-slate-50/80 transition-colors group">
+                    <div className="flex items-center gap-4">
+                      <div className="h-14 w-14 relative rounded-full overflow-hidden shrink-0 border-2 border-white shadow-sm ring-1 ring-slate-100">
+                        {t.picture ? (
+                          <img src={t.picture} className="object-cover w-full h-full" alt="Trainer" />
+                        ) : (
+                          <div className="w-full h-full bg-[#00B4CC10] text-[#00B4CC] flex items-center justify-center font-bold text-xl uppercase italic">
+                            {t.name?.[0]}
+                          </div>
+                        )}
                       </div>
-                      <div className="flex flex-col justify-center">
-                        <div className="leading-6">{t.name} {t.surname}</div>
-                        <div className="leading-6 text-[#94979c]">{t.profession?.name || "Məşqçi"}</div>
+                      <div className="flex flex-col">
+                        <div className="font-bold text-[#101828] group-hover:text-[#00B4CC] transition-colors">{t.name} {t.surname}</div>
+                        <div className="text-sm font-medium text-slate-400">{t.profession?.name || "Məşqçi"}</div>
                       </div>
                     </div>
                     
-                    <div className="w-32 leading-6">{t.phone || "Göstərilməyib"}</div>
-                    
-                    <div className="w-48 flex items-center shrink-0">
-                      <div className="leading-6 truncate">{t.email || "Göstərilməyib"}</div>
-                    </div>
+                    <div className="font-medium text-slate-600">{t.phone || "—"}</div>
+                    <div className="font-medium text-slate-500 truncate pr-4">{t.email || "—"}</div>
+                    <div className="text-center font-bold text-slate-700">Test Gym</div>
 
-                    <div className="w-32 flex items-center">
-                      <div className="leading-6 truncate">Current Gym</div>
-                    </div>
-
-                    <div className="w-16 flex justify-end relative">
+                    <div className="flex justify-end relative">
                       <button 
                         onClick={() => setOpenMenuId(openMenuId === t.trainer_id ? null : t.trainer_id)}
-                        className="w-6 h-6 flex items-center justify-center cursor-pointer hover:bg-slate-100 rounded"
+                        className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-colors"
                       >
                         <Image src="/more.png" width={24} height={24} alt="more" className="object-contain" />
                       </button>
 
                       {openMenuId === t.trainer_id && (
-                        <div ref={menuRef} className="absolute right-8 top-0 z-10 w-[160px] bg-white rounded-[10px] shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)] border border-[#e5e7eb] py-1 text-sm text-[#364153]">
+                        <div ref={menuRef} className="absolute right-0 top-12 z-[100] w-[180px] bg-white rounded-xl shadow-2xl border border-slate-100 py-2 overflow-hidden animate-in fade-in zoom-in duration-200">
                           <button 
                             onClick={() => { setShowDetails(t); setOpenMenuId(null); }}
-                            className="w-full h-9 flex items-center px-4 hover:bg-gray-50 transition-colors gap-2"
+                            className="w-full h-11 flex items-center px-4 hover:bg-slate-50 transition-colors gap-3 font-medium text-slate-700"
                           >
-                            <div className="w-4 h-4 flex items-center justify-center relative">
-                              <Image src="/Eye.png" width={16} height={16} alt="View" className="object-contain" />
-                            </div>
-                            <span className="leading-[18px]">Bax</span>
+                            <Image src="/Eye.png" width={18} height={18} alt="View" />
+                            <span>Məlumatlara bax</span>
                           </button>
-                          <div className="w-full h-[0.6px] bg-[#f3f4f6]" />
+                          <div className="h-px bg-slate-100 mx-2" />
                           <button 
                             onClick={() => handleDelete(t.trainer_id)}
-                            className="w-full h-9 flex items-center px-4 text-[#e7000b] hover:bg-red-50 transition-colors gap-2"
+                            className="w-full h-11 flex items-center px-4 text-red-600 hover:bg-red-50 transition-colors gap-3 font-medium"
                           >
-                            <Image src="/trash.png" width={16} height={16} alt="Delete" />
-                            <span className="leading-[20px] tracking-[-0.15px]">Ləğv et</span>
+                            <Image src="/trash.png" width={18} height={18} alt="Delete" />
+                            <span>Məşqçini sil</span>
                           </button>
                         </div>
                       )}
                     </div>
                   </div>
-                </div>
-              ))
-            )}
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {showAdd && <AddTrainerModal onClose={() => setShowAdd(false)} isDashboard={true} />}
       {showDetails && <TrainerDetailsModal trainer={showDetails} onClose={() => setShowDetails(null)} />}
