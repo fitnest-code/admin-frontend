@@ -4,19 +4,31 @@ import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import { AddTrainerModal } from "../modals/add-trainer-modal";
 import { TrainerDetailsModal } from "../modals/trainer-details-modal";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useGymStore } from "@/lib/store/gym-store";
 import { useGymTrainers, useDeleteTrainer } from "@/lib/query/gym-query";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-export function TrainersTab() {
+export function TrainersTab({ gym }: { gym?: any }) {
   const [showAdd, setShowAdd] = useState(false);
   const [showDetails, setShowDetails] = useState<any>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   
   const { gymId } = useGymStore();
+
+  const initialTrainers = useMemo(() => {
+    if (gym?.trainers) {
+      return {
+        items: gym.trainers,
+        totalItems: gym.trainers.length,
+        totalPages: 1,
+        currentPage: 1
+      };
+    }
+    return undefined;
+  }, [gym]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -30,7 +42,8 @@ export function TrainersTab() {
 
   const { data: apiData, isLoading: apiLoading } = useGymTrainers(
     gymId || '',
-    { page: 1, pageSize: 100, sort_dir: "desc" }
+    { page: 1, pageSize: 100, sort_dir: "DESC" },
+    initialTrainers
   );
   
   const { mutate: deleteTrainerMutate } = useDeleteTrainer();
@@ -69,7 +82,7 @@ export function TrainersTab() {
       </div>
 
       {/* Table / Empty State */}
-      <div className="w-full rounded-[12px] bg-white border border-[#ececed] overflow-hidden min-h-[175px] flex flex-col">
+      <div className="w-full rounded-[12px] bg-white border border-[#ececed] min-h-[175px] flex flex-col">
         {apiLoading ? (
           <div className="flex-1 py-20 flex justify-center items-center text-slate-400">
             <Loader2 className="animate-spin mr-2" /> Məşqçilər yüklənir...
@@ -87,24 +100,25 @@ export function TrainersTab() {
             </div>
           </div>
         ) : (
-          <div className="w-full overflow-x-auto">
+          <div className="w-full">
             <div className="min-w-[1000px] flex flex-col">
               {/* Header */}
-              <div className="w-full flex items-center justify-between px-6 py-[20px] bg-[rgba(0,180,204,0.15)] border border-[#cecfd2] rounded-t-[12px] text-[16px] font-bold text-black font-sans">
-                <div className="w-[374px] flex justify-between">
-                  <span>Ad / Soyad</span>
-                  <span>Telefon</span>
+              <div className="w-full h-[64px] flex items-center justify-center bg-[rgba(0,180,204,0.15)] border border-[#cecfd2] rounded-t-[12px] text-[16px] font-bold text-black font-sans px-6">
+                <div className="w-[1015px] flex items-center gap-[90px]">
+                   <div className="w-[280px]">Ad / Soyad</div>
+                   <div className="w-[160px]">Telefon</div>
+                   <div className="w-[280px]">Email</div>
+                   <div className="flex-1 text-right">Ətraflı</div>
                 </div>
-                <div className="w-[164px]">Email</div>
-                <div className="w-[164px]">Zal</div>
-                <div className="w-[24px]">Ətraflı</div>
               </div>
+
+              {/* Rows */}
               <div className="flex flex-col bg-white border-x border-b border-[#ececed] rounded-b-[12px] divide-y divide-[#ececed]">
-                {trainers.map((t: any) => (
-                  <div key={t.trainer_id} className="w-full h-[100px] flex items-center justify-between px-6 py-[20px] text-[16px] hover:bg-slate-50/80 transition-colors group font-sans">
-                    {/* Name & Phone section */}
-                    <div className="w-[374px] flex items-center justify-between">
-                      <div className="flex items-center gap-[14px]">
+                {trainers.map((t: any, i: number) => (
+                  <div key={t.trainer_id || t.id || i} className="w-full h-[100px] flex items-center justify-center px-6 text-[16px] hover:bg-slate-50/80 transition-colors group font-sans">
+                    <div className="w-[1015px] flex items-center gap-[90px]">
+                      {/* Name Section */}
+                      <div className="w-[280px] flex items-center gap-[14px] shrink-0">
                         <div className="h-[54px] w-[54px] relative rounded-full overflow-hidden shrink-0">
                           {t.picture ? (
                             <img src={t.picture} className="object-cover w-full h-full" alt="Trainer" />
@@ -114,52 +128,55 @@ export function TrainersTab() {
                             </div>
                           )}
                         </div>
-                        <div className="flex flex-col justify-center">
-                          <div className="font-bold text-black leading-[24px] group-hover:text-[#00B4CC] transition-colors">{t.name} {t.surname}</div>
-                          <div className="text-[14px] leading-[24px] text-[#94979c]">{t.profession?.name || "Məşqçi"}</div>
+                        <div className="flex flex-col justify-center overflow-hidden">
+                          <div className="font-bold text-black leading-[24px] group-hover:text-[#00B4CC] transition-colors truncate">
+                            {t.name} {t.surname}
+                          </div>
+                          <div className="text-[14px] leading-[24px] text-[#94979c] truncate">
+                            {t.profession?.name || "Məşqçi"}
+                          </div>
                         </div>
                       </div>
-                      <div className="font-medium text-black leading-[24px]">{t.phone || "+994 ** *** ** **"}</div>
-                    </div>
-                    
-                    {/* Email */}
-                    <div className="w-[164px] font-medium text-black leading-[24px] truncate pr-4">
-                      {t.email || "fitnest@gmail.com"}
-                    </div>
 
-                    {/* Gym */}
-                    <div className="w-[164px] font-bold text-black leading-[24px]">
-                      {gymId === 'test' ? 'FitZone Gym' : 'Test Gym'}
-                    </div>
+                      {/* Phone */}
+                      <div className="w-[160px] font-medium text-black leading-[24px] shrink-0">
+                        {t.phone || "+994 ** *** ** **"}
+                      </div>
 
-                    {/* Actions */}
-                    <div className="w-[24px] flex justify-end relative">
-                      <button 
-                        onClick={() => setOpenMenuId(openMenuId === t.trainer_id ? null : t.trainer_id)}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors rotate-90"
-                      >
-                         <Image src="/more.png" width={24} height={24} alt="more" className="object-contain -rotate-90" />
-                      </button>
+                      {/* Email */}
+                      <div className="w-[280px] font-medium text-black leading-[24px] truncate shrink-0">
+                        {t.email || "fitnest@gmail.com"}
+                      </div>
 
-                      {openMenuId === t.trainer_id && (
-                        <div ref={menuRef} className="absolute right-0 top-10 z-[100] w-[180px] bg-white rounded-xl shadow-2xl border border-slate-100 py-2 overflow-hidden animate-in fade-in zoom-in duration-200">
-                          <button 
-                            onClick={() => { setShowDetails(t); setOpenMenuId(null); }}
-                            className="w-full h-11 flex items-center px-4 hover:bg-slate-50 transition-colors gap-3 font-medium text-slate-700"
-                          >
-                            <Image src="/Eye.png" width={18} height={18} alt="View" />
-                            <span>Məlumatlara bax</span>
-                          </button>
-                          <div className="h-px bg-slate-100 mx-2" />
-                          <button 
-                            onClick={() => handleDelete(t.trainer_id)}
-                            className="w-full h-11 flex items-center px-4 text-red-600 hover:bg-red-50 transition-colors gap-3 font-medium"
-                          >
-                            <Image src="/trash.png" width={18} height={18} alt="Delete" />
-                            <span>Məşqçini sil</span>
-                          </button>
-                        </div>
-                      )}
+                      {/* Actions */}
+                      <div className="flex-1 flex justify-end relative">
+                        <button 
+                          onClick={() => setOpenMenuId(openMenuId === t.trainer_id ? null : t.trainer_id)}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors"
+                        >
+                          <Image src="/more.png" width={24} height={24} alt="more" className="-rotate-90" />
+                        </button>
+
+                        {openMenuId === t.trainer_id && (
+                          <div ref={menuRef} className="absolute right-0 top-10 z-[100] w-[180px] bg-white rounded-xl shadow-2xl border border-slate-100 py-2 animate-in fade-in zoom-in duration-200">
+                            <button 
+                              onClick={() => { setShowDetails(t); setOpenMenuId(null); }}
+                              className="w-full h-11 flex items-center px-4 hover:bg-slate-50 transition-colors gap-3 font-medium text-slate-700"
+                            >
+                              <Image src="/Eye.png" width={18} height={18} alt="View" />
+                              <span>Məlumatlara bax</span>
+                            </button>
+                            <div className="h-px bg-slate-100 mx-2" />
+                            <button 
+                              onClick={() => handleDelete(t.trainer_id)}
+                              className="w-full h-11 flex items-center px-4 text-red-600 hover:bg-red-50 transition-colors gap-3 font-medium"
+                            >
+                              <Image src="/trash.png" width={18} height={18} alt="Delete" />
+                              <span>Məşqçini sil</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}

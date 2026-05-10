@@ -44,7 +44,13 @@ interface GymDetailProps {
 
 export function GymDetail({ gym, isNew = false }: GymDetailProps) {
   const router = useRouter()
-  const { gymId, currentTab, setCurrentTab, resetGym } = useGymStore()
+  const { gymId, currentTab, setCurrentTab, resetGym, setGymId } = useGymStore()
+
+  useEffect(() => {
+    if (gym?.id && gymId !== gym.id) {
+      setGymId(gym.id)
+    }
+  }, [gym?.id, gymId, setGymId])
 
   const isCompletedRef = useRef(false)
 
@@ -113,11 +119,11 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       case 'analitika':
         return <AnalitikaTab gymId={gym.id} />
       case 'info':
-        return <InfoTab gymId={gym.id} />
+        return <InfoTab gymId={gym.id} gym={gym} />
       case 'trainers':
-        return <TrainersTab />
+        return <TrainersTab gym={gym} />
       case 'plans':
-        return <PlansTab />
+        return <PlansTab gym={gym} />
       case 'reviews':
         return <ReviewsTab />
       case 'reservations':

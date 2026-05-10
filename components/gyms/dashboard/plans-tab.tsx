@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Check, Loader2, Trash2 } from "lucide-react";
+import { useState, useMemo } from "react";
+import Image from "next/image";
+import { Plus, Check, Loader2, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGymStore } from "@/lib/store/gym-store";
-import { useSupportedServices, useCreateGymStep6 } from "@/lib/query/gym-query";
+import { useSupportedServices, useCreateGymStep6, useCreateSupportedService, useDeleteSupportedService, useUpdateGymSubscriptions } from "@/lib/query/gym-query";
 import { toast } from "sonner";
 import { ServiceSelectorModal } from "../modals/service-selector-modal";
 
@@ -26,32 +27,97 @@ const DEFAULT_SERVICES = [
   { id: 4, name: "Dəsmal" },
 ];
 
-export function PlansTab() {
+export function PlansTab({ gym }: { gym?: any }) {
   const { gymId } = useGymStore();
-  const [selectedPackages, setSelectedPackages] = useState<Package[]>(["Platinum"]);
-  const [activePackage, setActivePackage] = useState<Package>("Platinum");
-  const [prices, setPrices] = useState<Record<Package, string>>({ Bronze: "", Silver: "", Gold: "", Platinum: "50" });
-  
-  const [packageServices, setPackageServices] = useState<Record<Package, string[]>>({
-    Bronze: [], Silver: [], Gold: [], Platinum: []
-  });
 
-  const [showSelectorModal, setShowSelectorModal] = useState(false);
+  const initialData = useMemo(() => {
+    const selected = new Set<Package>();
+    const prcs: Record<Package, string> = { Bronze: "", Silver: "", Gold: "", Platinum: "" };
+    const svcs: Record<Package, string[]> = { Bronze: [], Silver: [], Gold: [], Platinum: [] };
+
+    if (gym?.supportedSubscriptions) {
+      gym.supportedSubscriptions.forEach((sub: any) => {
+        const pkgName = sub.packageName as Package;
+        if (PACKAGES.includes(pkgName)) {
+          selected.add(pkgName);
+          prcs[pkgName] = String(sub.dailyPrice || "");
+          // Note: In the user response, services are not explicitly listed by ID/Name in a flat way for packages
+          // but we might have them in the detailed response. 
+          // For now, we populate what we have.
+        }
+      });
+    }
+
+    return { 
+      selected: selected.size > 0 ? selected : new Set<Package>(["Platinum"]),
+      prices: prcs,
+      services: svcs
+    };
+  }, [gym]);
+
+  const [activePackage, setActivePackage] = useState<Package>("Platinum");
+  const [selectedPackages, setSelectedPackages] = useState<Set<Package>>(initialData.selected);
+  const [prices, setPrices] = useState<Record<Package, string>>(initialData.prices);
+  
+  const [packageServices, setPackageServices] = useState<Record<Package, string[]>>(initialData.services);
+
+  const [pendingService, setPendingService] = useState<string | null>(null);
 
   const { data: allServices } = useSupportedServices(gymId ? Number(gymId) : undefined);
+  const createServiceMutation = useCreateSupportedService();
+  const deleteServiceMutation = useDeleteSupportedService();
+  const { mutate: updateSubscriptions, isPending: savingUpdate } = useUpdateGymSubscriptions();
 
   const togglePackage = (pkg: Package) => {
-    setSelectedPackages((prev) =>
-      prev.includes(pkg) ? prev.filter((p) => p !== pkg) : [...prev, pkg]
-    );
-    if (!selectedPackages.includes(pkg)) setActivePackage(pkg);
+    setSelectedPackages((prev) => {
+      const next = new Set(prev);
+      if (next.has(pkg)) next.delete(pkg);
+      else next.add(pkg);
+      return next;
+    });
   };
 
-  const removeService = (pkg: Package, svcName: string) => {
-    setPackageServices((prev) => ({ ...prev, [pkg]: prev[pkg].filter((s) => s !== svcName) }));
+  const handleConfirmService = async () => {
+    if (!pendingService || !pendingService.trim()) {
+      setPendingService(null);
+      return;
+    }
+
+    try {
+      await createServiceMutation.mutateAsync({
+        name: pendingService.trim(),
+        gymId: gymId ? Number(gymId) : undefined
+      });
+      
+      setPendingService(null);
+      toast.success("Xidmət yaradıldı");
+    } catch (err: any) {
+      toast.error(err?.message || "Xidmət yaradıla bilmədi");
+    }
   };
 
-  const { mutate: createStep6, isPending: savingStep6 } = useCreateGymStep6();
+  const handleDeleteFromGym = async (id: number, e: React.MouseEvent) => {
+    e.stopPropagation(); // Kartın kliklənməsini dayandır (toggle baş verməsin)
+    if (!confirm("Bu xidməti bütünlüklə silmək istədiyinizə əminsiniz?")) return;
+
+    try {
+      await deleteServiceMutation.mutateAsync(id);
+      toast.success("Xidmət idman zalından silindi");
+    } catch (err: any) {
+      toast.error(err?.message || "Xidmət silinərkən xəta baş verdi");
+    }
+  };
+
+  const toggleServiceSelection = (svcName: string) => {
+    setPackageServices(prev => {
+      const isSelected = prev[activePackage].includes(svcName);
+      if (isSelected) {
+        return { ...prev, [activePackage]: prev[activePackage].filter(s => s !== svcName) };
+      } else {
+        return { ...prev, [activePackage]: [...prev[activePackage], svcName] };
+      }
+    });
+  };
 
   const handleSave = () => {
     if (!gymId) return toast.error("Zal ID tapılmadı");
@@ -60,7 +126,7 @@ export function PlansTab() {
       Bronze: 1, Silver: 2, Gold: 3, Platinum: 4,
     };
 
-    const subscriptions = selectedPackages.map(pkg => {
+    const subscriptions = Array.from(selectedPackages).map(pkg => {
       const serviceNames = packageServices[pkg];
       const serviceIds = serviceNames.map(name => {
         const found = allServices?.find(s => s.name === name);
@@ -78,7 +144,7 @@ export function PlansTab() {
       return toast.error("Ən azı bir abunəlik paketi seçilməlidir");
     }
 
-    createStep6({
+    updateSubscriptions({
       id: Number(gymId),
       payload: { subscriptions }
     }, {
@@ -86,104 +152,176 @@ export function PlansTab() {
         toast.success("Abunəlik məlumatları uğurla yeniləndi");
       },
       onError: (err: any) => {
-        toast.error(err?.message || "Xəta baş verdi");
+        toast.error(err?.response?.data?.message || err?.message || "Xəta baş verdi");
       }
     });
   };
 
+  const gradients: Record<Package, string> = {
+    Bronze: "linear-gradient(111.92deg, #d8a673, #b97a3c 99.99%)",
+    Silver: "linear-gradient(106.25deg, #e5e8ec, #9baac7)",
+    Gold: "linear-gradient(104.88deg, #e7b75f, #f8d57e)",
+    Platinum: "linear-gradient(99.99deg, #313131, #515254 40.45%, #5b5b5d 55.32%, #565857)",
+  };
+
   return (
-    <div className="flex flex-col gap-6">
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm flex flex-col gap-8">
-        <div className="flex flex-col gap-4">
-          <h3 className="text-sm font-bold text-foreground">Zala aid olan abunəliklər</h3>
-          <div className="flex flex-wrap gap-3">
-            {PACKAGES.map((pkg) => {
-              const ps = packageStyles[pkg];
-              const isSelected = selectedPackages.includes(pkg);
-              return (
-                <button
-                  key={pkg}
-                  onClick={() => togglePackage(pkg)}
-                  className={cn(
-                    "flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all border",
-                    isSelected 
-                      ? `${ps.bg} ${ps.text} border-transparent shadow-sm` 
-                      : "bg-secondary/20 text-muted-foreground border-border hover:bg-secondary/40"
-                  )}
-                >
-                  <div className={cn(
-                    "w-4 h-4 rounded flex items-center justify-center border transition-colors",
-                    isSelected ? "bg-white/30 border-white" : "bg-white border-border"
-                  )}>
-                    {isSelected && <Check className="w-3 h-3 text-white stroke-[4]" />}
-                  </div>
-                  {pkg}
-                </button>
-              );
-            })}
-          </div>
+    <div className="w-full flex flex-col gap-9 font-sans text-black animate-in fade-in duration-500">
+      
+      {/* 1. Package Selector Section */}
+      <div className="bg-white rounded-[24px] border border-[#ececed] p-7 flex flex-col gap-6 shadow-sm">
+        <div className="border-b border-[#ececed] pb-2">
+          <h2 className="text-[20px] font-semibold leading-[30px]">Zala aid olan abunəliklər</h2>
         </div>
 
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-foreground">Zalda mövcud olan xidmətlər</h3>
-            <button 
-              onClick={() => setShowSelectorModal(true)}
-              className="text-xs font-bold text-[#00B4CC] hover:underline"
-            >
-              Xidmət seç / əlavə et +
-            </button>
-          </div>
-          <div className="grid grid-cols-4 gap-3">
-            {DEFAULT_SERVICES.map((svc) => {
-              const isSelected = packageServices[activePackage].includes(svc.name);
-              return (
-                <button
-                  key={svc.id}
-                  onClick={() => {
-                    if (isSelected) removeService(activePackage, svc.name);
-                    else setPackageServices(prev => ({ ...prev, [activePackage]: [...prev[activePackage], svc.name] }));
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {PACKAGES.map((pkg) => {
+            const isSelected = selectedPackages.has(pkg);
+            const isActive = activePackage === pkg;
+            
+            return (
+              <div
+                key={pkg}
+                onClick={() => setActivePackage(pkg)}
+                style={{ background: gradients[pkg] }}
+                className={cn(
+                  "relative h-[68px] rounded-[32px] flex items-center px-6 cursor-pointer transition-all duration-300",
+                  isActive ? "scale-[1.05] shadow-xl ring-2 ring-[#00B4CC]" : "hover:scale-[1.02] shadow-sm",
+                  !isSelected && "ring-1 ring-inset ring-black/5"
+                )}
+              >
+                <div 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    togglePackage(pkg);
                   }}
                   className={cn(
-                    "flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition-all border",
-                    isSelected 
-                      ? "bg-[#00B4CC15] text-[#00B4CC] border-[#00B4CC] shadow-sm" 
-                      : "bg-secondary/10 text-muted-foreground border-border hover:bg-secondary/20"
+                    "w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all shadow-sm",
+                    isSelected ? "bg-white border-white" : "bg-transparent border-white/70"
                   )}
                 >
-                  <div className={cn(
-                    "w-4 h-4 rounded flex items-center justify-center border transition-colors",
-                    isSelected ? "bg-[#00B4CC] border-transparent" : "bg-white border-border"
-                  )}>
-                    {isSelected && <Check className="w-3 h-3 text-white stroke-[4]" />}
-                  </div>
-                  {svc.name}
-                </button>
-              );
-            })}
+                  {isSelected && <Check className="text-black w-4 h-4 stroke-[4]" />}
+                </div>
+                
+                <b className={cn(
+                  "ml-3 text-[18px] tracking-tight",
+                  pkg === "Platinum" ? "text-white" : "text-white drop-shadow-md"
+                )}>
+                  {pkg}
+                </b>
+                
+                {isActive && (
+                   <div className="absolute -top-1 -right-1 w-4 h-4 bg-[#00B4CC] rounded-full border-2 border-white shadow-sm animate-pulse" />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 2. Price Section */}
+      <div className="bg-white rounded-[24px] border border-[#ececed] p-7 flex flex-col gap-6 shadow-sm">
+        <div className="border-b border-[#ececed] pb-2">
+          <h2 className="text-[20px] font-semibold leading-[30px]">Giriş qiyməti</h2>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <label className="text-[16px] text-black/60 font-medium">Giriş qiyməti (AZN)</label>
+          <div className="h-[60px] w-full max-w-[320px] bg-[#fafafa] border border-[#ececed] rounded-[12px] flex items-center px-5">
+             <input 
+               type="number"
+               value={prices[activePackage]}
+               onChange={(e) => setPrices(prev => ({ ...prev, [activePackage]: e.target.value }))}
+               className="bg-transparent w-full h-full outline-none text-[18px] font-semibold"
+               placeholder="0.00"
+             />
+             <span className="text-black/40 font-bold ml-2">AZN</span>
           </div>
         </div>
       </div>
 
-      <div className="flex justify-end mt-4">
+      {/* 3. Services Section */}
+      <div className="bg-white rounded-[12px] border border-[#ececed] p-7 flex flex-col gap-8 shadow-sm">
+        <div className="flex items-center justify-between border-b border-[#ececed] pb-2">
+          <h2 className="text-[20px] font-semibold leading-[30px]">
+            {activePackage} paketə daxil olan xidmətlər
+          </h2>
+          <button 
+            onClick={() => setPendingService("")}
+            className="h-[48px] w-[193px] bg-[#00B4CC] rounded-[12px] flex items-center justify-end px-4 gap-3 text-white text-[16px] transition-all hover:opacity-90 shadow-sm"
+          >
+            <span className="leading-tight">Xidmət əlavə et</span>
+            <div className="w-6 h-6 flex items-center justify-center">
+               <Plus size={24} />
+            </div>
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-5">
+           <div className="flex flex-wrap gap-5 min-h-[120px]">
+              {/* All Services with Select/Delete Logic */}
+              {allServices?.map((svc) => {
+                const isSelected = packageServices[activePackage].includes(svc.name);
+                return (
+                  <div 
+                    key={svc.id}
+                    onClick={() => toggleServiceSelection(svc.name)}
+                    className={cn(
+                      "w-[160px] h-[72px] rounded-lg px-3 py-5 flex items-center justify-between cursor-pointer transition-all border",
+                      isSelected 
+                        ? "bg-[#00b4cc0a] border-[#00b4cc]" 
+                        : "bg-[#fafafa] border-[#ececed]"
+                    )}
+                  >
+                    <div className="flex items-center overflow-hidden">
+                       <span className="text-[16px] font-medium text-black truncate leading-[24px]">
+                         {svc.name}
+                       </span>
+                    </div>
+
+                    <button 
+                      onClick={(e) => handleDeleteFromGym(svc.id, e)}
+                      className="w-6 h-6 flex-shrink-0 flex items-center justify-center hover:scale-110 transition-transform"
+                    >
+                      <Image src="/icons/trash.svg" width={24} height={24} alt="Delete" />
+                    </button>
+                  </div>
+                );
+              })}
+
+              {/* Inline Add Input */}
+              {pendingService !== null && (
+                <div className="w-[160px] h-[72px] border-2 border-dashed border-[#00B4CC] rounded-lg px-3 flex items-center justify-between animate-in slide-in-from-left duration-300">
+                   <input 
+                     autoFocus
+                     value={pendingService}
+                     onChange={(e) => setPendingService(e.target.value)}
+                     onKeyDown={(e) => e.key === 'Enter' && handleConfirmService()}
+                     placeholder="..."
+                     className="bg-transparent border-none outline-none text-[14px] font-medium w-full"
+                   />
+                   <div className="flex items-center ml-1">
+                     <button onClick={handleConfirmService} className="text-green-500">
+                       <Check size={18} strokeWidth={3} />
+                     </button>
+                   </div>
+                </div>
+              )}
+           </div>
+        </div>
+      </div>
+
+      {/* 4. Footer Buttons */}
+      <div className="flex items-center justify-end mt-4">
         <button 
           onClick={handleSave}
-          disabled={savingStep6}
-          className="px-10 py-3.5 rounded-xl bg-muted text-muted-foreground font-bold transition-all hover:bg-secondary/50 flex items-center gap-2"
+          disabled={savingUpdate}
+          className="h-[48px] w-[280px] rounded-[10px] bg-[#00B4CC] text-white text-[16px] font-medium hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-md shadow-cyan-100"
         >
-          {savingStep6 && <Loader2 className="w-4 h-4 animate-spin" />}
+          {savingUpdate && <Loader2 className="w-4 h-4 animate-spin" />}
           Yadda saxla
         </button>
       </div>
 
-      {showSelectorModal && (
-        <ServiceSelectorModal 
-          onClose={() => setShowSelectorModal(false)}
-          activePackageName={activePackage}
-          selectedServiceNames={packageServices[activePackage]}
-          onSelectionChange={(names) => setPackageServices(prev => ({ ...prev, [activePackage]: names }))}
-        />
-      )}
     </div>
   );
 }

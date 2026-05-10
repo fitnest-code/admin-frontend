@@ -85,11 +85,32 @@ export function useCreateSupportedService() {
   });
 }
 
+// 5.1 Xidməti silmək üçün
+export function useDeleteSupportedService() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiDelete(`/admin/gyms/services/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['supported-services'] });
+    }
+  });
+}
+
 // 6. Step 6: Abunəlik və xidmətləri aktivləşdirin
 export function useCreateGymStep6() {
   return useMutation({
     mutationFn: ({ id, payload }: { id: number, payload: GymCreateStep6Request }) =>
       apiPost(`/admin/gyms/${id}/step6`, payload),
+  });
+}
+
+// 6.1 Abunəlikləri yeniləyin (DRAFT statusunda olmayan zallar üçün)
+export function useUpdateGymSubscriptions() {
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: number, payload: GymCreateStep6Request }) =>
+      apiPut(`/admin/gyms/${id}/subscriptions`, payload),
   });
 }
 
@@ -155,14 +176,20 @@ export function useUpdateGymInfo() {
 }
 
 // 11. Məşqçiləri çəkmək üçün
-export function useGymTrainers(gymId: number | string | null | undefined, params?: { page?: number, pageSize?: number, sort_dir?: string }) {
+export function useGymTrainers(gymId: number | string | null | undefined, params?: { page?: number, pageSize?: number, sort_dir?: string }, initialData?: any) {
+  const normalizedParams = {
+    ...params,
+    sort_dir: params?.sort_dir?.toUpperCase() || 'DESC'
+  };
+
   return useQuery({
-    queryKey: ['gym-trainers', gymId, params],
+    queryKey: ['gym-trainers', gymId, normalizedParams],
     queryFn: () => {
       if (!gymId) return Promise.resolve(null)
-      return apiGet<PaginatedResponse<ITrainer>>(`/admin/gyms/${gymId}/trainers`, { params })
+      return apiGet<PaginatedResponse<ITrainer>>(`/admin/gyms/${gymId}/trainers`, { params: normalizedParams })
     },
     enabled: !!gymId,
+    initialData: initialData
   })
 }
 
