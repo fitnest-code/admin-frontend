@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { X, Trash2, Loader2, Plus, UserPlus, Shield, User, Key, Eye, EyeOff } from "lucide-react";
+import { X, Loader2, UserPlus, User, Key, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGymStore } from "@/lib/store/gym-store";
 import { useGymAdmins, useAddGymAdmin, useDeleteGymAdmin } from "@/lib/query/gym-query";
@@ -38,6 +38,10 @@ export function AdminsTab() {
         onSuccess: () => {
           setModalOpen(false);
           setForm({ name: "", surname: "", phoneNumber: "", email: "", password: "" });
+          toast.success("Admin uğurla əlavə edildi");
+        },
+        onError: (err: any) => {
+          toast.error(err?.response?.data?.message || "Xəta baş verdi");
         }
       }
     );
@@ -45,7 +49,9 @@ export function AdminsTab() {
 
   const handleDelete = (adminId: number) => {
     if (!gymId || !confirm("Bu admini silmək istədiyinizə əminsiniz?")) return;
-    deleteAdmin({ gymId: Number(gymId), adminId });
+    deleteAdmin({ gymId: Number(gymId), adminId }, {
+      onSuccess: () => toast.success("Admin silindi")
+    });
   };
 
   if (isLoading) {
@@ -58,75 +64,67 @@ export function AdminsTab() {
   }
 
   return (
-    <div className="flex flex-col gap-6 py-2 font-sans">
-      <div className="w-full bg-white rounded-2xl border border-[#ececed] overflow-hidden">
-        {/* Header Section */}
-        <div className="p-6 border-b border-[#ececed] flex items-center justify-between">
-          <div className="flex flex-col gap-1">
-            <h3 className="text-[18px] font-bold text-[#101828]">Zalı idarə edən adminlər</h3>
-            <p className="text-[14px] text-slate-500">Zalın idarə edilməsi üçün təyin olunmuş məsul şəxslər</p>
-          </div>
-          
-          <button 
-            onClick={() => setModalOpen(true)}
-            className="h-11 px-5 bg-[#00B4CC] text-white rounded-xl flex items-center gap-2.5 font-semibold text-[14px] hover:bg-[#009DB3] transition-all shadow-sm"
-          >
-            <UserPlus size={18} />
-            Admin əlavə et
-          </button>
+    <div className="flex flex-col gap-6 py-2 font-sans text-black">
+      {/* Main Container */}
+      <div className="w-full bg-white rounded-[12px] border border-[#ececed] flex flex-col items-start p-5 gap-7">
+        
+        {/* Title Section */}
+        <div className="w-full border-b border-[#ececed] flex items-center justify-between pb-1">
+          <h2 className="text-[20px] font-semibold leading-[30px] text-black">Zalı idarə edən admin</h2>
         </div>
 
-        {/* Table Content */}
-        <div className="p-6">
-          <div className="overflow-hidden border border-[#cecfd2] rounded-xl shadow-sm">
-            {/* Table Header */}
-            <div className="grid grid-cols-[160px_100px_1fr_1.2fr_1.5fr_60px] gap-4 bg-[#00B4CC]/10 px-5 py-4 border-b border-[#cecfd2]">
-              <div className="text-[12px] font-bold text-[#101828] uppercase tracking-wider">Rol</div>
-              <div className="text-[12px] font-bold text-[#101828] uppercase tracking-wider">ID</div>
-              <div className="text-[12px] font-bold text-[#101828] uppercase tracking-wider">Ad / Soyad</div>
-              <div className="text-[12px] font-bold text-[#101828] uppercase tracking-wider">Telefon</div>
-              <div className="text-[12px] font-bold text-[#101828] uppercase tracking-wider">E-poçt</div>
-              <div className="text-center text-[12px] font-bold text-[#101828] uppercase tracking-wider">Əməl</div>
-            </div>
+        {/* Table Section */}
+        <div className="w-full flex flex-col items-start">
+          {/* Table Header */}
+          <div className="w-full flex items-center bg-[#00b4cc]/15 border border-[#cecfd2] rounded-t-[12px] px-[10px] py-5 gap-[68px]">
+            <div className="w-[142px] text-[16px] leading-[24px] font-normal text-black">Rol</div>
+            <div className="w-[61px] text-[16px] leading-[24px] font-normal text-black">ID</div>
+            <div className="w-[111px] text-[16px] leading-[24px] font-normal text-black">Ad / Soyad</div>
+            <div className="w-[150px] text-[16px] leading-[24px] font-normal text-black">Telefon</div>
+            <div className="w-[130px] text-[16px] leading-[24px] font-normal text-black">E-poçt</div>
+          </div>
 
-            {/* Table Body */}
+          {/* Table Body */}
+          <div className="w-full flex flex-col">
             {admins?.length === 0 ? (
-              <div className="py-20 text-center text-slate-400 font-medium">
-                Siyahı boşdur
+              <div className="w-full bg-white border-x border-b border-[#ececed] p-10 text-center text-slate-400">
+                Admin tapılmadı
               </div>
             ) : (
               admins?.map((admin: any) => (
-                <div key={admin.id} className="grid grid-cols-[160px_100px_1fr_1.2fr_1.5fr_60px] gap-4 px-5 py-4 items-center border-b border-[#ececed] last:border-0 hover:bg-slate-50 transition-colors">
-                  <div>
-                    <div className="flex items-center justify-center bg-[#00B4CC] border border-[#ececed] rounded-[4px] px-2 py-1 gap-2 text-white font-['SF_Pro',sans-serif] text-[16px]">
-                      {admin.role === "Super admin" ? (
-                        <>
-                          <div className="w-5 h-5 flex items-center justify-center">
-                            <Image src="/superAdmin.svg" width={20} height={20} alt="Super" />
-                          </div>
-                          <span className="font-medium leading-6">Super admin</span>
-                        </>
-                      ) : (
-                        <>
-                          <div className="w-5 h-5 flex items-center justify-center">
-                            <Image src="/admin.svg" width={20} height={20} alt="Admin" />
-                          </div>
-                          <span className="font-medium leading-6">Admin</span>
-                        </>
-                      )}
+                <div key={admin.id} className="w-full flex items-center bg-white border-x border-b border-[#ececed] px-[10px] py-5 gap-[68px] hover:bg-slate-50 transition-colors">
+                  {/* Role Badge */}
+                  <div className="w-[142px] flex items-center justify-center bg-[#00b4cc] border border-[#ececed] rounded-[4px] px-2 py-1 gap-2 text-white">
+                    <div className="w-5 h-5 relative">
+                      <Image 
+                        src={admin.role === "Super admin" ? "/superAdmin.svg" : "/admin.svg"} 
+                        fill 
+                        alt="Role" 
+                        className={cn("object-contain", admin.role === "Super admin" ? "p-[2px]" : "p-[1px]")}
+                      />
                     </div>
+                    <span className="text-[16px] font-medium leading-[24px]">{admin.role}</span>
                   </div>
-                  <div className="text-[14px] text-slate-600 font-mono">#{String(admin.id).padStart(6, '0')}</div>
-                  <div className="text-[14px] font-bold text-[#101828] truncate">{admin.name} {admin.surname}</div>
-                  <div className="text-[14px] text-slate-600 truncate">{admin.phone || "—"}</div>
-                  <div className="text-[14px] text-slate-600 truncate">{admin.email}</div>
-                  <div className="flex justify-center">
+
+                  {/* ID */}
+                  <div className="w-[61px] text-[16px] leading-[24px]">{String(admin.id).padStart(6, '0')}</div>
+
+                  {/* Name */}
+                  <div className="w-[111px] text-[16px] leading-[24px] truncate">{admin.name} {admin.surname}</div>
+
+                  {/* Phone */}
+                  <div className="w-[150px] text-[16px] leading-[24px] truncate">{admin.phone || "+994 00 000 00 00"}</div>
+
+                  {/* Email */}
+                  <div className="w-[130px] text-[16px] leading-[24px] truncate">{admin.email}</div>
+
+                  {/* Delete Action */}
+                  <div className="flex-1 flex justify-center">
                     <button 
                       onClick={() => handleDelete(admin.id)}
-                      className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                      title="Sil"
+                      className="w-5 h-5 flex items-center justify-center hover:opacity-70 transition-opacity"
                     >
-                      <Trash2 size={18} />
+                      <Image src="/trash.png" width={20} height={20} alt="Delete" />
                     </button>
                   </div>
                 </div>
@@ -134,106 +132,122 @@ export function AdminsTab() {
             )}
           </div>
         </div>
+
+        {/* Footer Action */}
+        <div className="w-full flex justify-end mt-1">
+          <button 
+            onClick={() => setModalOpen(true)}
+            className="w-[193px] h-12 bg-[#00b4cc] rounded-[12px] flex items-center justify-end px-3 gap-3 text-[#fafafa] hover:opacity-90 transition-opacity"
+          >
+            <span className="text-[16px] leading-[24px]">Admin əlavə et</span>
+            <div className="w-6 h-6 flex items-center justify-center">
+              <Image src="/trainer-add.svg" width={24} height={24} alt="Add" />
+            </div>
+          </button>
+        </div>
       </div>
 
       {/* Add Admin Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 font-sans">
-          <div className="w-full max-w-[500px] bg-white rounded-3xl border border-[#ececed] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="p-6 border-b border-[#ececed] flex items-center justify-between bg-slate-50/50">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#00B4CC]/10 flex items-center justify-center text-[#00B4CC]">
-                  <UserPlus size={20} />
-                </div>
-                <h2 className="text-[20px] font-bold text-[#101828]">Admin əlavə et</h2>
-              </div>
-              <button onClick={() => setModalOpen(false)} className="p-2 hover:bg-white rounded-full transition-colors text-slate-400 hover:text-[#101828]">
-                <X size={20} />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4 font-sans text-black">
+          <div className="w-full max-w-[500px] bg-white rounded-[14px] shadow-2xl flex flex-col animate-in fade-in zoom-in duration-200 overflow-hidden">
+            {/* Modal Header */}
+            <div className="px-6 py-6 border-b border-black/10 flex items-center justify-between">
+              <h2 className="text-[18px] font-bold text-[#101828]">Yeni Admin Əlavə Et</h2>
+              <button 
+                onClick={() => setModalOpen(false)}
+                className="w-6 h-6 flex items-center justify-center hover:bg-slate-100 rounded-md transition-colors"
+              >
+                 <X size={16} className="text-[#101828]" />
               </button>
             </div>
 
-            <form onSubmit={handleAdd} className="p-8 flex flex-col gap-6">
+            <form onSubmit={handleAdd} className="p-6 flex flex-col gap-6">
               <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2">
-                  <label className="text-[14px] font-bold text-[#344054]">Ad</label>
-                  <div className="relative">
-                    <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input 
-                      type="text"
-                      required
-                      value={form.name}
-                      onChange={e => setForm({...form, name: e.target.value})}
-                      className="w-full h-12 pl-10 pr-4 bg-[#fafafa] border border-[#ececed] rounded-xl outline-none focus:border-[#00B4CC] transition-all text-[15px]"
-                      placeholder="Məs: Kamal"
-                    />
-                  </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[14px] font-medium text-[#364153]">Ad</label>
+                  <input 
+                    type="text"
+                    required
+                    value={form.name}
+                    onChange={e => setForm({...form, name: e.target.value})}
+                    className="w-full h-11 px-4 bg-white border border-[#dddcdc] rounded-xl outline-none focus:border-[#00b4cc] text-[14px]"
+                    placeholder="Məs: Kamal"
+                  />
                 </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-[14px] font-bold text-[#344054]">Soyad</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[14px] font-medium text-[#364153]">Soyad</label>
                   <input 
                     type="text"
                     required
                     value={form.surname}
                     onChange={e => setForm({...form, surname: e.target.value})}
-                    className="w-full h-12 px-4 bg-[#fafafa] border border-[#ececed] rounded-xl outline-none focus:border-[#00B4CC] transition-all text-[15px]"
+                    className="w-full h-11 px-4 bg-white border border-[#dddcdc] rounded-xl outline-none focus:border-[#00b4cc] text-[14px]"
                     placeholder="Məs: Aliyev"
                   />
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2">
-                <label className="text-[14px] font-bold text-[#344054]">E-poçt</label>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[14px] font-medium text-[#364153]">E-poçt</label>
                 <input 
                   type="email"
                   required
                   value={form.email}
                   onChange={e => setForm({...form, email: e.target.value})}
-                  className="w-full h-12 px-4 bg-[#fafafa] border border-[#ececed] rounded-xl outline-none focus:border-[#00B4CC] transition-all text-[15px]"
+                  className="w-full h-11 px-4 bg-white border border-[#dddcdc] rounded-xl outline-none focus:border-[#00b4cc] text-[14px]"
                   placeholder="admin@mail.com"
                 />
               </div>
 
-              <div className="flex flex-col gap-2">
-                <label className="text-[14px] font-bold text-[#344054]">Telefon nömrəsi</label>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[14px] font-medium text-[#364153]">Telefon nömrəsi</label>
                 <input 
                   type="text"
                   value={form.phoneNumber}
                   onChange={e => setForm({...form, phoneNumber: e.target.value})}
-                  className="w-full h-12 px-4 bg-[#fafafa] border border-[#ececed] rounded-xl outline-none focus:border-[#00B4CC] transition-all text-[15px]"
+                  className="w-full h-11 px-4 bg-white border border-[#dddcdc] rounded-xl outline-none focus:border-[#00b4cc] text-[14px]"
                   placeholder="+994 00 000 00 00"
                 />
               </div>
 
-              <div className="flex flex-col gap-2">
-                <label className="text-[14px] font-bold text-[#344054]">Şifrə</label>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[14px] font-medium text-[#364153]">Şifrə</label>
                 <div className="relative">
-                  <Key size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input 
                     type={showPassword ? "text" : "password"}
                     required
                     value={form.password}
                     onChange={e => setForm({...form, password: e.target.value})}
-                    className="w-full h-12 pl-10 pr-12 bg-[#fafafa] border border-[#ececed] rounded-xl outline-none focus:border-[#00B4CC] transition-all text-[15px]"
+                    className="w-full h-11 px-4 bg-white border border-[#dddcdc] rounded-xl outline-none focus:border-[#00b4cc] text-[14px]"
                     placeholder="••••••••"
                   />
                   <button 
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#00B4CC] transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#00b4cc]"
                   >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
-                <p className="text-[12px] text-slate-400 italic">Admin bu şifrə ilə sistemə daxil olacaq</p>
               </div>
 
-              <button 
-                type="submit"
-                disabled={isAdding}
-                className="w-full h-12 mt-2 bg-[#00B4CC] text-white rounded-xl font-bold text-[16px] flex items-center justify-center gap-2 hover:bg-[#009DB3] transition-all disabled:bg-slate-200"
-              >
-                {isAdding ? <Loader2 size={20} className="animate-spin" /> : "Admini yarat"}
-              </button>
+              <div className="flex items-center gap-3 mt-2">
+                <button 
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  className="flex-1 h-12 rounded-[10px] border border-[#00b4cc] text-black text-[16px] font-medium hover:bg-slate-50"
+                >
+                  Bağla
+                </button>
+                <button 
+                  type="submit"
+                  disabled={isAdding}
+                  className="flex-1 h-12 bg-[#00b4cc] text-white rounded-[10px] font-bold text-[16px] flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50"
+                >
+                  {isAdding ? <Loader2 size={20} className="animate-spin" /> : "Təsdiq et"}
+                </button>
+              </div>
             </form>
           </div>
         </div>

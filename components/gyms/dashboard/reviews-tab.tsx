@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Loader2, Search, ChevronDown, Star, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -17,10 +17,10 @@ const STATUS_OPTIONS = [
 ];
 
 const SORT_OPTIONS = [
-  { key: "newest", label: "Tarixə (yeni → köhnə)" },
-  { key: "oldest", label: "Tarix (Köhnə → yeni)" },
-  { key: "highest", label: "Reytinq (yeni → köhnə)" },
-  { key: "lowest", label: "Reytinq (Köhnə → yeni)" },
+  { key: "newest", label: "Tarixə\n(yeni → köhnə)" },
+  { key: "oldest", label: "Tarix\n(Köhnə → yeni)" },
+  { key: "highest", label: "Reytinq\n(yeni → köhnə)" },
+  { key: "lowest", label: "Reytinq\n(Köhnə → yeni)" },
   { key: "gym_asc", label: "Zal : A-Z" },
   { key: "gym_desc", label: "Zal : Z-A" },
 ];
@@ -51,10 +51,22 @@ export function ReviewsTab() {
   const [status, setStatus] = useState<string>("");
   const [sort, setSort] = useState<string>("newest");
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedReview, setSelectedReview] = useState<any | null>(null);
+
+  const [isOpenStatus, setIsOpenStatus] = useState(false);
+  const [isOpenSort, setIsOpenSort] = useState(false);
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 500);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const { data: reviewsData, isLoading } = useGymReviews(gymId, { 
     status, 
+    search: debouncedSearch,
     page, 
     pageSize: 10,
     sort 
@@ -91,51 +103,75 @@ export function ReviewsTab() {
           <input 
             type="text" 
             placeholder="Ad/Soyad , Zal adı , Status....." 
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             className="flex-1 bg-transparent outline-none text-[14px] text-[#94979c]"
           />
         </div>
 
         {/* Status Dropdown */}
-        <div className="relative group">
-          <div className="h-[48px] w-[200px] bg-white border border-[#ececed] rounded-xl flex items-center justify-between px-4 cursor-pointer hover:border-[#00B4CC] transition-all shadow-sm">
-            <span className="text-[14px] font-medium">
+        <div className="relative">
+          <div 
+            onClick={() => setIsOpenStatus(!isOpenStatus)}
+            className="h-[48px] w-[183px] bg-white border border-[#ececed] rounded-xl flex items-center justify-between px-4 cursor-pointer hover:border-[#00B4CC] transition-all shadow-sm"
+          >
+            <span className="text-[14px] font-medium truncate">
               {status ? STATUS_OPTIONS.find(o => o.key === status)?.label : "Bütün statuslar"}
             </span>
-            <ChevronDown size={18} className="text-slate-400" />
+            <ChevronDown size={18} className={cn("text-slate-400 transition-transform flex-shrink-0", isOpenStatus && "rotate-180")} />
           </div>
-          <div className="absolute top-full right-0 mt-2 w-[220px] bg-white border border-[#d9d9d9] rounded-xl shadow-xl hidden group-hover:flex flex-col p-4 gap-3 z-50 animate-in fade-in slide-in-from-top-1 duration-200">
-            {STATUS_OPTIONS.map((opt) => (
-              <button 
-                key={opt.key}
-                onClick={() => setStatus(opt.key)}
-                className="flex items-center gap-2 hover:opacity-70 transition-opacity"
-              >
-                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: opt.color }} />
-                <span className="text-[14px] font-medium text-[#001028]">{opt.label}</span>
-              </button>
-            ))}
-          </div>
+          {isOpenStatus && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setIsOpenStatus(false)} />
+              <div className="absolute top-full left-0 mt-2 w-full bg-white border border-[#d9d9d9] rounded-xl shadow-xl flex flex-col p-4 gap-3 z-50 animate-in fade-in slide-in-from-top-1 duration-200">
+                {STATUS_OPTIONS.map((opt) => (
+                  <button 
+                    key={opt.key}
+                    onClick={() => {
+                      setStatus(opt.key);
+                      setIsOpenStatus(false);
+                    }}
+                    className="flex items-center gap-2 hover:opacity-70 transition-opacity"
+                  >
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: opt.color }} />
+                    <span className="text-[14px] font-medium text-[#001028] whitespace-nowrap">{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Sort Dropdown */}
-        <div className="relative group">
-          <div className="h-[48px] w-[200px] bg-white border border-[#ececed] rounded-xl flex items-center justify-between px-4 cursor-pointer hover:border-[#00B4CC] transition-all shadow-sm">
-            <span className="text-[14px] font-medium">
+        <div className="relative">
+          <div 
+            onClick={() => setIsOpenSort(!isOpenSort)}
+            className="h-[48px] w-[193px] bg-white border border-[#ececed] rounded-xl flex items-center justify-between px-4 cursor-pointer hover:border-[#00B4CC] transition-all shadow-sm"
+          >
+            <span className="text-[14px] font-medium truncate">
               {SORT_OPTIONS.find(o => o.key === sort)?.label || "Sırala"}
             </span>
-            <ChevronDown size={18} className="text-slate-400" />
+            <ChevronDown size={18} className={cn("text-slate-400 transition-transform flex-shrink-0", isOpenSort && "rotate-180")} />
           </div>
-          <div className="absolute top-full right-0 mt-2 w-[220px] bg-white border border-[#ececed] rounded-xl shadow-xl hidden group-hover:flex flex-col p-3 gap-1 z-50 animate-in fade-in slide-in-from-top-1 duration-200">
-            {SORT_OPTIONS.map((opt) => (
-              <button 
-                key={opt.key}
-                onClick={() => setSort(opt.key)}
-                className="w-full text-left p-2 rounded-lg hover:bg-slate-50 transition-colors border-b border-[#ececed] last:border-0"
-              >
-                <span className="text-[14px] leading-[20px] font-medium whitespace-pre-wrap">{opt.label}</span>
-              </button>
-            ))}
-          </div>
+          {isOpenSort && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setIsOpenSort(false)} />
+              <div className="absolute top-full left-0 mt-2 w-full bg-white border border-[#ececed] rounded-xl shadow-xl flex flex-col p-3 gap-1 z-50 animate-in fade-in slide-in-from-top-1 duration-200">
+                {SORT_OPTIONS.map((opt) => (
+                  <button 
+                    key={opt.key}
+                    onClick={() => {
+                      setSort(opt.key);
+                      setIsOpenSort(false);
+                    }}
+                    className="w-full text-left p-2 rounded-lg hover:bg-slate-50 transition-colors border-b border-[#ececed] last:border-0"
+                  >
+                    <span className="text-[14px] leading-[20px] font-medium whitespace-pre-wrap">{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
 

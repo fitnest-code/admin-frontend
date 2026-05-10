@@ -303,13 +303,14 @@ export function useDeleteGymAdmin() {
 }
 
 // 18. Zal rəylərini çəkmək üçün
-export function useGymReviews(gymId: number | string | null | undefined, params?: { status?: string, page?: number, pageSize?: number, sort?: string }) {
+export function useGymReviews(gymId: number | string | null | undefined, params?: { status?: string, search?: string, page?: number, pageSize?: number, sort?: string }) {
   return useQuery({
     queryKey: ['gym-reviews', gymId, params],
     queryFn: () => {
       if (!gymId) return Promise.resolve(null)
       const searchParams = new URLSearchParams()
       if (params?.status) searchParams.append('status', params.status)
+      if (params?.search) searchParams.append('search', params.search)
       if (params?.page) searchParams.append('page', params.page.toString())
       if (params?.pageSize) searchParams.append('pageSize', params.pageSize.toString())
       if (params?.sort) searchParams.append('sort', params.sort)
