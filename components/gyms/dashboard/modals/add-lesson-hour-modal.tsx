@@ -16,7 +16,7 @@ interface Props {
 
 export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
     const [selectedLessonType, setSelectedLessonType] = useState<number | null>(null)
-    const [selectedTrainer, setSelectedTrainer] = useState<number | null>(null)
+    const [selectedTrainer, setSelectedTrainer] = useState<string | null>(null)
     const [date, setDate] = useState('')
     const [startTime, setStartTime] = useState('09:00')
     const [endTime, setEndTime] = useState('10:00')
@@ -35,7 +35,7 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
         addMutation.mutate({
             gymId,
             payload: {
-                trainerId: selectedTrainer,
+                trainerId: Number(selectedTrainer),
                 lessonTypeId: selectedLessonType,
                 date,
                 startTime,
@@ -80,25 +80,28 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                     <div className={styles.section}>
                         <h3 className={styles.sectionTitle}>Məşqçi seçin</h3>
                         <div className={styles.trainersList}>
-                            {trainers?.items.map((trainer: any) => (
+                            {trainers?.items?.map((trainer: any) => (
                                 <div 
-                                    key={trainer.id}
-                                    className={`${styles.trainerCard} ${selectedTrainer === trainer.id ? styles.selected : ''}`}
-                                    onClick={() => setSelectedTrainer(trainer.id)}
+                                    key={trainer.trainer_id || trainer.id}
+                                    className={`${styles.trainerCard} ${selectedTrainer === (trainer.trainer_id || trainer.id) ? styles.selected : ''}`}
+                                    onClick={() => setSelectedTrainer(trainer.trainer_id || trainer.id)}
                                 >
                                     <div className={styles.trainerAvatar}>
                                         <Image 
-                                            src={trainer.photoUrl || '/Sidebar/Avatar.svg'} 
+                                            src={trainer.picture || trainer.photoUrl || '/Sidebar/Avatar.svg'} 
                                             width={54} height={54} alt="Avatar" 
                                             className={styles.avatarImg}
                                         />
                                     </div>
                                     <div className={styles.trainerInfo}>
                                         <div className={styles.trainerName}>{trainer.name} {trainer.surname}</div>
-                                        <div className={styles.trainerRole}>{trainer.professionName}</div>
+                                        <div className={styles.trainerRole}>{trainer.profession?.name || trainer.professionName || 'Məşqçi'}</div>
                                     </div>
                                 </div>
                             ))}
+                            {(!trainers?.items || trainers.items.length === 0) && (
+                                <p className={styles.emptyText}>Məşqçi tapılmadı</p>
+                            )}
                         </div>
                     </div>
 

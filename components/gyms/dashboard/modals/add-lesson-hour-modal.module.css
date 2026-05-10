@@ -88,38 +88,54 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 12px;
+    padding: 8px;
     background: #F9FAFB;
     border: 1px solid #E5E7EB;
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s;
     width: calc(50% - 8px);
+    box-sizing: border-box;
+    text-align: left;
+    font-size: 16px;
+    color: #000;
 }
 
 .trainerCard.selected {
     border-color: #00B4CC;
-    background: #FFFFFF;
+    background: #F9FAFB;
 }
 
 .trainerAvatar {
     width: 54px;
     height: 54px;
     border-radius: 50%;
+    position: relative;
     overflow: hidden;
 }
 
 .avatarImg {
     object-fit: cover;
+    width: 100%;
+    height: 100%;
+}
+
+.trainerInfo {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
 }
 
 .trainerName {
     font-size: 16px;
-    font-weight: 500;
+    line-height: 24px;
 }
 
 .trainerRole {
     font-size: 14px;
+    line-height: 24px;
     color: #94979C;
 }
 

@@ -10,6 +10,17 @@ import {
     useGymReservationStats 
 } from '@/lib/query/gym-query'
 import { useParams } from 'next/navigation'
+import { cn } from '@/lib/utils'
+import { ChevronDown } from 'lucide-react'
+
+const STATUS_OPTIONS = [
+    { key: "", label: "Hamısı", color: "#4b5563" },
+    { key: "PENDING", label: "Gözləmədə", color: "#ec972f" },
+    { key: "APPROVED", label: "Təsdiq olundu", color: "#166728" },
+    { key: "CANCELLED", label: "Ləğv edildi", color: "#c9373a" },
+    { key: "REJECTED", label: "İmtina olundu", color: "#8a38f5" },
+    { key: "EXPIRED", label: "Müddəti bitib", color: "#9ca3af" },
+];
 
 const ReservationsTab = () => {
     const { id: gymId } = useParams()
@@ -91,141 +102,237 @@ const ReservationsTab = () => {
 
     const getStatusClass = (status: string) => {
         switch (status) {
-            case 'PENDING': return styles.statusPending
-            case 'APPROVED': return styles.statusConfirmed
-            case 'CANCELLED': return styles.statusCancelled
-            case 'REJECTED': return styles.statusRejected
-            default: return ''
+            case 'PENDING': return styles.odeniStatus
+            case 'APPROVED': return styles.odeniStatus2
+            case 'CANCELLED': return styles.odeniStatus3
+            case 'REJECTED': return styles.odeniStatus4
+            default: return styles.odeniStatus
         }
     }
+
+    const totalPages = Math.ceil((reservationsData?.total || 0) / 10) || 1;
 
     return (
         <div className={styles.container}>
             {/* Header / Stats */}
             <div className={styles.statsRow}>
                 <div className={styles.statCard}>
-                    <div className={styles.statTitle}>Ümumi Rezervasiyalar</div>
-                    <div className={styles.statValue}>{stats?.total || 0}</div>
+                    <div className={styles.statTitleWrapper}>
+                        <div className={styles.statTitle}>Ümumi Rezervasiya</div>
+                    </div>
+                    <div className={styles.statValueWrapper}>
+                        <b className={styles.statValue}>{stats?.total || 0}</b>
+                    </div>
+                    <div className={styles.statSubtitleWrapper}>
+                        <div className={styles.statSubtitle}>Bu ay</div>
+                    </div>
                 </div>
                 <div className={styles.statCard}>
-                    <div className={styles.statTitle}>Gözləyənlər</div>
-                    <div className={`${styles.statValue} ${styles.colorOrange}`}>{stats?.pending || 0}</div>
+                    <div className={styles.statTitleWrapper}>
+                        <div className={styles.statTitle}>Gözləmədə</div>
+                    </div>
+                    <div className={`${styles.statValueWrapper} ${styles.colorOrange}`}>
+                        <b className={styles.statValue}>{stats?.pending || 0}</b>
+                    </div>
+                    <div className={styles.statSubtitleWrapper}>
+                        <div className={styles.statSubtitle}>Təsdiq gözləyir</div>
+                    </div>
                 </div>
                 <div className={styles.statCard}>
-                    <div className={styles.statTitle}>Təsdiqlənənlər</div>
-                    <div className={`${styles.statValue} ${styles.colorGreen}`}>{stats?.confirmed || 0}</div>
+                    <div className={styles.statTitleWrapper}>
+                        <div className={styles.statTitle}>Təsdiq olundu</div>
+                    </div>
+                    <div className={`${styles.statValueWrapper} ${styles.colorGreen}`}>
+                        <b className={styles.statValue}>{stats?.confirmed || 0}</b>
+                    </div>
+                    <div className={styles.statSubtitleWrapper}>
+                        <div className={styles.statSubtitle}>Bu ay</div>
+                    </div>
                 </div>
                 <div className={styles.statCard}>
-                    <div className={styles.statTitle}>Ləğv Edilənlər</div>
-                    <div className={`${styles.statValue} ${styles.colorRed}`}>{stats?.cancelled || 0}</div>
+                    <div className={styles.statTitleWrapper}>
+                        <div className={styles.statTitle}>Ləğv edildi</div>
+                    </div>
+                    <div className={`${styles.statValueWrapper} ${styles.colorRed}`}>
+                        <b className={styles.statValue}>{stats?.cancelled || 0}</b>
+                    </div>
+                    <div className={styles.statSubtitleWrapper}>
+                        <div className={styles.statSubtitle}>Bu ay</div>
+                    </div>
                 </div>
             </div>
 
-            {/* Filters */}
-            <div className={styles.filtersRow}>
-                <div className={styles.searchBox}>
-                    <Image src="/search-normal.svg" width={20} height={20} alt="Search" />
-                    <input type="text" placeholder="Ad, Soyad və ya ID ilə axtar" className={styles.searchInput} />
-                </div>
-                <div className={styles.dropdowns}>
-                    <div className={styles.dropdownWrapper}>
-                        <button 
-                            className={styles.filterButton}
+            {/* Filters and Table */}
+            <div className={styles.frameParent2}>
+                <div className={styles.statusParent}>
+                    <div className={styles.statusLabel}>Status:</div>
+                    <div className="relative">
+                        <div 
                             onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+                            className="h-[48px] w-[206px] bg-white border border-[#ececed] rounded-xl flex items-center justify-between px-4 cursor-pointer hover:border-[#00B4CC] transition-all shadow-sm"
                         >
-                            <span>Status: {statusFilter ? getStatusText(statusFilter) : 'Hamısı'}</span>
-                            <Image src="/arrow-down.svg" width={16} height={16} alt="Arrow" />
-                        </button>
+                            <span className="text-[16px] text-black">
+                                {statusFilter ? STATUS_OPTIONS.find(o => o.key === statusFilter)?.label : "Hamısı"}
+                            </span>
+                            <ChevronDown size={20} className={cn("text-black transition-transform flex-shrink-0", isStatusDropdownOpen && "rotate-180")} />
+                        </div>
                         {isStatusDropdownOpen && (
-                            <div className={styles.dropdownMenu}>
-                                <div className={styles.dropdownItem} onClick={() => handleStatusFilter(undefined)}>Hamısı</div>
-                                <div className={styles.dropdownItem} onClick={() => handleStatusFilter('PENDING')}>Gözləmədə</div>
-                                <div className={styles.dropdownItem} onClick={() => handleStatusFilter('APPROVED')}>Təsdiqlənib</div>
-                                <div className={styles.dropdownItem} onClick={() => handleStatusFilter('CANCELLED')}>Ləğv edilib</div>
-                                <div className={styles.dropdownItem} onClick={() => handleStatusFilter('REJECTED')}>İmtina edilib</div>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className={styles.dropdownWrapper}>
-                        <button 
-                            className={styles.filterButton}
-                            onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
-                        >
-                            <span>Sırala</span>
-                            <Image src="/arrow-down.svg" width={16} height={16} alt="Arrow" />
-                        </button>
-                        {isSortDropdownOpen && (
-                            <div className={styles.dropdownMenu}>
-                                <div className={styles.dropdownItem}>Tarix (Yeni → Köhnə)</div>
-                                <div className={styles.dropdownItem}>Tarix (Köhnə → Yeni)</div>
-                            </div>
+                            <>
+                                <div className="fixed inset-0 z-40" onClick={() => setIsStatusDropdownOpen(false)} />
+                                <div className="absolute top-full left-0 mt-2 w-full bg-white border border-[#ececed] rounded-xl shadow-xl flex flex-col p-4 gap-3 z-50 animate-in fade-in slide-in-from-top-1 duration-200">
+                                    {STATUS_OPTIONS.map((opt) => (
+                                        <button 
+                                            key={opt.key}
+                                            onClick={() => {
+                                                handleStatusFilter(opt.key ? opt.key : undefined);
+                                            }}
+                                            className="flex items-center gap-2 hover:opacity-70 transition-opacity"
+                                        >
+                                            {opt.key && <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: opt.color }} />}
+                                            <span className="text-[14px] font-medium text-[#001028] whitespace-nowrap">{opt.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </>
                         )}
                     </div>
                 </div>
-            </div>
 
-            {/* Table */}
-            <div className={styles.tableContainer}>
-                <table className={styles.table}>
-                    <thead>
-                        <tr>
-                            <th>Ad / Soyad</th>
-                            <th>Tarix</th>
-                            <th>Saat</th>
-                            <th>Status</th>
-                            <th>Məşqçi</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {isLoading ? (
-                            <tr><td colSpan={6} style={{ textAlign: 'center', padding: '20px' }}>Yüklənir...</td></tr>
-                        ) : reservationsData?.items.length === 0 ? (
-                            <tr><td colSpan={6} style={{ textAlign: 'center', padding: '20px' }}>Rezervasiya tapılmadı</td></tr>
-                        ) : reservationsData?.items.map((res: any) => (
-                            <tr key={res.id}>
-                                <td>{res.userFullName}</td>
-                                <td>{res.date}</td>
-                                <td>{res.timeRange}</td>
-                                <td>
-                                    <span className={`${styles.statusBadge} ${getStatusClass(res.status)}`}>
-                                        {getStatusText(res.status)}
-                                    </span>
-                                </td>
-                                <td>{res.trainerName}</td>
-                                <td className={styles.actionsCell}>
-                                    <button className={styles.detailBtn} onClick={() => handleOpenDetail(res.id)}>
-                                        Detallı
-                                    </button>
-                                    <div className={styles.moreActions}>
-                                        <Image src="/more.svg" width={24} height={24} alt="More" />
+                <div className={styles.musteriParent}>
+                    <div className={styles.musteri3}>
+                        <div className={styles.adSoyadWrapper}>
+                            <div className={styles.adSoyad}>Ad / Soyad</div>
+                        </div>
+                        <div className={styles.tarix}>Tarix</div>
+                        <div className={styles.saat}>Saat</div>
+                        <div className={styles.status2}>Status</div>
+                        <div className={styles.mqi}>Məşqçi</div>
+                        <div className={styles.mkanAxtar}>Əməliyyatlar</div>
+                    </div>
+
+                    {isLoading ? (
+                        <div className={styles.frameParent3} style={{ justifyContent: 'center', color: '#999' }}>Yüklənir...</div>
+                    ) : reservationsData?.items?.length === 0 ? (
+                        <div className={styles.frameParent3} style={{ justifyContent: 'center', color: '#999' }}>Rezervasiya tapılmadı</div>
+                    ) : reservationsData?.items?.map((res: any) => (
+                        <React.Fragment key={res.id}>
+                            <div className={styles.frameParent3}>
+                                <div className={styles.frameWrapper}>
+                                    <div className={styles.ayxanSalmanzadWrapper}>
+                                        <div className={styles.mkanAxtar}>{res.userFullName}</div>
                                     </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                                </div>
+                                <div className={styles.mart2026}>{res.date}</div>
+                                <div className={styles.mkanAxtar}>{res.timeRange}</div>
+                                <div className={getStatusClass(res.status)}>
+                                    <div className={styles.component32Child} />
+                                    <div className={styles.aktiv}>{getStatusText(res.status)}</div>
+                                </div>
+                                <div className={styles.adSoyadContainer}>
+                                    <div className={styles.mkanAxtar}>{res.trainerName}</div>
+                                </div>
+                                <div className={styles.moreWrapper} onClick={() => handleOpenDetail(res.id)}>
+                                    <div className={styles.moreWrapper}>
+                                        <div className={styles.more}>
+                                            <Image src="/more.svg" width={24} height={24} alt="More" className={styles.vuesaxlinearmoreIcon} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {(res.status === 'REJECTED' || res.status === 'CANCELLED') && res.reason && (
+                                <div className={styles.frameWrapper9}>
+                                    <div className={styles.frameWrapper10}>
+                                        <div className={styles.rectangleParent}>
+                                            <div className={styles.frameItem} />
+                                            <div className={styles.lvEtmSbbiParent}>
+                                                <div className={styles.lvEtmSbbi}>Ləğv etmə səbəbi</div>
+                                                <b className={styles.tciliIlLaqdar}>{res.reason}</b>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </React.Fragment>
+                    ))}
+                </div>
             </div>
 
-            {/* Pagination */}
-            <div className={styles.pagination}>
+            {/* Pagination Section */}
+            {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-[18px] mt-8 select-none">
+                {/* Page 1 */}
                 <button 
-                    className={styles.pageBtn} 
-                    disabled={page === 1}
-                    onClick={() => setPage(page - 1)}
+                    onClick={() => setPage(1)}
+                    className={cn(
+                    "h-8 w-8 rounded flex items-center justify-center text-[16px] font-semibold transition-all",
+                    page === 1 ? "bg-[#00b4cc] text-white" : "bg-white border border-[#ececed] text-black hover:bg-slate-50"
+                    )}
                 >
-                    <Image src="/arrow-left.svg" width={16} height={16} alt="Prev" />
+                    1
                 </button>
-                <span className={styles.pageInfo}>Səhifə {page} / {Math.ceil((reservationsData?.total || 0) / 10) || 1}</span>
-                <button 
-                    className={styles.pageBtn}
-                    disabled={page >= Math.ceil((reservationsData?.total || 0) / 10)}
-                    onClick={() => setPage(page + 1)}
-                >
-                    <Image src="/arrow-right.svg" width={16} height={16} alt="Next" />
-                </button>
-            </div>
+                
+                {/* Page 2 */}
+                {totalPages >= 2 && (
+                    <button 
+                    onClick={() => setPage(2)}
+                    className={cn(
+                        "h-8 w-8 rounded flex items-center justify-center text-[16px] font-semibold transition-all",
+                        page === 2 ? "bg-[#00b4cc] text-white" : "bg-white border border-[#ececed] text-black hover:bg-slate-50"
+                    )}
+                    >
+                    2
+                    </button>
+                )}
+
+                {/* Page 3 */}
+                {totalPages >= 3 && (
+                    <button 
+                    onClick={() => setPage(3)}
+                    className={cn(
+                        "h-8 w-8 rounded flex items-center justify-center text-[16px] font-semibold transition-all",
+                        page === 3 ? "bg-[#00b4cc] text-white" : "bg-white border border-[#ececed] text-black hover:bg-slate-50"
+                    )}
+                    >
+                    3
+                    </button>
+                )}
+
+                {/* Page 4 */}
+                {totalPages >= 4 && (
+                    <button 
+                    onClick={() => setPage(4)}
+                    className={cn(
+                        "h-8 w-8 rounded flex items-center justify-center text-[16px] font-semibold transition-all",
+                        page === 4 ? "bg-[#00b4cc] text-white" : "bg-white border border-[#ececed] text-black hover:bg-slate-50"
+                    )}
+                    >
+                    4
+                    </button>
+                )}
+
+                {/* Ellipsis */}
+                {totalPages > 5 && (
+                    <div className="h-8 w-8 rounded bg-white border border-[#ececed] flex items-center justify-center gap-[1px]">
+                    <div className="h-[3px] w-[3px] rounded-full bg-black" />
+                    <div className="h-[3px] w-[3px] rounded-full bg-black" />
+                    <div className="h-[3px] w-[3px] rounded-full bg-black" />
+                    </div>
+                )}
+
+                {/* Last Page */}
+                {totalPages > 4 && (
+                    <button 
+                    onClick={() => setPage(totalPages)}
+                    className={cn(
+                        "h-8 w-8 rounded flex items-center justify-center text-[16px] font-semibold transition-all",
+                        page === totalPages ? "bg-[#00b4cc] text-white" : "bg-white border border-[#ececed] text-black hover:bg-slate-50"
+                    )}
+                    >
+                    {totalPages}
+                    </button>
+                )}
+                </div>
+            )}
 
             {/* Detail Modal */}
             {isDetailModalOpen && detailData && (
