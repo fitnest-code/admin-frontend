@@ -49,7 +49,7 @@ const ReservationsTab = () => {
     const handleApprove = (id: number) => {
         updateStatusMutation.mutate({
             reservationId: id,
-            status: 'CONFIRMED'
+            status: 'APPROVED'
         })
     }
 
@@ -82,7 +82,7 @@ const ReservationsTab = () => {
     const getStatusText = (status: string) => {
         switch (status) {
             case 'PENDING': return 'Gözləmədə'
-            case 'CONFIRMED': return 'Təsdiqlənib'
+            case 'APPROVED': return 'Təsdiqlənib'
             case 'CANCELLED': return 'Ləğv edilib'
             case 'REJECTED': return 'İmtina edilib'
             default: return status
@@ -92,7 +92,7 @@ const ReservationsTab = () => {
     const getStatusClass = (status: string) => {
         switch (status) {
             case 'PENDING': return styles.statusPending
-            case 'CONFIRMED': return styles.statusConfirmed
+            case 'APPROVED': return styles.statusConfirmed
             case 'CANCELLED': return styles.statusCancelled
             case 'REJECTED': return styles.statusRejected
             default: return ''
@@ -140,7 +140,7 @@ const ReservationsTab = () => {
                             <div className={styles.dropdownMenu}>
                                 <div className={styles.dropdownItem} onClick={() => handleStatusFilter(undefined)}>Hamısı</div>
                                 <div className={styles.dropdownItem} onClick={() => handleStatusFilter('PENDING')}>Gözləmədə</div>
-                                <div className={styles.dropdownItem} onClick={() => handleStatusFilter('CONFIRMED')}>Təsdiqlənib</div>
+                                <div className={styles.dropdownItem} onClick={() => handleStatusFilter('APPROVED')}>Təsdiqlənib</div>
                                 <div className={styles.dropdownItem} onClick={() => handleStatusFilter('CANCELLED')}>Ləğv edilib</div>
                                 <div className={styles.dropdownItem} onClick={() => handleStatusFilter('REJECTED')}>İmtina edilib</div>
                             </div>
