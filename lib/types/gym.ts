@@ -174,10 +174,6 @@ export interface GymInfoAdminResponse {
   address: string
   latitude: number
   longitude: number
-  generalWorkHours?: GymWorkHourResponse[]
-  workHoursWoman?: GymWorkHourResponse[]
-  workHoursMan?: GymWorkHourResponse[]
-  restDays?: RestDayRequest[]
   status?: string
   createdAt: string
 }
