@@ -87,6 +87,12 @@ export interface GymDetailResponse {
   }[]
   coverImageUrl?: string
   status?: 'ACTIVE' | 'INACTIVE' | 'DELETED'
+  supportedSubscriptions?: {
+    plan_id: string
+    packageName: string
+    dailyPrice: number
+    benefits?: { description: string }[]
+  }[]
 }
 
 export interface GymTrainersResponse {

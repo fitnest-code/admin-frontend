@@ -77,6 +77,7 @@ export async function getGymById(id: string): Promise<Gym> {
       photo: trainer.picture,
     })),
     admins: [],
+    supportedSubscriptions: response.supportedSubscriptions ?? [],
   }
 }
 

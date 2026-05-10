@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { Plus, Check, Loader2, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -41,14 +41,14 @@ export function PlansTab({ gym }: { gym?: any }) {
         if (PACKAGES.includes(pkgName)) {
           selected.add(pkgName);
           prcs[pkgName] = String(sub.dailyPrice || "");
-          // Note: In the user response, services are not explicitly listed by ID/Name in a flat way for packages
-          // but we might have them in the detailed response. 
-          // For now, we populate what we have.
+          svcs[pkgName] = (sub.benefits || [])
+            .map((b: any) => b.description)
+            .filter(Boolean);
         }
       });
     }
 
-    return { 
+    return {
       selected: selected.size > 0 ? selected : new Set<Package>(["Platinum"]),
       prices: prcs,
       services: svcs
@@ -58,8 +58,18 @@ export function PlansTab({ gym }: { gym?: any }) {
   const [activePackage, setActivePackage] = useState<Package>("Platinum");
   const [selectedPackages, setSelectedPackages] = useState<Set<Package>>(initialData.selected);
   const [prices, setPrices] = useState<Record<Package, string>>(initialData.prices);
-  
   const [packageServices, setPackageServices] = useState<Record<Package, string[]>>(initialData.services);
+  const [hasSynced, setHasSynced] = useState(false);
+
+  // Sync state when gym data arrives (gym prop may be undefined on first render)
+  useEffect(() => {
+    if (gym?.supportedSubscriptions && !hasSynced) {
+      setSelectedPackages(initialData.selected);
+      setPrices(initialData.prices);
+      setPackageServices(initialData.services);
+      setHasSynced(true);
+    }
+  }, [gym?.supportedSubscriptions, initialData, hasSynced]);
 
   const [pendingService, setPendingService] = useState<string | null>(null);
 
@@ -88,7 +98,7 @@ export function PlansTab({ gym }: { gym?: any }) {
         name: pendingService.trim(),
         gymId: gymId ? Number(gymId) : undefined
       });
-      
+
       setPendingService(null);
       toast.success("Xidmət yaradıldı");
     } catch (err: any) {
@@ -110,26 +120,45 @@ export function PlansTab({ gym }: { gym?: any }) {
 
   const toggleServiceSelection = (svcName: string) => {
     setPackageServices(prev => {
-      const isSelected = prev[activePackage].includes(svcName);
+      const currentServices = prev[activePackage] || [];
+      const isSelected = currentServices.some(
+        s => s.trim().toLowerCase() === svcName.trim().toLowerCase()
+      );
+      
       if (isSelected) {
-        return { ...prev, [activePackage]: prev[activePackage].filter(s => s !== svcName) };
+        return { 
+          ...prev, 
+          [activePackage]: currentServices.filter(
+            s => s.trim().toLowerCase() !== svcName.trim().toLowerCase()
+          ) 
+        };
       } else {
-        return { ...prev, [activePackage]: [...prev[activePackage], svcName] };
+        return { ...prev, [activePackage]: [...currentServices, svcName] };
       }
     });
   };
 
   const handleSave = () => {
     if (!gymId) return toast.error("Zal ID tapılmadı");
-    
+
     const PACKAGE_IDS: Record<Package, number> = {
       Bronze: 1, Silver: 2, Gold: 3, Platinum: 4,
     };
 
     const subscriptions = Array.from(selectedPackages).map(pkg => {
-      const serviceNames = packageServices[pkg];
+      // Get service names from state, fall back to gym benefits if state is empty
+      let serviceNames = packageServices[pkg] || [];
+      if (serviceNames.length === 0 && gym?.supportedSubscriptions) {
+        const sub = gym.supportedSubscriptions.find((s: any) => s.packageName === pkg);
+        if (sub?.benefits) {
+          serviceNames = sub.benefits.map((b: any) => b.description).filter(Boolean);
+        }
+      }
+
       const serviceIds = serviceNames.map(name => {
-        const found = allServices?.find(s => s.name === name);
+        const found = allServices?.find(s =>
+          s.name.trim().toLowerCase() === name.trim().toLowerCase()
+        );
         return found ? found.id : null;
       }).filter((id): id is number => id !== null);
 
@@ -166,7 +195,7 @@ export function PlansTab({ gym }: { gym?: any }) {
 
   return (
     <div className="w-full flex flex-col gap-9 font-sans text-black animate-in fade-in duration-500">
-      
+
       {/* 1. Package Selector Section */}
       <div className="bg-white rounded-[24px] border border-[#ececed] p-7 flex flex-col gap-6 shadow-sm">
         <div className="border-b border-[#ececed] pb-2">
@@ -177,7 +206,7 @@ export function PlansTab({ gym }: { gym?: any }) {
           {PACKAGES.map((pkg) => {
             const isSelected = selectedPackages.has(pkg);
             const isActive = activePackage === pkg;
-            
+
             return (
               <div
                 key={pkg}
@@ -189,7 +218,7 @@ export function PlansTab({ gym }: { gym?: any }) {
                   !isSelected && "ring-1 ring-inset ring-black/5"
                 )}
               >
-                <div 
+                <div
                   onClick={(e) => {
                     e.stopPropagation();
                     togglePackage(pkg);
@@ -201,16 +230,16 @@ export function PlansTab({ gym }: { gym?: any }) {
                 >
                   {isSelected && <Check className="text-black w-4 h-4 stroke-[4]" />}
                 </div>
-                
+
                 <b className={cn(
                   "ml-3 text-[18px] tracking-tight",
                   pkg === "Platinum" ? "text-white" : "text-white drop-shadow-md"
                 )}>
                   {pkg}
                 </b>
-                
+
                 {isActive && (
-                   <div className="absolute -top-1 -right-1 w-4 h-4 bg-[#00B4CC] rounded-full border-2 border-white shadow-sm animate-pulse" />
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-[#00B4CC] rounded-full border-2 border-white shadow-sm animate-pulse" />
                 )}
               </div>
             );
@@ -227,14 +256,14 @@ export function PlansTab({ gym }: { gym?: any }) {
         <div className="flex flex-col gap-3">
           <label className="text-[16px] text-black/60 font-medium">Giriş qiyməti (AZN)</label>
           <div className="h-[60px] w-full max-w-[320px] bg-[#fafafa] border border-[#ececed] rounded-[12px] flex items-center px-5">
-             <input 
-               type="number"
-               value={prices[activePackage]}
-               onChange={(e) => setPrices(prev => ({ ...prev, [activePackage]: e.target.value }))}
-               className="bg-transparent w-full h-full outline-none text-[18px] font-semibold"
-               placeholder="0.00"
-             />
-             <span className="text-black/40 font-bold ml-2">AZN</span>
+            <input
+              type="number"
+              value={prices[activePackage]}
+              onChange={(e) => setPrices(prev => ({ ...prev, [activePackage]: e.target.value }))}
+              className="bg-transparent w-full h-full outline-none text-[18px] font-semibold"
+              placeholder="0.00"
+            />
+            <span className="text-black/40 font-bold ml-2">AZN</span>
           </div>
         </div>
       </div>
@@ -245,74 +274,82 @@ export function PlansTab({ gym }: { gym?: any }) {
           <h2 className="text-[20px] font-semibold leading-[30px]">
             {activePackage} paketə daxil olan xidmətlər
           </h2>
-          <button 
+          <button
             onClick={() => setPendingService("")}
             className="h-[48px] w-[193px] bg-[#00B4CC] rounded-[12px] flex items-center justify-end px-4 gap-3 text-white text-[16px] transition-all hover:opacity-90 shadow-sm"
           >
             <span className="leading-tight">Xidmət əlavə et</span>
             <div className="w-6 h-6 flex items-center justify-center">
-               <Plus size={24} />
+              <Plus size={24} />
             </div>
           </button>
         </div>
 
         <div className="flex flex-col gap-5">
-           <div className="flex flex-wrap gap-5 min-h-[120px]">
-              {/* All Services with Select/Delete Logic */}
-              {allServices?.map((svc) => {
-                const isSelected = packageServices[activePackage].includes(svc.name);
-                return (
-                  <div 
-                    key={svc.id}
-                    onClick={() => toggleServiceSelection(svc.name)}
-                    className={cn(
-                      "w-[160px] h-[72px] rounded-lg px-3 py-5 flex items-center justify-between cursor-pointer transition-all border",
-                      isSelected 
-                        ? "bg-[#00b4cc0a] border-[#00b4cc]" 
-                        : "bg-[#fafafa] border-[#ececed]"
-                    )}
-                  >
-                    <div className="flex items-center overflow-hidden">
-                       <span className="text-[16px] font-medium text-black truncate leading-[24px]">
-                         {svc.name}
-                       </span>
-                    </div>
-
-                    <button 
-                      onClick={(e) => handleDeleteFromGym(svc.id, e)}
-                      className="w-6 h-6 flex-shrink-0 flex items-center justify-center hover:scale-110 transition-transform"
-                    >
-                      <Image src="/icons/trash.svg" width={24} height={24} alt="Delete" />
-                    </button>
+          <div className="flex flex-wrap gap-5 min-h-[120px]">
+            {/* All Services with Select/Delete Logic */}
+            {allServices?.map((svc) => {
+              // Check state first, then fall back to gym benefits data
+              const stateSelected = packageServices[activePackage]?.includes(svc.name);
+              const gymBenefits = gym?.supportedSubscriptions?.find(
+                (s: any) => s.packageName === activePackage
+              )?.benefits || [];
+              const gymSelected = gymBenefits.some(
+                (b: any) => b.description?.trim().toLowerCase() === svc.name?.trim().toLowerCase()
+              );
+              const isSelected = stateSelected || gymSelected;
+              return (
+                <div
+                  key={svc.id}
+                  onClick={() => toggleServiceSelection(svc.name)}
+                  className={cn(
+                    "w-[160px] h-[72px] rounded-lg px-3 py-5 flex items-center justify-between cursor-pointer transition-all border",
+                    isSelected
+                      ? "bg-[#00b4cc0a] border-[#00b4cc]"
+                      : "bg-[#fafafa] border-[#ececed]"
+                  )}
+                >
+                  <div className="flex items-center overflow-hidden">
+                    <span className="text-[16px] font-medium text-black truncate leading-[24px]">
+                      {svc.name}
+                    </span>
                   </div>
-                );
-              })}
 
-              {/* Inline Add Input */}
-              {pendingService !== null && (
-                <div className="w-[160px] h-[72px] border-2 border-dashed border-[#00B4CC] rounded-lg px-3 flex items-center justify-between animate-in slide-in-from-left duration-300">
-                   <input 
-                     autoFocus
-                     value={pendingService}
-                     onChange={(e) => setPendingService(e.target.value)}
-                     onKeyDown={(e) => e.key === 'Enter' && handleConfirmService()}
-                     placeholder="..."
-                     className="bg-transparent border-none outline-none text-[14px] font-medium w-full"
-                   />
-                   <div className="flex items-center ml-1">
-                     <button onClick={handleConfirmService} className="text-green-500">
-                       <Check size={18} strokeWidth={3} />
-                     </button>
-                   </div>
+                  <button
+                    onClick={(e) => handleDeleteFromGym(svc.id, e)}
+                    className="w-6 h-6 flex-shrink-0 flex items-center justify-center hover:scale-110 transition-transform"
+                  >
+                    <Image src="/icons/trash.svg" width={24} height={24} alt="Delete" />
+                  </button>
                 </div>
-              )}
-           </div>
+              );
+            })}
+
+            {/* Inline Add Input */}
+            {pendingService !== null && (
+              <div className="w-[160px] h-[72px] border-2 border-dashed border-[#00B4CC] rounded-lg px-3 flex items-center justify-between animate-in slide-in-from-left duration-300">
+                <input
+                  autoFocus
+                  value={pendingService}
+                  onChange={(e) => setPendingService(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleConfirmService()}
+                  placeholder="..."
+                  className="bg-transparent border-none outline-none text-[14px] font-medium w-full"
+                />
+                <div className="flex items-center ml-1">
+                  <button onClick={handleConfirmService} className="text-green-500">
+                    <Check size={18} strokeWidth={3} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* 4. Footer Buttons */}
       <div className="flex items-center justify-end mt-4">
-        <button 
+        <button
           onClick={handleSave}
           disabled={savingUpdate}
           className="h-[48px] w-[280px] rounded-[10px] bg-[#00B4CC] text-white text-[16px] font-medium hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-md shadow-cyan-100"
