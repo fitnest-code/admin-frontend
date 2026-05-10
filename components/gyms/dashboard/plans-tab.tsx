@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Plus, Check, Loader2, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGymStore } from "@/lib/store/gym-store";
-import { useSupportedServices, useCreateGymStep6, useCreateSupportedService, useDeleteSupportedService, useUpdateGymSubscriptions } from "@/lib/query/gym-query";
+import { useSupportedServices, useCreateGymStep6, useCreateSupportedService, useDeleteSupportedService, useUpdateGymSubscriptions, useGymSubscriptionsAdmin } from "@/lib/query/gym-query";
 import { toast } from "sonner";
 import { ServiceSelectorModal } from "../modals/service-selector-modal";
 
@@ -28,15 +28,21 @@ const DEFAULT_SERVICES = [
 ];
 
 export function PlansTab({ gym }: { gym?: any }) {
-  const { gymId } = useGymStore();
+  const { data: adminSubs, isLoading: subsLoading } = useGymSubscriptionsAdmin(gymId);
+  const { data: allServices } = useSupportedServices(gymId ? Number(gymId) : undefined);
+  const createServiceMutation = useCreateSupportedService();
+  const deleteServiceMutation = useDeleteSupportedService();
+  const { mutate: updateSubscriptions, isPending: savingUpdate } = useUpdateGymSubscriptions();
 
   const initialData = useMemo(() => {
     const selected = new Set<Package>();
     const prcs: Record<Package, string> = { Bronze: "", Silver: "", Gold: "", Platinum: "" };
     const svcs: Record<Package, string[]> = { Bronze: [], Silver: [], Gold: [], Platinum: [] };
 
-    if (gym?.supportedSubscriptions) {
-      gym.supportedSubscriptions.forEach((sub: any) => {
+    const sourceData = adminSubs?.subscriptions || gym?.supportedSubscriptions;
+
+    if (sourceData) {
+      sourceData.forEach((sub: any) => {
         const pkgName = sub.packageName as Package;
         if (PACKAGES.includes(pkgName)) {
           selected.add(pkgName);
@@ -53,7 +59,7 @@ export function PlansTab({ gym }: { gym?: any }) {
       prices: prcs,
       services: svcs
     };
-  }, [gym]);
+  }, [gym, adminSubs]);
 
   const [activePackage, setActivePackage] = useState<Package>("Platinum");
   const [selectedPackages, setSelectedPackages] = useState<Set<Package>>(initialData.selected);
@@ -61,22 +67,25 @@ export function PlansTab({ gym }: { gym?: any }) {
   const [packageServices, setPackageServices] = useState<Record<Package, string[]>>(initialData.services);
   const [hasSynced, setHasSynced] = useState(false);
 
-  // Sync state when gym data arrives (gym prop may be undefined on first render)
+  // Sync state when gym data arrives
   useEffect(() => {
-    if (gym?.supportedSubscriptions && !hasSynced) {
+    const sourceData = adminSubs?.subscriptions || gym?.supportedSubscriptions;
+    if (sourceData && !hasSynced) {
       setSelectedPackages(initialData.selected);
       setPrices(initialData.prices);
       setPackageServices(initialData.services);
       setHasSynced(true);
     }
-  }, [gym?.supportedSubscriptions, initialData, hasSynced]);
+  }, [gym?.supportedSubscriptions, adminSubs, initialData, hasSynced]);
 
-  const [pendingService, setPendingService] = useState<string | null>(null);
-
-  const { data: allServices } = useSupportedServices(gymId ? Number(gymId) : undefined);
-  const createServiceMutation = useCreateSupportedService();
-  const deleteServiceMutation = useDeleteSupportedService();
-  const { mutate: updateSubscriptions, isPending: savingUpdate } = useUpdateGymSubscriptions();
+  if (subsLoading) {
+    return (
+      <div className="flex-1 py-20 flex flex-col justify-center items-center text-slate-400 gap-3">
+        <Loader2 className="animate-spin" size={32} />
+        <span className="font-medium">Abunəliklər yüklənir...</span>
+      </div>
+    );
+  }
 
   const togglePackage = (pkg: Package) => {
     setSelectedPackages((prev) => {

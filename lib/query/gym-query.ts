@@ -13,7 +13,9 @@ import {
   ITrainer,
   IProfession,
   PaginatedResponse,
-  TrainerRequest
+  TrainerRequest,
+  GymSubscriptionsAdminResponse,
+  GymAnalyticsResponse
 } from '../types/gym'
 import { useGymStore } from '../store/gym-store'
 import { toast } from 'sonner'
@@ -135,7 +137,7 @@ export function useGymAnalytics(
   }
 ) {
   return useQuery({
-    queryKey: ['gym-analytics', gymId, params],
+    queryKey: ['gym-analytics', gymId ? Number(gymId) : null, params],
     queryFn: () => {
       if (!gymId) return Promise.resolve(null)
       return apiGet<GymAnalyticsResponse>(`/admin/gyms/${gymId}/analytics`, { params })
@@ -145,13 +147,26 @@ export function useGymAnalytics(
   })
 }
 
-// 9. Zal məlumatlarını çəkmək üçün
-export function useGymInfoAdmin(gymId: number | string | null | undefined) {
+// 9. Zal məlumatlarını çəkmək üçün (Admin)
+export function useGymDetailsAdmin(gymId: number | string | null | undefined) {
   return useQuery({
-    queryKey: ['gym-info', gymId],
+    queryKey: ['gym-details', gymId ? Number(gymId) : null],
     queryFn: () => {
       if (!gymId) return Promise.resolve(null)
-      return apiGet<GymInfoAdminResponse>(`/admin/gyms/${gymId}/info`)
+      return apiGet<GymInfoAdminResponse>(`/admin/gyms/${gymId}/details`)
+    },
+    enabled: !!gymId,
+    staleTime: 60 * 1000,
+  })
+}
+
+// 9.1 Zal abunəliklərini çəkmək üçün (Admin)
+export function useGymSubscriptionsAdmin(gymId: number | string | null | undefined) {
+  return useQuery({
+    queryKey: ['gym-subscriptions-admin', gymId ? Number(gymId) : null],
+    queryFn: () => {
+      if (!gymId) return Promise.resolve(null)
+      return apiGet<GymSubscriptionsAdminResponse>(`/admin/gyms/${gymId}/subscriptions`)
     },
     enabled: !!gymId,
     staleTime: 60 * 1000,
@@ -159,14 +174,14 @@ export function useGymInfoAdmin(gymId: number | string | null | undefined) {
 }
 
 // 10. Zal məlumatlarını yeniləmək üçün
-export function useUpdateGymInfo() {
+export function useUpdateGymDetails() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, payload }: { id: number, payload: GymInfoUpdateRequest }) =>
-      apiPut(`/admin/gyms/${id}/info`, payload),
+      apiPut(`/admin/gyms/${id}/details`, payload),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['gym-info', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['gym-details', variables.id] });
       toast.success('Məlumatlar uğurla yeniləndi');
     },
     onError: (err: any) => {

@@ -5,6 +5,7 @@ import type {
   GetAdminGymsParams,
   GetGymsParams,
   GymDetailResponse,
+  GymInfoAdminResponse,
   GymListItem,
   GymLocationResponse,
   GymQrResponse,
@@ -48,36 +49,27 @@ export async function getGyms(params?: GetGymsParams) {
 }
 
 export async function getGymById(id: string): Promise<Gym> {
-  const response = await apiGet<GymDetailResponse>(`/api/v1/gyms/${id}`)
+  const response = await apiGet<GymInfoAdminResponse>(`/api/v1/admin/gyms/${id}/info`)
 
   return {
-    id: response.gym_id,
+    id: String(response.id),
     name: response.name,
     about: response.description ?? '',
-    city: response.address?.city ?? '',
-    address: response.address?.addressText ?? '',
+    city: response.city ?? '',
+    address: response.address ?? '',
     phone: response.phone ?? '',
     email: response.email ?? '',
     status: response.status === 'INACTIVE' || response.status === 'DELETED' ? 'inactive' : 'active',
-    createdAt: new Date().toLocaleDateString('az-AZ'),
+    createdAt: response.createdAt ?? new Date().toLocaleDateString('az-AZ'),
     coverImage: response.coverImageUrl,
     images: [],
     genderType: 'mixed',
     workingHours: DEFAULT_WORKING_HOURS,
     subscriptionTiers: [],
     services: [],
-    trainers: (response.trainers ?? []).map((trainer) => ({
-      id: trainer.trainer_id,
-      firstName: trainer.name,
-      lastName: trainer.surname,
-      phone: trainer.phone ?? '',
-      email: trainer.email ?? '',
-      role: trainer.profession?.name ?? 'Trainer',
-      gymId: response.gym_id,
-      photo: trainer.picture,
-    })),
+    trainers: [],
     admins: [],
-    supportedSubscriptions: response.supportedSubscriptions ?? [],
+    supportedSubscriptions: [],
   }
 }
 

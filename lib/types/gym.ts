@@ -150,6 +150,16 @@ export interface RoomImageDto {
   imageUrl: string
 }
 
+export interface GymWorkHourResponse {
+  period: string
+  from: string
+  to: string
+}
+
+export interface RestDayRequest {
+  period: string
+}
+
 export interface GymInfoAdminResponse {
   id: number
   categoryId: number
@@ -164,7 +174,22 @@ export interface GymInfoAdminResponse {
   address: string
   latitude: number
   longitude: number
+  generalWorkHours?: GymWorkHourResponse[]
+  workHoursWoman?: GymWorkHourResponse[]
+  workHoursMan?: GymWorkHourResponse[]
+  restDays?: RestDayRequest[]
+  status?: string
   createdAt: string
+}
+
+export interface GymSubscriptionsAdminResponse {
+  gymId: number
+  subscriptions: {
+    plan_id: string
+    packageName: string
+    dailyPrice: number
+    benefits?: { description: string }[]
+  }[]
 }
 
 export interface GymInfoUpdateRequest {
