@@ -114,7 +114,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
 
     switch (activeTab) {
       case 'analitika': return <AnalitikaTab gymId={gym.id} />
-      case 'info': return <InfoTab />
+      case 'info': return <InfoTab gymId={gym.id} />
       case 'trainers': return <TrainersTab />
       case 'plans': return <PlansTab />
       case 'admins': return <AdminsTab />

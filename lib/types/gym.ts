@@ -145,3 +145,38 @@ export interface GymAnalyticsResponse {
     pageSize: number
   }
 }
+
+export interface RoomImageDto {
+  id: number
+  name: string
+  imageUrl: string
+}
+
+export interface GymInfoAdminResponse {
+  id: number
+  categoryId: number
+  categoryName: string
+  name: string
+  description: string
+  coverImageUrl: string
+  rooms: RoomImageDto[]
+  phone: string
+  email: string
+  city: string
+  address: string
+  latitude: number
+  longitude: number
+  createdAt: string
+}
+
+export interface GymInfoUpdateRequest {
+  categoryId: number
+  name: string
+  description: string
+  phone: string
+  email: string
+  city: string
+  address: string
+  latitude: number
+  longitude: number
+}

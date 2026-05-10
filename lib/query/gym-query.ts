@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiGet, apiPost, apiDelete } from "@/lib/api/client" 
+import { apiGet, apiPost, apiDelete, apiPut } from "@/lib/api/client" 
 import { 
   CategoriesResponse, 
   GymStep1Payload, 
@@ -8,7 +8,9 @@ import {
   SupportedServiceRequest,
   GymCreateStep6Request,
   GymCreateStep7Request,
-  GymAnalyticsResponse
+  GymAnalyticsResponse,
+  GymInfoAdminResponse,
+  GymInfoUpdateRequest
 } from '../types/gym'
 import { useGymStore } from '../store/gym-store'
 import { toast } from 'sonner'
@@ -117,4 +119,34 @@ export function useGymAnalytics(
     enabled: !!gymId,
     staleTime: 60 * 1000,
   })
+}
+
+// 9. Zal məlumatlarını çəkmək üçün
+export function useGymInfoAdmin(gymId: number | string | null | undefined) {
+  return useQuery({
+    queryKey: ['gym-info', gymId],
+    queryFn: () => {
+      if (!gymId) return Promise.resolve(null)
+      return apiGet<GymInfoAdminResponse>(`/admin/gyms/${gymId}/info`)
+    },
+    enabled: !!gymId,
+    staleTime: 60 * 1000,
+  })
+}
+
+// 10. Zal məlumatlarını yeniləmək üçün
+export function useUpdateGymInfo() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: number, payload: GymInfoUpdateRequest }) =>
+      apiPut(`/admin/gyms/${id}/info`, payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-info', variables.id] });
+      toast.success('Məlumatlar uğurla yeniləndi');
+    },
+    onError: () => {
+      toast.error('Məlumatların yenilənməsində xəta baş verdi');
+    }
+  });
 }
