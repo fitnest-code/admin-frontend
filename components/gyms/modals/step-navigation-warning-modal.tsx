@@ -26,9 +26,7 @@ export function StepNavigationWarningModal({ onClose }: StepNavigationWarningMod
         </div>
         <div className="flex flex-col gap-6 p-6">
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Bildiririk ki, artıq tamamlanmış addımlarda düzəliş etmək mümkün deyil.
-            <br /><br />
-            Dəyişiklik üçün əvvəlcə zalı yaradın, daha sonra zalın detalları bölməsindən düzəlişləri aparın.
+            Geri qayıda bilməzsiniz. Zəhmət olmasa zalın yaradılmasını tamamlayın və sonra məlumatları zalın detallarından redaktə edin.
           </p>
           <div className="flex items-center justify-end">
             <button

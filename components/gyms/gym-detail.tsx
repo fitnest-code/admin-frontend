@@ -165,14 +165,22 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
                 const isCompleted = WIZARD_TABS.findIndex(t => t.key === activeTab) > index
 
                 return (
-                  <div key={tab.key} className="w-full">
+                  <div 
+                    key={tab.key} 
+                    className="w-full cursor-pointer group"
+                    onClick={() => {
+                      if (isCompleted) {
+                        setShowWarning(true)
+                      }
+                    }}
+                  >
                     {/* Step Row */}
                     <div className="flex items-center gap-3 w-full">
                       <div className={cn(
                         "w-11 h-11 rounded-full flex items-center justify-center text-[18px] font-semibold transition-all duration-300 shrink-0",
                         isActive 
                           ? "bg-[#00B4CC] text-white shadow-md scale-105" 
-                          : isCompleted ? "bg-[#00B4CC] text-white" : "bg-[#F3F4F6] text-[#9CA3AF]"
+                          : isCompleted ? "bg-[#00B4CC] text-white group-hover:bg-[#009DB3]" : "bg-[#F3F4F6] text-[#9CA3AF]"
                       )}>
                         {isCompleted ? <Check size={20} strokeWidth={3} /> : index + 1}
                       </div>
@@ -203,6 +211,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
         </div>
 
         {showExitConfirm && <ExitConfirmationModal onConfirm={handleConfirmExit} onCancel={() => setShowExitConfirm(false)} />}
+        {showWarning && <StepNavigationWarningModal onClose={() => setShowWarning(false)} />}
       </div>
     )
   }
