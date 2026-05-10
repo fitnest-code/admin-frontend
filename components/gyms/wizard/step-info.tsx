@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGymStore } from "@/lib/store/gym-store";
 import { useCategories, useCreateGymStep1 } from "@/lib/query/gym-query";
 import { toast } from "sonner";
-import { CategorySelect } from "../components/CategorySelect";
-import { InputField } from "../components/InputField";
+import Image from "next/image";
 
 type Lang = "Az" | "Ru" | "En";
 
@@ -59,46 +58,112 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
   };
 
   const isSaving = createStep1.isPending;
-  const canSubmit = !!categoryId && !!name && !!phone && !isSaving;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="rounded-xl border bg-white overflow-hidden shadow-sm">
-        <div className="flex items-center justify-between px-4 pt-4 pb-3 bg-slate-50/50">
-          <h2 className="text-[18px] font-bold text-slate-800">
-            Zal məlumatları
-          </h2>
-          <div className="flex gap-3">
+    <div className="flex flex-col gap-14 font-sans text-black">
+      {/* Zal Məlumatları Section */}
+      <div className="flex flex-col gap-7">
+        <div className="flex items-center justify-between border-b border-[#ececed] pb-1">
+          <h2 className="text-[20px] font-semibold leading-[30px]">Zal məlumatları</h2>
+          <div className="flex items-center gap-[34px] text-[16px] text-center">
             {(["Az", "Ru", "En"] as Lang[]).map((l) => (
-              <button key={l} onClick={() => setLang(l)} className={cn("text-sm font-semibold pb-0.5 transition-all outline-none", lang === l ? "border-b-2 border-[#00B4CC] text-[#00B4CC]" : "text-slate-400")}>
+              <button
+                key={l}
+                onClick={() => setLang(l)}
+                className={cn(
+                  "px-1 pb-1 transition-all duration-300",
+                  lang === l ? "border-b border-[#00B4CC] text-black" : "text-black/40"
+                )}
+              >
                 {l}
               </button>
             ))}
           </div>
         </div>
 
-        <div className="px-4 pb-4 divide-y border-t border-slate-100">
-          <CategorySelect value={categoryId} onChange={setCategoryId} data={categoriesData} loading={categoriesLoading} />
-          <InputField label="Zal adı *" value={name} onChange={setName} placeholder="Məs: FitNest" />
-          <div className="flex flex-col gap-1.5 py-4">
-            <label className="text-xs text-slate-500 font-bold uppercase tracking-wider">Haqqında</label>
-            <textarea
-              value={about}
-              onChange={(e) => setAbout(e.target.value)}
-              rows={4}
-              className="w-full resize-none rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#00B4CC] transition-all"
-            />
+        <div className="flex flex-col gap-5">
+          {/* Category Select */}
+          <div className="flex flex-col gap-3">
+            <label className="text-[16px] leading-[24px]">Kateqoriya</label>
+            <div className="relative h-[60px] w-full bg-[#fafafa] border border-[#ececed] rounded-[12px] flex items-center px-4">
+              <select 
+                className="w-full h-full bg-transparent outline-none appearance-none text-[18px] cursor-pointer"
+                value={categoryId || ""}
+                onChange={(e) => setCategoryId(Number(e.target.value))}
+              >
+                <option value="" disabled>Kateqoriya</option>
+                {categoriesData?.items?.map((cat: any) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+              <div className="absolute right-4 pointer-events-none">
+                 <ChevronDown size={24} className="text-black/60" />
+              </div>
+            </div>
           </div>
-          <InputField label="Telefon *" type="tel" value={phone} onChange={setPhone} placeholder="+994 50 000 00 00" />
-          <InputField label="E-poçt" type="email" value={email} onChange={setEmail} placeholder="gym@info.az" />
+
+          {/* Gym Name */}
+          <div className="flex flex-col gap-3">
+             <label className="text-[16px] leading-[24px]">Zal adı</label>
+             <input 
+               type="text"
+               value={name}
+               onChange={(e) => setName(e.target.value)}
+               placeholder="Zal adı"
+               className="h-[60px] w-full bg-[#fafafa] border border-[#ececed] rounded-[12px] px-4 text-[18px] outline-none placeholder:text-black/40"
+             />
+          </div>
+
+          {/* About */}
+          <div className="flex flex-col gap-3">
+             <label className="text-[16px] leading-[24px]">Haqqında</label>
+             <textarea 
+               value={about}
+               onChange={(e) => setAbout(e.target.value)}
+               placeholder="Haqqında"
+               className="h-[100px] w-full bg-[#fafafa] border border-[#ececed] rounded-[12px] p-4 text-[18px] outline-none resize-none placeholder:text-black/40"
+             />
+          </div>
         </div>
       </div>
 
-      <div className="flex justify-end gap-3 mt-6">
-        <button
+      {/* Əlaqə Section */}
+      <div className="flex flex-col gap-7">
+        <div className="border-b border-[#ececed] pb-1">
+          <h2 className="text-[20px] font-semibold leading-[30px]">Əlaqə</h2>
+        </div>
+        
+        <div className="flex flex-col gap-5">
+           <div className="flex flex-col gap-3">
+              <label className="text-[16px] leading-[24px]">Telefon nömrəsi</label>
+              <input 
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+994 00 000 00 00"
+                className="h-[60px] w-full bg-[#fafafa] border border-[#ececed] rounded-[12px] px-4 text-[18px] font-semibold outline-none placeholder:text-black/40"
+              />
+           </div>
+           
+           <div className="flex flex-col gap-3">
+              <label className="text-[16px] leading-[24px]">E-Poçt</label>
+              <input 
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="asss@gmail.com"
+                className="h-[60px] w-full bg-[#fafafa] border border-[#ececed] rounded-[12px] px-4 text-[18px] font-semibold outline-none placeholder:text-black/40"
+              />
+           </div>
+        </div>
+      </div>
+
+      {/* Buttons */}
+      <div className="flex items-center justify-end mt-4">
+        <button 
           onClick={handleNext}
-          disabled={!canSubmit}
-          className="w-full py-4 rounded-xl font-bold bg-[#00B4CC] text-white hover:bg-[#009DB3] transition flex items-center justify-center gap-2 disabled:opacity-50"
+          disabled={isSaving}
+          className="h-[48px] w-[280px] rounded-[10px] bg-[#00B4CC] text-white text-[16px] font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
         >
           {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
           Növbəti

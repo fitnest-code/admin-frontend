@@ -149,10 +149,10 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
                   isEnabled
                     ? isActive
                       ? "border-white/50 bg-white/25"
-                      : "border-[#00B4CC] bg-[#00B4CC]"
-                    : "border-[#D1D5DB] bg-transparent"
+                      : "border-[#00B4D8] bg-[#00B4D8]"
+                    : "border-slate-200 bg-white"
                 )}>
-                  {isEnabled && <Check size={12} strokeWidth={3} className={isActive ? "text-white" : "text-white"} />}
+                  {isEnabled && <Check className="text-white w-3.5 h-3.5 stroke-[4]" />}
                 </span>
                 {tab.label}
               </button>

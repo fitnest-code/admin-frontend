@@ -29,6 +29,7 @@ interface GymState {
   setCurrentTab: (tab: string) => void;
   addStep2Trainer: (trainer: LocalTrainer) => void;
   removeStep2Trainer: (index: number) => void;
+  updateStep2Trainer: (index: number, trainer: LocalTrainer) => void;
   addStep7Admin: (admin: LocalAdmin) => void;
   removeStep7Admin: (index: number) => void;
   resetGym: () => void;
@@ -48,6 +49,9 @@ export const useGymStore = create<GymState>()(
       })),
       removeStep2Trainer: (index) => set((state) => ({
         step2Trainers: state.step2Trainers.filter((_, i) => i !== index)
+      })),
+      updateStep2Trainer: (index, trainer) => set((state) => ({
+        step2Trainers: state.step2Trainers.map((t, i) => i === index ? trainer : t)
       })),
       addStep7Admin: (admin) => set((state) => ({ 
         step7Admins: [...state.step7Admins, admin] 

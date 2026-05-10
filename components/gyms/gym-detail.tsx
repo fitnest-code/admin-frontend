@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, ChevronDown, Check } from 'lucide-react'
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { GYM_TABS, type Gym } from '@/lib/gyms-data'
 import { StepInfo } from './wizard/step-info'
@@ -77,26 +78,34 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
     resetGym()
     router.push('/gyms')
   }
-
+  const goToNext = () => {
+    const currentIndex = WIZARD_TABS.findIndex(t => t.key === activeTab)
+    if (currentIndex < WIZARD_TABS.length - 1) {
+      const nextTab = WIZARD_TABS[currentIndex + 1].key
+      setActiveTab(nextTab)
+      setCurrentTab(nextTab)
+      window.scrollTo(0, 0)
+    }
+  }
   const renderTab = () => {
     if (isNew) {
       switch (activeTab) {
         case 'info':
-          return <StepInfo />
+          return <StepInfo onNext={goToNext} />
         case 'trainers':
-          return <StepTrainers />
+          return <StepTrainers onNext={goToNext} />
         case 'workingHours':
-          return <StepWorkingHours />
+          return <StepWorkingHours onNext={goToNext} />
         case 'address':
-          return <StepAddress />
+          return <StepAddress onNext={goToNext} />
         case 'images':
-          return <StepImages />
+          return <StepImages onNext={goToNext} />
         case 'plans':
-          return <StepPlans />
+          return <StepPlans onNext={goToNext} />
         case 'admins':
-          return <StepAdmins />
+          return <StepAdmins onNext={goToNext} />
         default:
-          return <StepInfo />
+          return <StepInfo onNext={goToNext} />
       }
     }
 
@@ -124,43 +133,75 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
 
   if (isNew) {
     return (
-      <div className="flex flex-col gap-6 w-full">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowExitConfirm(true)}
-              className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors flex items-center gap-1"
-            >
-              <ArrowLeft size={10} />
-              Zallar
-            </button>
-            <span className="text-[10px] text-muted-foreground">/</span>
-            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Yeni Zal Əlavə Et</span>
+      <div className="flex flex-col w-full font-sans">
+        {/* Page Header */}
+        <div className="mb-6 flex items-center justify-between border-b border-[#ececed] pb-5">
+           <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                 <button
+                   onClick={() => setShowExitConfirm(true)}
+                   className="text-[11px] font-bold text-slate-400 uppercase tracking-widest hover:text-[#00B4CC] transition-colors flex items-center gap-2"
+                 >
+                   <ArrowLeft size={14} strokeWidth={3} />
+                   Geri qayıt
+                 </button>
+              </div>
+              <h1 className="text-[24px] font-semibold text-[#101828] leading-[28px]">Yeni Zal</h1>
+           </div>
+           
+           <div className="flex items-center gap-4">
+              <button className="w-6 h-6 flex items-center justify-center hover:bg-slate-100 rounded-md">
+                 <Image src="/Sidebar/X.svg" width={18} height={18} alt="Delete" className="opacity-40" />
+              </button>
+           </div>
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
+          {/* Left Side: Vertical Stepper */}
+          <aside className="w-full lg:w-[260px] shrink-0 bg-white rounded-[12px] p-4 shadow-sm border border-[#ececed]/50">
+            <div className="flex flex-col items-start px-2">
+              {WIZARD_TABS.map((tab, index) => {
+                const isActive = activeTab === tab.key
+                const isCompleted = WIZARD_TABS.findIndex(t => t.key === activeTab) > index
+
+                return (
+                  <div key={tab.key} className="w-full">
+                    {/* Step Row */}
+                    <div className="flex items-center gap-3 w-full">
+                      <div className={cn(
+                        "w-11 h-11 rounded-full flex items-center justify-center text-[18px] font-semibold transition-all duration-300 shrink-0",
+                        isActive 
+                          ? "bg-[#00B4CC] text-white shadow-md scale-105" 
+                          : isCompleted ? "bg-[#00B4CC] text-white" : "bg-[#F3F4F6] text-[#9CA3AF]"
+                      )}>
+                        {isCompleted ? <Check size={20} strokeWidth={3} /> : index + 1}
+                      </div>
+                      <span className={cn(
+                        "text-[18px] font-medium leading-[28px] transition-colors duration-300",
+                        isActive ? "text-black" : "text-[#C9C9C9]"
+                      )}>
+                        {tab.label}
+                      </span>
+                    </div>
+
+                    {/* Connector Line */}
+                    {index < WIZARD_TABS.length - 1 && (
+                      <div className="w-11 flex justify-center py-2">
+                        <div className="w-[4px] h-[24px] bg-[#E8E8E8] rounded-full" />
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </aside>
+
+          {/* Right Side: Form Content */}
+          <div className="flex-1 w-full bg-white rounded-[12px] border border-[#ececed] shadow-sm overflow-hidden p-6 md:p-8">
+            {renderTab()}
           </div>
         </div>
 
-        <div className="w-full border-b border-border">
-          <nav className="-mb-px flex w-full gap-0 overflow-x-auto no-scrollbar" aria-label="Zal yaratma mərhələləri">
-            {WIZARD_TABS.map((tab, index) => (
-              <button
-                key={tab.key}
-                disabled={true}
-                className={cn(
-                  'flex-1 min-w-[120px] border-b-2 pb-4 text-sm font-semibold transition-all duration-200 whitespace-nowrap opacity-100 text-center',
-                  activeTab === tab.key
-                    ? 'border-[#00B4CC] text-foreground'
-                    : 'border-transparent text-muted-foreground',
-                )}
-              >
-                {index + 1}. {tab.label}
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        <div className="min-h-[400px] w-full">{renderTab()}</div>
-
-        {showWarning && <StepNavigationWarningModal onClose={() => setShowWarning(false)} />}
         {showExitConfirm && <ExitConfirmationModal onConfirm={handleConfirmExit} onCancel={() => setShowExitConfirm(false)} />}
       </div>
     )

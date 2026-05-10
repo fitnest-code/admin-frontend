@@ -72,7 +72,7 @@ export function Sidebar({ className }: SidebarProps) {
       {/* Sidebar panel */}
       <aside
         className={cn(
-          'fixed left-0 top-0 z-[110] flex h-screen flex-col bg-white border-r border-[#ececed] transition-all duration-500 ease-in-out font-sans overflow-hidden shadow-sm',
+          'fixed left-0 top-0 z-40 flex h-screen flex-col bg-white border-r border-[#ececed] transition-all duration-500 ease-in-out font-sans overflow-hidden shadow-sm',
           collapsed ? 'w-[110px]' : 'w-[272px]',
           // Mobile: translate off-screen unless open
           mobileOpen ? 'translate-x-0' : '-translate-x-full',

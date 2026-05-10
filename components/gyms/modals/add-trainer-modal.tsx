@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { X, Upload, Loader2, RefreshCw } from "lucide-react";
+import { X, Upload, Loader2, RefreshCw, ChevronDown, MoreVertical } from "lucide-react";
 import { toast } from "sonner";
 import { 
   useAddTrainer, 
@@ -11,7 +11,15 @@ import { useGymStore } from "@/lib/store/gym-store";
 import { useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 
+import { createPortal } from "react-dom";
+
 export function AddTrainerModal({ onClose, isDashboard = false }: { onClose: () => void, isDashboard?: boolean }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
   const fileRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const id = useGymStore((state) => state.gymId);
@@ -31,12 +39,6 @@ export function AddTrainerModal({ onClose, isDashboard = false }: { onClose: () 
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (preview) URL.revokeObjectURL(preview);
-    };
-  }, [preview]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -102,8 +104,10 @@ export function AddTrainerModal({ onClose, isDashboard = false }: { onClose: () 
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 font-sans">
+  if (!mounted) return null;
+
+  return createPortal(
+    <div className="fixed top-0 left-0 w-full h-full z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 font-sans">
       <div className="w-full max-w-[1040px] max-h-[95vh] rounded-[24px] bg-white border border-[#ececed] shadow-2xl overflow-y-auto flex flex-col p-5 md:p-8 gap-6 md:gap-[34px] animate-in fade-in zoom-in duration-200 font-sans">
         
         {/* Header */}
@@ -178,6 +182,9 @@ export function AddTrainerModal({ onClose, isDashboard = false }: { onClose: () 
                       <option key={p.id} value={p.id}>{p.name}</option>
                     ))}
                   </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-black/40">
+                     <ChevronDown size={24} />
+                  </div>
                 </div>
               </div>
             </div>
@@ -218,6 +225,7 @@ export function AddTrainerModal({ onClose, isDashboard = false }: { onClose: () 
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
