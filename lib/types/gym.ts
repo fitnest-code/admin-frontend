@@ -178,14 +178,21 @@ export interface GymInfoAdminResponse {
   createdAt: string
 }
 
+export interface GymPlanBenefitAdminResponse {
+  id: number
+  name: string
+}
+
+export interface GymPlanItemAdminResponse {
+  packageId: number
+  packageName: string
+  dailyPrice: number
+  benefits: GymPlanBenefitAdminResponse[]
+}
+
 export interface GymSubscriptionsAdminResponse {
   gymId: number
-  subscriptions: {
-    plan_id: string
-    packageName: string
-    dailyPrice: number
-    benefits?: { description: string }[]
-  }[]
+  subscriptions: GymPlanItemAdminResponse[]
 }
 
 export interface GymInfoUpdateRequest {

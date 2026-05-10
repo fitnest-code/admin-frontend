@@ -48,7 +48,7 @@ export function PlansTab({ gym }: { gym?: any }) {
           selected.add(pkgName);
           prcs[pkgName] = String(sub.dailyPrice || "");
           svcs[pkgName] = (sub.benefits || [])
-            .map((b: any) => b.description)
+            .map((b: any) => b.name)
             .filter(Boolean);
         }
       });
