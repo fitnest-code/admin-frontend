@@ -1,112 +1,318 @@
 'use client'
 
-import { useState } from 'react'
-import { Search, ChevronDown, Filter, MoreHorizontal, Eye, Trash2 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import React, { useState } from 'react'
+import Image from 'next/image'
+import styles from './reservations-tab.module.css'
+import { 
+    useGymReservations, 
+    useReservationDetail, 
+    useUpdateReservationStatus, 
+    useGymReservationStats 
+} from '@/lib/query/gym-query'
+import { useParams } from 'next/navigation'
 
-interface Reservation {
-  id: string
-  user: {
-    name: string
-    avatar?: string
-  }
-  date: string
-  time: string
-  gymName: string
-  status: 'active' | 'completed' | 'cancelled'
-}
+const ReservationsTab = () => {
+    const { id: gymId } = useParams()
+    const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined)
+    const [page, setPage] = useState(1)
+    const [selectedReservationId, setSelectedReservationId] = useState<number | null>(null)
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
+    const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false)
+    const [rejectionReason, setRejectionReason] = useState('')
+    const [rejectionError, setRejectionError] = useState(false)
 
-const MOCK_RESERVATIONS: Reservation[] = [
-  { id: '1', user: { name: 'Nigar Məmmədova' }, date: '31 Mart, 2025', time: '14:00', gymName: 'FIT CLUB', status: 'active' },
-  { id: '2', user: { name: 'Ramil Babayev' },   date: '30 Mart, 2025', time: '10:00', gymName: 'FIT CLUB', status: 'completed' },
-  { id: '3', user: { name: 'Aynur Həsənova' },  date: '29 Mart, 2025', time: '18:30', gymName: 'FIT CLUB', status: 'cancelled' },
-  { id: '4', user: { name: 'Orxan Nəbiyev' },   date: '28 Mart, 2025', time: '09:00', gymName: 'FIT CLUB', status: 'completed' },
-]
+    // Dropdown states
+    const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false)
+    const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false)
 
-const STATUS_LABELS = {
-  active: 'Gözləmədə',
-  completed: 'Təsdiq edildi',
-  cancelled: 'Rədd edildi',
-}
+    const { data: stats } = useGymReservationStats(gymId as string)
+    const { data: reservationsData, isLoading } = useGymReservations(gymId as string, {
+        status: statusFilter,
+        page,
+        pageSize: 10
+    })
 
-const STATUS_STYLES = {
-  active: 'bg-amber-50 text-amber-600 border border-amber-100',
-  completed: 'bg-green-50 text-green-600 border border-green-100',
-  cancelled: 'bg-red-50 text-red-600 border border-red-100',
-}
+    const { data: detailData } = useReservationDetail(selectedReservationId)
+    const updateStatusMutation = useUpdateReservationStatus()
 
-export function ReservationsTab() {
-  const [query, setQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed' | 'cancelled'>('all')
+    const handleStatusFilter = (status: string | undefined) => {
+        setStatusFilter(status)
+        setPage(1)
+        setIsStatusDropdownOpen(false)
+    }
 
-  const filtered = MOCK_RESERVATIONS.filter(r => {
-    const matchQuery = r.user.name.toLowerCase().includes(query.toLowerCase())
-    const matchStatus = statusFilter === 'all' || r.status === statusFilter
-    return matchQuery && matchStatus
-  })
+    const handleOpenDetail = (id: number) => {
+        setSelectedReservationId(id)
+        setIsDetailModalOpen(true)
+    }
 
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[240px]">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Müştəri, Zalın statusu..."
-            className="w-full rounded-lg border border-border bg-card pl-9 pr-3 py-2 text-sm outline-none focus:border-[#00B4CC] transition-colors"
-          />
-        </div>
+    const handleApprove = (id: number) => {
+        updateStatusMutation.mutate({
+            reservationId: id,
+            status: 'CONFIRMED'
+        })
+    }
 
-        <div className="flex items-center gap-2">
-          <button className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors">
-            Sırala
-            <ChevronDown size={14} className="text-muted-foreground" />
-          </button>
-          <button className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors">
-            Status
-            <Filter size={14} className="text-muted-foreground" />
-          </button>
-        </div>
-      </div>
+    const handleRejectClick = (id: number) => {
+        setSelectedReservationId(id)
+        setIsRejectionModalOpen(true)
+    }
 
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
-        <div className="grid grid-cols-[1.5fr_1fr_1fr_1fr_0.5fr] items-center gap-4 border-b border-border bg-[#00B4CC14] px-4 py-3">
-          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Müştəri</span>
-          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Tarix</span>
-          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Zal adı</span>
-          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Status</span>
-          <span className="text-xs font-semibold text-foreground uppercase tracking-wider text-right">Detallı</span>
-        </div>
+    const handleConfirmRejection = () => {
+        if (!rejectionReason.trim()) {
+            setRejectionError(true)
+            return
+        }
+        if (selectedReservationId) {
+            updateStatusMutation.mutate({
+                reservationId: selectedReservationId,
+                status: 'REJECTED',
+                reason: rejectionReason
+            }, {
+                onSuccess: () => {
+                    setIsRejectionModalOpen(false)
+                    setRejectionReason('')
+                    setRejectionError(false)
+                    setIsDetailModalOpen(false)
+                }
+            })
+        }
+    }
 
-        <div className="divide-y divide-border">
-          {filtered.map((r) => (
-            <div key={r.id} className="grid grid-cols-[1.5fr_1fr_1fr_1fr_0.5fr] items-center gap-4 px-4 py-3.5 hover:bg-secondary/30 transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#00B4CC15] text-xs font-bold text-[#00B4CC]">
-                  {r.user.name[0]}
+    const getStatusText = (status: string) => {
+        switch (status) {
+            case 'PENDING': return 'Gözləmədə'
+            case 'CONFIRMED': return 'Təsdiqlənib'
+            case 'CANCELLED': return 'Ləğv edilib'
+            case 'REJECTED': return 'İmtina edilib'
+            default: return status
+        }
+    }
+
+    const getStatusClass = (status: string) => {
+        switch (status) {
+            case 'PENDING': return styles.statusPending
+            case 'CONFIRMED': return styles.statusConfirmed
+            case 'CANCELLED': return styles.statusCancelled
+            case 'REJECTED': return styles.statusRejected
+            default: return ''
+        }
+    }
+
+    return (
+        <div className={styles.container}>
+            {/* Header / Stats */}
+            <div className={styles.statsRow}>
+                <div className={styles.statCard}>
+                    <div className={styles.statTitle}>Ümumi Rezervasiyalar</div>
+                    <div className={styles.statValue}>{stats?.total || 0}</div>
                 </div>
-                <span className="text-sm font-medium text-foreground">{r.user.name}</span>
-              </div>
-              <span className="text-sm text-muted-foreground">{r.date}</span>
-              <span className="text-sm text-foreground">{r.gymName}</span>
-              <div>
-                <span className={cn('rounded-full px-2.5 py-0.5 text-[11px] font-bold', STATUS_STYLES[r.status])}>
-                  {STATUS_LABELS[r.status]}
-                </span>
-              </div>
-              <div className="flex justify-end gap-2">
-                <button className="p-1.5 text-muted-foreground hover:text-[#00B4CC] transition-colors" title="Detallı bax">
-                  <Eye size={16} />
-                </button>
-                <button className="p-1.5 text-muted-foreground hover:text-red-500 transition-colors" title="Sil">
-                  <Trash2 size={16} />
-                </button>
-              </div>
+                <div className={styles.statCard}>
+                    <div className={styles.statTitle}>Gözləyənlər</div>
+                    <div className={`${styles.statValue} ${styles.colorOrange}`}>{stats?.pending || 0}</div>
+                </div>
+                <div className={styles.statCard}>
+                    <div className={styles.statTitle}>Təsdiqlənənlər</div>
+                    <div className={`${styles.statValue} ${styles.colorGreen}`}>{stats?.confirmed || 0}</div>
+                </div>
+                <div className={styles.statCard}>
+                    <div className={styles.statTitle}>Ləğv Edilənlər</div>
+                    <div className={`${styles.statValue} ${styles.colorRed}`}>{stats?.cancelled || 0}</div>
+                </div>
             </div>
-          ))}
+
+            {/* Filters */}
+            <div className={styles.filtersRow}>
+                <div className={styles.searchBox}>
+                    <Image src="/search-normal.svg" width={20} height={20} alt="Search" />
+                    <input type="text" placeholder="Ad, Soyad və ya ID ilə axtar" className={styles.searchInput} />
+                </div>
+                <div className={styles.dropdowns}>
+                    <div className={styles.dropdownWrapper}>
+                        <button 
+                            className={styles.filterButton}
+                            onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+                        >
+                            <span>Status: {statusFilter ? getStatusText(statusFilter) : 'Hamısı'}</span>
+                            <Image src="/arrow-down.svg" width={16} height={16} alt="Arrow" />
+                        </button>
+                        {isStatusDropdownOpen && (
+                            <div className={styles.dropdownMenu}>
+                                <div className={styles.dropdownItem} onClick={() => handleStatusFilter(undefined)}>Hamısı</div>
+                                <div className={styles.dropdownItem} onClick={() => handleStatusFilter('PENDING')}>Gözləmədə</div>
+                                <div className={styles.dropdownItem} onClick={() => handleStatusFilter('CONFIRMED')}>Təsdiqlənib</div>
+                                <div className={styles.dropdownItem} onClick={() => handleStatusFilter('CANCELLED')}>Ləğv edilib</div>
+                                <div className={styles.dropdownItem} onClick={() => handleStatusFilter('REJECTED')}>İmtina edilib</div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className={styles.dropdownWrapper}>
+                        <button 
+                            className={styles.filterButton}
+                            onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
+                        >
+                            <span>Sırala</span>
+                            <Image src="/arrow-down.svg" width={16} height={16} alt="Arrow" />
+                        </button>
+                        {isSortDropdownOpen && (
+                            <div className={styles.dropdownMenu}>
+                                <div className={styles.dropdownItem}>Tarix (Yeni → Köhnə)</div>
+                                <div className={styles.dropdownItem}>Tarix (Köhnə → Yeni)</div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Table */}
+            <div className={styles.tableContainer}>
+                <table className={styles.table}>
+                    <thead>
+                        <tr>
+                            <th>Ad / Soyad</th>
+                            <th>Tarix</th>
+                            <th>Saat</th>
+                            <th>Status</th>
+                            <th>Məşqçi</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {isLoading ? (
+                            <tr><td colSpan={6} style={{ textAlign: 'center', padding: '20px' }}>Yüklənir...</td></tr>
+                        ) : reservationsData?.items.length === 0 ? (
+                            <tr><td colSpan={6} style={{ textAlign: 'center', padding: '20px' }}>Rezervasiya tapılmadı</td></tr>
+                        ) : reservationsData?.items.map((res: any) => (
+                            <tr key={res.id}>
+                                <td>{res.userFullName}</td>
+                                <td>{res.date}</td>
+                                <td>{res.timeRange}</td>
+                                <td>
+                                    <span className={`${styles.statusBadge} ${getStatusClass(res.status)}`}>
+                                        {getStatusText(res.status)}
+                                    </span>
+                                </td>
+                                <td>{res.trainerName}</td>
+                                <td className={styles.actionsCell}>
+                                    <button className={styles.detailBtn} onClick={() => handleOpenDetail(res.id)}>
+                                        Detallı
+                                    </button>
+                                    <div className={styles.moreActions}>
+                                        <Image src="/more.svg" width={24} height={24} alt="More" />
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Pagination */}
+            <div className={styles.pagination}>
+                <button 
+                    className={styles.pageBtn} 
+                    disabled={page === 1}
+                    onClick={() => setPage(page - 1)}
+                >
+                    <Image src="/arrow-left.svg" width={16} height={16} alt="Prev" />
+                </button>
+                <span className={styles.pageInfo}>Səhifə {page} / {Math.ceil((reservationsData?.total || 0) / 10) || 1}</span>
+                <button 
+                    className={styles.pageBtn}
+                    disabled={page >= Math.ceil((reservationsData?.total || 0) / 10)}
+                    onClick={() => setPage(page + 1)}
+                >
+                    <Image src="/arrow-right.svg" width={16} height={16} alt="Next" />
+                </button>
+            </div>
+
+            {/* Detail Modal */}
+            {isDetailModalOpen && detailData && (
+                <div className={styles.modalOverlay}>
+                    <div className={styles.modalContent}>
+                        <div className={styles.modalHeader}>
+                            <h2>Rezervasiya Detalları</h2>
+                            <button className={styles.closeBtn} onClick={() => setIsDetailModalOpen(false)}>
+                                <Image src="/close.svg" width={24} height={24} alt="Close" />
+                            </button>
+                        </div>
+                        
+                        <div className={styles.modalBody}>
+                            <div className={styles.detailGrid}>
+                                <div className={styles.detailGroup}>
+                                    <label>Müştəri</label>
+                                    <div>{detailData.userFullName}</div>
+                                </div>
+                                <div className={styles.detailGroup}>
+                                    <label>Telefon</label>
+                                    <div>{detailData.userPhone}</div>
+                                </div>
+                                <div className={styles.detailGroup}>
+                                    <label>E-poçt</label>
+                                    <div>{detailData.userEmail}</div>
+                                </div>
+                                <div className={styles.detailGroup}>
+                                    <label>Tarix / Saat</label>
+                                    <div>{detailData.date} | {detailData.timeRange}</div>
+                                </div>
+                                <div className={styles.detailGroup}>
+                                    <label>Məşqçi</label>
+                                    <div>{detailData.trainerName}</div>
+                                </div>
+                                <div className={styles.detailGroup}>
+                                    <label>Dərs növü</label>
+                                    <div>{detailData.lessonType}</div>
+                                </div>
+                            </div>
+
+                            {detailData.cancelReason && (
+                                <div className={styles.reasonBox}>
+                                    <label>İmtina səbəbi:</label>
+                                    <p>{detailData.cancelReason}</p>
+                                </div>
+                            )}
+
+                            {detailData.status === 'PENDING' && (
+                                <div className={styles.modalActions}>
+                                    <button className={styles.approveBtn} onClick={() => handleApprove(detailData.id)}>
+                                        Təsdiqlə
+                                    </button>
+                                    <button className={styles.rejectBtn} onClick={() => handleRejectClick(detailData.id)}>
+                                        İmtina et
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Rejection Modal */}
+            {isRejectionModalOpen && (
+                <div className={styles.modalOverlay}>
+                    <div className={styles.rejectionModal}>
+                        <h3>İmtina səbəbi</h3>
+                        <p>Zəhmət olmasa imtina səbəbini qeyd edin</p>
+                        <textarea 
+                            className={`${styles.reasonInput} ${rejectionError ? styles.inputError : ''}`}
+                            placeholder="Səbəbi bura yazın..."
+                            value={rejectionReason}
+                            onChange={(e) => {
+                                setRejectionReason(e.target.value)
+                                if (e.target.value.trim()) setRejectionError(false)
+                            }}
+                        />
+                        {rejectionError && <span className={styles.errorText}>Səbəb qeyd edilməlidir</span>}
+                        <div className={styles.rejectionActions}>
+                            <button className={styles.cancelBtn} onClick={() => setIsRejectionModalOpen(false)}>Ləğv et</button>
+                            <button className={styles.confirmRejectBtn} onClick={handleConfirmRejection}>Təsdiqlə</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
-      </div>
-    </div>
-  )
+    )
 }
+
+export default ReservationsTab

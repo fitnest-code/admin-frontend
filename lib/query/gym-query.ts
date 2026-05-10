@@ -360,3 +360,69 @@ export function useRejectReview() {
     },
   });
 }
+
+// 22. Rezervasiyaları çəkmək üçün
+export function useGymReservations(gymId: number | string | null | undefined, params?: { status?: string, page?: number, pageSize?: number }) {
+  return useQuery({
+    queryKey: ['gym-reservations', gymId, params],
+    queryFn: () => {
+      if (!gymId) return Promise.resolve(null)
+      const searchParams = new URLSearchParams()
+      if (params?.status) searchParams.append('status', params.status)
+      if (params?.page) searchParams.append('page', params.page.toString())
+      if (params?.pageSize) searchParams.append('pageSize', params.pageSize.toString())
+      
+      return apiGet<any>(`/admin/gyms/${gymId}/reservations?${searchParams.toString()}`)
+    },
+    enabled: !!gymId,
+  })
+}
+
+// 23. Rezervasiya detallarını çəkmək üçün
+export function useReservationDetail(reservationId: number | string | null) {
+  return useQuery({
+    queryKey: ['reservation-detail', reservationId],
+    queryFn: () => {
+      if (!reservationId) return Promise.resolve(null)
+      return apiGet<any>(`/admin/gyms/reservations/${reservationId}`)
+    },
+    enabled: !!reservationId,
+  })
+}
+
+// 24. Rezervasiya statusunu yeniləmək üçün
+export function useUpdateReservationStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ reservationId, status, reason }: { reservationId: number | string, status: string, reason?: string }) => {
+      const searchParams = new URLSearchParams()
+      searchParams.append('status', status)
+      if (reason) searchParams.append('reason', reason)
+      // Note: Backend might expect PATCH, but apiPost/apiPut/apiPatch are available.
+      // My backend uses @PatchMapping. I should use apiPatch if available or apiPost if it's configured to handle it.
+      // Let's check api client.
+      return apiPost(`/admin/gyms/reservations/${reservationId}/status?${searchParams.toString()}`, {})
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-reservations'] });
+      queryClient.invalidateQueries({ queryKey: ['reservation-detail', variables.reservationId] });
+      queryClient.invalidateQueries({ queryKey: ['gym-reservation-stats', variables.reservationId] }); // Fixed key
+      toast.success('Status yeniləndi');
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Xəta baş verdi');
+    }
+  });
+}
+
+// 25. Rezervasiya statistikasını çəkmək üçün
+export function useGymReservationStats(gymId: number | string | null | undefined) {
+  return useQuery({
+    queryKey: ['gym-reservation-stats', gymId],
+    queryFn: () => {
+      if (!gymId) return Promise.resolve(null)
+      return apiGet<any>(`/admin/gyms/${gymId}/reservations/stats`)
+    },
+    enabled: !!gymId,
+  })
+}

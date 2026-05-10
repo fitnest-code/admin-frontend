@@ -1,0 +1,307 @@
+.container {
+    padding: 24px;
+}
+
+.statsRow {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.statCard {
+    background: #FFFFFF;
+    border: 1px solid #E5E5E5;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.statTitle {
+    font-size: 14px;
+    color: #666666;
+}
+
+.statValue {
+    font-size: 24px;
+    font-weight: 600;
+    color: #111111;
+}
+
+.colorOrange { color: #F59E0B; }
+.colorGreen { color: #10B981; }
+.colorRed { color: #EF4444; }
+
+.filtersRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.searchBox {
+    display: flex;
+    align-items: center;
+    background: #F9FAFB;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    padding: 10px 16px;
+    gap: 12px;
+    width: 320px;
+}
+
+.searchInput {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    width: 100%;
+}
+
+.dropdowns {
+    display: flex;
+    gap: 12px;
+}
+
+.dropdownWrapper {
+    position: relative;
+}
+
+.filterButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    padding: 10px 16px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.dropdownMenu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    min-width: 160px;
+    margin-top: 4px;
+}
+
+.dropdownItem {
+    padding: 10px 16px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.dropdownItem:hover {
+    background: #F9FAFB;
+}
+
+.tableContainer {
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th {
+    background: #F9FAFB;
+    padding: 16px;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 500;
+    color: #6B7280;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.table td {
+    padding: 16px;
+    font-size: 14px;
+    color: #111827;
+    border-bottom: 1px solid #F3F4F6;
+}
+
+.statusBadge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.statusPending { background: #FEF3C7; color: #92400E; }
+.statusConfirmed { background: #D1FAE5; color: #065F46; }
+.statusCancelled { background: #FEE2E2; color: #991B1B; }
+.statusRejected { background: #F3F4F6; color: #374151; }
+
+.actionsCell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.detailBtn {
+    background: #F3F4F6;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 24px;
+    gap: 16px;
+}
+
+.pageBtn {
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+}
+
+.pageBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.modalContent {
+    background: #FFFFFF;
+    width: 600px;
+    border-radius: 16px;
+    padding: 24px;
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.closeBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.detailGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.detailGroup label {
+    display: block;
+    font-size: 12px;
+    color: #6B7280;
+    margin-bottom: 4px;
+}
+
+.modalActions {
+    display: flex;
+    gap: 12px;
+    margin-top: 32px;
+}
+
+.approveBtn {
+    flex: 1;
+    background: #111111;
+    color: #FFFFFF;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.rejectBtn {
+    flex: 1;
+    background: #FFFFFF;
+    border: 1px solid #EF4444;
+    color: #EF4444;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.rejectionModal {
+    background: #FFFFFF;
+    width: 400px;
+    padding: 24px;
+    border-radius: 16px;
+}
+
+.reasonInput {
+    width: 100%;
+    height: 100px;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 16px;
+    resize: none;
+}
+
+.inputError {
+    border-color: #EF4444;
+}
+
+.errorText {
+    font-size: 12px;
+    color: #EF4444;
+}
+
+.rejectionActions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.cancelBtn {
+    flex: 1;
+    background: #F3F4F6;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.confirmRejectBtn {
+    flex: 1;
+    background: #EF4444;
+    color: #FFFFFF;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+}
