@@ -100,25 +100,25 @@ export function TrainersTab({ gym }: { gym?: any }) {
             </div>
           </div>
         ) : (
-          <div className="w-full">
-            <div className="min-w-[1000px] flex flex-col">
+          <div className="w-full overflow-x-auto">
+            <table className="w-full border-separate border-spacing-0">
               {/* Header */}
-              <div className="w-full h-[64px] flex items-center justify-center bg-[rgba(0,180,204,0.15)] border border-[#cecfd2] rounded-t-[12px] text-[16px] font-bold text-black font-sans px-6">
-                <div className="w-[1015px] flex items-center gap-[90px]">
-                   <div className="w-[280px]">Ad / Soyad</div>
-                   <div className="w-[160px]">Telefon</div>
-                   <div className="w-[280px]">Email</div>
-                   <div className="flex-1 text-right">Ətraflı</div>
-                </div>
-              </div>
+              <thead>
+                <tr className="bg-[rgba(0,180,204,0.15)] h-[64px] text-[16px] font-bold text-black font-sans">
+                  <th className="border-y border-l border-[#cecfd2] rounded-tl-[12px] pl-[108px] text-left whitespace-nowrap">Ad / Soyad</th>
+                  <th className="border-y border-[#cecfd2] px-10 text-left whitespace-nowrap">Telefon</th>
+                  <th className="border-y border-[#cecfd2] px-10 text-left whitespace-nowrap">Email</th>
+                  <th className="border-y border-r border-[#cecfd2] rounded-tr-[12px] px-10 text-right whitespace-nowrap">Ətraflı</th>
+                </tr>
+              </thead>
 
-              {/* Rows */}
-              <div className="flex flex-col bg-white border-x border-b border-[#ececed] rounded-b-[12px] divide-y divide-[#ececed]">
+              {/* Body */}
+              <tbody className="bg-white">
                 {trainers.map((t: any, i: number) => (
-                  <div key={t.trainer_id || t.id || i} className="w-full h-[100px] flex items-center justify-center px-6 text-[16px] hover:bg-slate-50/80 transition-colors group font-sans">
-                    <div className="w-[1015px] flex items-center gap-[90px]">
-                      {/* Name Section */}
-                      <div className="w-[280px] flex items-center gap-[14px] shrink-0">
+                  <tr key={t.trainer_id || t.id || i} className="h-[100px] hover:bg-slate-50/80 transition-colors group font-sans border-b border-[#ececed]">
+                    {/* Name Section */}
+                    <td className="border-b border-l border-[#ececed] pl-10">
+                      <div className="flex items-center gap-[14px]">
                         <div className="h-[54px] w-[54px] relative rounded-full overflow-hidden shrink-0">
                           {t.picture ? (
                             <img src={t.picture} className="object-cover w-full h-full" alt="Trainer" />
@@ -129,39 +129,45 @@ export function TrainersTab({ gym }: { gym?: any }) {
                           )}
                         </div>
                         <div className="flex flex-col justify-center overflow-hidden">
-                          <div className="font-bold text-black leading-[24px] group-hover:text-[#00B4CC] transition-colors truncate">
+                          <div className="font-bold text-black leading-[24px] group-hover:text-[#00B4CC] transition-colors whitespace-nowrap">
                             {t.name} {t.surname}
                           </div>
-                          <div className="text-[14px] leading-[24px] text-[#94979c] truncate">
+                          <div className="text-[14px] leading-[24px] text-[#94979c] whitespace-nowrap">
                             {t.profession?.name || "Məşqçi"}
                           </div>
                         </div>
                       </div>
+                    </td>
 
-                      {/* Phone */}
-                      <div className="w-[160px] font-medium text-black leading-[24px] shrink-0">
+                    {/* Phone */}
+                    <td className="border-b border-[#ececed] px-10">
+                      <div className="font-medium text-black leading-[24px] whitespace-nowrap">
                         {t.phone || "+994 ** *** ** **"}
                       </div>
+                    </td>
 
-                      {/* Email */}
-                      <div className="w-[280px] font-medium text-black leading-[24px] truncate shrink-0">
+                    {/* Email */}
+                    <td className="border-b border-[#ececed] px-10">
+                      <div className="font-medium text-black leading-[24px] whitespace-nowrap">
                         {t.email || "fitnest@gmail.com"}
                       </div>
+                    </td>
 
-                      {/* Actions */}
-                      <div className="flex-1 flex justify-end relative">
+                    {/* Actions */}
+                    <td className="border-b border-r border-[#ececed] px-10">
+                      <div className="flex justify-end relative pr-4">
                         <button 
                           onClick={() => setOpenMenuId(openMenuId === t.trainer_id ? null : t.trainer_id)}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors"
+                          className="w-8 h-8 flex items-center justify-center transition-opacity hover:opacity-70"
                         >
-                          <Image src="/more.png" width={24} height={24} alt="more" className="-rotate-90" />
+                          <Image src="/more.png" width={24} height={24} alt="more" />
                         </button>
 
                         {openMenuId === t.trainer_id && (
                           <div ref={menuRef} className="absolute right-0 top-10 z-[100] w-[180px] bg-white rounded-xl shadow-2xl border border-slate-100 py-2 animate-in fade-in zoom-in duration-200">
                             <button 
                               onClick={() => { setShowDetails(t); setOpenMenuId(null); }}
-                              className="w-full h-11 flex items-center px-4 hover:bg-slate-50 transition-colors gap-3 font-medium text-slate-700"
+                              className="w-full h-11 flex items-center px-4 hover:bg-slate-50 transition-colors gap-3 font-medium text-slate-700 whitespace-nowrap"
                             >
                               <Image src="/Eye.png" width={18} height={18} alt="View" />
                               <span>Məlumatlara bax</span>
@@ -169,7 +175,7 @@ export function TrainersTab({ gym }: { gym?: any }) {
                             <div className="h-px bg-slate-100 mx-2" />
                             <button 
                               onClick={() => handleDelete(t.trainer_id)}
-                              className="w-full h-11 flex items-center px-4 text-red-600 hover:bg-red-50 transition-colors gap-3 font-medium"
+                              className="w-full h-11 flex items-center px-4 text-red-600 hover:bg-red-50 transition-colors gap-3 font-medium whitespace-nowrap"
                             >
                               <Image src="/trash.png" width={18} height={18} alt="Delete" />
                               <span>Məşqçini sil</span>
@@ -177,11 +183,11 @@ export function TrainersTab({ gym }: { gym?: any }) {
                           </div>
                         )}
                       </div>
-                    </div>
-                  </div>
+                    </td>
+                  </tr>
                 ))}
-              </div>
-            </div>
+              </tbody>
+            </table>
           </div>
         )}
       </div>
