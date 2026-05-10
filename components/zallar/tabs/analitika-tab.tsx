@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { Wallet, UserCheck, UserX, Search, Filter, Download, ChevronDown, Calendar, ArrowUpDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useGymAnalytics } from '@/lib/query/gym-query'
@@ -83,44 +84,52 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
   const totalPages = data?.history?.total ? Math.ceil(data.history.total / pageSize) : 1
 
   return (
-    <div className="flex flex-col gap-6 py-2">
-      {/* Analytics Header */}
-      <div className="flex flex-col gap-4">
-        <h2 className="text-sm font-semibold text-foreground">Zal analitikası</h2>
-        <div className="flex items-center justify-between">
-          <div className="relative">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-xs font-medium text-muted-foreground hover:border-[#00B4CC] transition-colors">
-                  <Calendar size={14} />
-                  {dateRange === 'today' ? 'Bu gün' :
-                   dateRange === 'last7' ? 'Son 7 gün' :
-                   dateRange === 'thisMonth' ? 'Bu ay' :
-                   dateRange === 'lastMonth' ? 'Keçən ay' : 'Bütün vaxtlar'}
-                  <ChevronDown size={14} />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-40">
-                <DropdownMenuItem onClick={() => handleDateRangeSelect('all')}>Bütün vaxtlar</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleDateRangeSelect('today')}>Bu gün</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleDateRangeSelect('last7')}>Son 7 gün</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleDateRangeSelect('thisMonth')}>Bu ay</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleDateRangeSelect('lastMonth')}>Keçən ay</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-          <button className="flex items-center gap-2 rounded-lg bg-[#00B4CC] px-4 py-2 text-xs font-semibold text-white hover:bg-[#008799] transition-colors shadow-sm shadow-[#00B4CC]/20">
-            <Download size={14} />
-            Hesabatı yüklə
-          </button>
+    <div className="w-full rounded-xl bg-white border border-[#ececed] flex flex-col items-start p-5 sm:p-[20px_28px] text-left text-foreground font-sans">
+      <div className="self-stretch flex flex-col items-start gap-7">
+        
+        {/* Header */}
+        <div className="self-stretch border-b border-[#ececed] flex items-center justify-between pb-1">
+          <div className="relative leading-[30px] font-semibold text-lg sm:text-xl">Zal analitikası</div>
         </div>
-      </div>
+
+        <div className="self-stretch flex flex-col items-start gap-10 text-base">
+          
+          {/* Controls: Date Range & Export */}
+          <div className="self-stretch rounded-xl border border-[#ececed] flex flex-wrap items-center justify-between p-3 gap-5">
+            <div className="relative">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="h-12 w-[237px] rounded-xl bg-white border border-[#ececed] flex items-center justify-center px-4 gap-5 text-sm sm:text-base text-foreground transition-colors hover:border-[#00B4CC]">
+                    <span className="relative leading-[24px]">
+                      {dateRange === 'today' ? 'Bu gün' :
+                       dateRange === 'last7' ? 'Son 7 gün' :
+                       dateRange === 'thisMonth' ? 'Bu ay' :
+                       dateRange === 'lastMonth' ? 'Keçən ay' : 'Bütün vaxtlar'}
+                    </span>
+                    <ChevronDown size={20} className="text-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-40">
+                  <DropdownMenuItem onClick={() => handleDateRangeSelect('all')}>Bütün vaxtlar</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleDateRangeSelect('today')}>Bu gün</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleDateRangeSelect('last7')}>Son 7 gün</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleDateRangeSelect('thisMonth')}>Bu ay</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleDateRangeSelect('lastMonth')}>Keçən ay</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            <button className="rounded-xl bg-[#00B4CC] flex items-center justify-center p-[6px_12px_6px_24px] gap-3 text-sm text-[#fafafa] hover:bg-[#008799] transition-colors">
+              <div className="relative leading-[18px]">Hesabatı yüklə</div>
+              <Download size={18} className="text-white" />
+            </button>
+          </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 hover:shadow-md transition-shadow">
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#00B4CC1A] text-[#00B4CC]">
-            <Wallet size={24} />
+            <Image src="/vuesax/linear/dollar-square.png" width={24} height={24} alt="Total Profit" />
           </div>
           <div className="flex flex-col">
             <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-tight">Ümumi gəlir</span>
@@ -132,7 +141,7 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
 
         <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 hover:shadow-md transition-shadow">
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-50 text-green-500">
-            <UserCheck size={24} />
+            <Image src="/QrCode.png" width={24} height={24} alt="Successful Scans" />
           </div>
           <div className="flex flex-col">
             <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-tight">Uğurlu girişlər</span>
@@ -144,7 +153,7 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
 
         <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 hover:shadow-md transition-shadow">
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-red-50 text-red-500">
-            <UserX size={24} />
+            <Image src="/vuesax/linear/info-circle.png" width={24} height={24} alt="Unsuccessful Scans" />
           </div>
           <div className="flex flex-col">
             <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-tight">Uğursuz girişlər</span>
