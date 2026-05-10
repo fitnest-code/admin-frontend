@@ -7,7 +7,8 @@ import {
   SupportedServiceResponse,
   SupportedServiceRequest,
   GymCreateStep6Request,
-  GymCreateStep7Request
+  GymCreateStep7Request,
+  GymAnalyticsResponse
 } from '../types/gym'
 import { useGymStore } from '../store/gym-store'
 import { toast } from 'sonner'
@@ -93,4 +94,27 @@ export function useCreateGymStep7() {
     mutationFn: ({ id, payload }: { id: number, payload: GymCreateStep7Request }) =>
       apiPost(`/admin/gyms/${id}/step7`, payload),
   });
+}
+
+// 8. Analitik məlumatları çəkmək üçün
+export function useGymAnalytics(
+  gymId: number | string | null | undefined, 
+  params?: {
+    startDate?: string,
+    endDate?: string,
+    status?: string,
+    sort?: string,
+    page?: number,
+    pageSize?: number
+  }
+) {
+  return useQuery({
+    queryKey: ['gym-analytics', gymId, params],
+    queryFn: () => {
+      if (!gymId) return Promise.resolve(null)
+      return apiGet<GymAnalyticsResponse>(`/admin/gyms/${gymId}/analytics`, { params })
+    },
+    enabled: !!gymId,
+    staleTime: 60 * 1000,
+  })
 }

@@ -121,3 +121,27 @@ export interface GymAdminCreateRequest {
 export interface GymCreateStep7Request {
   admins: GymAdminCreateRequest[]
 }
+
+export interface GymEntranceHistoryAdminResponse {
+  id: number
+  userId: number
+  firstName: string
+  lastName: string
+  phone: string
+  scanDateTime: string
+  status: string
+  reason: string | null
+  amount: number
+}
+
+export interface GymAnalyticsResponse {
+  totalProfit: number
+  successfulScans: number
+  failedScans: number
+  history: {
+    items: GymEntranceHistoryAdminResponse[]
+    total: number
+    page: number
+    pageSize: number
+  }
+}
