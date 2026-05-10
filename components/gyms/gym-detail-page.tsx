@@ -3,9 +3,12 @@
 import { useRouter } from 'next/navigation'
 import { GymDetail } from '@/components/gyms/gym-detail'
 import { useGymQuery } from '@/modules/gyms'
+import { useGymAnalytics } from '@/lib/query/gym-query'
 
 export function GymDetailPage({ id }: { id: string }) {
   const router = useRouter()
+  // Prefetch analytics in parallel since it's the default tab
+  useGymAnalytics(id)
   const gymQuery = useGymQuery(id)
 
   if (gymQuery.isLoading) {
