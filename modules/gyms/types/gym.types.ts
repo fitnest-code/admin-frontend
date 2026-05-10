@@ -1,5 +1,5 @@
 export type GymStatus = 'active' | 'inactive'
-export type AdminGymStatus = 'ACTIVE' | 'INACTIVE'
+export type AdminGymStatus = 'ACTIVE' | 'INACTIVE' | 'DELETED' | 'DRAFT'
 export type AdminGymSort = 'name_asc' | 'name_desc' | 'address_asc' | 'newest' | 'deactivated'
 
 export interface GymListItem {

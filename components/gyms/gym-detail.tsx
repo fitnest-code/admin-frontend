@@ -19,8 +19,9 @@ import { TrainersTab } from './dashboard/trainers-tab'
 import { AdminsTab } from './dashboard/admins-tab'
 import { PlansTab } from './dashboard/plans-tab'
 import { ReviewsTab } from './dashboard/reviews-tab'
-import { ReservationsTab } from './dashboard/reservations-tab'
+import ReservationsTab from './dashboard/reservations-tab'
 import { CustomersTab } from './dashboard/customers-tab'
+import LessonHoursTab from './dashboard/lesson-hours-tab'
 
 import { AnalitikaTab } from '@/components/zallar/tabs/analitika-tab'
 import { StepNavigationWarningModal } from './modals/step-navigation-warning-modal'
@@ -48,8 +49,8 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
 
   useEffect(() => {
     // Only update store gymId from props if it's an existing gym (not 'new')
-    if (gym?.id && gym.id !== 'new' && gymId !== gym.id) {
-      setGymId(gym.id)
+    if (gym?.id && gym.id !== 'new' && gymId !== Number(gym.id)) {
+      setGymId(Number(gym.id))
     }
   }, [gym?.id, gymId, setGymId])
 
@@ -110,7 +111,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
         case 'plans':
           return <StepPlans onNext={goToNext} />
         case 'admins':
-          return <StepAdmins onNext={goToNext} />
+          return <StepAdmins />
         default:
           return <StepInfo onNext={goToNext} />
       }
@@ -120,15 +121,17 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       case 'analitika':
         return <AnalitikaTab gymId={gym.id} />
       case 'info':
-        return <InfoTab gymId={gym.id} gym={gym} />
+        return <InfoTab gymId={gym.id} />
       case 'trainers':
-        return <TrainersTab gym={gym} />
+        return <TrainersTab />
       case 'plans':
         return <PlansTab gym={gym} />
       case 'reviews':
         return <ReviewsTab />
       case 'reservations':
         return <ReservationsTab />
+      case 'lessonHours':
+        return <LessonHoursTab />
       case 'customers':
         return <CustomersTab />
       case 'admins':

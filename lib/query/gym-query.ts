@@ -426,3 +426,56 @@ export function useGymReservationStats(gymId: number | string | null | undefined
     enabled: !!gymId,
   })
 }
+
+// 26. Dərs saatlarını çəkmək üçün
+export function useGymLessonHours(gymId: number | string | null | undefined) {
+  return useQuery({
+    queryKey: ['gym-lesson-hours', gymId],
+    queryFn: () => {
+      if (!gymId) return Promise.resolve([])
+      return apiGet<any[]>(`/admin/gyms/${gymId}/lesson-hours`)
+    },
+    enabled: !!gymId,
+  })
+}
+
+// 27. Yeni dərs saatı əlavə etmək üçün
+export function useAddLessonHour() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ gymId, payload }: { gymId: number, payload: any }) =>
+      apiPost(`/admin/gyms/${gymId}/lesson-hours`, payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-lesson-hours', variables.gymId] });
+      toast.success('Dərs saatı əlavə edildi');
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Xəta baş verdi');
+    }
+  });
+}
+
+// 28. Dərs saatını silmək üçün
+export function useDeleteLessonHour() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ gymId, lessonHourId }: { gymId: number, lessonHourId: number | string }) =>
+      apiDelete(`/admin/gyms/lesson-hours/${lessonHourId}`),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-lesson-hours', variables.gymId] });
+      toast.success('Dərs saatı silindi');
+    }
+  });
+}
+
+// 29. Zalın dərs növlərini çəkmək üçün
+export function useGymLessonTypes(gymId: number | string | null | undefined) {
+  return useQuery({
+    queryKey: ['gym-lesson-types', gymId],
+    queryFn: () => {
+      if (!gymId) return Promise.resolve([])
+      return apiGet<any[]>(`/admin/reservations/gyms/${gymId}/lesson-types`)
+    },
+    enabled: !!gymId,
+  })
+}

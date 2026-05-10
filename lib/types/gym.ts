@@ -29,6 +29,11 @@ export interface ITrainer {
   email: string;
 }
 
+export interface ITrainersResponse {
+  items: ITrainer[];
+  total: number;
+}
+
 export interface PaginatedResponse<T> {
   items: T[];
   total: number;
