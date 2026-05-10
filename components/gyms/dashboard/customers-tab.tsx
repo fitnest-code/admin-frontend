@@ -105,106 +105,124 @@ export function CustomersTab() {
   function handleSort(v: string)   { setSort(v); setPage(1); setSortOpen(false) }
 
   return (
-    <div className="flex flex-col gap-4 py-4">
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3">
-        {/* Search */}
-        <div className="flex flex-1 min-w-[220px] items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
-          <Search size={13} className="shrink-0 text-muted-foreground" />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => handleQueryChange(e.target.value)}
-            placeholder="ID, Ad/Soyad , Email , Telefon üzrə axtarış...."
-            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
-          />
-        </div>
+    <div className="flex flex-col gap-6 py-4">
+      {/* Header & Search */}
+      <div className="flex flex-col gap-4">
+        <div className="text-[20px] font-semibold text-[#101828] font-['SF_Pro']">Müştəri girişləri</div>
+        
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Search Bar */}
+          <div className="flex-1 h-12 bg-white rounded-xl border border-[#ececed] flex items-center px-4 gap-3">
+            <Image src="/search.svg" width={24} height={24} alt="search" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => handleQueryChange(e.target.value)}
+              placeholder="Axtar..."
+              className="flex-1 bg-transparent text-[14px] text-[#94979c] outline-none placeholder:text-[#94979c]"
+            />
+          </div>
 
-        {/* Filter dropdown */}
-        <div className="relative" ref={filterRef}>
-          <button
-            onClick={() => setFilterOpen((o) => !o)}
-            className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground hover:border-[#00B4CC] transition-colors"
-          >
-            Filter <ChevronDown size={14} className={cn('transition-transform', filterOpen && 'rotate-180')} />
-          </button>
-          {filterOpen && (
-            <div className="absolute right-0 top-full z-30 mt-1 w-40 overflow-hidden rounded-xl border border-border bg-card shadow-lg">
-              {FILTER_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => handleFilter(opt.value)}
-                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-secondary transition-colors"
-                >
-                  {filter === opt.value && <Check size={13} className="text-[#00B4CC]" />}
-                  <span className={cn('text-foreground', filter !== opt.value && 'pl-5')}>{opt.label}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+          {/* Filter Dropdown */}
+          <div className="relative" ref={filterRef}>
+            <button
+              onClick={() => setFilterOpen(!filterOpen)}
+              className="h-12 px-4 rounded-xl border border-[#ececed] bg-white flex items-center gap-2 text-[14px] font-medium text-[#101828] hover:border-[#00B4CC] transition-colors"
+            >
+              <Image src="/filter.png" width={20} height={20} alt="filter" />
+              Filter
+              <ChevronDown size={16} className={cn('transition-transform text-[#667085]', filterOpen && 'rotate-180')} />
+            </button>
+            {filterOpen && (
+              <div className="absolute right-0 top-full z-30 mt-2 w-48 bg-white rounded-xl shadow-xl border border-[#ececed] overflow-hidden animate-in fade-in zoom-in duration-150">
+                {FILTER_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => handleFilter(opt.value)}
+                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors text-[14px]"
+                  >
+                    <span className={cn(filter === opt.value ? "text-[#00B4CC] font-semibold" : "text-[#344054]")}>{opt.label}</span>
+                    {filter === opt.value && <Check size={16} className="text-[#00B4CC]" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
-        {/* Sort dropdown */}
-        <div className="relative" ref={sortRef}>
-          <button
-            onClick={() => setSortOpen((o) => !o)}
-            className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground hover:border-[#00B4CC] transition-colors"
-          >
-            Sırala <ChevronDown size={14} className={cn('transition-transform', sortOpen && 'rotate-180')} />
-          </button>
-          {sortOpen && (
-            <div className="absolute right-0 top-full z-30 mt-1 w-52 overflow-hidden rounded-xl border border-border bg-card shadow-lg">
-              {SORT_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => handleSort(opt.value)}
-                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-secondary transition-colors"
-                >
-                  {sort === opt.value && <Check size={13} className="text-[#00B4CC]" />}
-                  <span className={cn('text-foreground', sort !== opt.value && 'pl-5')}>{opt.label}</span>
-                </button>
-              ))}
-            </div>
-          )}
+          {/* Sort Dropdown */}
+          <div className="relative" ref={sortRef}>
+            <button
+              onClick={() => setSortOpen(!sortOpen)}
+              className="h-12 px-4 rounded-xl border border-[#ececed] bg-white flex items-center gap-2 text-[14px] font-medium text-[#101828] hover:border-[#00B4CC] transition-colors"
+            >
+              <Image src="/sort.png" width={20} height={20} alt="sort" />
+              Sırala
+              <ChevronDown size={16} className={cn('transition-transform text-[#667085]', sortOpen && 'rotate-180')} />
+            </button>
+            {sortOpen && (
+              <div className="absolute right-0 top-full z-30 mt-2 w-56 bg-white rounded-xl shadow-xl border border-[#ececed] overflow-hidden animate-in fade-in zoom-in duration-150">
+                {SORT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => handleSort(opt.value)}
+                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors text-[14px]"
+                  >
+                    <span className={cn(sort === opt.value ? "text-[#00B4CC] font-semibold" : "text-[#344054]")}>{opt.label}</span>
+                    {sort === opt.value && <Check size={16} className="text-[#00B4CC]" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Table */}
       {paginated.length === 0 ? (
-        <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">
-          Nəticə tapılmadı
+        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-[#ececed]">
+          <Image src="/empty-state.png" width={120} height={120} alt="no results" className="opacity-20" />
+          <div className="mt-4 text-[16px] text-[#667085]">Nəticə tapılmadı</div>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <div className="w-full bg-white rounded-2xl border border-[#ececed] overflow-hidden">
           {/* Header */}
-          <div className="grid grid-cols-[1fr_1.5fr_1.5fr_1.5fr_1fr_1fr] items-center gap-4 border-b border-border bg-[#00B4CC14] px-4 py-3">
-            <span className="text-xs font-semibold text-foreground">ID</span>
-            <span className="text-xs font-semibold text-foreground">Ad / Soyad</span>
-            <span className="text-xs font-semibold text-foreground">Telefon</span>
-            <span className="text-xs font-semibold text-foreground">Tarix / Saat</span>
-            <span className="text-xs font-semibold text-foreground">Nəticə</span>
-            <span className="text-xs font-semibold text-foreground">Səbəb</span>
+          <div className="grid grid-cols-[80px_1fr_180px_180px_120px_100px_100px] items-center gap-4 bg-[#00B4CC14] border-b border-[#ececed] px-6 py-4">
+            <span className="text-[14px] font-semibold text-[#101828] font-['SF_Pro']">ID</span>
+            <span className="text-[14px] font-semibold text-[#101828] font-['SF_Pro']">Ad / Soyad</span>
+            <span className="text-[14px] font-semibold text-[#101828] font-['SF_Pro']">Telefon</span>
+            <span className="text-[14px] font-semibold text-[#101828] font-['SF_Pro']">Tarix / Saat</span>
+            <span className="text-[14px] font-semibold text-[#101828] font-['SF_Pro'] text-center">Giriş məbləği</span>
+            <span className="text-[14px] font-semibold text-[#101828] font-['SF_Pro']">Nəticə</span>
+            <span className="text-[14px] font-semibold text-[#101828] font-['SF_Pro'] text-center">Səbəb</span>
           </div>
 
           {/* Rows */}
-          {paginated.map((entry) => (
-            <div
-              key={entry.id}
-              className="grid grid-cols-[1fr_1.5fr_1.5fr_1.5fr_1fr_1fr] items-center gap-4 border-b border-border px-4 py-3.5 last:border-0"
-            >
-              <span className="text-sm text-muted-foreground font-mono">{entry.customerId}</span>
-              <span className="text-sm font-medium text-foreground">{entry.fullName}</span>
-              <span className="text-sm text-muted-foreground">{entry.phone}</span>
-              <span className="text-sm text-muted-foreground">{entry.datetime}</span>
-              <span>
-                <span className={cn('inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold', RESULT_STYLES[entry.result])}>
-                  <span className="h-1.5 w-1.5 rounded-full bg-white/70" />
-                  {RESULT_LABELS[entry.result]}
-                </span>
-              </span>
-              <span className="text-sm text-muted-foreground">{entry.reason}</span>
-            </div>
-          ))}
+          <div className="flex flex-col">
+            {paginated.map((entry) => (
+              <div
+                key={entry.id}
+                className="grid grid-cols-[80px_1fr_180px_180px_120px_100px_100px] items-center gap-4 border-b border-[#f2f4f7] px-6 py-4 last:border-0 hover:bg-slate-50 transition-colors"
+              >
+                <span className="text-[14px] text-[#667085] font-medium">{entry.customerId}</span>
+                <span className="text-[14px] font-semibold text-[#101828] font-['SF_Pro']">{entry.fullName}</span>
+                <span className="text-[14px] text-[#667085] font-medium">{entry.phone}</span>
+                <span className="text-[14px] text-[#667085] font-medium">{entry.datetime}</span>
+                <span className="text-[14px] text-[#667085] font-medium text-center">0.00 AZN</span>
+                <div className="flex">
+                  <div className={cn(
+                    "flex items-center px-2 py-1 rounded-full gap-1.5",
+                    entry.result === 'success' ? "bg-green-50" : "bg-red-50"
+                  )}>
+                    <div className={cn("w-1.5 h-1.5 rounded-full", entry.result === 'success' ? "bg-green-600" : "bg-red-600")} />
+                    <span className={cn("text-[12px] font-semibold", entry.result === 'success' ? "text-green-700" : "text-red-700")}>
+                      {RESULT_LABELS[entry.result]}
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[14px] text-[#667085] font-medium text-center">{entry.reason}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

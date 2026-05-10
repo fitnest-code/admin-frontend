@@ -231,14 +231,33 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">{gym.name}</h1>
-          <span className="flex items-center gap-1 rounded-full bg-green-500 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm shadow-green-500/20">
-            <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-            Aktiv
-          </span>
-        </div>
+      <div className="w-full flex items-center justify-between border-b border-[#ececed] pb-4">
+        <h1 className="text-2xl font-semibold text-[#101828]">{gym.name}</h1>
+        {gym.status === 'ACTIVE' && (
+          <div className="h-6 rounded-full bg-[#166728] flex items-center px-3 gap-1 shadow-sm">
+            <span className="h-1.5 w-1.5 rounded-full bg-white" />
+            <span className="text-xs font-medium text-white leading-[18px]">Aktiv</span>
+          </div>
+        )}
+        {gym.status === 'INACTIVE' && (
+          <div className="h-6 rounded-full bg-[#c9373a] flex items-center px-3 gap-1 shadow-sm">
+            <span className="h-1.5 w-1.5 rounded-full bg-white" />
+            <span className="text-xs font-medium text-white leading-[18px]">Deaktiv</span>
+          </div>
+        )}
+        {gym.status === 'DRAFT' && (
+          <div className="h-6 rounded-full bg-[#94979c] flex items-center px-3 gap-1 shadow-sm">
+            <span className="h-1.5 w-1.5 rounded-full bg-white" />
+            <span className="text-xs font-medium text-white leading-[18px]">Qaralama</span>
+          </div>
+        )}
+        {/* Fallback if status is null but gym exists */}
+        {!gym.status && !isNew && (
+          <div className="h-6 rounded-full bg-[#166728] flex items-center px-3 gap-1 shadow-sm">
+            <span className="h-1.5 w-1.5 rounded-full bg-white" />
+            <span className="text-xs font-medium text-white leading-[18px]">Aktiv</span>
+          </div>
+        )}
       </div>
 
       <div className="border-b border-border">
