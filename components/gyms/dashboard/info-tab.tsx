@@ -1,175 +1,242 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Globe, Instagram, Mail, Phone, MapPin } from "lucide-react";
+import { Upload, Trash2, ChevronDown, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function InfoTab() {
   const [activeLang, setActiveLang] = useState<"Az" | "Ru" | "En">("Az");
-
+  
   return (
-    <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-3 gap-6">
-        {/* Left Column: Details */}
-        <div className="col-span-2 flex flex-col gap-6">
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Zal məlumatları</h3>
-              <div className="flex gap-4">
-                {["Az", "Ru", "En"].map((l) => (
-                  <button
-                    key={l}
-                    onClick={() => setActiveLang(l as any)}
-                    className={cn(
-                      "text-xs font-bold transition-all border-b-2 pb-1",
-                      activeLang === l ? "border-[#00B4CC] text-[#00B4CC]" : "border-transparent text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    {l}
-                  </button>
+    <div className="flex flex-col gap-6 w-full">
+      <div className="rounded-2xl border border-border bg-white p-8 shadow-sm flex flex-col gap-10">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-border pb-2">
+          <div className="flex items-center gap-3">
+            <h3 className="text-lg font-semibold text-[#101828]">Zal məlumatları</h3>
+            <button className="text-muted-foreground hover:text-foreground">
+              <Pencil size={16} />
+            </button>
+          </div>
+          <div className="flex gap-6">
+            {(["Az", "Ru", "En"] as const).map((l) => (
+              <button
+                key={l}
+                onClick={() => setActiveLang(l)}
+                className={cn(
+                  "text-sm font-medium transition-all pb-2",
+                  activeLang === l 
+                    ? "text-[#00B4CC] border-b-[3px] border-[#00B4CC]" 
+                    : "text-muted-foreground hover:text-foreground border-b-[3px] border-transparent"
+                )}
+              >
+                {l}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Form Fields */}
+        <div className="flex flex-col gap-6">
+          {/* Kateqoriya */}
+          <div className="flex flex-col gap-2">
+            <label className="text-[15px] text-[#101828]">Kateqoriya</label>
+            <div className="flex items-center justify-between rounded-xl bg-[#FAFAFA] border border-[#ECECED] px-4 py-3.5 cursor-pointer">
+              <span className="text-[15px] text-[#101828]">Kateqoriya</span>
+              <ChevronDown size={20} className="text-muted-foreground" />
+            </div>
+          </div>
+
+          {/* Zal adı */}
+          <div className="flex flex-col gap-2">
+            <label className="text-[15px] text-[#101828]">Zal adı</label>
+            <div className="flex items-center rounded-xl bg-[#FAFAFA] border border-[#ECECED] px-4 py-3.5">
+              <input 
+                type="text" 
+                defaultValue="Zal adı"
+                className="bg-transparent text-[15px] text-[#101828] outline-none w-full"
+              />
+            </div>
+          </div>
+
+          {/* Haqqında */}
+          <div className="flex flex-col gap-2">
+            <label className="text-[15px] text-[#101828]">Haqqında</label>
+            <div className="rounded-xl bg-[#FAFAFA] border border-[#ECECED] px-4 py-3.5 min-h-[120px]">
+              <textarea 
+                defaultValue="Haqqında"
+                className="bg-transparent text-[15px] text-[#101828] outline-none w-full h-full resize-none"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Zal Şəkilləri */}
+        <div className="flex flex-col gap-6 border-t border-border pt-8">
+          <h3 className="text-lg font-semibold text-[#101828]">Zal şəkilləri</h3>
+          
+          <div className="flex flex-col gap-8">
+            {/* Cover image */}
+            <div className="flex flex-col gap-3">
+              <label className="text-[15px] text-[#101828]">Cover Şəkil</label>
+              <div className="w-full max-w-[444px] h-[252px] rounded-2xl border border-dashed border-[#99A1AF] flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-slate-50 transition-colors">
+                <Upload size={32} className="text-[#4A5565]" />
+                <span className="text-[15px] font-medium text-[#4A5565]">Upload cover</span>
+              </div>
+              <span className="text-sm text-[#6A7282]">JPG or PNG • Max size 2MB</span>
+            </div>
+
+            {/* Digər şəkillər */}
+            <div className="flex flex-col gap-4">
+              <label className="text-[15px] text-[#101828]">Digər şəkillər ( 0/9)</label>
+              <div className="flex flex-wrap gap-4">
+                
+                {/* Image item example */}
+                <div className="flex flex-col gap-3 w-[180px]">
+                  <div className="w-full h-[180px] rounded-2xl bg-secondary border border-border relative overflow-hidden group">
+                    <img 
+                      src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=400" 
+                      className="w-full h-full object-cover" 
+                      alt="gym" 
+                    />
+                    <div className="absolute top-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button className="h-7 w-7 rounded-full bg-white flex items-center justify-center text-slate-700 shadow-sm hover:text-[#00B4CC]">
+                        <Pencil size={13} />
+                      </button>
+                      <button className="h-7 w-7 rounded-full bg-white flex items-center justify-center text-slate-700 shadow-sm hover:text-red-500">
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                  <input 
+                    type="text" 
+                    defaultValue="Ad (məs: SPA)" 
+                    className="w-full text-sm bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg px-3 py-2 outline-none text-[#101828]" 
+                  />
+                </div>
+
+                {/* Empty slots */}
+                {[...Array(8)].map((_, i) => (
+                  <div key={i} className="flex flex-col gap-3 w-[180px]">
+                    <div className="w-full h-[180px] rounded-2xl border border-dashed border-[#D1D5DC] flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-slate-50 transition-colors">
+                      <Upload size={24} className="text-[#717182]" />
+                      <span className="text-sm text-[#717182]">Upload</span>
+                    </div>
+                    <input 
+                      type="text" 
+                      placeholder="Ad (məs: SPA)" 
+                      className="w-full text-sm bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg px-3 py-2 outline-none text-[#717182] placeholder:text-[#717182]" 
+                    />
+                  </div>
                 ))}
               </div>
             </div>
-
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1.5">Kateqoriya</p>
-                  <p className="text-sm font-semibold text-foreground">Fitness / Bodybuilding</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1.5">Zal adı</p>
-                  <p className="text-sm font-semibold text-foreground">FitNest Premium</p>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1.5">Qiymət</p>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-xl font-black text-[#00B4CC]">50</span>
-                  <span className="text-xs font-bold text-muted-foreground uppercase">AZN / GÜNLÜK</span>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1.5">Haqqında</p>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  FitNest Premium bakıda ən böyük və ən müasir idman zallarından biridir. Bizim zalda ən müasir trenajorlar, geniş qrup dərsləri otağı və peşəkar məşqçi heyəti fəaliyyət göstərir. Müştərilərimizin rahatlığı üçün hər bir şərait yaradılmışdır.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider mb-6">Zal şəkilləri</h3>
-            <div className="space-y-6">
-              <div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase mb-3">Əsas şəkil</p>
-                <div className="h-48 w-full rounded-xl overflow-hidden bg-secondary border border-border group relative">
-                  <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <button className="bg-white/90 text-black px-4 py-2 rounded-lg text-xs font-bold shadow-xl">Şəkli dəyiş</button>
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase mb-3">Otaq şəkilləri</p>
-                <div className="grid grid-cols-4 gap-3">
-                  {[1,2,3,4].map(i => (
-                    <div key={i} className="aspect-square rounded-lg overflow-hidden bg-secondary border border-border group relative">
-                       <img src={`https://images.unsplash.com/photo-1540497077202-7c8a3999166f?q=80&w=2070`} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                       <div className="absolute inset-0 bg-black/10 flex items-end p-2">
-                         <span className="text-[9px] font-bold text-white bg-black/40 px-1.5 py-0.5 rounded backdrop-blur-sm">Otaq {i}</span>
-                       </div>
-                    </div>
-                  ))}
-                  <button className="aspect-square rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 hover:bg-secondary/50 transition-colors">
-                    <span className="text-xl font-light text-muted-foreground">+</span>
-                    <span className="text-[10px] font-bold text-muted-foreground">Əlavə et</span>
-                  </button>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 
-        {/* Right Column: Contact & Location */}
-        <div className="flex flex-col gap-6">
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider mb-6">Əlaqə məlumatları</h3>
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary/30 border border-transparent hover:border-border transition-all">
-                <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center text-[#00B4CC] shadow-sm">
-                  <Phone size={14} />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-muted-foreground uppercase">Telefon</span>
-                  <span className="text-xs font-bold text-foreground">+994 50 123 45 67</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary/30 border border-transparent hover:border-border transition-all">
-                <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center text-[#00B4CC] shadow-sm">
-                  <Mail size={14} />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-muted-foreground uppercase">E-poçt</span>
-                  <span className="text-xs font-bold text-foreground">premium@fitnest.az</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary/30 border border-transparent hover:border-border transition-all">
-                <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center text-[#00B4CC] shadow-sm">
-                  <Globe size={14} />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-muted-foreground uppercase">Vebsayt</span>
-                  <span className="text-xs font-bold text-foreground">www.fitnest.az</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary/30 border border-transparent hover:border-border transition-all">
-                <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center text-[#E4405F] shadow-sm">
-                  <Instagram size={14} />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-muted-foreground uppercase">Instagram</span>
-                  <span className="text-xs font-bold text-foreground">@fitnest_premium</span>
-                </div>
-              </div>
-            </div>
+        {/* Əlaqə */}
+        <div className="flex flex-col gap-6 border-t border-border pt-8">
+          <div className="flex items-center justify-between">
+             <h3 className="text-lg font-semibold text-[#101828]">Əlaqə</h3>
           </div>
-
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Koordinatlar</h3>
-              <MapPin size={16} className="text-[#00B4CC]" />
-            </div>
-            <div className="h-48 w-full rounded-xl bg-secondary border border-border overflow-hidden relative mb-4">
-              <div className="absolute inset-0 flex items-center justify-center opacity-20">
-                <Search size={40} className="text-muted-foreground" />
-              </div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-white/80 px-4 py-2 rounded-full border border-border backdrop-blur-sm">Google Maps Placeholder</span>
-              </div>
-            </div>
+          
+          <div className="grid grid-cols-2 gap-6">
             <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase">Enlik (Lat)</span>
-                <span className="text-xs font-bold text-foreground">40.4093</span>
+              <label className="text-[15px] text-[#101828]">Telefon nömrəsi</label>
+              <div className="flex items-center rounded-xl bg-[#FAFAFA] border border-[#ECECED] px-4 py-3.5">
+                <input 
+                  type="text" 
+                  defaultValue="+994 00 000 00 00"
+                  className="bg-transparent text-[15px] font-semibold text-[#101828] outline-none w-full"
+                />
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase">Uzunluq (Long)</span>
-                <span className="text-xs font-bold text-foreground">49.8671</span>
+            </div>
+            
+            <div className="flex flex-col gap-2">
+              <label className="text-[15px] text-[#101828]">E-Poçt</label>
+              <div className="flex items-center rounded-xl bg-[#FAFAFA] border border-[#ECECED] px-4 py-3.5">
+                <input 
+                  type="email" 
+                  defaultValue="asss@gmail.com"
+                  className="bg-transparent text-[15px] font-semibold text-[#101828] outline-none w-full"
+                />
               </div>
             </div>
           </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-[15px] text-[#101828]">Ünvan</label>
+            <div className="flex items-center rounded-xl bg-[#FAFAFA] border border-[#ECECED] px-4 py-3.5">
+              <input 
+                type="text" 
+                defaultValue="Bakı, Nərimanov rayonu"
+                className="bg-transparent text-[15px] text-[#101828] outline-none w-full"
+              />
+            </div>
+          </div>
         </div>
-      </div>
-      
-      <div className="flex justify-end pt-4">
-        <button className="px-10 py-3.5 rounded-xl bg-muted text-muted-foreground font-bold transition-all hover:bg-secondary/50">Yadda saxla</button>
+
+        {/* Koordinatlar */}
+        <div className="flex flex-col gap-6 border-t border-border pt-8">
+          <h3 className="text-lg font-semibold text-[#101828]">Koordinatlar</h3>
+          
+          <div className="grid grid-cols-2 gap-6">
+            <div className="flex flex-col gap-2">
+              <label className="text-[15px] text-[#101828]">En</label>
+              <div className="flex items-center justify-between rounded-xl bg-[#FAFAFA] border border-[#ECECED] px-4 py-3.5">
+                <input 
+                  type="text" 
+                  defaultValue="40.9999"
+                  className="bg-transparent text-[15px] text-[#101828] outline-none w-full"
+                />
+                <Pencil size={16} className="text-muted-foreground cursor-pointer" />
+              </div>
+            </div>
+            
+            <div className="flex flex-col gap-2">
+              <label className="text-[15px] text-[#101828]">Uzunluq</label>
+              <div className="flex items-center justify-between rounded-xl bg-[#FAFAFA] border border-[#ECECED] px-4 py-3.5">
+                <input 
+                  type="text" 
+                  defaultValue="49.8671"
+                  className="bg-transparent text-[15px] text-[#101828] outline-none w-full"
+                />
+                <Pencil size={16} className="text-muted-foreground cursor-pointer" />
+              </div>
+            </div>
+          </div>
+
+          {/* Map Placeholder */}
+          <div className="w-full h-[400px] sm:h-[553px] rounded-2xl overflow-hidden relative border border-border">
+            <iframe 
+               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d194472.76853036997!2d49.71487405105952!3d40.39473651167735!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x40307d6bd6211cf9%3A0x343f6b5e7ae56c6b!2sBaku%2C%20Azerbaijan!5e0!3m2!1sen!2s!4v1715340120155!5m2!1sen!2s" 
+               width="100%" 
+               height="100%" 
+               style={{ border: 0 }} 
+               allowFullScreen 
+               loading="lazy" 
+               referrerPolicy="no-referrer-when-downgrade"
+               className="grayscale-[0.2]"
+            />
+          </div>
+        </div>
+
+        {/* Yaradılma tarixi */}
+        <div className="flex flex-col gap-2 border-t border-border pt-8">
+          <label className="text-[15px] text-[#101828]">Yaradılma tarixi</label>
+          <div className="flex items-center rounded-xl bg-[#FAFAFA] border border-[#ECECED] px-4 py-3.5 w-full">
+            <span className="text-[15px] text-[#101828]">24.07.2025</span>
+          </div>
+        </div>
+
+        {/* Action Button */}
+        <div className="flex justify-end pt-4">
+          <button className="px-8 py-3.5 rounded-xl bg-[#C1C1CC] text-white font-medium hover:bg-[#a5a5b0] transition-colors w-[280px]">
+            Yadda saxla
+          </button>
+        </div>
+
       </div>
     </div>
   );
