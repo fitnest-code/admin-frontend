@@ -1,5 +1,5 @@
 import { AdminLayout } from '@/components/layout/admin-layout'
-import { ReviewsTab }  from '@/components/gyms/tabs/reviews-tab'
+import { ReviewsTab }  from '@/components/gyms/dashboard/reviews-tab'
 
 export default function ReviewsPage() {
   return (

@@ -4,27 +4,21 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { FitNestLogo } from '@/components/brand/fitnest-logo'
 import { NAV_ITEMS } from '@/lib/nav-config'
 import { Menu, X } from 'lucide-react'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+import Image from 'next/image'
+import { useGymStore } from '@/lib/store/gym-store'
+import { useUIStore } from '@/lib/store/ui-store'
+import { useRouter } from 'next/navigation'
+import { ExitConfirmationModal } from '../gyms/modals/exit-confirmation-modal'
 
 interface SidebarProps {
   className?: string
   onCollapseChange?: (collapsed: boolean) => void
 }
 
-import { useGymStore } from '@/lib/store/gym-store'
-import { useRouter } from 'next/navigation'
-import { ExitConfirmationModal } from '../gyms/modals/exit-confirmation-modal'
-
-export function Sidebar({ className, onCollapseChange }: SidebarProps) {
-  const [collapsed, setCollapsed] = useState(false)
+export function Sidebar({ className }: SidebarProps) {
+  const { sidebarCollapsed: collapsed, toggleSidebar } = useUIStore()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [showExitConfirm, setShowExitConfirm] = useState(false)
   const [pendingHref, setPendingHref] = useState<string | null>(null)
@@ -34,9 +28,7 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
   const pathname = usePathname()
 
   function handleCollapseToggle() {
-    const next = !collapsed
-    setCollapsed(next)
-    onCollapseChange?.(next)
+    toggleSidebar()
   }
 
   const handleLinkClick = (e: React.MouseEvent, href: string) => {
@@ -62,7 +54,7 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+          className="fixed inset-0 z-[100] bg-black/60 lg:hidden backdrop-blur-sm"
           onClick={() => setMobileOpen(false)}
           aria-hidden="true"
         />
@@ -71,17 +63,17 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
       {/* Mobile toggle button */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="fixed top-4 left-4 z-50 flex h-9 w-9 items-center justify-center rounded-lg bg-[#111318] text-[#A0ADB8] hover:text-white transition-colors lg:hidden"
+        className="fixed top-4 left-4 z-50 flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-[#ececed] text-[#00b4cc] shadow-sm lg:hidden"
         aria-label="Open navigation"
       >
-        <Menu size={18} />
+        <Menu size={20} />
       </button>
 
       {/* Sidebar panel */}
       <aside
         className={cn(
-          'fixed left-0 top-0 z-50 flex h-screen flex-col bg-[#111318] transition-all duration-300 ease-in-out',
-          collapsed ? 'w-16' : 'w-[240px]',
+          'fixed left-0 top-0 z-40 flex h-screen flex-col bg-white border-r border-[#ececed] transition-all duration-500 ease-in-out font-sans overflow-hidden shadow-sm',
+          collapsed ? 'w-[110px]' : 'w-[272px]',
           // Mobile: translate off-screen unless open
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
           'lg:translate-x-0',
@@ -90,40 +82,51 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
         aria-label="Main navigation"
       >
         {/* Logo area */}
-        <div
-          className={cn(
-            'flex h-20 items-center border-b border-[#1E2229] px-4',
-            collapsed ? 'justify-center' : 'justify-between',
+        <div className="relative w-full h-[150px] shrink-0">
+          <div className={cn(
+            "absolute transition-all duration-500",
+            collapsed ? "top-[60px] left-[35px]" : "top-[71px] left-[25.5px]"
+          )}>
+            <div className="flex items-center gap-4">
+               <div className="relative h-[34px] w-[34px] md:h-[41px] md:w-[41px] shrink-0">
+                  <Image src="/Sidebar/Group 11.svg" fill alt="Logo" className="object-contain" />
+               </div>
+               {!collapsed && (
+                 <span className="text-[30px] font-semibold text-[#00b4cc] leading-[46px] animate-in fade-in slide-in-from-left-2 duration-500 whitespace-nowrap">
+                   FitNest
+                 </span>
+               )}
+            </div>
+          </div>
+          
+          {/* Collapse/Expand Toggle - Visible when collapsed */}
+          {collapsed && (
+            <button
+              onClick={handleCollapseToggle}
+              className="absolute top-[115px] left-1/2 -translate-x-1/2 w-8 h-8 flex items-center justify-center transition-all"
+            >
+              <Image src="/menu.svg" width={28} height={28} alt="Expand" />
+            </button>
           )}
-        >
-          <FitNestLogo showText={!collapsed} />
-
-          {/* Mobile close */}
-          <button
-            onClick={() => setMobileOpen(false)}
-            className="ml-auto flex h-7 w-7 items-center justify-center rounded-md text-[#A0ADB8] hover:text-white transition-colors lg:hidden"
-            aria-label="Close navigation"
-          >
-            <X size={16} />
-          </button>
-
-          {/* Desktop collapse toggle */}
-          <button
-            onClick={handleCollapseToggle}
-            className={cn(
-              'hidden h-7 w-7 items-center justify-center rounded-md text-[#A0ADB8] hover:text-white transition-colors lg:flex',
-              collapsed && 'mt-0',
-            )}
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            <Menu size={16} />
-          </button>
+          
+          {/* Collapse/Expand Toggle - Visible when expanded */}
+          {!collapsed && (
+            <button 
+              onClick={handleCollapseToggle}
+              className="absolute top-[71px] right-6 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+               <div className="h-[46px] flex items-center justify-center">
+                  <Image src="/Sidebar/X.svg" width={24} height={24} alt="Collapse" />
+               </div>
+            </button>
+          )}
         </div>
 
         {/* Nav items */}
-        <nav className="flex-1 overflow-y-auto py-4 px-2">
-          <TooltipProvider delayDuration={200}>
-            <ul className="flex flex-col gap-1" role="list">
+        <nav className="flex-1 overflow-y-auto overflow-x-hidden pb-10 flex flex-col items-center">
+            <ul className={cn(
+              "flex flex-col transition-all duration-500 w-full px-4 items-center gap-5",
+            )} role="list">
               {NAV_ITEMS.map((item) => {
                 const Icon = item.icon
                 const isActive =
@@ -131,61 +134,41 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
                     ? pathname === '/'
                     : pathname === item.href || pathname.startsWith(item.href + '/')
 
-                const linkContent = (
-                  <Link
-                    href={item.href}
-                    onClick={(e) => handleLinkClick(e, item.href)}
-                    className={cn(
-                      'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150',
-                      isActive
-                        ? 'bg-[#00B4CC26] text-[#00B4CC]'
-                        : 'text-[#A0ADB8] hover:bg-[#1E2229] hover:text-white',
-                      collapsed && 'justify-center px-2',
-                    )}
-                    aria-current={isActive ? 'page' : undefined}
-                  >
-                    <Icon
-                      size={18}
-                      className={cn(
-                        'shrink-0 transition-colors',
-                        isActive ? 'text-[#00B4CC]' : 'text-[#A0ADB8] group-hover:text-white',
-                      )}
-                      aria-hidden="true"
-                    />
-                    {!collapsed && (
-                      <span className="truncate leading-relaxed">{item.label}</span>
-                    )}
-                    {/* Active indicator bar */}
-                    {isActive && !collapsed && (
-                      <span
-                        className="ml-auto h-1.5 w-1.5 rounded-full bg-[#00B4CC]"
-                        aria-hidden="true"
-                      />
-                    )}
-                  </Link>
-                )
-
                 return (
-                  <li key={item.key}>
-                    {collapsed ? (
-                      <Tooltip>
-                        <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-                        <TooltipContent side="right" className="text-xs">
+                  <li key={item.key} className="w-full flex justify-center">
+                    <Link
+                      href={item.href}
+                      onClick={(e) => handleLinkClick(e, item.href)}
+                      className={cn(
+                        'group flex items-center rounded-[12px] transition-all duration-300 relative',
+                        isActive
+                          ? 'bg-white border border-[#00b4cc] text-black shadow-sm'
+                          : 'text-black hover:bg-slate-50',
+                        collapsed 
+                          ? 'w-[60px] h-[48px] justify-center px-0' 
+                          : 'w-[184px] h-[48px] px-6 gap-3',
+                      )}
+                      aria-current={isActive ? 'page' : undefined}
+                    >
+                      <div className="shrink-0 transition-all duration-300 text-black w-6 h-6 relative">
+                      {item.iconPath ? (
+                        <Image src={item.iconPath} fill alt={item.label} className="object-contain" />
+                      ) : (
+                        <Icon size={24} strokeWidth={2} />
+                      )}
+                    </div>
+                      
+                      {!collapsed && (
+                        <span className="text-[16px] leading-[24px] font-medium transition-all duration-300 whitespace-nowrap overflow-hidden">
                           {item.label}
-                        </TooltipContent>
-                      </Tooltip>
-                    ) : (
-                      linkContent
-                    )}
+                        </span>
+                      )}
+                    </Link>
                   </li>
                 )
               })}
             </ul>
-          </TooltipProvider>
         </nav>
-
-        {/* Bottom: active indicator stripe */}
-        <div className="h-px w-full bg-gradient-to-r from-[#624DE3] to-[#87CBF1] opacity-60" />
       </aside>
 
       {showExitConfirm && (

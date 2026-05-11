@@ -8,6 +8,7 @@ import { useGymStore } from "@/lib/store/gym-store";
 import { useAddGymLocation, useGetAddressByCoords } from "@/lib/query/location-query";
 
 
+
 type Lang = "Az" | "Ru" | "En";
 
 const labels: Record<Lang, any> = {

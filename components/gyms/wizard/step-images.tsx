@@ -22,10 +22,10 @@ interface RoomPhotoState {
   previewUrl: string | null;
 }
 
-export default function GymImagesTab({ onNext }: { onNext?: () => void }) {
+export function StepImages({ onNext }: { onNext?: () => void }) {
   const [mounted, setMounted] = useState(false);
   const [lang, setLang] = useState<Lang>("Az");
-  
+
   const [coverPhoto, setCoverPhoto] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
 
@@ -88,7 +88,7 @@ export default function GymImagesTab({ onNext }: { onNext?: () => void }) {
     if (!coverPhoto) return toast.error("Zəhmət olmasa Cover Şəkil yükləyin");
 
     const validRoomPhotos = roomPhotos.filter(p => p.photo !== null);
-    
+
     // Check if any uploaded photo is missing a name
     const missingNames = validRoomPhotos.some(p => !p.name.trim());
     if (missingNames) {
@@ -113,7 +113,7 @@ export default function GymImagesTab({ onNext }: { onNext?: () => void }) {
   return (
     <div className="w-full flex justify-center py-6">
       <div className="bg-white rounded-2xl border border-[#ECECED] w-full max-w-[783px] p-7 flex flex-col gap-6 shadow-sm">
-        
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-[#1F2937]">{t.title}</h1>
@@ -137,7 +137,7 @@ export default function GymImagesTab({ onNext }: { onNext?: () => void }) {
         {/* Cover Photo */}
         <div className="flex flex-col gap-3">
           <label className="text-sm font-bold text-[#1F2937]">{t.cover}</label>
-          <div 
+          <div
             onClick={() => coverInputRef.current?.click()}
             className="relative w-full h-[220px] rounded-xl border-2 border-dashed border-[#D1D5DB] bg-[#F9FAFB] flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors overflow-hidden group"
           >
@@ -162,36 +162,35 @@ export default function GymImagesTab({ onNext }: { onNext?: () => void }) {
         {/* Room Photos */}
         <div className="flex flex-col gap-3 mt-4">
           <label className="text-sm font-bold text-[#1F2937]">{t.others} ( {activePhotosCount}/9 )</label>
-          
+
           <div className="grid grid-cols-3 gap-4">
             {roomPhotos.map((room, index) => (
               <div key={room.id} className="flex flex-col gap-2">
-                <div 
+                <div
                   onClick={() => !room.previewUrl && roomInputRefs.current[index]?.click()}
-                  className={`relative w-full aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-colors overflow-hidden ${
-                    room.previewUrl ? 'border-[#ECECED] cursor-default' : 'border-[#D1D5DB] bg-[#F9FAFB] cursor-pointer hover:bg-gray-50'
-                  }`}
+                  className={`relative w-full aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-colors overflow-hidden ${room.previewUrl ? 'border-[#ECECED] cursor-default' : 'border-[#D1D5DB] bg-[#F9FAFB] cursor-pointer hover:bg-gray-50'
+                    }`}
                 >
-                  <input 
-                    type="file" 
-                    ref={el => { roomInputRefs.current[index] = el }} 
-                    className="hidden" 
-                    accept="image/jpeg, image/png" 
-                    onChange={e => handleRoomPhotoChange(index, e)} 
+                  <input
+                    type="file"
+                    ref={el => { roomInputRefs.current[index] = el }}
+                    className="hidden"
+                    accept="image/jpeg, image/png"
+                    onChange={e => handleRoomPhotoChange(index, e)}
                   />
-                  
+
                   {room.previewUrl ? (
                     <>
                       <img src={room.previewUrl} alt="Room" className="w-full h-full object-cover" />
                       <div className="absolute top-2 right-2 flex gap-1">
-                        <button 
+                        <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); roomInputRefs.current[index]?.click(); }}
                           className="p-1.5 bg-white/80 hover:bg-white rounded-lg text-[#1F2937] transition-colors"
                         >
                           <Upload size={14} />
                         </button>
-                        <button 
+                        <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); handleRemoveRoomPhoto(index); }}
                           className="p-1.5 bg-white/80 hover:bg-white rounded-lg text-red-500 transition-colors"
@@ -207,7 +206,7 @@ export default function GymImagesTab({ onNext }: { onNext?: () => void }) {
                     </div>
                   )}
                 </div>
-                
+
                 <input
                   type="text"
                   placeholder={t.namePlaceholder}
@@ -222,7 +221,7 @@ export default function GymImagesTab({ onNext }: { onNext?: () => void }) {
 
         {/* Action Button */}
         <div className="flex gap-4 mt-6">
-          <button 
+          <button
             type="button"
             disabled={isPending}
             onClick={handleNext}

@@ -3,9 +3,15 @@
 import { useRouter } from 'next/navigation'
 import { GymDetail } from '@/components/gyms/gym-detail'
 import { useGymQuery } from '@/modules/gyms'
+import { useGymAnalytics, useGymTrainers, useGymSubscriptionsAdmin, useGymAdmins } from '@/lib/query/gym-query'
 
 export function GymDetailPage({ id }: { id: string }) {
   const router = useRouter()
+  // Prefetch all dashboard data in parallel for instant tab switching
+  useGymAnalytics(id)
+  useGymTrainers(id, { page: 1, pageSize: 10 })
+  useGymSubscriptionsAdmin(id)
+  useGymAdmins(id)
   const gymQuery = useGymQuery(id)
 
   if (gymQuery.isLoading) {

@@ -1,0 +1,200 @@
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.modal {
+    background: #FFFFFF;
+    width: 100%;
+    max-width: 700px;
+    border-radius: 24px;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #101828;
+}
+
+.closeBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.body {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.sectionTitle {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+.lessonTypesList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.lessonTypeCard {
+    padding: 12px 24px;
+    background: #FAFAFA;
+    border: 1px solid #ECECED;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.lessonTypeCard.selected {
+    background: rgba(0, 180, 204, 0.04);
+    border-color: #00B4CC;
+    color: #00B4CC;
+}
+
+.trainersList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.trainerCard {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    background: #F9FAFB;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: calc(50% - 8px);
+    box-sizing: border-box;
+    text-align: left;
+    font-size: 16px;
+    color: #000;
+}
+
+.trainerCard.selected {
+    border-color: #00B4CC;
+    background: #F9FAFB;
+}
+
+.trainerAvatar {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+}
+
+.avatarImg {
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+}
+
+.trainerInfo {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+}
+
+.trainerName {
+    font-size: 16px;
+    line-height: 24px;
+}
+
+.trainerRole {
+    font-size: 14px;
+    line-height: 24px;
+    color: #94979C;
+}
+
+.row {
+    display: flex;
+    gap: 16px;
+}
+
+.inputGroup {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.label {
+    font-size: 16px;
+    color: #000;
+}
+
+.input {
+    width: 100%;
+    padding: 16px;
+    background: #FAFAFA;
+    border: 1px solid #ECECED;
+    border-radius: 12px;
+    font-size: 18px;
+    outline: none;
+}
+
+.footer {
+    display: flex;
+    gap: 16px;
+}
+
+.cancelBtn {
+    flex: 1;
+    background: #FFFFFF;
+    border: 1px solid #00B4CC;
+    padding: 12px;
+    border-radius: 10px;
+    color: #00B4CC;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.saveBtn {
+    flex: 1;
+    background: #00B4CC;
+    color: #FFFFFF;
+    border: none;
+    padding: 12px;
+    border-radius: 10px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.emptyText {
+    color: #666;
+    font-size: 14px;
+    font-style: italic;
+}

@@ -95,6 +95,7 @@ export interface Gym {
   services: GymService[]
   trainers: Trainer[]
   admins: GymAdmin[]
+  supportedSubscriptions?: any[]
 }
 
 export const DEFAULT_WORKING_HOURS: WorkingHour[] = [
@@ -241,9 +242,8 @@ export const GYM_TABS = [
   { key: 'info',        label: 'Zal məlumatları' },
   { key: 'trainers',    label: 'Məşqçilər' },
   { key: 'plans',       label: 'Abunəlik / Xidmətlər' },
-  { key: 'workingHours',label: 'İş saatları' },
-  { key: 'address',     label: 'Ünvan' },
-  { key: 'images',      label: 'Şəkillər' },
   { key: 'admins',      label: 'Zal Admini' },
   { key: 'reviews',     label: 'Reytinq' },
+  { key: 'reservations',label: 'Rezervlər' },
+  { key: 'lessonHours', label: 'Dərs saatları' },
 ];

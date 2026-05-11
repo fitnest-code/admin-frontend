@@ -32,19 +32,22 @@ export interface ITrainer {
 export interface ITrainersResponse {
   items: ITrainer[];
   total: number;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
   page: number;
   pageSize: number;
 }
 
-interface TrainerState {
-  searchQuery: string;
-  page: number;
-  pageSize: number;
-  sortDir: "ASC" | "DESC";
-  setSearchQuery: (q: string) => void;
-  setPage: (p: number) => void;
-  setPageSize: (s: number) => void;
-  setSortDir: (d: "ASC" | "DESC") => void;
+export interface TrainerRequest {
+  name: string;
+  surname: string;
+  professionId: number;
+  phone: string;
+  email: string;
+  photo?: File;
 }
 
 
@@ -120,4 +123,91 @@ export interface GymAdminCreateRequest {
 
 export interface GymCreateStep7Request {
   admins: GymAdminCreateRequest[]
+}
+
+export interface GymEntranceHistoryAdminResponse {
+  id: number
+  userId: number
+  firstName: string
+  lastName: string
+  phone: string
+  scanDateTime: string
+  status: string
+  reason: string | null
+  amount: number
+}
+
+export interface GymAnalyticsResponse {
+  totalProfit: number
+  successfulScans: number
+  failedScans: number
+  history: {
+    items: GymEntranceHistoryAdminResponse[]
+    total: number
+    page: number
+    pageSize: number
+  }
+}
+
+export interface RoomImageDto {
+  id: number
+  name: string
+  imageUrl: string
+}
+
+export interface GymWorkHourResponse {
+  period: string
+  from: string
+  to: string
+}
+
+export interface RestDayRequest {
+  period: string
+}
+
+export interface GymInfoAdminResponse {
+  id: number
+  categoryId: number
+  categoryName: string
+  name: string
+  description: string
+  coverImageUrl: string
+  rooms: RoomImageDto[]
+  phone: string
+  email: string
+  city: string
+  address: string
+  latitude: number
+  longitude: number
+  status?: string
+  createdAt: string
+}
+
+export interface GymPlanBenefitAdminResponse {
+  id: number
+  name: string
+}
+
+export interface GymPlanItemAdminResponse {
+  packageId: number
+  packageName: string
+  dailyPrice: number
+  benefits: GymPlanBenefitAdminResponse[]
+}
+
+export interface GymSubscriptionsAdminResponse {
+  gymId: number
+  subscriptions: GymPlanItemAdminResponse[]
+}
+
+export interface GymInfoUpdateRequest {
+  categoryId: number
+  name: string
+  description: string
+  phone: string
+  email: string
+  city: string
+  address: string
+  latitude: number
+  longitude: number
 }

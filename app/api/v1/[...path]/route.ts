@@ -59,15 +59,17 @@ async function forward(request: NextRequest, context: RouteContext) {
       return new NextResponse(null, { status: 204 })
     }
 
-    const responseBody = await backendResponse.text()
-    const response = new NextResponse(responseBody, { status })
-
+    const responseHeaders = new Headers()
     const responseType = backendResponse.headers.get('content-type')
     if (responseType) {
-      response.headers.set('content-type', responseType)
+      responseHeaders.set('content-type', responseType)
     }
 
-    return response
+    // Use backendResponse.body (ReadableStream) directly instead of .text() to avoid corrupting binary files like images
+    return new NextResponse(backendResponse.body, { 
+      status, 
+      headers: responseHeaders 
+    })
   } catch (error) {
     return NextResponse.json(
       { message: error instanceof Error ? error.message : 'Proxy error' },

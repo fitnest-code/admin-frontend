@@ -1,40 +1,50 @@
 'use client'
 
-import { X } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { Loader2 } from 'lucide-react'
 
 interface ConfirmDeleteModalProps {
   name: string
   onConfirm: () => void
   onCancel: () => void
+  isLoading?: boolean
 }
 
-export function ConfirmDeleteModal({ name, onConfirm, onCancel }: ConfirmDeleteModalProps) {
+export function ConfirmDeleteModal({ name, onConfirm, onCancel, isLoading }: ConfirmDeleteModalProps) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4"
-      onClick={(e) => e.target === e.currentTarget && onCancel()}
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4 animate-in fade-in duration-200"
+      onClick={(e) => !isLoading && e.target === e.currentTarget && onCancel()}
       role="dialog"
       aria-modal="true"
     >
-      <div className="w-full max-w-sm rounded-2xl bg-card border border-border shadow-2xl">
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <h2 className="text-sm font-semibold text-foreground">İdman zalını silin</h2>
-          <button onClick={onCancel} className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary transition-colors">
-            <X size={15} />
-          </button>
+      <div className="w-full max-w-[548px] min-h-[170px] rounded-[12px] bg-white flex flex-col items-center justify-center p-10 gap-7 shadow-2xl animate-in zoom-in-95 duration-200 font-sans">
+        <div className="text-[26px] font-medium text-[#131212] leading-[40px] text-center">
+          Silmək istədiyinizə əminsiniz?
         </div>
-        <div className="flex flex-col gap-5 p-5">
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            <span className="font-semibold text-foreground">{name}</span> zalını silmək istədiyinizə əminsiniz? Bu əməliyyat geri alına bilməz.
-          </p>
-          <div className="flex items-center justify-end gap-2">
-            <button onClick={onCancel} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary transition-colors">
-              Ləğv et
-            </button>
-            <button onClick={onConfirm} className="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600 transition-colors">
-              Sil
-            </button>
-          </div>
+        
+        <div className="w-full flex items-center justify-between gap-5">
+          <button 
+            onClick={onCancel}
+            disabled={isLoading}
+            className="flex-1 h-[48px] max-w-[250px] rounded-[10px] bg-white border border-[#00b4cc] flex items-center justify-center px-4 transition-all hover:bg-slate-50 disabled:opacity-50"
+          >
+            <span className="text-[16px] font-medium text-black leading-[24px]">Ləğv et</span>
+          </button>
+          
+          <button 
+            onClick={onConfirm}
+            disabled={isLoading}
+            className="flex-1 h-[48px] max-w-[250px] rounded-[10px] bg-[#00b4cc] flex items-center justify-center px-4 transition-all hover:opacity-90 shadow-md shadow-cyan-100 disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            <div className="flex items-center justify-center">
+              {isLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin text-white" />
+              ) : (
+                <span className="text-[16px] font-medium text-white leading-[24px]">Bəli</span>
+              )}
+            </div>
+          </button>
         </div>
       </div>
     </div>

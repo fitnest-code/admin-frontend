@@ -191,6 +191,7 @@ export function GymsList() {
           name={gyms.find((g) => g.id === deleteId)?.name ?? ''}
           onConfirm={handleDelete}
           onCancel={() => setDeleteId(null)}
+          isLoading={deleteGym.isPending}
         />
       )}
 

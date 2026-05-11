@@ -1,5 +1,5 @@
 export type GymStatus = 'active' | 'inactive'
-export type AdminGymStatus = 'ACTIVE' | 'INACTIVE'
+export type AdminGymStatus = 'ACTIVE' | 'INACTIVE' | 'DELETED' | 'DRAFT'
 export type AdminGymSort = 'name_asc' | 'name_desc' | 'address_asc' | 'newest' | 'deactivated'
 
 export interface GymListItem {
@@ -87,6 +87,12 @@ export interface GymDetailResponse {
   }[]
   coverImageUrl?: string
   status?: 'ACTIVE' | 'INACTIVE' | 'DELETED'
+  supportedSubscriptions?: {
+    plan_id: string
+    packageName: string
+    dailyPrice: number
+    benefits?: { description: string }[]
+  }[]
 }
 
 export interface GymTrainersResponse {
@@ -140,4 +146,52 @@ export interface GymReservationRulesResponse {
     cancel_before_minutes?: number
   }
   reservation_required?: boolean
+}
+
+export interface GymWorkHourResponse {
+  period: string
+  from: string
+  to: string
+}
+
+export interface RestDayRequest {
+  period: string
+}
+
+export interface RoomImageDto {
+  id: number
+  name: string
+  imageUrl?: string
+}
+
+export interface GymInfoAdminResponse {
+  id: number
+  categoryId?: number
+  categoryName?: string
+  name: string
+  description?: string
+  coverImageUrl?: string
+  rooms?: RoomImageDto[]
+  phone?: string
+  email?: string
+  city?: string
+  address?: string
+  latitude?: number
+  longitude?: number
+  generalWorkHours?: GymWorkHourResponse[]
+  workHoursWoman?: GymWorkHourResponse[]
+  workHoursMan?: GymWorkHourResponse[]
+  restDays?: RestDayRequest[]
+  status?: AdminGymStatus
+  createdAt?: string
+}
+
+export interface GymSubscriptionsAdminResponse {
+  gymId: number
+  subscriptions: {
+    plan_id: string
+    packageName: string
+    dailyPrice: number
+    benefits?: { description: string }[]
+  }[]
 }
