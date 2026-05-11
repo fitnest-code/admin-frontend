@@ -8,6 +8,7 @@ import { useGymStore } from "@/lib/store/gym-store";
 import { useSupportedServices, useCreateGymStep6, useCreateSupportedService, useDeleteSupportedService, useUpdateGymSubscriptions, useGymSubscriptionsAdmin } from "@/lib/query/gym-query";
 import { toast } from "sonner";
 import { ServiceSelectorModal } from "../modals/service-selector-modal";
+import { ConfirmDeleteModal } from "../modals/confirm-delete-modal";
 
 type Package = "Bronze" | "Silver" | "Gold" | "Platinum";
 
@@ -117,12 +118,15 @@ export function PlansTab({ gym }: { gym?: any }) {
     }
   };
 
-  const handleDeleteFromGym = async (id: number, e: React.MouseEvent) => {
-    e.stopPropagation(); // Kartın kliklənməsini dayandır (toggle baş verməsin)
-    if (!confirm("Bu xidməti bütünlüklə silmək istədiyinizə əminsiniz?")) return;
+  const [deleteServiceId, setDeleteServiceId] = useState<number | null>(null);
+
+  const handleDeleteFromGym = async (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!deleteServiceId) return;
 
     try {
-      await deleteServiceMutation.mutateAsync(id);
+      await deleteServiceMutation.mutateAsync(deleteServiceId);
+      setDeleteServiceId(null);
       toast.success("Xidmət idman zalından silindi");
     } catch (err: any) {
       toast.error(err?.message || "Xidmət silinərkən xəta baş verdi");
@@ -271,7 +275,7 @@ export function PlansTab({ gym }: { gym?: any }) {
               type="number"
               value={prices[activePackage]}
               onChange={(e) => setPrices(prev => ({ ...prev, [activePackage]: e.target.value }))}
-              className="bg-transparent w-full h-full outline-none text-[18px] font-semibold"
+              className="bg-transparent w-full h-full outline-none text-[18px] font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               placeholder="0.00"
             />
             <span className="text-black/40 font-bold ml-2">AZN</span>
@@ -327,7 +331,10 @@ export function PlansTab({ gym }: { gym?: any }) {
                   </div>
 
                   <button
-                    onClick={(e) => handleDeleteFromGym(svc.id, e)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeleteServiceId(svc.id);
+                    }}
                     className="w-6 h-6 flex-shrink-0 flex items-center justify-center hover:scale-110 transition-transform"
                   >
                     <Image src="/icons/trash.svg" width={24} height={24} alt="Delete" />
@@ -370,6 +377,14 @@ export function PlansTab({ gym }: { gym?: any }) {
         </button>
       </div>
 
+      {deleteServiceId !== null && (
+        <ConfirmDeleteModal
+          name={allServices?.find(s => s.id === deleteServiceId)?.name || "Xidmət"}
+          onConfirm={() => handleDeleteFromGym()}
+          onCancel={() => setDeleteServiceId(null)}
+          isLoading={deleteServiceMutation.isPending}
+        />
+      )}
     </div>
   );
 }

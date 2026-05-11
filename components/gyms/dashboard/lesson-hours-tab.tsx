@@ -11,18 +11,21 @@ import {
 } from '@/lib/query/gym-query'
 import { useParams } from 'next/navigation'
 import { AddLessonHourModal } from './modals/add-lesson-hour-modal'
+import { ConfirmDeleteModal } from '../modals/confirm-delete-modal'
 
 const LessonHoursTab = () => {
     const { id: gymId } = useParams()
     const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+    const [deleteLessonId, setDeleteLessonId] = useState<number | null>(null)
 
     const { data: lessonHours, isLoading } = useGymLessonHours(gymId as string)
     const deleteMutation = useDeleteLessonHour()
 
-    const handleDelete = (lessonHourId: number) => {
-        if (confirm('Bu dərs saatını silmək istədiyinizə əminsiniz?')) {
-            deleteMutation.mutate({ gymId: Number(gymId), lessonHourId })
-        }
+    const handleDelete = () => {
+        if (!deleteLessonId) return
+        deleteMutation.mutate({ gymId: Number(gymId), lessonHourId: deleteLessonId }, {
+            onSuccess: () => setDeleteLessonId(null)
+        })
     }
 
     if (isLoading) return <div className={styles.loading}>Yüklənir...</div>
@@ -71,7 +74,7 @@ const LessonHoursTab = () => {
                                         </span>
                                     </td>
                                     <td className={styles.actions}>
-                                        <button className={styles.deleteBtn} onClick={() => handleDelete(hour.id)}>
+                                        <button className={styles.deleteBtn} onClick={() => setDeleteLessonId(hour.id)}>
                                             <Image src="/trash.png" width={20} height={20} alt="Delete" />
                                         </button>
                                     </td>
@@ -86,6 +89,14 @@ const LessonHoursTab = () => {
                 <AddLessonHourModal 
                     gymId={Number(gymId)} 
                     onClose={() => setIsAddModalOpen(false)} 
+                />
+            )}
+            {deleteLessonId !== null && (
+                <ConfirmDeleteModal
+                    name={lessonHours?.find((h: any) => h.id === deleteLessonId)?.lessonTypeName || 'Dərs saatı'}
+                    onConfirm={handleDelete}
+                    onCancel={() => setDeleteLessonId(null)}
+                    isLoading={deleteMutation.isPending}
                 />
             )}
         </div>

@@ -11,6 +11,13 @@ type Package = "Bronze" | "Silver" | "Gold" | "Platinum";
 
 const PACKAGES: Package[] = ["Bronze", "Silver", "Gold", "Platinum"];
 
+const gradients: Record<Package, string> = {
+  Bronze: "linear-gradient(111.92deg, #d8a673, #b97a3c 99.99%)",
+  Silver: "linear-gradient(106.25deg, #e5e8ec, #9baac7)",
+  Gold: "linear-gradient(104.88deg, #e7b75f, #f8d57e)",
+  Platinum: "linear-gradient(99.99deg, #313131, #515254 40.45%, #5b5b5d 55.32%, #565857)",
+};
+
 export function StepPlans({ onNext }: { onNext: () => void }) {
   const { gymId } = useGymStore();
   const [selectedPackages, setSelectedPackages] = useState<Package[]>(["Platinum"]);
@@ -129,20 +136,12 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
               return (
                 <div
                   key={pkg}
-                  onClick={() => {
-                    if (isSelected) setActivePackage(pkg);
-                    else {
-                      togglePackage(pkg);
-                      setActivePackage(pkg);
-                    }
-                  }}
+                  onClick={() => setActivePackage(pkg)}
+                  style={{ background: gradients[pkg] }}
                   className={cn(
-                    "relative flex items-center gap-3 px-4 py-4 rounded-[20px] border-2 transition-all duration-300 cursor-pointer",
-                    isActive && isSelected
-                      ? "border-[#00B4D8] bg-white shadow-md ring-4 ring-[#00B4D805]" 
-                      : isSelected
-                      ? "border-slate-200 bg-white"
-                      : "border-transparent bg-slate-50 opacity-60 grayscale hover:grayscale-0 hover:opacity-100"
+                    "relative h-[56px] rounded-[24px] flex items-center px-4 cursor-pointer transition-all duration-300",
+                    isActive ? "scale-[1.05] shadow-lg ring-2 ring-[#00B4CC]" : "hover:scale-[1.02] shadow-sm",
+                    !isSelected && "ring-1 ring-inset ring-black/10"
                   )}
                 >
                   <div 
@@ -151,22 +150,23 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
                       togglePackage(pkg);
                     }}
                     className={cn(
-                      "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all",
-                      isSelected ? "bg-[#00B4D8] border-[#00B4D8]" : "bg-white border-slate-200"
+                      "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all shadow-sm",
+                      isSelected ? "bg-white border-white" : "bg-transparent border-white/70"
                     )}
                   >
-                    {isSelected && <Check className="text-white w-3.5 h-3.5 stroke-[4]" />}
+                    {isSelected && <Check className="text-black w-3.5 h-3.5 stroke-[4]" />}
                   </div>
                   
-                  <div className="flex flex-col">
-                    <span className={cn(
-                      "text-xs font-bold transition-colors",
-                      isSelected ? "text-slate-800" : "text-slate-400"
-                    )}>
-                      {pkg}
-                    </span>
-                    {isSelected && <span className="text-[10px] text-[#00B4D8] font-bold">Aktiv</span>}
-                  </div>
+                  <b className={cn(
+                    "ml-2.5 text-[14px] tracking-tight whitespace-nowrap",
+                    pkg === "Platinum" ? "text-white" : "text-white drop-shadow-md"
+                  )}>
+                    {pkg}
+                  </b>
+
+                  {isActive && isSelected && (
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-[#00B4CC] rounded-full border-2 border-white shadow-sm animate-pulse" />
+                  )}
                 </div>
               );
             })}
@@ -192,7 +192,8 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
                 onChange={(e) => setPrices((prev) => ({ ...prev, [activePackage]: e.target.value }))}
                 placeholder="0.00"
                 className="w-full bg-slate-50 border border-slate-100 rounded-[18px] px-5 py-4 text-sm font-bold text-slate-700
-                  focus:outline-none focus:border-[#00B4D8] focus:bg-white transition-all shadow-sm"
+                  focus:outline-none focus:border-[#00B4D8] focus:bg-white transition-all shadow-sm
+                  [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-300">AZN</span>
             </div>

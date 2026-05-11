@@ -9,12 +9,14 @@ import { useGymStore } from "@/lib/store/gym-store";
 import { useGymTrainers, useDeleteTrainer } from "@/lib/query/gym-query";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { ConfirmDeleteModal } from "../modals/confirm-delete-modal";
 
 export function TrainersTab() {
   const [showAdd, setShowAdd] = useState(false);
   const [showDetails, setShowDetails] = useState<any>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [deleteTrainerId, setDeleteTrainerId] = useState<string | number | null>(null);
   const pageSize = 10;
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -37,10 +39,17 @@ export function TrainersTab() {
 
   const { mutate: deleteTrainerMutate } = useDeleteTrainer();
 
-  const handleDelete = (trainerId: string | number) => {
-    if (!gymId) return;
-    if (!window.confirm("Bu məşqçini silmək istədiyinizə əminsiniz?")) return;
-    deleteTrainerMutate({ gymId: Number(gymId), trainerId });
+  const handleDelete = () => {
+    if (!gymId || !deleteTrainerId) return;
+    deleteTrainerMutate({ gymId: Number(gymId), trainerId: deleteTrainerId }, {
+      onSuccess: () => {
+        setDeleteTrainerId(null);
+        toast.success("Məşqçi silindi");
+      },
+      onError: (err: any) => {
+        toast.error(err?.message || "Xəta baş verdi");
+      }
+    });
     setOpenMenuId(null);
   };
 
@@ -190,7 +199,10 @@ export function TrainersTab() {
                               </button>
                               <div className="h-px bg-slate-100 mx-2" />
                               <button
-                                onClick={() => handleDelete(t.trainer_id || t.id)}
+                                onClick={() => {
+                                  setDeleteTrainerId(t.trainer_id || t.id);
+                                  setOpenMenuId(null);
+                                }}
                                 className="w-full h-11 flex items-center px-4 text-red-600 hover:bg-red-50 transition-colors gap-3 font-medium whitespace-nowrap"
                               >
                                 <Image src="/trash.png" width={18} height={18} alt="Delete" />
@@ -298,6 +310,14 @@ export function TrainersTab() {
 
       {showAdd && <AddTrainerModal onClose={() => setShowAdd(false)} isDashboard={true} />}
       {showDetails && <TrainerDetailsModal trainer={showDetails} onClose={() => setShowDetails(null)} />}
+      {deleteTrainerId !== null && (
+        <ConfirmDeleteModal
+          name={trainers.find(t => (t.trainer_id || t.id) === deleteTrainerId)?.name || "Məşqçi"}
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteTrainerId(null)}
+          isLoading={deleteTrainerMutate.isPending}
+        />
+      )}
     </div>
   );
 }

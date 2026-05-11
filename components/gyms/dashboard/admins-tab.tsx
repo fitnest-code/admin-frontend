@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useGymStore } from "@/lib/store/gym-store";
 import { useGymAdmins, useAddGymAdmin, useDeleteGymAdmin } from "@/lib/query/gym-query";
 import { toast } from "sonner";
+import { ConfirmDeleteModal } from "../modals/confirm-delete-modal";
 
 export function AdminsTab() {
   const { gymId } = useGymStore();
@@ -16,6 +17,7 @@ export function AdminsTab() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [deleteAdminId, setDeleteAdminId] = useState<number | null>(null);
   const [form, setForm] = useState({
     name: "",
     surname: "",
@@ -47,10 +49,13 @@ export function AdminsTab() {
     );
   };
 
-  const handleDelete = (adminId: number) => {
-    if (!gymId || !confirm("Bu admini silmək istədiyinizə əminsiniz?")) return;
-    deleteAdmin({ gymId: Number(gymId), adminId }, {
-      onSuccess: () => toast.success("Admin silindi")
+  const handleDelete = () => {
+    if (!gymId || !deleteAdminId) return;
+    deleteAdmin({ gymId: Number(gymId), adminId: deleteAdminId }, {
+      onSuccess: () => {
+        setDeleteAdminId(null);
+        toast.success("Admin silindi");
+      }
     });
   };
 
@@ -121,7 +126,7 @@ export function AdminsTab() {
                   {/* Delete Action */}
                   <div className="flex-1 flex justify-center">
                     <button 
-                      onClick={() => handleDelete(admin.id)}
+                      onClick={() => setDeleteAdminId(admin.id)}
                       className="w-5 h-5 flex items-center justify-center hover:opacity-70 transition-opacity"
                     >
                       <Image src="/trash.png" width={20} height={20} alt="Delete" />
@@ -251,6 +256,14 @@ export function AdminsTab() {
             </form>
           </div>
         </div>
+      )}
+      {deleteAdminId !== null && (
+        <ConfirmDeleteModal
+          name={admins?.find((a: any) => a.id === deleteAdminId)?.name || "Admin"}
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteAdminId(null)}
+          isLoading={deleteAdmin.isPending}
+        />
       )}
     </div>
   );

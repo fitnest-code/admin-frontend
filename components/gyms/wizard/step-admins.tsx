@@ -12,7 +12,7 @@ import Image from "next/image";
 
 const EMPTY_FORM: LocalAdmin = { firstName: "", lastName: "", phone: "", email: "", password: "" };
 
-export function StepAdmins() {
+export function StepAdmins({ onComplete }: { onComplete?: () => void }) {
   const router = useRouter();
   const { gymId, step7Admins: admins, addStep7Admin, removeStep7Admin, resetGym } = useGymStore();
   const [modalOpen, setModalOpen] = useState(false);
@@ -61,6 +61,7 @@ export function StepAdmins() {
       { id: Number(gymId), payload },
       {
         onSuccess: () => {
+          onComplete?.();
           setShowSuccess(true);
           resetGym();
         },

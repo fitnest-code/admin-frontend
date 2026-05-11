@@ -23,6 +23,8 @@ import ReservationsTab from './dashboard/reservations-tab'
 import { CustomersTab } from './dashboard/customers-tab'
 import LessonHoursTab from './dashboard/lesson-hours-tab'
 
+import { useDeleteGym } from '@/lib/query/gym-query'
+
 import { AnalitikaTab } from '@/components/zallar/tabs/analitika-tab'
 import { StepNavigationWarningModal } from './modals/step-navigation-warning-modal'
 import { ExitConfirmationModal } from './modals/exit-confirmation-modal'
@@ -44,8 +46,8 @@ interface GymDetailProps {
 }
 
 export function GymDetail({ gym, isNew = false }: GymDetailProps) {
-  const router = useRouter()
   const { gymId, currentTab, setCurrentTab, resetGym, setGymId } = useGymStore()
+  const { mutate: deleteGymMutate } = useDeleteGym()
 
   useEffect(() => {
     // Only update store gymId from props if it's an existing gym (not 'new')
@@ -60,6 +62,15 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
   useEffect(() => {
     gymIdRef.current = gymId
   }, [gymId])
+
+  useEffect(() => {
+    return () => {
+      // Cleanup: delete draft gym if user leaves the page/unmounts
+      if (isNew && gymIdRef.current && !isCompletedRef.current) {
+        deleteGymMutate(gymIdRef.current)
+      }
+    }
+  }, [isNew, deleteGymMutate])
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -83,6 +94,9 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
   }, [currentTab])
 
   const handleConfirmExit = () => {
+    if (isNew && gymId) {
+      deleteGymMutate(gymId)
+    }
     resetGym()
     router.push('/gyms')
   }
@@ -111,7 +125,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
         case 'plans':
           return <StepPlans onNext={goToNext} />
         case 'admins':
-          return <StepAdmins />
+          return <StepAdmins onComplete={() => { isCompletedRef.current = true }} />
         default:
           return <StepInfo onNext={goToNext} />
       }

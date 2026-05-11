@@ -3,11 +3,15 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 import styles from './add-lesson-hour-modal.module.css'
+import { cn } from '@/lib/utils'
 import { 
     useAddLessonHour, 
     useGymTrainers, 
     useGymLessonTypes 
 } from '@/lib/query/gym-query'
+import { CustomCalendar } from '@/components/ui/custom-calendar'
+import { format, parse } from 'date-fns'
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 
 interface Props {
     gymId: number
@@ -18,13 +22,22 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
     const [selectedLessonType, setSelectedLessonType] = useState<number | null>(null)
     const [selectedTrainer, setSelectedTrainer] = useState<string | null>(null)
     const [date, setDate] = useState('')
+    const [showCalendar, setShowCalendar] = useState(false)
     const [startTime, setStartTime] = useState('09:00')
     const [endTime, setEndTime] = useState('10:00')
     const [maxSlots, setMaxSlots] = useState(12)
+    const [trainerPage, setTrainerPage] = useState(1)
 
-    const { data: trainers } = useGymTrainers(gymId)
+    const { data: trainers, isLoading: trainersLoading } = useGymTrainers(gymId, { 
+        page: trainerPage, 
+        pageSize: 4 
+    })
     const { data: lessonTypes } = useGymLessonTypes(gymId)
     const addMutation = useAddLessonHour()
+
+    const trainerItems = trainers?.items || []
+    const totalTrainerPages = trainers ? Math.ceil(trainers.total / 4) : 0
+    const currentTrainers = trainerItems
 
     const handleSubmit = () => {
         if (!selectedLessonType || !selectedTrainer || !date) {
@@ -47,8 +60,10 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
         })
     }
 
+    const selectedDateObj = date ? parse(date, 'yyyy-MM-dd', new Date()) : undefined
+
     return (
-        <div className={styles.overlay}>
+        <div className={styles.overlay} onClick={(e) => e.target === e.currentTarget && onClose()}>
             <div className={styles.modal}>
                 <div className={styles.header}>
                     <h2 className={styles.title}>Dərs saatı məlumatları</h2>
@@ -78,9 +93,38 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
 
                     {/* Trainer Selection */}
                     <div className={styles.section}>
-                        <h3 className={styles.sectionTitle}>Məşqçi seçin</h3>
-                        <div className={styles.trainersList}>
-                            {trainers?.items?.map((trainer: any) => (
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className={styles.sectionTitle}>Məşqçi seçin</h3>
+                            {totalTrainerPages > 1 && (
+                                <div className="flex items-center gap-2">
+                                    <button 
+                                        disabled={trainerPage === 1}
+                                        onClick={() => setTrainerPage(p => Math.max(1, p - 1))}
+                                        className="p-1 rounded-full hover:bg-slate-100 disabled:opacity-30 transition-colors"
+                                    >
+                                        <ChevronLeft size={20} />
+                                    </button>
+                                    <span className="text-xs font-medium text-slate-500">
+                                        {trainerPage} / {totalTrainerPages}
+                                    </span>
+                                    <button 
+                                        disabled={trainerPage >= totalTrainerPages}
+                                        onClick={() => setTrainerPage(p => Math.min(totalTrainerPages, p + 1))}
+                                        className="p-1 rounded-full hover:bg-slate-100 disabled:opacity-30 transition-colors"
+                                    >
+                                        <ChevronRight size={20} />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                        <div className={cn(styles.trainersList, "min-h-[140px] relative")}>
+                            {trainersLoading ? (
+                                <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-10">
+                                    <Loader2 className="w-6 h-6 animate-spin text-[#00b4cc]" />
+                                </div>
+                            ) : null}
+                            
+                            {currentTrainers.map((trainer: any) => (
                                 <div 
                                     key={trainer.trainer_id || trainer.id}
                                     className={`${styles.trainerCard} ${selectedTrainer === (trainer.trainer_id || trainer.id) ? styles.selected : ''}`}
@@ -99,7 +143,7 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                                     </div>
                                 </div>
                             ))}
-                            {(!trainers?.items || trainers.items.length === 0) && (
+                            {!trainersLoading && trainerItems.length === 0 && (
                                 <p className={styles.emptyText}>Məşqçi tapılmadı</p>
                             )}
                         </div>
@@ -109,12 +153,33 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                     <div className={styles.row}>
                         <div className={styles.inputGroup}>
                             <label className={styles.label}>Tarix</label>
-                            <input 
-                                type="date" 
-                                className={styles.input} 
-                                value={date}
-                                onChange={(e) => setDate(e.target.value)}
-                            />
+                            <div className="relative">
+                                <button 
+                                    onClick={() => setShowCalendar(!showCalendar)}
+                                    className={cn(
+                                        styles.input,
+                                        "flex items-center justify-between gap-2 text-left bg-white"
+                                    )}
+                                >
+                                    <span className={cn(!date && "text-slate-400")}>
+                                        {date ? format(selectedDateObj!, 'dd.MM.yyyy') : 'Tarix seçin'}
+                                    </span>
+                                    <CalendarIcon size={18} className="text-slate-400" />
+                                </button>
+
+                                {showCalendar && (
+                                    <div className="absolute top-full left-0 z-[60] mt-1">
+                                        <CustomCalendar 
+                                            selectedDate={selectedDateObj}
+                                            onSelect={(d) => {
+                                                setDate(format(d, 'yyyy-MM-dd'))
+                                                setShowCalendar(false)
+                                            }}
+                                            onClose={() => setShowCalendar(false)}
+                                        />
+                                    </div>
+                                )}
+                            </div>
                         </div>
                         <div className={styles.inputGroup}>
                             <label className={styles.label}>Yer / Nəfər ( max. 12 )</label>
