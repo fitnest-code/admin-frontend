@@ -37,11 +37,13 @@ export function ConfirmDeleteModal({ name, onConfirm, onCancel, isLoading }: Con
             disabled={isLoading}
             className="flex-1 h-[48px] max-w-[250px] rounded-[10px] bg-[#00b4cc] flex items-center justify-center px-4 transition-all hover:opacity-90 shadow-md shadow-cyan-100 disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {isLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin text-white" />
-            ) : (
-              <span className="text-[16px] font-medium text-white leading-[24px]">Bəli</span>
-            )}
+            <div className="flex items-center justify-center">
+              {isLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin text-white" />
+              ) : (
+                <span className="text-[16px] font-medium text-white leading-[24px]">Bəli</span>
+              )}
+            </div>
           </button>
         </div>
       </div>

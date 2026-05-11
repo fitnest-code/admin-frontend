@@ -13,7 +13,7 @@ export function AdminsTab() {
   const { gymId } = useGymStore();
   const { data: admins, isLoading } = useGymAdmins(gymId);
   const { mutate: addAdmin, isPending: isAdding } = useAddGymAdmin();
-  const { mutate: deleteAdmin } = useDeleteGymAdmin();
+  const { mutate: deleteAdmin, isPending: isDeletingAdmin } = useDeleteGymAdmin();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -262,7 +262,7 @@ export function AdminsTab() {
           name={admins?.find((a: any) => a.id === deleteAdminId)?.name || "Admin"}
           onConfirm={handleDelete}
           onCancel={() => setDeleteAdminId(null)}
-          isLoading={deleteAdmin.isPending}
+          isLoading={isDeletingAdmin}
         />
       )}
     </div>

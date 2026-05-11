@@ -37,7 +37,7 @@ export function TrainersTab() {
     { page: currentPage, pageSize: pageSize, sort_dir: "DESC" }
   );
 
-  const { mutate: deleteTrainerMutate } = useDeleteTrainer();
+  const { mutate: deleteTrainerMutate, isPending: isDeletingTrainer } = useDeleteTrainer();
 
   const handleDelete = () => {
     if (!gymId || !deleteTrainerId) return;
@@ -315,7 +315,7 @@ export function TrainersTab() {
           name={trainers.find(t => (t.trainer_id || t.id) === deleteTrainerId)?.name || "Məşqçi"}
           onConfirm={handleDelete}
           onCancel={() => setDeleteTrainerId(null)}
-          isLoading={deleteTrainerMutate.isPending}
+          isLoading={isDeletingTrainer}
         />
       )}
     </div>
