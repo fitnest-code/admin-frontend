@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { createPortal } from "react-dom";
 import successAnimationData from "./success.json";
 
 // Dynamically import Lottie with SSR disabled to prevent hydration errors
@@ -14,7 +15,12 @@ interface SuccessModalProps {
 }
 
 export function SuccessAnimationModal({ isOpen, onClose }: SuccessModalProps) {
+  const [mounted, setMounted] = useState(false);
   const lottieRef = useRef<any>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -28,9 +34,9 @@ export function SuccessAnimationModal({ isOpen, onClose }: SuccessModalProps) {
     }
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/30 backdrop-blur-md animate-in fade-in duration-200 font-sans">
       <div className="relative w-56 h-56 flex items-center justify-center animate-in zoom-in-95 duration-200 pointer-events-none">
         <Lottie 
@@ -41,6 +47,7 @@ export function SuccessAnimationModal({ isOpen, onClose }: SuccessModalProps) {
           className="w-full h-full"
         />
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

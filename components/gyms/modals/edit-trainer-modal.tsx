@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { X, Upload, Loader2, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { useProfessions, useCategories, useGymDetailsAdmin } from "@/lib/query/gym-query";
+import { useLessonTypes } from "@/lib/query/use-lesson-types";
 import { useGymStore } from "@/lib/store/gym-store";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -18,12 +19,15 @@ interface EditTrainerModalProps {
 export function EditTrainerModal({ onClose, trainer, index }: EditTrainerModalProps) {
   const [mounted, setMounted] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
-  const gymId = useGymStore((state) => state.gymId);
-  const { updateStep2Trainer } = useGymStore();
+  const { gymId, step1Data, updateStep2Trainer } = useGymStore();
   const { data: professions } = useProfessions();
   const { data: categoriesData } = useCategories();
   const { data: gymDetails } = useGymDetailsAdmin(gymId);
+  const { lessonTypes: allLessonTypes } = useLessonTypes();
 
+  const availableLessonTypes = gymId 
+    ? (gymDetails?.lessonTypes || [])
+    : (allLessonTypes?.filter((lt: any) => step1Data?.lessonTypeIds?.includes(lt.id)) || []);
   const [form, setForm] = useState({
     name: trainer.name || "",
     surname: trainer.surname || "",
@@ -50,7 +54,6 @@ export function EditTrainerModal({ onClose, trainer, index }: EditTrainerModalPr
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const availableLessonTypes = gymDetails?.lessonTypes || [];
   const selectedLessonTypesList = availableLessonTypes.filter((lt: any) => selectedLessonTypeIds.has(lt.id));
 
   let dropdownLabel = "Dərs növü seçin";

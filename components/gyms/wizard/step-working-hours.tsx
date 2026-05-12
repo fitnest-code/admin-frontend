@@ -36,7 +36,7 @@ const DAY_FULL_LABELS: Record<string, string> = {
 };
 
 export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
-  const { step3Data, setStep3Data } = useGymStore();
+  const { gymId, step3Data, setStep3Data } = useGymStore();
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<GenderTab>("generalWorkHours");
   const [modalOpen, setModalOpen] = useState(false);
@@ -65,6 +65,32 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
   useEffect(() => { setMounted(true); }, []);
 
   const handleNext = async () => {
+    // 1. Basic validation
+    const enabledTabsArray = Array.from(enabledTabs);
+    if (enabledTabsArray.length === 0) {
+      return toast.error("Ən azı bir zal rejimi seçilməlidir (Ümumi, Kişi və ya Qadın)");
+    }
+
+    // 2. Check if at least one slot exists for each enabled regime
+    for (const tab of enabledTabsArray) {
+      if (slots[tab].length === 0) {
+        const labels: Record<GenderTab, string> = {
+          generalWorkHours: "Ümumi zal",
+          workHoursMan: "Kişi zalı",
+          workHoursWoman: "Qadın zalı"
+        };
+        return toast.error(`${labels[tab]} rejimi üçün heç bir iş saatı əlavə edilməyib`);
+      }
+    }
+
+    // 3. Check for slots on rest days (double check)
+    for (const tab of enabledTabsArray) {
+      const hasSlotsOnRestDay = slots[tab].some(s => restDays.has(s.day));
+      if (hasSlotsOnRestDay) {
+        return toast.error("İstirahət günlərinə iş saatı təyin edilə bilməz. Zəhmət olmasa yoxlayın.");
+      }
+    }
+
     try {
       const payload = buildPayload();
       await validateStep3.mutateAsync(payload);
@@ -88,7 +114,7 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
     };
 
     return {
-      gymId: Number(gymId),
+      gymId: gymId ? Number(gymId) : 0,
       generalWorkHours: mapToWorkHour("generalWorkHours"),
       workHoursMan: mapToWorkHour("workHoursMan"),
       workHoursWoman: mapToWorkHour("workHoursWoman"),
@@ -276,7 +302,17 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
                 type="button"
                 onClick={() => {
                   const newRest = new Set(restDays);
-                  newRest.has(day.key) ? newRest.delete(day.key) : newRest.add(day.key);
+                  if (newRest.has(day.key)) {
+                    newRest.delete(day.key);
+                  } else {
+                    newRest.add(day.key);
+                    // Clear slots for this day across all tabs
+                    setSlots(prev => ({
+                      generalWorkHours: prev.generalWorkHours.filter(s => s.day !== day.key),
+                      workHoursMan: prev.workHoursMan.filter(s => s.day !== day.key),
+                      workHoursWoman: prev.workHoursWoman.filter(s => s.day !== day.key),
+                    }));
+                  }
                   setRestDays(newRest);
                 }}
                 className={cn(
@@ -316,6 +352,10 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
         open={modalOpen}
         onOpenChange={setModalOpen}
         onSubmit={(data) => {
+          if (restDays.has(data.day)) {
+            return toast.error("İstirahət gününə iş saatı əlavə edilə bilməz");
+          }
+
           const timeToMin = (t: string) => {
             const [h, m] = t.split(':').map(Number);
             return h * 60 + m;

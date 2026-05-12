@@ -125,12 +125,12 @@ export const useGymStore = create<GymState>()(
           step6Data: null,
           step7Admins: [] 
         });
-        sessionStorage.removeItem('gym-storage');
+        localStorage.removeItem('gym-storage');
       },
     }),
     {
       name: 'gym-storage',
-      storage: createJSONStorage(() => sessionStorage),
+      storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ 
         gymId: state.gymId,
         currentTab: state.currentTab,

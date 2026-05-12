@@ -106,8 +106,6 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
 
     try {
       const payload = {
-        cityId: 1, // Default Baku for now
-        address: searchQuery,
         latitude: Number(coords.lat),
         longitude: Number(coords.lng)
       };

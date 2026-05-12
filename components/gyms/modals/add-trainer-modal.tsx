@@ -9,6 +9,7 @@ import {
   useGymDetailsAdmin
 } from "@/lib/query/gym-query";
 import { useCreateTrainer } from "@/lib/query/trainers";
+import { useLessonTypes } from "@/lib/query/use-lesson-types";
 import { useGymStore } from "@/lib/store/gym-store";
 import { useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
@@ -55,9 +56,15 @@ export function AddTrainerModal({ onClose, isDashboard = false }: { onClose: () 
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const { step1Data, addStep2Trainer } = useGymStore();
   const { data: gymDetails } = useGymDetailsAdmin(id);
+  const { lessonTypes: allLessonTypes } = useLessonTypes();
 
-  const availableLessonTypes = gymDetails?.lessonTypes || [];
+  // If we are in wizard (no gymId yet), use lesson types from Step 1 store
+  const availableLessonTypes = id 
+    ? (gymDetails?.lessonTypes || [])
+    : (allLessonTypes?.filter((lt: any) => step1Data?.lessonTypeIds?.includes(lt.id)) || []);
+
   const selectedLessonTypesList = availableLessonTypes.filter((lt: any) => selectedLessonTypeIds.has(lt.id));
 
   let dropdownLabel = "Dərs növü seçin";
@@ -100,8 +107,6 @@ export function AddTrainerModal({ onClose, isDashboard = false }: { onClose: () 
     const objectUrl = URL.createObjectURL(file);
     setPreview(objectUrl);
   };
-
-  const { addStep2Trainer } = useGymStore();
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();

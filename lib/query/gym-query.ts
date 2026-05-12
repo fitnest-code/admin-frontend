@@ -209,7 +209,10 @@ export function useCreateGymComplete() {
       await apiPost(`/admin/gyms/${gymId}/step3`, data.step3);
 
       // Step 4 (Address)
-      await apiPost(`/admin/gyms/${gymId}/step4`, data.step4);
+      await apiPost(`/admin/gyms/${gymId}/step4`, {
+        latitude: data.step4.lat,
+        longitude: data.step4.lng
+      });
 
       // Step 5 (Images)
       const fd5 = new FormData();

@@ -275,7 +275,7 @@ export function PlansTab({ gym }: { gym?: any }) {
           <div className="h-[60px] w-full max-w-[320px] bg-[#fafafa] border border-[#ececed] rounded-[12px] flex items-center px-5">
             <input
               type="number"
-              value={prices[activePackage]}
+              value={prices[activePackage] || ""}
               onChange={(e) => setPrices(prev => ({ ...prev, [activePackage]: e.target.value }))}
               className="bg-transparent w-full h-full outline-none text-[18px] font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               placeholder="0.00"
