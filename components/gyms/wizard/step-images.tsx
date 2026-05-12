@@ -101,7 +101,6 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
         coverPhoto,
         roomPhotos: validRoomPhotos.map(p => ({ photo: p.photo!, name: p.name.trim() }))
       });
-      toast.success("Şəkillər uğurla yadda saxlanıldı");
       onNext?.();
     } catch (err: any) {
       toast.error(err.message || "Xəta baş verdi");

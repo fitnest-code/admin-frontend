@@ -114,7 +114,6 @@ export function PlansTab({ gym }: { gym?: any }) {
       });
 
       setPendingService(null);
-      toast.success("Xidmət yaradıldı");
     } catch (err: any) {
       toast.error(err?.message || "Xidmət yaradıla bilmədi");
     }
@@ -129,7 +128,6 @@ export function PlansTab({ gym }: { gym?: any }) {
     try {
       await deleteServiceMutation.mutateAsync(deleteServiceId);
       setDeleteServiceId(null);
-      toast.success("Xidmət idman zalından silindi");
     } catch (err: any) {
       toast.error(err?.message || "Xidmət silinərkən xəta baş verdi");
     }
@@ -195,7 +193,6 @@ export function PlansTab({ gym }: { gym?: any }) {
       payload: { subscriptions }
     }, {
       onSuccess: () => {
-        toast.success("Abunəlik məlumatları uğurla yeniləndi");
         setShowSuccessModal(true);
       },
       onError: (err: any) => {

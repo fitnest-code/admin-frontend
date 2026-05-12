@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import CategoryModal, { CategoryFormData } from "./modals/category-add-modal";
 import { ConfirmDeleteModal } from "../gyms/modals/confirm-delete-modal";
 import { ErrorToastModal } from "./modals/error-toast-modal";
+import { SuccessAnimationModal } from "../ui/success-animation-modal";
 import { useCategories } from "@/lib/query/add-category";
 
 export default function CategoriesPage() {
@@ -14,6 +15,7 @@ export default function CategoriesPage() {
   const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const categoryItems = Array.isArray(categories) 
     ? categories 
@@ -37,6 +39,7 @@ export default function CategoriesPage() {
       }
       setModalOpen(false);
       setEditTarget(null);
+      setShowSuccessModal(true);
     } catch (error) {
       console.error("Save error:", error);
     }
@@ -132,6 +135,7 @@ export default function CategoriesPage() {
               await deleteCategory(deleteTarget.id);
               await refetch();
               setDeleteTarget(null);
+              setShowSuccessModal(true);
             } catch (err: any) {
               console.error("Delete error:", err);
               const msg = err?.response?.data?.error?.message || err?.error?.message || err?.message || "Kateqoriya istifadə olunur və silinə bilməz";
@@ -150,6 +154,11 @@ export default function CategoriesPage() {
           onClose={() => setDeleteErrorMessage(null)}
         />
       )}
+
+      <SuccessAnimationModal 
+        isOpen={showSuccessModal} 
+        onClose={() => setShowSuccessModal(false)} 
+      />
     </div>
   );
 }

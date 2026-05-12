@@ -60,7 +60,6 @@ export function GymsList() {
       { id: String(id), enabled: !currentEnabled },
       {
         onSuccess: () => {
-          toast.success("Status uğurla yeniləndi")
           setShowSuccessModal(true)
         },
         onError: () => {
@@ -75,7 +74,7 @@ export function GymsList() {
     deleteGym.mutate(deleteId, {
       onSuccess: () => {
         setDeleteId(null)
-        toast.success("Zal uğurla silindi")
+        setShowSuccessModal(true)
       },
       onError: (error: any) => {
         toast.error(error?.message || "Zalı silmək mümkün olmadı")

@@ -121,7 +121,6 @@ export function EditTrainerModal({ onClose, trainer, index }: EditTrainerModalPr
       lessonTypeIds: Array.from(selectedLessonTypeIds),
     });
 
-    toast.success("Məşqçi məlumatları yeniləndi");
     onClose();
   };
 

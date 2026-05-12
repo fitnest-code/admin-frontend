@@ -101,7 +101,6 @@ export function TrainerDetailsModal({ trainer, onClose }: TrainerDetailsModalPro
       },
       {
         onSuccess: () => {
-          toast.success("Məşqçi məlumatları yeniləndi")
           queryClient.invalidateQueries({ queryKey: ["gym-trainers"] })
           onClose()
         },

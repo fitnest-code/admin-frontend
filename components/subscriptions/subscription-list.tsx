@@ -697,6 +697,7 @@ export function SubscriptionList() {
     const targetId = deletingId
     setLocalPackages((prev) => prev.filter((p) => p.id !== targetId))
     setDeletingId(null)
+    setShowSuccessModal(true)
 
     if (!targetId.startsWith('temp') && !targetId.startsWith('sub-')) {
       try {

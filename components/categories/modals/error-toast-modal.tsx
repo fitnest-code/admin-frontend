@@ -1,6 +1,11 @@
 "use client";
 
-import { AlertCircle } from "lucide-react";
+import React, { useEffect } from "react";
+import dynamic from "next/dynamic";
+import errorAnimationData from "../../ui/error.json";
+
+// Dynamically import Lottie with SSR disabled to prevent hydration errors
+const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
 
 interface ErrorToastModalProps {
   message: string;
@@ -8,26 +13,27 @@ interface ErrorToastModalProps {
 }
 
 export function ErrorToastModal({ message, onClose }: ErrorToastModalProps) {
-  return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-[420px] rounded-[20px] bg-white p-8 shadow-2xl flex flex-col items-center text-center gap-4 animate-in zoom-in-95 duration-200 border border-red-100 font-sans">
-        <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center animate-pulse">
-          <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-            <AlertCircle className="w-7 h-7 text-red-500" />
-          </div>
-        </div>
-        
-        <h3 className="text-[20px] font-bold text-gray-900 leading-[28px]">Xəta baş verdi</h3>
-        <p className="text-[15px] text-gray-600 font-medium leading-[22px]">
-          {message}
-        </p>
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onClose();
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
 
-        <button
-          onClick={onClose}
-          className="mt-2 w-full h-12 rounded-[12px] bg-[#00b4cc] text-white font-bold text-[15px] hover:opacity-90 transition-opacity shadow-md shadow-cyan-100"
-        >
-          Bağla
-        </button>
+  return (
+    <div 
+      onClick={onClose}
+      className="fixed inset-0 z-[999999] flex flex-col items-center justify-center p-4 bg-black/40 backdrop-blur-md animate-in fade-in duration-300 font-sans cursor-pointer"
+    >
+      <div className="relative w-56 h-56 flex items-center justify-center animate-in zoom-in-95 duration-300 pointer-events-none">
+        <Lottie 
+          animationData={errorAnimationData} 
+          loop={false} 
+          className="w-full h-full"
+        />
+      </div>
+      <div className="mt-4 text-white font-bold text-[18px] tracking-wide text-center max-w-md drop-shadow-md animate-in fade-in duration-400 pointer-events-none">
+        {message}
       </div>
     </div>
   );

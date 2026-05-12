@@ -51,7 +51,6 @@ export function StepTrainers({ onNext }: { onNext: () => void }) {
       },
       {
         onSuccess: () => {
-          toast.success("Məşqçilər uğurla yadda saxlanıldı");
           useGymStore.setState({ step2Trainers: [] });
           onNext();
         },

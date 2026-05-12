@@ -60,7 +60,6 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
     if (!gymId) return toast.error("Zal ID tapılmadı");
     try {
       await submitMutateAsync(buildPayload());
-      toast.success("Məlumatlar uğurla yadda saxlanıldı");
       onNext?.();
     } catch (error: any) {
       toast.error(error?.message || "Server xətası baş verdi (Növbəti)");
@@ -288,7 +287,6 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
       <div className="flex justify-end items-center gap-6 pt-10 border-t border-slate-100">
         <button
           type="button"
-          onClick={() => toast.success("Məlumatlar müvəqqəti yadda saxlanıldı")}
           className="w-[280px] h-[52px] rounded-xl border-2 border-[#00B4CC] bg-white text-[#00B4CC] font-bold text-base hover:bg-[#00B4CC08] transition-all"
         >
           Yadda saxla

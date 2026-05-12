@@ -92,7 +92,6 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
     navigator.clipboard.writeText(val.toString());
     setCopied(which);
     setTimeout(() => setCopied(null), 1500);
-    toast.success("Kopyalandı");
   };
 
   // Əsas Saxlama Məntiqi
@@ -123,7 +122,6 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
   const handleNext = async () => {
     const success = await performSave();
     if (success) {
-      toast.success("Məkan qeydə alındı, növbəti mərhələyə keçilir");
       onNext?.();
     }
   };

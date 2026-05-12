@@ -40,7 +40,6 @@ export function AdminsTab() {
         onSuccess: () => {
           setModalOpen(false);
           setForm({ name: "", surname: "", phoneNumber: "", email: "", password: "" });
-          toast.success("Admin uğurla əlavə edildi");
         },
         onError: (err: any) => {
           toast.error(err?.response?.data?.message || "Xəta baş verdi");
@@ -54,7 +53,6 @@ export function AdminsTab() {
     deleteAdmin({ gymId: Number(gymId), adminId: deleteAdminId }, {
       onSuccess: () => {
         setDeleteAdminId(null);
-        toast.success("Admin silindi");
       }
     });
   };

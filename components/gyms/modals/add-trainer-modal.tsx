@@ -99,7 +99,6 @@ export function AddTrainerModal({ onClose, isDashboard = false }: { onClose: () 
     setSelectedFile(file);
     const objectUrl = URL.createObjectURL(file);
     setPreview(objectUrl);
-    toast.success("Şəkil seçildi");
   };
 
   const { addStep2Trainer } = useGymStore();
@@ -127,7 +126,6 @@ export function AddTrainerModal({ onClose, isDashboard = false }: { onClose: () 
         {
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["gym-trainers"] });
-            toast.success("Məşqçi uğurla əlavə edildi");
             onClose();
           },
           onError: (err: any) => {
@@ -144,7 +142,6 @@ export function AddTrainerModal({ onClose, isDashboard = false }: { onClose: () 
         professionName: professionNameDisplay,
         lessonTypeIds: Array.from(selectedLessonTypeIds),
       });
-      toast.success("Məşqçi siyahıya əlavə edildi");
       onClose();
     }
   };

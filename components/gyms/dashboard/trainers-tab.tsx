@@ -10,6 +10,7 @@ import { useGymTrainers, useDeleteTrainer } from "@/lib/query/gym-query";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ConfirmDeleteModal } from "../modals/confirm-delete-modal";
+import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 
 export function TrainersTab() {
   const [showAdd, setShowAdd] = useState(false);
@@ -17,6 +18,7 @@ export function TrainersTab() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteTrainerId, setDeleteTrainerId] = useState<string | number | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const pageSize = 10;
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -44,7 +46,7 @@ export function TrainersTab() {
     deleteTrainerMutate({ gymId: Number(gymId), trainerId: deleteTrainerId }, {
       onSuccess: () => {
         setDeleteTrainerId(null);
-        toast.success("Məşqçi silindi");
+        setShowSuccessModal(true);
       },
       onError: (err: any) => {
         toast.error(err?.message || "Xəta baş verdi");
@@ -318,6 +320,7 @@ export function TrainersTab() {
           isLoading={isDeletingTrainer}
         />
       )}
+      <SuccessAnimationModal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)} />
     </div>
   );
 }

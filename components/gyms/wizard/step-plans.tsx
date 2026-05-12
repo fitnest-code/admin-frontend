@@ -61,7 +61,6 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
         [activePackage]: [...prev[activePackage], pendingService.trim()]
       }));
       setPendingService(null);
-      toast.success("Xidmət yaradıldı");
     } catch (err: any) {
       toast.error(err?.message || "Xidmət yaradıla bilmədi");
     }
@@ -108,7 +107,6 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
       payload: { subscriptions }
     }, {
       onSuccess: () => {
-        toast.success("Abunəlik məlumatları uğurla yeniləndi");
         onNext();
       },
       onError: (err: any) => {
