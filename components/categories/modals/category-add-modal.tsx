@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
-import { X, Plus, Image as ImageIcon, Loader2 } from "lucide-react";
+import { X, Plus, Loader2 } from "lucide-react";
 import { useLessonTypes } from "@/lib/query/use-lesson-types";
 
 export interface CategoryFormData {
@@ -140,7 +140,7 @@ export default function CategoryModal({
                   <img src={imagePreview} alt="preview" className="w-full h-full object-cover" />
                 ) : (
                   <div className="flex flex-col items-center gap-[30px]">
-                    <ImageIcon size={40} className="text-[#99a1af]" />
+                    <Image src="/upload.svg" width={40} height={40} alt="upload" />
                     <span className="text-[14px] font-medium leading-[20px] tracking-[-0.15px] text-[#101828]">Upload</span>
                   </div>
                 )}
