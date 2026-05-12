@@ -443,73 +443,104 @@ function PackageCard({
   onEdit: (p: SubPackage) => void
   onDelete: (id: string) => void
 }) {
-  const firstTier = pkg.priceTiers[0]
   return (
-    <div className="flex flex-col rounded-xl border border-border bg-card p-4 gap-3">
-      <div className="flex items-center justify-between">
-        <span className="text-base font-bold text-foreground">{pkg.name}</span>
-        <span className={cn(
-          'rounded-full px-2.5 py-0.5 text-xs font-semibold flex items-center gap-1',
-          pkg.status === 'active' ? 'bg-green-600 text-white' : 'bg-[#6B7280] text-white',
-        )}>
-          <span className="h-1.5 w-1.5 rounded-full bg-white/80 shrink-0" />
-          {pkg.status === 'active' ? 'Aktiv' : 'Deaktiv'}
-        </span>
-      </div>
-
-      <div className="flex flex-col gap-1">
-        {pkg.priceTiers.map((tier, i) => (
-          <div key={i} className="flex items-baseline justify-between gap-2">
-            <span className="text-xs text-muted-foreground shrink-0">{tier.duration}</span>
-            <div className="flex items-baseline gap-1.5">
-              {tier.discountPrice > 0 && tier.discountPrice !== tier.price && (
-                <span className="text-xs text-muted-foreground line-through">{tier.price}</span>
-              )}
-              <span className="text-lg font-bold text-foreground">{tier.discountPrice || tier.price}</span>
-              <span className="text-xs text-muted-foreground">AZN</span>
+    <div className="w-full relative rounded-[12px] bg-white border border-[#00b4cc] flex flex-col items-start p-5 gap-[34px] text-center font-sans text-black shadow-sm transition-all hover:shadow-md">
+      {/* Header Wrapper */}
+      <div className="w-full flex flex-col items-end">
+        <div className="w-full flex items-center justify-between gap-5">
+          <b className="text-[18px] font-bold text-black leading-[28px]">{pkg.name}</b>
+          <div className="flex items-center gap-2">
+            <div className={cn(
+              "h-[26px] rounded-[20px] flex items-center justify-center px-3 py-1 gap-1 text-[12px] font-medium text-white transition-colors",
+              pkg.status === 'active' ? "bg-[#166728]" : "bg-gray-500"
+            )}>
+              <div className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
+              <span className="leading-[18px] font-medium">{pkg.status === 'active' ? 'Aktiv' : 'Deaktiv'}</span>
+            </div>
+            
+            {/* Visual native CSS switch matching the design asset knobs */}
+            <div className={cn(
+              "w-[51px] h-[31px] rounded-full p-1 transition-colors duration-200 ease-in-out shrink-0 flex items-center",
+              pkg.status === 'active' ? "bg-[#00b4cc]" : "bg-gray-300"
+            )}>
+              <div className={cn(
+                "w-[23px] h-[23px] rounded-full bg-white shadow-md transform transition-transform duration-200 ease-in-out",
+                pkg.status === 'active' ? "translate-x-[20px]" : "translate-x-0"
+              )} />
             </div>
           </div>
-        ))}
+        </div>
       </div>
 
-      <div className="flex flex-col gap-1 text-sm border-t border-border pt-2">
-        <div className="flex items-center justify-between">
-          <span className="text-muted-foreground">Limit:</span>
-          <span className="font-medium text-foreground">{pkg.entryLimit} giriş</span>
-        </div>
-        {firstTier && (
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Başlanğıc müddət:</span>
-            <span className="font-medium text-foreground">{firstTier.duration}</span>
+      {/* Middle Section / Pricing & Entry Limit */}
+      <div className="w-full flex flex-col items-start gap-[22px] text-left text-[#4a5565]">
+        <div className="w-full flex flex-col items-start gap-3">
+          {pkg.priceTiers.map((tier, i) => (
+            <div key={i} className="w-full flex flex-col gap-3">
+              <div className="w-full flex items-center justify-between gap-5">
+                <span className="text-[16px] leading-[24px] text-[#4a5565]">{tier.duration || 'Müddət'}</span>
+                <div className="flex items-baseline gap-1.5">
+                  {tier.discountPrice > 0 && tier.discountPrice !== tier.price ? (
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-[16px] leading-[24px] font-medium text-red-500 line-through decoration-red-500 decoration-2">
+                        {tier.price} AZN
+                      </span>
+                      <span className="text-[16px] leading-[24px] font-bold text-[#101828]">
+                        / {tier.discountPrice} AZN
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-[16px] leading-[24px] font-medium text-[#101828]">
+                      {tier.price} AZN
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="w-full h-[1px] border-t border-[#ececed] transform rotate-[0.3deg]" />
+            </div>
+          ))}
+
+          <div className="w-full flex items-center justify-between gap-5 pt-1">
+            <span className="text-[16px] leading-[24px] text-[#4a5565]">Limit:</span>
+            <span className="text-[16px] leading-[24px] font-medium text-[#101828]">{pkg.entryLimit} giriş</span>
           </div>
-        )}
+          <div className="w-full h-[1px] border-t border-[#ececed] transform rotate-[0.3deg]" />
+        </div>
+
+        {/* Services List Block */}
+        <div className="w-full flex flex-col items-start gap-[11px] pt-1">
+          <span className="text-[12px] font-bold tracking-wider text-[#4a5565] uppercase">XİDMƏTLƏR</span>
+          <div className="w-full flex flex-wrap items-center gap-2">
+            {pkg.services.length > 0 ? (
+              pkg.services.map((s) => (
+                <div key={s} className="rounded-[20px] bg-white border border-[#ececed] flex items-center justify-center px-3 py-1 gap-1.5 text-[14px] text-black font-medium shadow-2xs">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#00b4cc] shrink-0" />
+                  <span className="leading-[20px] font-medium">{s}</span>
+                </div>
+              ))
+            ) : (
+              <span className="text-xs text-gray-400 italic">Xidmət təyin edilməyib</span>
+            )}
+          </div>
+        </div>
       </div>
 
-      {pkg.services.length > 0 && (
-        <div className="flex flex-col gap-1.5">
-          <span className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">Xidmətlər</span>
-          <div className="flex flex-wrap gap-1.5">
-            {pkg.services.map((s) => (
-              <span key={s} className="rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground">
-                {s}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="flex gap-2 pt-1">
+      {/* Buttons Block */}
+      <div className="w-full flex items-center gap-3 pt-1">
         <button
           onClick={() => onEdit(pkg)}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#00B4CC] py-2 text-sm font-medium text-[#00B4CC] hover:bg-[#00B4CC0D] transition-colors"
+          className="flex-1 h-[41px] rounded-[10px] bg-white border border-[#00b4cc] flex items-center justify-center px-4 gap-2 hover:bg-[#00b4cc]/5 transition-colors"
         >
-          <Pencil size={14} /> Dəyiş
+          <Pencil size={15} className="text-[#00b4cc] shrink-0" />
+          <span className="text-[15px] font-medium text-black leading-[24px]">Dəyiş</span>
         </button>
+        
         <button
           onClick={() => onDelete(pkg.id)}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-red-200 py-2 text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+          className="flex-1 h-[41px] rounded-[10px] bg-white border border-[#f10303] flex items-center justify-center px-4 gap-2 hover:bg-[#f10303]/5 transition-colors"
         >
-          <Trash2 size={14} /> Sil
+          <Trash2 size={15} className="text-[#f10303] shrink-0" />
+          <span className="text-[15px] font-medium text-black leading-[24px]">Sil</span>
         </button>
       </div>
     </div>
