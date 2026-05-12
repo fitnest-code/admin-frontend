@@ -18,9 +18,22 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
 
+  const [selectedLessonTypeIds, setSelectedLessonTypeIds] = useState<Set<number>>(new Set());
+
   const { gymId, setGymId } = useGymStore();
   const { data: categoriesData, isLoading: categoriesLoading } = useCategories();
   const createStep1 = useCreateGymStep1();
+
+  const selectedCategory = categoriesData?.items?.find((c) => c.id === categoryId);
+
+  const toggleLessonType = (id: number) => {
+    setSelectedLessonTypeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const buildPayload = () => ({
     categoryId: categoryId!,
@@ -28,6 +41,7 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
     description: about,
     phone,
     email,
+    lessonTypeIds: Array.from(selectedLessonTypeIds),
   });
 
   const validate = () => {
@@ -89,7 +103,10 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
               <select 
                 className="w-full h-full bg-transparent outline-none appearance-none text-[18px] cursor-pointer"
                 value={categoryId || ""}
-                onChange={(e) => setCategoryId(Number(e.target.value))}
+                onChange={(e) => {
+                  setCategoryId(Number(e.target.value));
+                  setSelectedLessonTypeIds(new Set());
+                }}
               >
                 <option value="" disabled>Kateqoriya</option>
                 {categoriesData?.items?.map((cat: any) => (
@@ -101,6 +118,31 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
               </div>
             </div>
           </div>
+
+          {/* Lesson Types Grid (Növlər) */}
+          {selectedCategory?.lessonTypes && selectedCategory.lessonTypes.length > 0 && (
+            <div className="flex flex-col gap-3 animate-in fade-in duration-300">
+              <label className="text-[16px] leading-[24px]">Dərs növləri</label>
+              <div className="w-full flex flex-wrap items-center gap-4">
+                {selectedCategory.lessonTypes.map((lt) => {
+                  const isSelected = selectedLessonTypeIds.has(lt.id);
+                  return (
+                    <div
+                      key={lt.id}
+                      onClick={() => toggleLessonType(lt.id)}
+                      className={`flex-[1_1_calc(50%-8px)] sm:flex-none min-w-[140px] h-[64px] rounded-[8px] flex items-center justify-center px-4 cursor-pointer select-none transition-all duration-200 ${
+                        isSelected 
+                          ? "bg-[#00b4cc]/[0.04] border border-[#00b4cc] text-[#00b4cc] font-medium" 
+                          : "bg-[#fafafa] border border-[#ececed] text-[#101828] hover:border-gray-300"
+                      }`}
+                    >
+                      <span className="text-[16px] leading-[24px] truncate">{lt.name}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Gym Name */}
           <div className="flex flex-col gap-3">

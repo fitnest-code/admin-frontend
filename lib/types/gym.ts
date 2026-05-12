@@ -48,6 +48,7 @@ export interface TrainerRequest {
   phone: string;
   email: string;
   photo?: File;
+  lessonTypeIds?: number[];
 }
 
 
@@ -71,6 +72,7 @@ export interface Category {
   name: string
   photoUrl: string
   iconUrl: string
+  lessonTypes?: { id: number; name: string }[]
 }
 
 export interface CategoriesResponse {
@@ -90,6 +92,7 @@ export interface GymStep1Payload {
   description: string
   phone: string
   email: string
+  lessonTypeIds?: number[]
 }
 
 export interface SupportedServiceResponse {

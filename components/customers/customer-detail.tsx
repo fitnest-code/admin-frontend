@@ -30,6 +30,24 @@ function formatValue(value: string | number | null | undefined, suffix?: string)
   return suffix ? `${value} ${suffix}` : String(value)
 }
 
+function formatDateTimeClean(val?: string | null) {
+  if (!val) return 'Məlumat yoxdur'
+  try {
+    const d = new Date(val)
+    if (isNaN(d.getTime())) {
+      return val.split('.')[0].replace('T', ' / ')
+    }
+    const dd = String(d.getDate()).padStart(2, '0')
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const yy = String(d.getFullYear()).slice(-2)
+    const hh = String(d.getHours()).padStart(2, '0')
+    const min = String(d.getMinutes()).padStart(2, '0')
+    return `${dd}.${mm}.${yy} / ${hh}:${min}`
+  } catch {
+    return val
+  }
+}
+
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-4 py-3.5 border-b border-border/40 last:border-0 first:pt-0 last:pb-0">
@@ -77,7 +95,7 @@ export function CustomerDetail({ customer }: { customer: CustomerProfile }) {
   const fullName = customer.fullName || [customer.name, customer.surname].filter(Boolean).join(' ') || 'Adsız'
 
   return (
-    <div className="flex flex-col gap-6 max-w-[1440px] mx-auto w-full pb-12 animate-in fade-in-50 duration-300">
+    <div className="flex flex-col gap-6 w-full pb-12 animate-in fade-in-50 duration-300">
       {/* Top Header Controls */}
       <div className="flex items-center justify-between">
         <button
@@ -143,16 +161,24 @@ export function CustomerDetail({ customer }: { customer: CustomerProfile }) {
         </div>
 
         {/* Right Metadata Flex Grid */}
-        <div className="flex flex-wrap sm:flex-nowrap items-center gap-6 divide-x divide-border bg-[#FAFAFA] p-4.5 rounded-xl border border-border/60">
-          <div className="flex flex-col gap-1 pl-0">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-5 bg-[#FAFAFA] px-6 py-4 rounded-xl border border-border/60 shadow-2xs shrink-0">
+          <div className="flex flex-col gap-1 text-left">
             <span className="text-xs font-medium text-muted-foreground">User ID:</span>
             <strong className="text-base font-bold text-foreground">{customer.id}</strong>
           </div>
-          <div className="flex flex-col gap-1 pl-6">
+
+          {/* Symmetrical Centered Vertical Divider */}
+          <div className="h-8 w-[1px] bg-border shrink-0 self-center" />
+
+          <div className="flex flex-col gap-1 text-left">
             <span className="text-xs font-medium text-muted-foreground">Qeydiyyat tarixi:</span>
-            <strong className="text-base font-bold text-foreground">{formatValue(customer.registeredAt)}</strong>
+            <strong className="text-base font-bold text-foreground">{formatDateTimeClean(customer.registeredAt)}</strong>
           </div>
-          <div className="flex flex-col gap-1 pl-6">
+
+          {/* Symmetrical Centered Vertical Divider */}
+          <div className="h-8 w-[1px] bg-border shrink-0 self-center" />
+
+          <div className="flex flex-col gap-1 text-left">
             <span className="text-xs font-medium text-muted-foreground">Platforma:</span>
             <strong className="text-base font-bold text-foreground">{formatValue(customer.platform) || 'İOS'}</strong>
           </div>

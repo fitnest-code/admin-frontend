@@ -10,6 +10,7 @@ export interface LocalTrainer {
   email: string;
   photo: File;
   preview: string;
+  lessonTypeIds?: number[];
 }
 
 export interface LocalAdmin {
