@@ -5,7 +5,7 @@ import { Loader2, Plus, MoreVertical, Eye, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useGymStore } from "@/lib/store/gym-store";
-import { useAddTrainer } from "@/lib/query/add-trainer-query";
+import { useValidateGymStep2 } from "@/lib/query/gym-query";
 import { toast } from "sonner";
 import { AddTrainerModal } from "../modals/add-trainer-modal";
 import { EditTrainerModal } from "../modals/edit-trainer-modal";
@@ -16,8 +16,8 @@ export function StepTrainers({ onNext }: { onNext: () => void }) {
   const [activeMenu, setActiveMenu] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   
-  const { gymId, step2Trainers, removeStep2Trainer } = useGymStore();
-  const { mutate, isPending: isSaving } = useAddTrainer();
+  const { step2Trainers, removeStep2Trainer } = useGymStore();
+  const validateStep2 = useValidateGymStep2();
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -30,34 +30,34 @@ export function StepTrainers({ onNext }: { onNext: () => void }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleNext = () => {
-    if (!gymId) return toast.error("Zal ID tapılmadı");
-    
+  const handleNext = async () => {
     if (step2Trainers.length === 0) {
       onNext();
       return;
     }
 
-    mutate(
-      {
-        id: Number(gymId),
-        names: step2Trainers.map((t) => t.name),
-        surnames: step2Trainers.map((t) => t.surname),
-        professionIds: step2Trainers.map((t) => Number(t.professionId)),
-        emails: step2Trainers.map((t) => t.email),
-        phones: step2Trainers.map((t) => t.phone),
-        photos: step2Trainers.map((t) => t.photo),
-        lessonTypesPerTrainer: step2Trainers.map((t) => t.lessonTypeIds?.join(",") || ""),
-      },
-      {
-        onSuccess: () => {
-          useGymStore.setState({ step2Trainers: [] });
-          onNext();
-        },
-        onError: (err: any) => toast.error(err.message || "Xəta baş verdi"),
-      }
-    );
+    try {
+      const formData = new FormData();
+      step2Trainers.forEach((t) => {
+        formData.append("names", t.name);
+        formData.append("surnames", t.surname);
+        formData.append("professionIds", t.professionId);
+        formData.append("emails", t.email);
+        formData.append("phones", t.phone);
+        formData.append("lessonTypesPerTrainer", t.lessonTypeIds?.join(",") || "");
+        if (t.photo) {
+          formData.append("photos", t.photo);
+        }
+      });
+
+      await validateStep2.mutateAsync(formData);
+      onNext();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err?.message || "Məşqçi məlumatları yanlışdır");
+    }
   };
+
+  const isSaving = validateStep2.isPending;
 
   return (
     <div className="flex flex-col gap-9 font-sans text-black min-h-[500px]">

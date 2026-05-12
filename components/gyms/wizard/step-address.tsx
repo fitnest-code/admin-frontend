@@ -5,7 +5,8 @@ import * as Tabs from "@radix-ui/react-tabs";
 import { Copy, Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useGymStore } from "@/lib/store/gym-store";
-import { useAddGymLocation, useGetAddressByCoords } from "@/lib/query/location-query";
+import { useValidateGymStep4 } from "@/lib/query/gym-query";
+import { useGetAddressByCoords } from "@/lib/query/location-query";
 
 
 type Lang = "Az" | "Ru" | "En";
@@ -17,16 +18,19 @@ const labels: Record<Lang, any> = {
 };
 
 export function StepAddress({ onNext }: { onNext?: () => void }) {
+  const { step4Data, setStep4Data } = useGymStore();
   const [mounted, setMounted] = useState(false);
   const [lang, setLang] = useState<Lang>("Az");
-  const { gymId } = useGymStore();
 
   // Koordinatlar (Başlanğıcda boş olmalıdır)
-  const [coords, setCoords] = useState<{ lat: number | "", lng: number | "" }>({ lat: "", lng: "" });
+  const [coords, setCoords] = useState<{ lat: number | "", lng: number | "" }>({ 
+    lat: step4Data?.lat ?? "", 
+    lng: step4Data?.lng ?? "" 
+  });
   const [copied, setCopied] = useState<"lat" | "lng" | null>(null);
 
   // Axtarış üçün state-lər
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(step4Data?.address || "");
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -39,8 +43,8 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
     shouldFetchAddress
   );
 
-  // 2. Step 4 Mutation
-  const { mutateAsync: submitStep4, isPending } = useAddGymLocation();
+  // 2. Step 4 Validation
+  const validateStep4 = useValidateGymStep4();
 
   useEffect(() => {
     setMounted(true);
@@ -48,10 +52,10 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
 
   // Backend-dən gələn ünvanı input-a sinxronizasiya et
   useEffect(() => {
-    if (addressData?.addressText && !isSearching && shouldFetchAddress) {
+    if (addressData?.addressText && !isSearching && shouldFetchAddress && !step4Data) {
       setSearchQuery(addressData.addressText);
     }
-  }, [addressData, isSearching, shouldFetchAddress]);
+  }, [addressData, isSearching, shouldFetchAddress, step4Data]);
 
   // Forward Geocoding (Axtarış)
   const debouncedSearch = (query: string) => {
@@ -94,37 +98,33 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
     setTimeout(() => setCopied(null), 1500);
   };
 
-  // Əsas Saxlama Məntiqi
-  const performSave = async () => {
-    if (!gymId) {
-      toast.error("Zal ID tapılmadı (Store-u yoxlayın)");
-      return false;
-    }
-
+  const handleNext = async () => {
     if (coords.lat === "" || coords.lng === "") {
       toast.error("Zəhmət olmasa xəritədən mütləq bir nöqtə seçin və ya koordinatları daxil edin");
-      return false;
+      return;
     }
 
     try {
-      await submitStep4({
-        gymId: Number(gymId),
+      const payload = {
+        cityId: 1, // Default Baku for now
+        address: searchQuery,
         latitude: Number(coords.lat),
         longitude: Number(coords.lng)
+      };
+      await validateStep4.mutateAsync(payload);
+      setStep4Data({
+        cityId: 1,
+        address: searchQuery,
+        lat: Number(coords.lat),
+        lng: Number(coords.lng)
       });
-      return true;
+      onNext?.();
     } catch (error: any) {
-      toast.error(error.message || "Xəta baş verdi");
-      return false;
+      toast.error(error?.response?.data?.message || error.message || "Xəta baş verdi");
     }
   };
 
-  const handleNext = async () => {
-    const success = await performSave();
-    if (success) {
-      onNext?.();
-    }
-  };
+  const isPending = validateStep4.isPending;
 
   if (!mounted) return null;
 

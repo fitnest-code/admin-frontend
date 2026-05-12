@@ -4,25 +4,27 @@ import { useState } from "react";
 import { Loader2, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGymStore } from "@/lib/store/gym-store";
-import { useCategories, useCreateGymStep1 } from "@/lib/query/gym-query";
+import { useCategories, useValidateGymStep1 } from "@/lib/query/gym-query";
+import { GymStep1Payload } from "@/lib/types/gym";
 import { toast } from "sonner";
 import Image from "next/image";
 
 type Lang = "Az" | "Ru" | "En";
 
 export function StepInfo({ onNext }: { onNext: () => void }) {
+  const { step1Data, setStep1Data } = useGymStore();
+  
   const [lang, setLang] = useState<Lang>("Az");
-  const [categoryId, setCategoryId] = useState<number | null>(null);
-  const [name, setName] = useState("");
-  const [about, setAbout] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
+  const [categoryId, setCategoryId] = useState<number | null>(step1Data?.categoryId || null);
+  const [name, setName] = useState(step1Data?.name || "");
+  const [about, setAbout] = useState(step1Data?.description || "");
+  const [phone, setPhone] = useState(step1Data?.phone || "");
+  const [email, setEmail] = useState(step1Data?.email || "");
 
-  const [selectedLessonTypeIds, setSelectedLessonTypeIds] = useState<Set<number>>(new Set());
+  const [selectedLessonTypeIds, setSelectedLessonTypeIds] = useState<Set<number>>(new Set(step1Data?.lessonTypeIds || []));
 
-  const { gymId, setGymId } = useGymStore();
   const { data: categoriesData, isLoading: categoriesLoading } = useCategories();
-  const createStep1 = useCreateGymStep1();
+  const validateStep1 = useValidateGymStep1();
 
   const selectedCategory = categoriesData?.items?.find((c) => c.id === categoryId);
 
@@ -35,7 +37,7 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
     });
   };
 
-  const buildPayload = () => ({
+  const buildPayload = (): GymStep1Payload => ({
     categoryId: categoryId!,
     name,
     description: about,
@@ -44,7 +46,7 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
     lessonTypeIds: Array.from(selectedLessonTypeIds),
   });
 
-  const validate = () => {
+  const validateLocal = () => {
     if (!categoryId || !name || !phone) {
       toast.error("Zəhmət olmasa ulduzlu məlumatları doldurun");
       return false;
@@ -53,25 +55,19 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
   };
 
   const handleNext = async () => {
-    if (gymId) {
-      onNext();
-      return;
-    }
-
-    if (!validate()) return;
+    if (!validateLocal()) return;
 
     try {
-      const result = await createStep1.mutateAsync(buildPayload());
-      if (result?.gymId) {
-        setGymId(Number(result.gymId));
-        onNext();
-      }
+      const payload = buildPayload();
+      await validateStep1.mutateAsync(payload);
+      setStep1Data(payload);
+      onNext();
     } catch (err: any) {
-      toast.error(err?.message || "Zal yaradılarkən xəta baş verdi");
+      toast.error(err?.response?.data?.message || err?.message || "Məlumatlar yanlışdır");
     }
   };
 
-  const isSaving = createStep1.isPending;
+  const isSaving = validateStep1.isPending;
 
   return (
     <div className="flex flex-col gap-14 font-sans text-black">

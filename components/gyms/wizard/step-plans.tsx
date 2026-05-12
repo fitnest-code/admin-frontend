@@ -4,7 +4,8 @@ import { useState } from "react";
 import { Plus, Check, Loader2, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGymStore } from "@/lib/store/gym-store";
-import { useSupportedServices, useCreateGymStep6, useCreateSupportedService } from "@/lib/query/gym-query";
+import { useSupportedServices, useValidateGymStep6, useCreateSupportedService } from "@/lib/query/gym-query";
+import { GymCreateStep6Request } from "@/lib/types/gym";
 import { toast } from "sonner";
 
 type Package = "Bronze" | "Silver" | "Gold" | "Platinum";
@@ -19,19 +20,32 @@ const gradients: Record<Package, string> = {
 };
 
 export function StepPlans({ onNext }: { onNext: () => void }) {
-  const { gymId } = useGymStore();
-  const [selectedPackages, setSelectedPackages] = useState<Package[]>(["Platinum"]);
+  const { step6Data, setStep6Data } = useGymStore();
+  
+  // Initialize from store if exists
+  const initialPackages = step6Data ? step6Data.subscriptions.map(s => {
+    const map: Record<number, Package> = { 1: "Bronze", 2: "Silver", 3: "Gold", 4: "Platinum" };
+    return map[s.packageId];
+  }) : ["Platinum"];
+
+  const initialPrices = step6Data ? step6Data.subscriptions.reduce((acc, s) => {
+    const map: Record<number, Package> = { 1: "Bronze", 2: "Silver", 3: "Gold", 4: "Platinum" };
+    acc[map[s.packageId]] = s.dailyPrice.toString();
+    return acc;
+  }, {} as Record<Package, string>) : { Bronze: "", Silver: "", Gold: "", Platinum: "50" };
+
+  const [selectedPackages, setSelectedPackages] = useState<Package[]>(initialPackages);
   const [activePackage, setActivePackage] = useState<Package>("Platinum");
-  const [prices, setPrices] = useState<Record<Package, string>>({ Bronze: "", Silver: "", Gold: "", Platinum: "50" });
+  const [prices, setPrices] = useState<Record<Package, string>>(initialPrices);
   
   const [packageServices, setPackageServices] = useState<Record<Package, string[]>>({
     Bronze: [], Silver: [], Gold: [], Platinum: []
   });
 
   const [pendingService, setPendingService] = useState<string | null>(null);
-  const { data: allServices } = useSupportedServices(gymId ? Number(gymId) : undefined);
+  const { data: allServices } = useSupportedServices(undefined); // Fetch global services
   const createServiceMutation = useCreateSupportedService();
-  const { mutate: createStep6, isPending: savingStep6 } = useCreateGymStep6();
+  const validateStep6 = useValidateGymStep6();
 
   const togglePackage = (pkg: Package) => {
     setSelectedPackages((prev) =>
@@ -53,7 +67,7 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
     try {
       await createServiceMutation.mutateAsync({
         name: pendingService.trim(),
-        gymId: gymId ? Number(gymId) : undefined
+        gymId: undefined
       });
       
       setPackageServices(prev => ({
@@ -77,9 +91,7 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
     });
   };
 
-  const handleNext = () => {
-    if (!gymId) return toast.error("Zal ID tapılmadı");
-    
+  const handleNext = async () => {
     const PACKAGE_IDS: Record<Package, number> = {
       Bronze: 1, Silver: 2, Gold: 3, Platinum: 4,
     };
@@ -102,18 +114,17 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
       return toast.error("Ən azı bir abunəlik paketi seçilməlidir");
     }
 
-    createStep6({
-      id: Number(gymId),
-      payload: { subscriptions }
-    }, {
-      onSuccess: () => {
-        onNext();
-      },
-      onError: (err: any) => {
-        toast.error(err?.message || "Xəta baş verdi");
-      }
-    });
+    try {
+      const payload = { subscriptions };
+      await validateStep6.mutateAsync(payload);
+      setStep6Data(payload);
+      onNext();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err?.message || "Abunəlik məlumatları yanlışdır");
+    }
   };
+
+  const savingStep6 = validateStep6.isPending;
 
   return (
     <div className="w-full flex justify-center py-6">

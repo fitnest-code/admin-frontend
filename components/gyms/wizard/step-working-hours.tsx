@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Trash2, Pencil, Plus, Loader2, Clock, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useGymStore } from "@/lib/store/gym-store";
-import { useAddGymWorkHours } from "@/lib/query/gym-work-hours";
+import { useValidateGymStep3 } from "@/lib/query/gym-query";
 import { AddClassTimeModal, ClassTimeData } from "../modals/add-hours-modal";
 import { IGymWorkHoursPayload, IWorkHour, IRestDay } from "@/lib/types/working-hours";
 import { cn } from "@/lib/utils";
@@ -36,6 +36,7 @@ const DAY_FULL_LABELS: Record<string, string> = {
 };
 
 export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
+  const { step3Data, setStep3Data } = useGymStore();
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<GenderTab>("generalWorkHours");
   const [modalOpen, setModalOpen] = useState(false);
@@ -43,28 +44,38 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
 
   const [enabledTabs, setEnabledTabs] = useState<Set<GenderTab>>(new Set(["generalWorkHours"]));
 
-  const [slots, setSlots] = useState<Record<GenderTab, SavedSlot[]>>({
+  // Map backend data back to frontend structure if exists
+  const initialSlots = step3Data ? {
+    generalWorkHours: step3Data.generalWorkHours.map((s: any) => ({ ...s, day: s.period.toLowerCase(), startTime: s.from, endTime: s.to, id: Math.random().toString() })),
+    workHoursMan: step3Data.workHoursMan.map((s: any) => ({ ...s, day: s.period.toLowerCase(), startTime: s.from, endTime: s.to, id: Math.random().toString() })),
+    workHoursWoman: step3Data.workHoursWoman.map((s: any) => ({ ...s, day: s.period.toLowerCase(), startTime: s.from, endTime: s.to, id: Math.random().toString() })),
+  } : {
     generalWorkHours: [],
     workHoursMan: [],
     workHoursWoman: [],
-  });
+  };
 
-  const [restDays, setRestDays] = useState<Set<string>>(new Set(["sunday"]));
+  const initialRestDays = step3Data ? new Set(step3Data.restDays.map((d: any) => d.period.toLowerCase())) : new Set(["sunday"]);
 
-  const gymId = useGymStore((state) => state.gymId);
-  const { mutateAsync: submitMutateAsync, isPending: isSubmitting } = useAddGymWorkHours();
+  const [slots, setSlots] = useState<Record<GenderTab, SavedSlot[]>>(initialSlots);
+  const [restDays, setRestDays] = useState<Set<string>>(initialRestDays);
+
+  const validateStep3 = useValidateGymStep3();
 
   useEffect(() => { setMounted(true); }, []);
 
   const handleNext = async () => {
-    if (!gymId) return toast.error("Zal ID tapılmadı");
     try {
-      await submitMutateAsync(buildPayload());
+      const payload = buildPayload();
+      await validateStep3.mutateAsync(payload);
+      setStep3Data(payload);
       onNext?.();
     } catch (error: any) {
-      toast.error(error?.message || "Server xətası baş verdi (Növbəti)");
+      toast.error(error?.response?.data?.message || error?.message || "İş saatları məlumatları yanlışdır");
     }
   };
+
+  const isSubmitting = validateStep3.isPending;
 
   const buildPayload = (): IGymWorkHoursPayload => {
     const mapToWorkHour = (key: GenderTab): IWorkHour[] => {

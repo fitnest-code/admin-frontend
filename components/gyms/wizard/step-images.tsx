@@ -5,7 +5,7 @@ import * as Tabs from "@radix-ui/react-tabs";
 import { Loader2, Upload, X, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useGymStore } from "@/lib/store/gym-store";
-import { useAddGymImages } from "@/lib/query/gym-images";
+import { useValidateGymStep5 } from "@/lib/query/gym-query";
 
 type Lang = "Az" | "Ru" | "En";
 
@@ -23,21 +23,26 @@ interface RoomPhotoState {
 }
 
 export function StepImages({ onNext }: { onNext?: () => void }) {
+  const { step5Photos, setStep5Photos } = useGymStore();
   const [mounted, setMounted] = useState(false);
   const [lang, setLang] = useState<Lang>("Az");
 
-  const [coverPhoto, setCoverPhoto] = useState<File | null>(null);
-  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [coverPhoto, setCoverPhoto] = useState<File | null>(step5Photos?.cover || null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(step5Photos?.cover ? URL.createObjectURL(step5Photos.cover) : null);
 
-  const [roomPhotos, setRoomPhotos] = useState<RoomPhotoState[]>(
-    Array.from({ length: 9 }).map((_, i) => ({ id: `rp-${i}`, photo: null, name: "", previewUrl: null }))
-  );
+  const initialRoomPhotos = step5Photos 
+    ? Array.from({ length: 9 }).map((_, i) => {
+        const p = step5Photos.rooms[i];
+        return p ? { id: `rp-${i}`, photo: p.file, name: p.name, previewUrl: URL.createObjectURL(p.file) } : { id: `rp-${i}`, photo: null, name: "", previewUrl: null };
+      })
+    : Array.from({ length: 9 }).map((_, i) => ({ id: `rp-${i}`, photo: null, name: "", previewUrl: null }));
+
+  const [roomPhotos, setRoomPhotos] = useState<RoomPhotoState[]>(initialRoomPhotos);
 
   const coverInputRef = useRef<HTMLInputElement>(null);
   const roomInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const { gymId } = useGymStore();
-  const { mutateAsync, isPending } = useAddGymImages();
+  const validateStep5 = useValidateGymStep5();
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -84,7 +89,6 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
   const activePhotosCount = roomPhotos.filter(p => p.photo).length;
 
   const handleNext = async () => {
-    if (!gymId) return toast.error("Zal ID tapılmadı");
     if (!coverPhoto) return toast.error("Zəhmət olmasa Cover Şəkil yükləyin");
 
     const validRoomPhotos = roomPhotos.filter(p => p.photo !== null);
@@ -96,16 +100,27 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
     }
 
     try {
-      await mutateAsync({
-        gymId: Number(gymId),
-        coverPhoto,
-        roomPhotos: validRoomPhotos.map(p => ({ photo: p.photo!, name: p.name.trim() }))
+      const formData = new FormData();
+      formData.append("coverPhoto", coverPhoto);
+      validRoomPhotos.forEach(p => {
+        formData.append("roomPhotos", p.photo!);
+        formData.append("roomNames", p.name.trim());
       });
+
+      await validateStep5.mutateAsync(formData);
+      
+      setStep5Photos({
+        cover: coverPhoto,
+        rooms: validRoomPhotos.map(p => ({ name: p.name.trim(), file: p.photo! }))
+      });
+
       onNext?.();
     } catch (err: any) {
-      toast.error(err.message || "Xəta baş verdi");
+      toast.error(err?.response?.data?.message || err.message || "Xəta baş verdi");
     }
   };
+
+  const isPending = validateStep5.isPending;
 
   if (!mounted) return null;
 
