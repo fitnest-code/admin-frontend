@@ -7,7 +7,7 @@ import { useGymStore, LocalAdmin } from "@/lib/store/gym-store";
 import { useCreateGymStep7 } from "@/lib/query/gym-query";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { SuccessModal } from "../modals/success-modal";
+import { SuccessAnimationModal } from "../../ui/success-animation-modal";
 import Image from "next/image";
 
 const EMPTY_FORM: LocalAdmin = { firstName: "", lastName: "", phone: "", email: "", password: "" };
@@ -165,13 +165,10 @@ export function StepAdmins({ onComplete }: { onComplete?: () => void }) {
         </button>
       </div>
 
-      {showSuccess && (
-        <SuccessModal 
-          onClose={handleSuccessClose} 
-          title="Təbriklər!" 
-          message="İdman zalı uğurla yaradıldı və aktivləşdirildi. İndi zalı idarə etməyə başlaya bilərsiniz." 
-        />
-      )}
+      <SuccessAnimationModal 
+        isOpen={showSuccess} 
+        onClose={handleSuccessClose} 
+      />
 
       {/* Add Admin Modal */}
       {modalOpen && (

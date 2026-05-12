@@ -676,8 +676,9 @@ export function SubscriptionList() {
             priceTiers: data.priceTiers,
           })
           setShowSuccessModal(true)
-        } catch (err) {
+        } catch (err: any) {
           console.warn('Backend subscription update sync error', err)
+          toast.error(err?.message || "Yadda saxlamaq mümkün olmadı")
         }
       } else {
         setShowSuccessModal(true)
@@ -696,27 +697,33 @@ export function SubscriptionList() {
           priceTiers: data.priceTiers,
         })
         setShowSuccessModal(true)
-      } catch (err) {
+      } catch (err: any) {
         console.warn('Backend subscription creation sync error', err)
+        toast.error(err?.message || "Paket yaradıla bilmədi")
       }
     }
   }
 
-  async function confirmDelete() {
-    if (!deletingId) return
-    const targetId = deletingId
-    setLocalPackages((prev) => prev.filter((p) => p.id !== targetId))
-    setDeletingId(null)
-    setShowSuccessModal(true)
-
-    if (!targetId.startsWith('temp') && !targetId.startsWith('sub-')) {
-      try {
-        await deletePackage(targetId)
-      } catch (err) {
-        console.warn('Backend subscription deletion sync error', err)
+    async function confirmDelete() {
+      if (!deletingId) return
+      const targetId = deletingId
+      const originalPackages = [...localPackages]
+      setLocalPackages((prev) => prev.filter((p) => p.id !== targetId))
+      setDeletingId(null)
+  
+      if (!targetId.startsWith('temp') && !targetId.startsWith('sub-')) {
+        try {
+          await deletePackage(targetId)
+          setShowSuccessModal(true)
+        } catch (err: any) {
+          console.warn('Backend subscription deletion sync error', err)
+          setLocalPackages(originalPackages) // Revert optimistic update
+          toast.error(err?.message || "Paketi silmək mümkün olmadı")
+        }
+      } else {
+        setShowSuccessModal(true)
       }
     }
-  }
 
   return (
     <div className="flex flex-col gap-5 font-sans">
