@@ -115,48 +115,47 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
 
                     {/* Trainer Selection */}
                     <div className={styles.section}>
-                        <div className="flex items-center justify-between mb-2">
-                            <h3 className={styles.sectionTitle}>Məşqçi seçin</h3>
-                            {selectedLessonType && (
-                                <span className="text-xs font-medium text-[#00b4cc] bg-[#00b4cc]/10 px-2 py-1 rounded">
-                                    Seçilmiş dərs növü üzrə filtrlənib
-                                </span>
-                            )}
-                        </div>
-                        <div className={cn(styles.trainersList, "max-h-[220px] overflow-y-auto relative p-1")}>
-                            {trainersLoading ? (
-                                <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-10">
-                                    <Loader2 className="w-6 h-6 animate-spin text-[#00b4cc]" />
-                                </div>
-                            ) : null}
-                            
-                            {currentTrainers.map((trainer: any) => (
-                                <div 
-                                    key={trainer.trainer_id || trainer.id}
-                                    className={`${styles.trainerCard} ${selectedTrainer === (trainer.trainer_id || trainer.id) ? styles.selected : ''}`}
-                                    onClick={() => setSelectedTrainer(trainer.trainer_id || trainer.id)}
-                                >
-                                    <div className={styles.trainerAvatar}>
-                                        <Image 
-                                            src={trainer.picture || trainer.photoUrl || '/Sidebar/Avatar.svg'} 
-                                            width={54} height={54} alt="Avatar" 
-                                            className={styles.avatarImg}
-                                        />
-                                    </div>
-                                    <div className={styles.trainerInfo}>
-                                        <div className={styles.trainerName}>{trainer.name} {trainer.surname}</div>
-                                        <div className={styles.trainerRole}>{trainer.profession?.name || trainer.professionName || 'Məşqçi'}</div>
-                                    </div>
-                                </div>
-                            ))}
-                            {!trainersLoading && currentTrainers.length === 0 && (
-                                <p className={styles.emptyText}>
-                                    {selectedLessonType 
-                                        ? "Bu dərs növü üzrə məşqçi tapılmadı" 
-                                        : "Məşqçi tapılmadı"}
+                        <h3 className={styles.sectionTitle}>Məşqçi seçin</h3>
+                        {!selectedLessonType ? (
+                            <div className="flex flex-col items-center justify-center py-10 bg-slate-50/50 rounded-[24px] border border-dashed border-slate-200">
+                                <p className="text-[14px] text-slate-400 font-medium italic">
+                                    Məşqçiləri görmək üçün əvvəlcə dərs növünü seçin
                                 </p>
-                            )}
-                        </div>
+                            </div>
+                        ) : (
+                            <div className={cn(styles.trainersList, "max-h-[220px] overflow-y-auto relative p-1")}>
+                                {trainersLoading ? (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-10">
+                                        <Loader2 className="w-6 h-6 animate-spin text-[#00b4cc]" />
+                                    </div>
+                                ) : null}
+                                
+                                {currentTrainers.map((trainer: any) => (
+                                    <div 
+                                        key={trainer.trainer_id || trainer.id}
+                                        className={`${styles.trainerCard} ${selectedTrainer === (trainer.trainer_id || trainer.id) ? styles.selected : ''}`}
+                                        onClick={() => setSelectedTrainer(trainer.trainer_id || trainer.id)}
+                                    >
+                                        <div className={styles.trainerAvatar}>
+                                            <Image 
+                                                src={trainer.picture || trainer.photoUrl || '/Sidebar/Avatar.svg'} 
+                                                width={54} height={54} alt="Avatar" 
+                                                className={styles.avatarImg}
+                                            />
+                                        </div>
+                                        <div className={styles.trainerInfo}>
+                                            <div className={styles.trainerName}>{trainer.name} {trainer.surname}</div>
+                                            <div className={styles.trainerRole}>{trainer.profession?.name || trainer.professionName || 'Məşqçi'}</div>
+                                        </div>
+                                    </div>
+                                ))}
+                                {!trainersLoading && currentTrainers.length === 0 && (
+                                    <p className={styles.emptyText}>
+                                        Bu dərs növü üzrə məşqçi tapılmadı
+                                    </p>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     {/* Date and Slots */}
