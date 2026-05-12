@@ -1,8 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { apiRequest, apiGet } from "../api/client"; // apiGet-i də əlavə etdim
+import { apiRequest, apiGet } from "../api/client";
 import { ITrainerPayload, IProfession, ITrainersResponse } from "../types/gym";
 
-// 1. BU HİSSƏDƏ EXPORT VARMI DEYƏ YOXLA:
 export const useProfessionsQuery = () => {
   return useQuery({
     queryKey: ["professions"],

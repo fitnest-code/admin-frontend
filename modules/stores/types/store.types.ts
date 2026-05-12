@@ -37,3 +37,35 @@ export interface GetAdminStoresParams {
   page?: number
   pageSize?: number
 }
+
+/** Mağaza detalı / redaktə UI (GET /admin/stores/{id} və ya siyahı fallback). */
+export interface AdminStoreDetailViewModel {
+  id: number
+  name: string
+  coverImageUrl: string | null
+  address: string
+  latitude: number
+  longitude: number
+  phone: string
+  email: string
+  socialUrl: string
+  workHours: { from: string; to: string }
+  discounts: { packageId: number; discountPercent: number }[]
+  status: 'ACTIVE' | 'INACTIVE'
+}
+
+/** PATCH /admin/stores/{id} — multipart: `data` (JSON string), `photo` (optional). */
+export interface AdminStorePatchData {
+  name: string
+  latitude: number
+  longitude: number
+  phone: string
+  email: string
+  socialUrl: string
+  socialUrlProvided: boolean
+  workHours: { from: string; to: string }
+  workHoursProvided: boolean
+  discounts: { packageId: number; discountPercent: number }[]
+  /** Backend ünvan üçün əlavə sahə istifadə edə bilər */
+  address?: string
+}

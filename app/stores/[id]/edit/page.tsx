@@ -1,12 +1,12 @@
 import { AdminLayout } from "@/components/layout/admin-layout";
-import { AdminStoreDetailView } from "@/components/stores/admin-store-detail-view";
+import { AdminStoreEditView } from "@/components/stores/admin-store-edit-view";
 import { notFound } from "next/navigation";
 
 type PageProps = {
   params: Promise<{ id: string }>;
 };
 
-export default async function StoreDetailPage({ params }: PageProps) {
+export default async function StoreEditPage({ params }: PageProps) {
   const { id } = await params;
   const numericId = Number(id);
 
@@ -16,7 +16,7 @@ export default async function StoreDetailPage({ params }: PageProps) {
 
   return (
     <AdminLayout>
-      <AdminStoreDetailView storeId={numericId} />
+      <AdminStoreEditView storeId={numericId} />
     </AdminLayout>
   );
 }
