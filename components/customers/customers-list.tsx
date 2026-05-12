@@ -21,7 +21,7 @@ export function CustomersList() {
   const [sortBy, setSortBy] = useState<CustomerSortValue | null>(null)
   const [pkg, setPkg] = useState<number | null>(null)
   const [duration, setDuration] = useState<number | null>(null)
-  const [subStatus, setSubStatus] = useState<Exclude<CustomerSubscriptionType, 'all'> | null>(null)
+  const [subStatus, setSubStatus] = useState<Exclude<CustomerSubscriptionType, 'ALL'> | null>(null)
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [page, setPage] = useState(1)
   const [pushOpen, setPushOpen] = useState(false)
@@ -87,7 +87,17 @@ export function CustomersList() {
     <div className="flex flex-col gap-5">
       <h1 className="text-xl font-bold text-foreground">Müştərilər</h1>
 
-      <CustomerStats total={stats.total} last7={stats.last7} expired={stats.expired} active={stats.active} />
+      <CustomerStats
+        total={stats.total}
+        last7={stats.last7}
+        expired={stats.expired}
+        active={stats.active}
+        selectedStatus={subStatus}
+        onStatusClick={(status) => {
+          setSubStatus(status)
+          setPage(1)
+        }}
+      />
 
       <CustomerFilters
         search={search}

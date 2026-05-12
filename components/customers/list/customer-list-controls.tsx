@@ -250,8 +250,8 @@ export function CustomerFilters({
   onPackageChange: (value: number | null) => void
   duration: number | null
   onDurationChange: (value: number | null) => void
-  subscriptionStatus: Exclude<CustomerSubscriptionType, 'all'> | null
-  onSubscriptionStatusChange: (value: Exclude<CustomerSubscriptionType, 'all'> | null) => void
+  subscriptionStatus: Exclude<CustomerSubscriptionType, 'ALL'> | null
+  onSubscriptionStatusChange: (value: Exclude<CustomerSubscriptionType, 'ALL'> | null) => void
   sortBy: CustomerSortValue | null
   onSortChange: (value: CustomerSortValue | null) => void
 }) {
@@ -283,7 +283,7 @@ export function CustomerFilters({
           label="Abunəlik"
           options={SUBSCRIPTION_STATUS_OPTIONS}
           selected={subscriptionStatus}
-          onChange={(value) => onSubscriptionStatusChange(value as Exclude<CustomerSubscriptionType, 'all'> | null)}
+          onChange={(value) => onSubscriptionStatusChange(value as Exclude<CustomerSubscriptionType, 'ALL'> | null)}
         />
         <SortDropdown value={sortBy} onChange={onSortChange} />
       </div>
