@@ -114,6 +114,7 @@ export function PlansTab({ gym }: { gym?: any }) {
       });
 
       setPendingService(null);
+      setShowSuccessModal(true);
     } catch (err: any) {
       toast.error(err?.message || "Xidmət yaradıla bilmədi");
     }
@@ -128,6 +129,7 @@ export function PlansTab({ gym }: { gym?: any }) {
     try {
       await deleteServiceMutation.mutateAsync(deleteServiceId);
       setDeleteServiceId(null);
+      setShowSuccessModal(true);
     } catch (err: any) {
       toast.error(err?.message || "Xidmət silinərkən xəta baş verdi");
     }
