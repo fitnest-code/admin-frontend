@@ -9,6 +9,7 @@ import {
 } from '@/lib/subscription-data'
 import { useSubscriptions } from '@/lib/query/use-subscriptions'
 import { ErrorToastModal } from '../categories/modals/error-toast-modal'
+import { ConfirmDeleteModal } from '../gyms/modals/confirm-delete-modal'
 
 const PAGE_SIZE = 6
 
@@ -370,24 +371,25 @@ function PackageForm({
 
         </div>
       </div>
-    </div>
 
-      {/* Action Controls Toolbar / Footer */ }
-  <div className="w-full flex justify-end gap-3 border-t border-border pt-4">
-    <button
-      onClick={onCancel}
-      className="h-[46px] rounded-[10px] border border-gray-300 px-6 text-[16px] font-medium text-black hover:bg-gray-50 transition-colors"
-    >
-      Ləğv et
-    </button>
-    <button
-      onClick={handleSave}
-      className="h-[46px] rounded-[10px] bg-[#00b4cc] px-8 text-[16px] font-semibold text-white hover:bg-[#009bb0] transition-colors shadow-sm"
-    >
-      Yadda saxla
-    </button>
-  </div>
-    </div >
+      {/* Action Controls Toolbar / Footer */}
+      <div className="w-full flex justify-end gap-3 border-t border-border pt-4">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="h-[46px] rounded-[10px] border border-gray-300 px-6 text-[16px] font-medium text-black hover:bg-gray-50 transition-colors cursor-pointer"
+        >
+          Ləğv et
+        </button>
+        <button
+          type="button"
+          onClick={handleSave}
+          className="h-[46px] rounded-[10px] bg-[#00b4cc] px-8 text-[16px] font-semibold text-white hover:bg-[#009bb0] transition-colors shadow-sm cursor-pointer"
+        >
+          Yadda saxla
+        </button>
+      </div>
+    </div>
   )
 }
 
@@ -507,23 +509,6 @@ function PackageCard({
           <Trash2 size={15} className="text-[#f10303] shrink-0" />
           <span className="text-[15px] font-medium text-black leading-[24px]">Sil</span>
         </button>
-      </div>
-    </div>
-  )
-}
-
-// ── Delete confirm modal ───────────────────────────────────────────────────────
-function DeleteModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onCancel}>
-      <div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-2xl flex flex-col gap-5" onClick={(e) => e.stopPropagation()}>
-        <p className="text-center text-sm font-medium text-foreground">
-          Bu paketi silmək istədiyinizə əminsiniz?
-        </p>
-        <div className="flex gap-3">
-          <button onClick={onCancel} className="flex-1 rounded-lg border border-border py-2.5 text-sm font-medium hover:bg-secondary transition-colors">Ləğv et</button>
-          <button onClick={onConfirm} className="flex-1 rounded-lg bg-red-500 py-2.5 text-sm font-semibold text-white hover:bg-red-600 transition-colors">Sil</button>
-        </div>
       </div>
     </div>
   )
@@ -672,7 +657,11 @@ export function SubscriptionList() {
       <Pagination total={currentPackages.length} page={page} perPage={PAGE_SIZE} onChange={setPage} />
 
       {deletingId && (
-        <DeleteModal onConfirm={confirmDelete} onCancel={() => setDeletingId(null)} />
+        <ConfirmDeleteModal
+          name={currentPackages.find((p) => p.id === deletingId)?.name ?? 'Paket'}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeletingId(null)}
+        />
       )}
 
       {errorMsg && (

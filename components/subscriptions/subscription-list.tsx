@@ -9,6 +9,7 @@ import {
 } from '@/lib/subscription-data'
 import { useSubscriptions } from '@/lib/query/use-subscriptions'
 import { ErrorToastModal } from '../categories/modals/error-toast-modal'
+import { ConfirmDeleteModal } from '../gyms/modals/confirm-delete-modal'
 
 const PAGE_SIZE = 6
 
@@ -499,10 +500,12 @@ function PackageCard({
   pkg,
   onEdit,
   onDelete,
+  onToggleStatus,
 }: {
   pkg: SubPackage
   onEdit: (p: SubPackage) => void
   onDelete: (id: string) => void
+  onToggleStatus: (p: SubPackage) => void
 }) {
   return (
     <div className="w-full relative rounded-[12px] bg-white border border-[#00b4cc] flex flex-col items-start p-5 gap-[34px] text-center font-sans text-black shadow-sm transition-all hover:shadow-md">
@@ -520,15 +523,20 @@ function PackageCard({
             </div>
             
             {/* Visual native CSS switch matching the design asset knobs */}
-            <div className={cn(
-              "w-[51px] h-[31px] rounded-full p-1 transition-colors duration-200 ease-in-out shrink-0 flex items-center",
-              pkg.status === 'active' ? "bg-[#00b4cc]" : "bg-gray-300"
-            )}>
+            <button
+              type="button"
+              onClick={() => onToggleStatus(pkg)}
+              className={cn(
+                "w-[51px] h-[31px] rounded-full p-1 transition-colors duration-200 ease-in-out shrink-0 flex items-center cursor-pointer outline-none border-none",
+                pkg.status === 'active' ? "bg-[#00b4cc]" : "bg-gray-300"
+              )}
+              aria-label="Statusu dəyiş"
+            >
               <div className={cn(
                 "w-[23px] h-[23px] rounded-full bg-white shadow-md transform transition-transform duration-200 ease-in-out",
                 pkg.status === 'active' ? "translate-x-[20px]" : "translate-x-0"
               )} />
-            </div>
+            </button>
           </div>
         </div>
       </div>
@@ -603,23 +611,6 @@ function PackageCard({
           <Trash2 size={15} className="text-[#f10303] shrink-0" />
           <span className="text-[15px] font-medium text-black leading-[24px]">Sil</span>
         </button>
-      </div>
-    </div>
-  )
-}
-
-// ── Delete confirm modal ───────────────────────────────────────────────────────
-function DeleteModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onCancel}>
-      <div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-2xl flex flex-col gap-5" onClick={(e) => e.stopPropagation()}>
-        <p className="text-center text-sm font-medium text-foreground">
-          Bu paketi silmək istədiyinizə əminsiniz?
-        </p>
-        <div className="flex gap-3">
-          <button onClick={onCancel} className="flex-1 rounded-lg border border-border py-2.5 text-sm font-medium hover:bg-secondary transition-colors">Ləğv et</button>
-          <button onClick={onConfirm} className="flex-1 rounded-lg bg-red-500 py-2.5 text-sm font-semibold text-white hover:bg-red-600 transition-colors">Sil</button>
-        </div>
       </div>
     </div>
   )
@@ -808,7 +799,11 @@ export function SubscriptionList() {
       )}
 
       {deletingId && (
-        <DeleteModal onConfirm={confirmDelete} onCancel={() => setDeletingId(null)} />
+        <ConfirmDeleteModal
+          name={currentPackages.find((p) => p.id === deletingId)?.name ?? 'Paket'}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeletingId(null)}
+        />
       )}
 
       {errorMsg && (

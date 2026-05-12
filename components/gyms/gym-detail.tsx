@@ -48,6 +48,7 @@ interface GymDetailProps {
 export function GymDetail({ gym, isNew = false }: GymDetailProps) {
   const { gymId, currentTab, setCurrentTab, resetGym, setGymId } = useGymStore()
   const { mutate: deleteGymMutate } = useDeleteGym()
+  const router = useRouter()
 
   useEffect(() => {
     // Only update store gymId from props if it's an existing gym (not 'new')

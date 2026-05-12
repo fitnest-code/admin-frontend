@@ -312,7 +312,7 @@ export function TrainersTab() {
       {showDetails && <TrainerDetailsModal trainer={showDetails} onClose={() => setShowDetails(null)} />}
       {deleteTrainerId !== null && (
         <ConfirmDeleteModal
-          name={trainers.find(t => (t.trainer_id || t.id) === deleteTrainerId)?.name || "Məşqçi"}
+          name={trainers.find((t: any) => (t.trainer_id || t.id) === deleteTrainerId)?.name || "Məşqçi"}
           onConfirm={handleDelete}
           onCancel={() => setDeleteTrainerId(null)}
           isLoading={isDeletingTrainer}
