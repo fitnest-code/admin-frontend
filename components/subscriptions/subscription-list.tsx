@@ -8,6 +8,7 @@ import {
   MOCK_SUB_PACKAGES, ENTRY_LIMIT_OPTIONS,
 } from '@/lib/subscription-data'
 import { useSubscriptions } from '@/lib/query/use-subscriptions'
+import { ErrorToastModal } from '../categories/modals/error-toast-modal'
 
 const PAGE_SIZE = 6
 
@@ -224,7 +225,7 @@ function PackageFormModal({
     >
       {/* Root Layout matching Frame2237 (.frameParent) */}
       <div
-        className="w-full max-w-5xl relative rounded-[20px] bg-white border border-[#00b4cc] flex flex-col items-start p-8 gap-8 text-left text-[20px] text-black shadow-2xl"
+        className="w-full max-w-[1095px] relative rounded-[20px] bg-white border border-[#00b4cc] flex flex-col items-stretch p-8 gap-8 text-left text-[20px] text-black shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Title Bar Wrapper (.yeniAbunlikFormuParent) */}
@@ -245,10 +246,10 @@ function PackageFormModal({
         <div className="w-full h-[1px] border-t border-[#cecfd2]" />
 
         {/* Content Body Grid (.frameGroup) */}
-        <div className="w-full flex flex-col md:flex-row items-start gap-6 text-[16px]">
+        <div className="w-full flex flex-col md:flex-row items-stretch justify-between gap-6 text-[16px]">
           
           {/* Left Column (.frameContainer) */}
-          <div className="flex-1 flex flex-col items-start gap-4 w-full">
+          <div className="w-full md:w-[503px] flex flex-col items-start gap-4 shrink-0">
             
             {/* Package Selector Dropdown Container */}
             <div className="w-full">
@@ -271,57 +272,60 @@ function PackageFormModal({
               </div>
 
               {priceTiers.length > 0 && (
-                <div className="w-full flex flex-col gap-2">
-                  <div className="grid grid-cols-[1.2fr_1fr_1fr_2.5rem] gap-2 px-1">
-                    <span className="text-[13px] text-gray-500 font-medium">Müddət</span>
-                    <span className="text-[13px] text-gray-500 font-medium">Qiymət</span>
-                    <span className="text-[13px] text-gray-500 font-medium">Endirimli</span>
+                <div className="w-full flex flex-col gap-1.5 pt-1">
+                  <div className="grid grid-cols-[1.1fr_1fr_1fr_1fr_2rem] gap-1 px-1">
+                    <span className="text-[12px] text-gray-500 font-medium truncate">Müddət</span>
+                    <span className="text-[12px] text-gray-500 font-medium truncate">Qiymət</span>
+                    <span className="text-[12px] text-gray-500 font-medium truncate">Endirimli</span>
+                    <span className="text-[12px] text-gray-500 font-medium truncate">Giriş (Limit)</span>
                     <span />
                   </div>
                   {priceTiers.map((tier, i) => (
-                    <div key={i} className="grid grid-cols-[1.2fr_1fr_1fr_2.5rem] gap-2 items-center">
+                    <div key={i} className="grid grid-cols-[1.1fr_1fr_1fr_1fr_2rem] gap-1 items-center">
                       <input
                         value={tier.duration}
                         onChange={(e) => updateTier(i, 'duration', e.target.value)}
                         placeholder="1 ay"
-                        className="h-[44px] rounded-[10px] border border-gray-300 bg-white px-3 text-[15px] outline-none focus:border-[#00b4cc]"
+                        className="h-[38px] rounded-[8px] border border-gray-300 bg-white px-2 text-[13px] outline-none focus:border-[#00b4cc] w-full"
                       />
                       <input
                         type="number"
                         value={tier.price || ''}
                         onChange={(e) => updateTier(i, 'price', Number(e.target.value))}
                         placeholder="0"
-                        className="h-[44px] rounded-[10px] border border-gray-300 bg-white px-3 text-[15px] outline-none focus:border-[#00b4cc]"
+                        className="h-[38px] rounded-[8px] border border-gray-300 bg-white px-2 text-[13px] outline-none focus:border-[#00b4cc] w-full"
                       />
                       <input
                         type="number"
                         value={tier.discountPrice || ''}
                         onChange={(e) => updateTier(i, 'discountPrice', Number(e.target.value))}
                         placeholder="0"
-                        className="h-[44px] rounded-[10px] border border-gray-300 bg-white px-3 text-[15px] outline-none focus:border-[#00b4cc]"
+                        className="h-[38px] rounded-[8px] border border-gray-300 bg-white px-2 text-[13px] outline-none focus:border-[#00b4cc] w-full"
+                      />
+                      <input
+                        type="number"
+                        value={tier.entryLimit ?? 12}
+                        onChange={(e) => updateTier(i, 'entryLimit', Number(e.target.value))}
+                        placeholder="12"
+                        className="h-[38px] rounded-[8px] border border-gray-300 bg-white px-2 text-[13px] outline-none focus:border-[#00b4cc] w-full"
                       />
                       <button
                         type="button"
                         onClick={() => removeTier(i)}
                         disabled={priceTiers.length === 1}
-                        className="h-[36px] w-[36px] rounded-[8px] flex items-center justify-center transition-colors hover:bg-red-50 text-gray-400 hover:text-red-500 disabled:opacity-20"
+                        className="h-[32px] w-[32px] rounded-[6px] flex items-center justify-center transition-colors hover:bg-red-50 text-gray-400 hover:text-red-500 disabled:opacity-20 mx-auto"
                       >
-                        <X size={16} />
+                        <X size={15} />
                       </button>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-
-            {/* Entry Limit Select block */}
-            <div className="w-full pt-1">
-              <EntryLimitSelect label="Giriş sayı (Limit)" value={entryLimit} onChange={setEntryLimit} />
-            </div>
           </div>
 
           {/* Right Column (.frameParent2) */}
-          <div className="flex-1 flex flex-col items-stretch justify-between gap-6 w-full h-full">
+          <div className="w-full md:w-[503px] flex flex-col items-stretch justify-between gap-6 shrink-0 h-full">
             
             {/* Services Wrapper (.frameParent3) */}
             <div className="w-full flex flex-col items-stretch gap-3">
@@ -373,36 +377,6 @@ function PackageFormModal({
               </div>
             </div>
 
-            {/* Status Segment Controls (.statusParent) */}
-            <div className="w-full flex flex-col items-start gap-2 pt-1">
-              <label className="text-[16px] leading-[24px] font-medium text-black">Status</label>
-              <div className="w-full flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setStatus('active')}
-                  className={cn(
-                    "h-[48px] flex-1 rounded-[10px] flex items-center justify-center text-[16px] font-medium transition-all",
-                    status === 'active'
-                      ? "bg-[#00b4cc] text-white shadow-sm"
-                      : "bg-white border border-[#00b4cc] text-black hover:bg-gray-50"
-                  )}
-                >
-                  Aktiv et
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStatus('inactive')}
-                  className={cn(
-                    "h-[48px] flex-1 rounded-[10px] flex items-center justify-center text-[16px] font-medium transition-all",
-                    status === 'inactive'
-                      ? "bg-black text-white shadow-sm"
-                      : "bg-white border border-gray-300 text-black hover:bg-gray-50"
-                  )}
-                >
-                  Deaktiv et
-                </button>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -431,10 +405,12 @@ function PackageRow({
   pkg,
   onEdit,
   onDelete,
+  onToggleStatus,
 }: {
   pkg: SubPackage
   onEdit: (p: SubPackage) => void
   onDelete: (id: string) => void
+  onToggleStatus: (p: SubPackage) => void
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -453,13 +429,18 @@ function PackageRow({
     <tr className="border-b border-border hover:bg-secondary/40 transition-colors">
       <td className="px-4 py-3 text-sm font-semibold text-foreground">{pkg.name}</td>
       <td className="px-4 py-3">
-        <span className={cn(
-          'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold',
-          pkg.status === 'active' ? 'bg-green-600 text-white' : 'bg-[#6B7280] text-white',
-        )}>
+        <button
+          type="button"
+          onClick={() => onToggleStatus(pkg)}
+          className={cn(
+            'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold cursor-pointer border-none outline-none transition-opacity hover:opacity-80',
+            pkg.status === 'active' ? 'bg-green-600 text-white' : 'bg-[#6B7280] text-white',
+          )}
+          title="Statusu dəyişmək üçün klikləyin"
+        >
           <span className="h-1.5 w-1.5 rounded-full bg-white/80 shrink-0" />
           {pkg.status === 'active' ? 'Aktiv' : 'Deaktiv'}
-        </span>
+        </button>
       </td>
       <td className="px-4 py-3 text-sm text-foreground">
         {pkg.priceTiers.map((t, i) => (
@@ -646,12 +627,26 @@ function DeleteModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel:
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export function SubscriptionList() {
-  const { packages: backendPackages, isLoading, createPackage, updatePackage, deletePackage } = useSubscriptions()
+  const { packages: backendPackages, isLoading, createPackage, updatePackage, deletePackage, updatePackageStatus } = useSubscriptions()
   const [localPackages, setLocalPackages] = useState<SubPackage[]>(MOCK_SUB_PACKAGES)
   const [modalPkg, setModalPkg] = useState<SubPackage | 'new' | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [view, setView] = useState<'grid' | 'list'>('grid')
+
+  async function handleToggleStatus(pkg: SubPackage) {
+    const newStatus = pkg.status === 'active' ? 'inactive' : 'active'
+    setLocalPackages((prev) => prev.map((p) => p.id === pkg.id ? { ...p, status: newStatus } : p))
+    
+    if (!pkg.id.startsWith('temp') && !pkg.id.startsWith('sub-')) {
+      try {
+        await updatePackageStatus({ id: pkg.id, isActive: newStatus === 'active' })
+      } catch (err) {
+        console.warn('Backend status toggle sync error', err)
+      }
+    }
+  }
 
   const currentPackages = backendPackages?.length > 0 ? backendPackages : localPackages
   const paginated = currentPackages.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
@@ -744,7 +739,13 @@ export function SubscriptionList() {
             </button>
           </div>
           <button
-            onClick={() => setModalPkg('new')}
+            onClick={() => {
+              if (currentPackages.length >= 4) {
+                setErrorMsg('Hal-hazırda bütün paketlər yaradılıb. Zəhmət olmasa mövcud paketləri redaktə edin.')
+                return
+              }
+              setModalPkg('new')
+            }}
             className="flex items-center gap-1.5 rounded-lg bg-[#00B4CC] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#008799] transition-colors shadow-2xs"
           >
             <Plus size={15} /> Yeni Paket
@@ -764,6 +765,7 @@ export function SubscriptionList() {
               pkg={pkg}
               onEdit={(p) => setModalPkg(p)}
               onDelete={(id) => setDeletingId(id)}
+              onToggleStatus={handleToggleStatus}
             />
           ))}
         </div>
@@ -787,6 +789,7 @@ export function SubscriptionList() {
                   pkg={pkg}
                   onEdit={(p) => setModalPkg(p)}
                   onDelete={(id) => setDeletingId(id)}
+                  onToggleStatus={handleToggleStatus}
                 />
               ))}
             </tbody>
@@ -806,6 +809,10 @@ export function SubscriptionList() {
 
       {deletingId && (
         <DeleteModal onConfirm={confirmDelete} onCancel={() => setDeletingId(null)} />
+      )}
+
+      {errorMsg && (
+        <ErrorToastModal message={errorMsg} onClose={() => setErrorMsg(null)} />
       )}
     </div>
   )

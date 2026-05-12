@@ -179,6 +179,20 @@ export const useSubscriptions = () => {
     },
   });
 
+  // 8. Update Package Status directly
+  const updatePackageStatus = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+      return apiRequest(`/admin/subscription-packages/${id}/status`, {
+        method: "PATCH",
+        params: { isActive: String(isActive) },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+      refetch();
+    },
+  });
+
   return {
     packages: packagesData || [],
     flatOptions: flatOptions || [],
@@ -189,5 +203,6 @@ export const useSubscriptions = () => {
     deletePackage: deletePackage.mutateAsync,
     addBenefit: addBenefit.mutateAsync,
     deleteBenefit: deleteBenefit.mutateAsync,
+    updatePackageStatus: updatePackageStatus.mutateAsync,
   };
 };
