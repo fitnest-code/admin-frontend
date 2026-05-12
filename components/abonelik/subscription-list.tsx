@@ -441,15 +441,17 @@ function PackageCard({
 
       {/* Middle Section / Pricing & Entry Limit */}
       <div className="w-full flex flex-col items-start gap-[22px] text-left text-[#4a5565]">
-        <div className="w-full flex flex-col items-start gap-3">
+        <div className="w-full flex flex-col items-stretch gap-2.5">
           {pkg.priceTiers.map((tier, i) => (
-            <div key={i} className="w-full flex flex-col gap-3">
-              <div className="w-full flex items-center justify-between gap-5">
-                <span className="text-[16px] leading-[24px] text-[#4a5565]">{tier.duration || 'Müddət'}</span>
-                <div className="flex items-baseline gap-1.5">
+            <div key={i} className="w-full flex flex-col gap-2.5">
+              <div className="grid grid-cols-3 items-center gap-2 px-1">
+                <span className="text-[16px] leading-[24px] font-medium text-[#4a5565] text-left">
+                  {tier.duration || 'Müddət'}
+                </span>
+                <div className="flex items-baseline justify-center gap-1.5 text-center">
                   {tier.discountPrice > 0 && tier.discountPrice !== tier.price ? (
                     <div className="flex items-baseline gap-1.5">
-                      <span className="text-[16px] leading-[24px] font-medium text-red-500 line-through decoration-red-500 decoration-2">
+                      <span className="text-[16px] leading-[24px] font-medium text-red-500 line-through">
                         {tier.price} AZN
                       </span>
                       <span className="text-[16px] leading-[24px] font-bold text-[#101828]">
@@ -457,21 +459,18 @@ function PackageCard({
                       </span>
                     </div>
                   ) : (
-                    <span className="text-[16px] leading-[24px] font-medium text-[#101828]">
+                    <span className="text-[16px] leading-[24px] font-bold text-[#101828]">
                       {tier.price} AZN
                     </span>
                   )}
                 </div>
+                <span className="text-[16px] leading-[24px] font-semibold text-[#101828] text-right">
+                  {tier.entryLimit ?? pkg.entryLimit} giriş
+                </span>
               </div>
-              <div className="w-full h-[1px] border-t border-[#ececed] transform rotate-[0.3deg]" />
+              <div className="w-full h-[1px] bg-gray-100" />
             </div>
           ))}
-
-          <div className="w-full flex items-center justify-between gap-5 pt-1">
-            <span className="text-[16px] leading-[24px] text-[#4a5565]">Limit:</span>
-            <span className="text-[16px] leading-[24px] font-medium text-[#101828]">{pkg.entryLimit} giriş</span>
-          </div>
-          <div className="w-full h-[1px] border-t border-[#ececed] transform rotate-[0.3deg]" />
         </div>
 
         {/* Services List Block */}
@@ -479,8 +478,8 @@ function PackageCard({
           <span className="text-[12px] font-bold tracking-wider text-[#4a5565] uppercase">XİDMƏTLƏR</span>
           <div className="w-full flex flex-wrap items-center gap-2">
             {pkg.services.length > 0 ? (
-              pkg.services.map((s) => (
-                <div key={s} className="rounded-[20px] bg-white border border-[#ececed] flex items-center justify-center px-3 py-1 gap-1.5 text-[14px] text-black font-medium shadow-2xs">
+              pkg.services.map((s, idx) => (
+                <div key={`${s}-${idx}`} className="rounded-[20px] bg-white border border-[#ececed] flex items-center justify-center px-3 py-1 gap-1.5 text-[14px] text-black font-medium shadow-2xs">
                   <div className="w-1.5 h-1.5 rounded-full bg-[#00b4cc] shrink-0" />
                   <span className="leading-[20px] font-medium">{s}</span>
                 </div>
