@@ -42,6 +42,7 @@ export function CustomersList() {
     packageId: pkg ?? undefined,
     packageDuration: duration ?? undefined,
     subscriptionStatus: subStatus ?? undefined,
+    sort: sortBy ?? undefined,
   })
   const packageNamesQuery = useSubscriptionPackageNamesQuery()
   const statisticsQuery = useUserStatisticsQuery()

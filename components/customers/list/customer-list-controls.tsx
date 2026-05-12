@@ -1,25 +1,49 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Image from 'next/image'
 import { Check, ChevronDown, Search, Timer, UserCheck, UserX, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CustomerSubscriptionType, SubscriptionPackageName } from '@/modules/customers'
 import { DURATION_OPTIONS, SORT_OPTIONS, SUBSCRIPTION_STATUS_OPTIONS } from './customer-list-constants'
 import type { CustomerSortValue } from './customer-list-utils'
 
-function StatCard({ icon: Icon, label, value, active }: { icon: React.ElementType; label: string; value: number; active?: boolean }) {
+function StatCard({
+  icon: Icon,
+  iconSrc,
+  label,
+  value,
+  active,
+  onClick,
+}: {
+  icon: React.ElementType
+  iconSrc?: string
+  label: string
+  value: string | number
+  active?: boolean
+  onClick?: () => void
+}) {
   return (
     <div
+      onClick={onClick}
       className={cn(
-        'flex flex-1 min-w-35 flex-col gap-2 rounded-xl border px-4 py-3 transition-colors',
-        active ? 'border-[#00B4CC] bg-[#00B4CC0D]' : 'border-border bg-card',
+        'flex flex-1 min-w-[210px] flex-col items-center justify-center gap-2.5 rounded-xl border bg-card p-5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md cursor-pointer select-none',
+        active
+          ? 'border-[#00B4CC] shadow-sm bg-gradient-to-b from-white to-[#00b4cc]/[0.03] dark:from-background dark:to-[#00b4cc]/[0.05]'
+          : 'border-[#cecfd2]/60 dark:border-border',
       )}
     >
-      <div className="flex items-center gap-2">
-        <Icon size={15} className={active ? 'text-[#00B4CC]' : 'text-muted-foreground'} />
-        <span className="text-xs text-muted-foreground">{label}</span>
+      <div className="flex items-center justify-center gap-2">
+        {iconSrc ? (
+          <Image src={iconSrc} width={18} height={18} alt="" className={cn('shrink-0', active ? '' : 'opacity-75')} />
+        ) : (
+          <Icon size={18} className={active ? 'text-[#00B4CC]' : 'text-muted-foreground'} />
+        )}
+        <span className="text-sm font-medium text-foreground">{label}</span>
       </div>
-      <span className={cn('text-2xl font-bold', active ? 'text-[#00B4CC]' : 'text-foreground')}>{value}</span>
+      <div className="flex items-center justify-center mt-0.5">
+        <span className="text-2xl font-bold text-foreground tracking-tight">{value}</span>
+      </div>
     </div>
   )
 }
@@ -53,10 +77,10 @@ function FilterDropdown<T extends string | number>({
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((prev) => !prev)}
-        className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground hover:border-[#00B4CC] transition-colors"
+        className="flex h-12 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-medium text-foreground hover:border-[#00B4CC] transition-all duration-200 shadow-sm"
       >
         {current ? current.label : label}
-        <ChevronDown size={14} className={cn('transition-transform', open && 'rotate-180')} />
+        <ChevronDown size={14} className={cn('transition-transform text-muted-foreground', open && 'rotate-180')} />
       </button>
       {open && (
         <div className="absolute left-0 top-full z-30 mt-1 w-64 rounded-xl border border-border bg-card shadow-xl overflow-hidden">
@@ -123,10 +147,10 @@ function SortDropdown({
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((prev) => !prev)}
-        className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground hover:border-[#00B4CC] transition-colors"
+        className="flex h-12 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-medium text-foreground hover:border-[#00B4CC] transition-all duration-200 shadow-sm"
       >
         {current ? current.label : 'Sırala'}
-        <ChevronDown size={14} className={cn('transition-transform', open && 'rotate-180')} />
+        <ChevronDown size={14} className={cn('transition-transform text-muted-foreground', open && 'rotate-180')} />
       </button>
       {open && (
         <div className="absolute right-0 top-full z-30 mt-1 w-72 rounded-xl border border-border bg-card shadow-xl overflow-hidden">
@@ -158,18 +182,50 @@ export function CustomerStats({
   last7,
   expired,
   active,
+  selectedStatus,
+  onStatusClick,
 }: {
   total: number
   last7: number
   expired: number
   active: number
+  selectedStatus?: Exclude<CustomerSubscriptionType, 'ALL'> | null
+  onStatusClick?: (status: Exclude<CustomerSubscriptionType, 'ALL'> | null) => void
 }) {
   return (
-    <div className="flex flex-wrap gap-3">
-      <StatCard icon={Users} label="Ümumi Müştərilər" value={total} />
-      <StatCard icon={Timer} label="Abunəlikdə son 7 gün" value={last7} />
-      <StatCard icon={UserX} label="Bitmiş abunəlik" value={expired} />
-      <StatCard icon={UserCheck} label="Aktiv abunəlik" value={active} />
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 w-full">
+      <StatCard
+        iconSrc="/vuesax/linear/People.svg"
+        icon={Users}
+        label="Ümumi Müştərilər"
+        value={total}
+        active={selectedStatus === null || selectedStatus === undefined}
+        onClick={() => onStatusClick?.(null)}
+      />
+      <StatCard
+        iconSrc="/abunelikde-7-gun.svg"
+        icon={Timer}
+        label="Abunəlikdə son 7 gün"
+        value={last7}
+        active={selectedStatus === 'LAST_7_DAYS'}
+        onClick={() => onStatusClick?.('LAST_7_DAYS')}
+      />
+      <StatCard
+        iconSrc="/bitmis-status.svg"
+        icon={UserX}
+        label="Bitmiş Status"
+        value={expired}
+        active={selectedStatus === 'FINISHED'}
+        onClick={() => onStatusClick?.('FINISHED')}
+      />
+      <StatCard
+        iconSrc="/dondurulmus-status.svg"
+        icon={UserCheck}
+        label="Dondurulmuş Status"
+        value="YAXINDA"
+        active={selectedStatus === 'FROZEN'}
+        onClick={() => onStatusClick?.('FROZEN')}
+      />
     </div>
   )
 }
@@ -200,35 +256,37 @@ export function CustomerFilters({
   onSortChange: (value: CustomerSortValue | null) => void
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <div className="relative flex-1 min-w-50">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+    <div className="flex flex-wrap items-center justify-between gap-4 w-full">
+      <div className="relative flex-1 min-w-[280px]">
+        <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <input
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
-          placeholder="ID, Ad/Soyad , Email , Telefon üzrə axtarış...."
-          className="w-full rounded-lg border border-border bg-card py-2 pl-9 pr-3 text-sm outline-none focus:border-[#00B4CC] transition-colors"
+          placeholder="ID, Ad/Soyad , Email , Telefon üzrə axtarış....."
+          className="h-12 w-full rounded-xl border border-border bg-card pl-11 pr-4 text-sm outline-none focus:border-[#00B4CC] transition-all duration-200 shadow-sm"
         />
       </div>
-      <FilterDropdown
-        label="Paketlər"
-        options={packageOptions.map((option) => ({ value: option.id, label: option.name }))}
-        selected={selectedPackageId}
-        onChange={(value) => onPackageChange(value as number | null)}
-      />
-      <FilterDropdown
-        label="Müddət"
-        options={DURATION_OPTIONS}
-        selected={duration}
-        onChange={(value) => onDurationChange(value as number | null)}
-      />
-      <FilterDropdown
-        label="Abunəlik"
-        options={SUBSCRIPTION_STATUS_OPTIONS}
-        selected={subscriptionStatus}
-        onChange={(value) => onSubscriptionStatusChange(value as Exclude<CustomerSubscriptionType, 'all'> | null)}
-      />
-      <SortDropdown value={sortBy} onChange={onSortChange} />
+      <div className="flex flex-wrap items-center gap-3">
+        <FilterDropdown
+          label="Paketlər"
+          options={packageOptions.map((option) => ({ value: option.id, label: option.name }))}
+          selected={selectedPackageId}
+          onChange={(value) => onPackageChange(value as number | null)}
+        />
+        <FilterDropdown
+          label="Müddət"
+          options={DURATION_OPTIONS}
+          selected={duration}
+          onChange={(value) => onDurationChange(value as number | null)}
+        />
+        <FilterDropdown
+          label="Abunəlik"
+          options={SUBSCRIPTION_STATUS_OPTIONS}
+          selected={subscriptionStatus}
+          onChange={(value) => onSubscriptionStatusChange(value as Exclude<CustomerSubscriptionType, 'all'> | null)}
+        />
+        <SortDropdown value={sortBy} onChange={onSortChange} />
+      </div>
     </div>
   )
 }

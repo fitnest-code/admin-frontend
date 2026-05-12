@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Image from 'next/image'
 import { Ban, Bell, Check, ChevronDown, Mail, MessageSquare, Upload } from 'lucide-react'
 import { QUICK_REPLIES } from '@/lib/customers-data'
 import { cn } from '@/lib/utils'
@@ -16,17 +17,17 @@ export function CustomerBulkActions({
   onOpenPush: () => void
   onOpenSms: () => void
 }) {
-  if (selectedCount <= 0) return null
-
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
-      <span className="text-sm font-medium text-foreground">{selectedCount} müştəri seçildi</span>
-      <div className="flex flex-wrap gap-2 ml-auto">
-        <ActionBtn icon={Bell} label="Push" onClick={onOpenPush} variant="primary" />
-        <ActionBtn icon={MessageSquare} label="SMS" onClick={onOpenSms} variant="primary" />
-        <ActionBtn icon={Mail} label="Email" onClick={() => {}} />
-        <ActionBtn icon={Upload} label="Export" onClick={() => {}} />
-        <ActionBtn icon={Ban} label="Block" onClick={() => {}} variant="danger" />
+    <div className="flex flex-wrap items-center justify-between gap-[13.4px] w-full transition-all duration-300 animate-in fade-in-50">
+      <div className="w-[196px] flex items-center px-2">
+        <span className="text-base font-medium text-foreground">{selectedCount} müştəri seçildi</span>
+      </div>
+      <div className="flex flex-wrap items-center gap-[13.4px]">
+        <ActionBtn iconSrc="/push-notification.svg" icon={Bell} label="Push" onClick={onOpenPush} variant="cyan-outline" />
+        <ActionBtn iconSrc="/sms-icon.svg" icon={MessageSquare} label="SMS" onClick={onOpenSms} variant="cyan-outline" />
+        <ActionBtn iconSrc="/mail-icon.svg" icon={Mail} label="Email " onClick={() => {}} variant="cyan-outline" />
+        <ActionBtn iconSrc="/export-icon.svg" icon={Upload} label="Export" onClick={() => {}} variant="cyan-outline" />
+        <ActionBtn icon={Ban} label="Block" onClick={() => {}} variant="danger-outline" />
       </div>
     </div>
   )
@@ -34,28 +35,29 @@ export function CustomerBulkActions({
 
 function ActionBtn({
   icon: Icon,
+  iconSrc,
   label,
   onClick,
-  variant = 'default',
+  variant = 'cyan-outline',
 }: {
   icon: React.ElementType
+  iconSrc?: string
   label: string
   onClick: () => void
-  variant?: 'primary' | 'danger' | 'default'
+  variant?: 'push' | 'cyan-outline' | 'danger-outline'
 }) {
   return (
     <button
       onClick={onClick}
       className={cn(
-        'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors',
-        variant === 'primary'
-          ? 'border-[#00B4CC] bg-[#00B4CC] text-white hover:bg-[#008799]'
-          : variant === 'danger'
-            ? 'border-red-200 text-red-500 hover:bg-red-50'
-            : 'border-border text-foreground hover:bg-secondary',
+        'flex h-[48px] w-[160px] items-center justify-center gap-2 rounded-[10px] border text-base font-medium transition-all duration-200 active:scale-[0.98]',
+        variant === 'danger-outline'
+          ? 'border-[#ff5255] bg-white dark:bg-card text-foreground hover:bg-[#ff5255]/10'
+          : 'border-[#00B4CC] bg-white dark:bg-card text-foreground hover:bg-[#00B4CC]/10',
       )}
     >
-      <Icon size={14} /> {label}
+      {iconSrc ? <Image src={iconSrc} width={24} height={24} alt="" className="shrink-0" /> : <Icon size={20} />}
+      <span>{label}</span>
     </button>
   )
 }
