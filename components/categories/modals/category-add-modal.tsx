@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { X, Plus, Image as ImageIcon } from "lucide-react";
+import Image from "next/image";
+import { X, Plus, Image as ImageIcon, Loader2 } from "lucide-react";
 import { useLessonTypes } from "@/lib/query/use-lesson-types";
 
 export interface CategoryFormData {
@@ -31,7 +32,7 @@ export default function CategoryModal({
   const [selectedLessonTypeIds, setSelectedLessonTypeIds] = useState<Set<number>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { lessonTypes, createLessonType } = useLessonTypes();
+  const { lessonTypes, createLessonType, deleteLessonType } = useLessonTypes();
 
   useEffect(() => {
     if (open) {
@@ -54,6 +55,10 @@ export default function CategoryModal({
     reader.readAsDataURL(file);
   }, []);
 
+  const [newLessonTypeName, setNewLessonTypeName] = useState("");
+  const [isAddingLessonType, setIsAddingLessonType] = useState(false);
+  const [isSubmittingLessonType, setIsSubmittingLessonType] = useState(false);
+
   const handleSave = () => {
     if (!name.trim()) return;
     onSave({ 
@@ -63,15 +68,20 @@ export default function CategoryModal({
     });
   };
 
-  const handleAddLessonType = async () => {
-    const newName = window.prompt("Yeni növün adını daxil edin:");
-    if (newName && newName.trim()) {
-      try {
-        const result = await createLessonType(newName.trim());
-        setSelectedLessonTypeIds((prev) => new Set(prev).add(result.id));
-      } catch (err) {
-        console.error("Error creating lesson type", err);
-      }
+  const handleAddLessonTypeSubmit = async () => {
+    const trimmed = newLessonTypeName.trim();
+    if (!trimmed || isSubmittingLessonType) return;
+
+    setIsSubmittingLessonType(true);
+    try {
+      const result = await createLessonType(trimmed);
+      setSelectedLessonTypeIds((prev) => new Set(prev).add(result.id));
+      setNewLessonTypeName("");
+      setIsAddingLessonType(false); // Hide the box on success
+    } catch (err) {
+      console.error("Error creating lesson type", err);
+    } finally {
+      setIsSubmittingLessonType(false);
     }
   };
 
@@ -82,6 +92,19 @@ export default function CategoryModal({
       else newSet.add(id);
       return newSet;
     });
+  };
+
+  const handleDeleteLessonType = async (id: number) => {
+    try {
+      await deleteLessonType(id);
+      setSelectedLessonTypeIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+    } catch (err) {
+      console.error("Error deleting lesson type", err);
+    }
   };
 
   if (!open) return null;
@@ -141,47 +164,102 @@ export default function CategoryModal({
             />
           </div>
 
-          {/* Növ Section */}
-          <div className="w-full rounded-[12px] bg-white border border-[#ececed] flex flex-col items-start p-5 sm:px-7 gap-8 text-[20px]">
-            <div className="w-full border-b border-[#ececed] flex items-center justify-between pb-2 gap-5">
-              <h3 className="text-[20px] font-semibold leading-[30px]">Növ ({selectedLessonTypeIds.size}/{lessonTypes?.length || 0})</h3>
-              <button 
-                onClick={handleAddLessonType}
-                className="h-12 rounded-[12px] bg-[#00b4cc] flex items-center justify-center px-4 gap-3 text-[16px] text-[#fafafa] hover:opacity-90 transition-opacity"
-              >
-                <span className="leading-[24px]">Növ əlavə et</span>
-                <Plus size={24} />
-              </button>
+          {/* Unified Növ Section */}
+          <div className="w-full rounded-[12px] bg-white border border-[#ececed] flex flex-col items-start p-5 sm:p-7 gap-8 text-[16px]">
+            {/* Header */}
+            <div className="w-full border-b border-[#ececed] pb-2 flex items-center justify-between text-[20px] font-semibold text-[#000] gap-4">
+              <span className="leading-[30px]">Növ ({selectedLessonTypeIds.size}/{lessonTypes?.length || 0})</span>
+              {!isAddingLessonType && (
+                <button
+                  type="button"
+                  onClick={() => setIsAddingLessonType(true)}
+                  className="h-12 rounded-[12px] bg-[#00b4cc] flex items-center justify-center px-4 gap-2 text-[16px] text-[#fafafa] font-medium hover:bg-[#00a4bd] transition-colors shrink-0"
+                >
+                  <span className="leading-[24px]">Növ əlavə et</span>
+                  <Plus size={20} />
+                </button>
+              )}
             </div>
 
-            <div className="w-full flex flex-col items-start justify-center gap-5 text-[16px]">
-              <div className="w-full flex flex-wrap items-center gap-5">
-                {lessonTypes?.map((lt) => {
-                  const isSelected = selectedLessonTypeIds.has(lt.id);
-                  return (
+            {/* Addition Form Box */}
+            {isAddingLessonType && (
+              <div className="w-full rounded-[12px] bg-white border border-[#ececed] flex flex-col items-end p-5 sm:p-7 gap-7 shadow-sm animate-in fade-in duration-200">
+                <div className="w-full border-b border-[#ececed] pb-2 flex items-center justify-between text-[20px] font-semibold text-[#000]">
+                  <span className="leading-[30px]">Növ əlavə et</span>
+                  <button
+                    type="button"
+                    onClick={() => { setIsAddingLessonType(false); setNewLessonTypeName(""); }}
+                    className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <div className="w-full flex flex-col items-start gap-3">
+                  <label className="text-[16px] text-[#000] leading-[24px]">Növ adı</label>
+                  <div className="w-full h-[60px] rounded-[12px] bg-[#fafafa] border border-[#ececed] flex items-center justify-between px-3 gap-5 text-[18px] focus-within:border-[#00b4cc] transition-colors">
+                    <input
+                      type="text"
+                      value={newLessonTypeName}
+                      onChange={(e) => setNewLessonTypeName(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleAddLessonTypeSubmit()}
+                      placeholder="Məs: Pilates"
+                      autoFocus
+                      className="w-full h-full bg-transparent outline-none text-[#000] text-[16px] sm:text-[18px]"
+                    />
                     <button
-                      key={lt.id}
-                      onClick={() => toggleLessonType(lt.id)}
-                      className={`flex-[1_1_calc(50%-10px)] sm:flex-none min-w-[140px] h-[64px] rounded-[8px] flex items-center justify-between px-3 transition-colors ${
-                        isSelected 
-                          ? "bg-[#00b4cc]/[0.04] border border-[#00b4cc]" 
-                          : "bg-[#fafafa] border border-[#ececed]"
-                      }`}
+                      type="button"
+                      onClick={() => setNewLessonTypeName("")}
+                      className="w-7 h-7 rounded-[4px] bg-[#ececed] flex items-center justify-center text-[#000] hover:bg-gray-200 transition-colors shrink-0"
                     >
-                      <span className="text-[#101828] leading-[24px] truncate">{lt.name}</span>
-                      {isSelected ? (
-                        <div className="w-6 h-6 text-[#00b4cc] flex items-center justify-center shrink-0">
-                           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M5 12L10 17L20 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                           </svg>
-                        </div>
-                      ) : (
-                        <Plus size={24} className="text-[#99a1af] shrink-0" />
-                      )}
+                      <X size={14} />
                     </button>
-                  );
-                })}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleAddLessonTypeSubmit}
+                  disabled={!newLessonTypeName.trim() || isSubmittingLessonType}
+                  className="w-[193px] h-[48px] rounded-[12px] bg-[#00b4cc] flex items-center justify-center text-[#fafafa] font-medium text-[16px] hover:bg-[#00a4bd] disabled:opacity-50 transition-colors gap-2"
+                >
+                  {isSubmittingLessonType ? (
+                    <Loader2 className="animate-spin" size={18} />
+                  ) : (
+                    <span className="leading-[24px]">Əlavə et</span>
+                  )}
+                </button>
               </div>
+            )}
+
+            {/* List of Items Grid */}
+            <div className="w-full flex flex-wrap items-center gap-4 pt-2">
+              {lessonTypes?.map((lt) => {
+                const isSelected = selectedLessonTypeIds.has(lt.id);
+                return (
+                  <div
+                    key={lt.id}
+                    onClick={() => toggleLessonType(lt.id)}
+                    className={`flex-[1_1_calc(50%-8px)] sm:flex-none min-w-[140px] h-[64px] rounded-[8px] flex items-center justify-between px-3 gap-3 cursor-pointer select-none transition-colors ${
+                      isSelected 
+                        ? "bg-[#00b4cc]/[0.04] border border-[#00b4cc]" 
+                        : "bg-[#fafafa] border border-[#ececed]"
+                    }`}
+                  >
+                    <span className="text-[#101828] text-[16px] leading-[24px] font-medium truncate">{lt.name}</span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteLessonType(lt.id);
+                      }}
+                      className="p-1 hover:opacity-70 transition-opacity shrink-0 flex items-center justify-center"
+                    >
+                      <Image src="/trash.png" width={24} height={24} alt="delete" className="shrink-0" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
 

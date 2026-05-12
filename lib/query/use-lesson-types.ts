@@ -18,15 +18,22 @@ export function useLessonTypes() {
     mutationFn: (name: string) => 
       apiRequest<LessonTypeResponse>("/admin/lesson-types", {
         method: "POST",
-        body: JSON.stringify({ name }),
-        headers: {
-          "Content-Type": "application/json",
-        },
+        body: { name },
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["lesson-types"] });
     },
   });
 
-  return { lessonTypes, isLoading, createLessonType };
+  const { mutateAsync: deleteLessonType } = useMutation({
+    mutationFn: (id: number) => 
+      apiRequest<void>(`/admin/lesson-types/${id}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["lesson-types"] });
+    },
+  });
+
+  return { lessonTypes, isLoading, createLessonType, deleteLessonType };
 }
