@@ -81,12 +81,13 @@ export function AdminsTab() {
         {/* Table Section */}
         <div className="w-full flex flex-col items-start">
           {/* Table Header */}
-          <div className="w-full flex items-center bg-[#00b4cc]/15 border border-[#cecfd2] rounded-t-[12px] px-[10px] py-5 gap-[68px]">
-            <div className="w-[142px] text-[16px] leading-[24px] font-normal text-black">Rol</div>
-            <div className="w-[61px] text-[16px] leading-[24px] font-normal text-black">ID</div>
-            <div className="w-[111px] text-[16px] leading-[24px] font-normal text-black">Ad / Soyad</div>
-            <div className="w-[150px] text-[16px] leading-[24px] font-normal text-black">Telefon</div>
-            <div className="w-[130px] text-[16px] leading-[24px] font-normal text-black">E-poçt</div>
+          <div className="w-full grid grid-cols-[1.5fr_1fr_2fr_2fr_2fr_40px] items-center bg-[#00b4cc]/15 border border-[#cecfd2] rounded-t-[12px] px-[20px] py-5 gap-4">
+            <div className="text-[16px] leading-[24px] font-normal text-black">Rol</div>
+            <div className="text-[16px] leading-[24px] font-normal text-black">ID</div>
+            <div className="text-[16px] leading-[24px] font-normal text-black">Ad / Soyad</div>
+            <div className="text-[16px] leading-[24px] font-normal text-black">Telefon</div>
+            <div className="text-[16px] leading-[24px] font-normal text-black">E-poçt</div>
+            <div className="w-10"></div>
           </div>
 
           {/* Table Body */}
@@ -97,34 +98,36 @@ export function AdminsTab() {
               </div>
             ) : (
               admins?.map((admin: any) => (
-                <div key={admin.id} className="w-full flex items-center bg-white border-x border-b border-[#ececed] px-[10px] py-5 gap-[68px] hover:bg-slate-50 transition-colors">
+                <div key={admin.id} className="w-full grid grid-cols-[1.5fr_1fr_2fr_2fr_2fr_40px] items-center bg-white border-x border-b border-[#ececed] px-[20px] py-5 gap-4 hover:bg-slate-50 transition-colors">
                   {/* Role Badge */}
-                  <div className="w-[142px] flex items-center justify-center bg-[#00b4cc] border border-[#ececed] rounded-[4px] px-2 py-1 gap-2 text-white">
-                    <div className="w-5 h-5 relative">
-                      <Image 
-                        src={admin.role === "Super admin" ? "/superAdmin.svg" : "/admin.svg"} 
-                        fill 
-                        alt="Role" 
-                        className={cn("object-contain", admin.role === "Super admin" ? "p-[2px]" : "p-[1px]")}
-                      />
+                  <div>
+                    <div className="inline-flex w-[142px] items-center justify-center bg-[#00b4cc] border border-[#ececed] rounded-[4px] px-2 py-1 gap-2 text-white">
+                      <div className="w-5 h-5 relative shrink-0">
+                        <Image 
+                          src={admin.role === "Super admin" ? "/superAdmin.svg" : "/admin.svg"} 
+                          fill 
+                          alt="Role" 
+                          className={cn("object-contain", admin.role === "Super admin" ? "p-[2px]" : "p-[1px]")}
+                        />
+                      </div>
+                      <span className="text-[16px] font-medium leading-[24px] truncate">{admin.role}</span>
                     </div>
-                    <span className="text-[16px] font-medium leading-[24px]">{admin.role}</span>
                   </div>
 
                   {/* ID */}
-                  <div className="w-[61px] text-[16px] leading-[24px]">{String(admin.id).padStart(6, '0')}</div>
+                  <div className="text-[16px] leading-[24px]">{String(admin.id).padStart(6, '0')}</div>
 
                   {/* Name */}
-                  <div className="w-[111px] text-[16px] leading-[24px] truncate">{admin.name} {admin.surname}</div>
+                  <div className="text-[16px] leading-[24px] truncate">{admin.name} {admin.surname}</div>
 
                   {/* Phone */}
-                  <div className="w-[150px] text-[16px] leading-[24px] truncate">{admin.phone || "+994 00 000 00 00"}</div>
+                  <div className="text-[16px] leading-[24px] truncate">{admin.phone || "+994 00 000 00 00"}</div>
 
                   {/* Email */}
-                  <div className="w-[130px] text-[16px] leading-[24px] truncate">{admin.email}</div>
+                  <div className="text-[16px] leading-[24px] truncate">{admin.email}</div>
 
                   {/* Delete Action */}
-                  <div className="flex-1 flex justify-center">
+                  <div className="flex justify-center">
                     <button 
                       onClick={() => setDeleteAdminId(admin.id)}
                       className="w-5 h-5 flex items-center justify-center hover:opacity-70 transition-opacity"
