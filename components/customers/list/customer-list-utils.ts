@@ -43,11 +43,11 @@ export function normalizeSubscriptionStatus(status?: string | null): UiSubscript
   if (!status) return 'none'
 
   const normalized = status.toLowerCase()
-  if (normalized === 'active') return 'active'
-  if (normalized === 'expired' || normalized === 'finished' || normalized === 'cancelled') return 'expired'
-  if (normalized === 'upgraded' || normalized === 'changed') return 'changed'
-  if (normalized === 'last_7_days' || normalized === 'last7days') return 'last7days'
-  if (normalized === 'frozen') return 'frozen'
+  if (normalized.includes('last_7_days') || normalized.includes('last7days') || normalized.includes('son 7 gün')) return 'last7days'
+  if (normalized.includes('upgraded') || normalized.includes('changed') || normalized.includes('dəyişdirilmiş')) return 'changed'
+  if (normalized.includes('expired') || normalized.includes('finished') || normalized.includes('cancelled') || normalized.includes('bitmiş') || normalized.includes('bitib')) return 'expired'
+  if (normalized.includes('frozen') || normalized.includes('dondurulmuş')) return 'frozen'
+  if (normalized.includes('active') || normalized.includes('aktiv')) return 'active'
   return 'none'
 }
 
