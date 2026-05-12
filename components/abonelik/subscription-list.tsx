@@ -5,7 +5,7 @@ import { Plus, Pencil, Trash2, X, ChevronDown, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   type SubPackage, type PriceTier, type SubStatus,
-  MOCK_SUB_PACKAGES, ENTRY_LIMIT_OPTIONS,
+  ENTRY_LIMIT_OPTIONS,
 } from '@/lib/subscription-data'
 import { useSubscriptions } from '@/lib/query/use-subscriptions'
 import { ErrorToastModal } from '../categories/modals/error-toast-modal'
@@ -517,7 +517,7 @@ function PackageCard({
 // ── Main ──────────────────────────────────────────────────────────────────────
 export function SubscriptionList() {
   const { packages: backendPackages, isLoading, createPackage, updatePackage, deletePackage, updatePackageStatus } = useSubscriptions()
-  const [localPackages, setLocalPackages] = useState<SubPackage[]>(MOCK_SUB_PACKAGES)
+  const [localPackages, setLocalPackages] = useState<SubPackage[]>([])
   const [showForm, setShowForm] = useState(false)
   const [editingPkg, setEditingPkg] = useState<SubPackage | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -537,7 +537,7 @@ export function SubscriptionList() {
     }
   }
 
-  const currentPackages = backendPackages?.length > 0 ? backendPackages : localPackages
+  const currentPackages = backendPackages || []
   const paginated = currentPackages.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   async function handleSave(data: Omit<SubPackage, 'id'>) {
