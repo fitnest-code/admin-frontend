@@ -19,7 +19,7 @@ const gradientsMap: Record<string, string> = {
 };
 
 export function StepPlans({ onNext }: { onNext: () => void }) {
-  const { step6Data, setStep6Data } = useGymStore();
+  const { step6Data, setStep6Data, gymId } = useGymStore();
   const { data: allPackageNames, isLoading: packagesLoading } = useSubscriptionPackages();
   
   const PACKAGES = useMemo(() => allPackageNames?.map(p => p.name) || [], [allPackageNames]);
@@ -74,7 +74,7 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
   }, [allPackageNames, initialPackages, initialPrices, initialServices]);
   
   const [pendingService, setPendingService] = useState<string | null>(null);
-  const { data: allServices } = useSupportedServices(undefined); // Fetch global services
+  const { data: allServices } = useSupportedServices(gymId ? Number(gymId) : undefined);
   const createServiceMutation = useCreateSupportedService();
   const validateStep6 = useValidateGymStep6();
 
@@ -96,7 +96,7 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
     try {
       await createServiceMutation.mutateAsync({
         name: pendingService.trim(),
-        gymId: undefined
+        gymId: gymId ? Number(gymId) : undefined
       });
       
       setPendingService(null);

@@ -233,7 +233,6 @@ export function useCreateGymComplete() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gyms'] });
-      toast.success('Zal uğurla yaradıldı!');
     }
   });
 }
