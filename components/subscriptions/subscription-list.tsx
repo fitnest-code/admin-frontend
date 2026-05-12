@@ -98,7 +98,7 @@ function EntryLimitSelect({ label, value, onChange }: { label: string; value: st
   )
 }
 
-function PackageNameDropdown({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function PackageNameDropdown({ value, onChange, existingNames = [] }: { value: string; onChange: (v: string) => void; existingNames?: string[] }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   
@@ -113,6 +113,7 @@ function PackageNameDropdown({ value, onChange }: { value: string; onChange: (v:
   }, [])
 
   const STATIC_PACKAGES = ['Bronze', 'Silver', 'Gold', 'Platinum']
+  const availablePackages = STATIC_PACKAGES.filter(pkgName => pkgName === value || !existingNames.includes(pkgName))
 
   return (
     <div className="w-full flex flex-col gap-1.5 text-left font-sans" ref={ref}>
@@ -129,7 +130,7 @@ function PackageNameDropdown({ value, onChange }: { value: string; onChange: (v:
         
         {open && (
           <ul className="absolute left-0 top-full z-50 mt-1 w-full overflow-hidden rounded-[12px] border border-[#ececed] bg-white shadow-xl max-h-52 divide-y divide-gray-100">
-            {STATIC_PACKAGES.map((pkgName) => (
+            {availablePackages.map((pkgName) => (
               <li key={pkgName}>
                 <button
                   type="button"
@@ -156,13 +157,17 @@ function PackageFormModal({
   initial,
   onSave,
   onClose,
+  existingNames = [],
 }: {
   initial?: SubPackage
   onSave: (pkg: Omit<SubPackage, 'id'>) => void
   onClose: () => void
+  existingNames?: string[]
 }) {
   const { addBenefit, deleteBenefit } = useSubscriptions()
-  const [name, setName] = useState(initial?.name || 'Bronze')
+  const STATIC_PACKAGES = ['Bronze', 'Silver', 'Gold', 'Platinum']
+  const defaultAvailable = STATIC_PACKAGES.find(p => !existingNames.includes(p)) || 'Bronze'
+  const [name, setName] = useState(initial?.name || defaultAvailable)
   const [priceTiers, setPriceTiers] = useState<PriceTier[]>(
     initial?.priceTiers?.length ? initial.priceTiers : [{ duration: '1 ay', price: 50, discountPrice: 45 }],
   )
@@ -189,7 +194,12 @@ function PackageFormModal({
     const s = serviceInput.trim()
     if (!s || services.length >= 20) return
     
-    // Optimistic UI updates along with actual API requests if modifying an existing package
+    // Prevent duplicates in the UI state
+    if (services.some(svc => svc.toLowerCase() === s.toLowerCase())) {
+      setServiceInput('')
+      return
+    }
+    
     setServices((prev) => [...prev, s])
     setServiceInput('')
     
@@ -255,7 +265,7 @@ function PackageFormModal({
             
             {/* Package Selector Dropdown Container */}
             <div className="w-full">
-              <PackageNameDropdown value={name} onChange={setName} />
+              <PackageNameDropdown value={name} onChange={setName} existingNames={existingNames} />
             </div>
 
             {/* Pricing / Tiers Wrapper */}
@@ -805,6 +815,7 @@ export function SubscriptionList() {
       {modalPkg !== null && (
         <PackageFormModal
           initial={modalPkg !== 'new' ? modalPkg as SubPackage : undefined}
+          existingNames={currentPackages.map(p => p.name)}
           onSave={handleSave}
           onClose={() => setModalPkg(null)}
         />
