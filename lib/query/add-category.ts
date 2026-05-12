@@ -6,7 +6,7 @@ export const useCategories = () => {
   const queryClient = useQueryClient();
 
   // 1. Siyahı
-  const { data: categories, isLoading } = useQuery({
+  const { data: categories, isLoading, refetch } = useQuery({
     queryKey: ["categories"],
     queryFn: () => apiRequest<ICategory[]>("/categories"),
   });
@@ -29,7 +29,10 @@ export const useCategories = () => {
         params, 
       });
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["categories"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      refetch();
+    },
   });
 
   // 3. PUT (Update)
@@ -41,9 +44,6 @@ export const useCategories = () => {
       }
 
       if (!data.photo) {
-        // If we have lessonTypeIds but no photo, we should use the main update endpoint
-        // Wait, the main update endpoint `/admin/categories/{id}` consumes MULTIPART_FORM_DATA_VALUE
-        // So we can still call it with an empty formData.
         const formData = new FormData();
         return apiRequest(`/admin/categories/${data.id}`, {
           method: "PUT",
@@ -61,18 +61,25 @@ export const useCategories = () => {
         params,
       });
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["categories"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      refetch();
+    },
   });
 
   // 4. DELETE
   const deleteCategory = useMutation({
     mutationFn: async (id: number) => apiRequest(`/admin/categories/${id}`, { method: "DELETE" }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["categories"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      refetch();
+    },
   });
 
   return {
     categories,
     isLoading,
+    refetch,
     createCategory: createCategory.mutateAsync,
     updateCategory: updateCategory.mutateAsync,
     deleteCategory: deleteCategory.mutateAsync,

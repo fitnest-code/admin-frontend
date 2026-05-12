@@ -3,13 +3,17 @@
 import { useState } from "react";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import CategoryModal, { CategoryFormData } from "./modals/category-add-modal";
+import { ConfirmDeleteModal } from "../gyms/modals/confirm-delete-modal";
+import { ErrorToastModal } from "./modals/error-toast-modal";
 import { useCategories } from "@/lib/query/add-category";
 
 export default function CategoriesPage() {
-  const { categories, isLoading, createCategory, updateCategory, deleteCategory } = useCategories();
+  const { categories, isLoading, refetch, createCategory, updateCategory, deleteCategory } = useCategories();
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<any | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(null);
 
   const categoryItems = Array.isArray(categories) 
     ? categories 
@@ -118,27 +122,33 @@ export default function CategoriesPage() {
       />
 
       {deleteTarget && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDeleteTarget(null)} />
-          <div className="relative bg-white p-6 rounded-xl w-full max-w-[340px] shadow-2xl text-center">
-            <h3 className="text-lg font-bold mb-2 text-gray-900">Silmək istəyirsiniz?</h3>
-            <p className="text-sm text-gray-500 mb-6 font-normal italic">
-              "{deleteTarget.name}" kateqoriyası silinəcək.
-            </p>
-            <div className="flex gap-3">
-              <button onClick={() => setDeleteTarget(null)} className="flex-1 h-10 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50">Ləğv et</button>
-              <button 
-                onClick={async () => { 
-                  await deleteCategory(deleteTarget.id); 
-                  setDeleteTarget(null); 
-                }} 
-                className="flex-1 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors"
-              >
-                Sil
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDeleteModal
+          name={deleteTarget.name}
+          isLoading={isDeleting}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={async () => {
+            try {
+              setIsDeleting(true);
+              await deleteCategory(deleteTarget.id);
+              await refetch();
+              setDeleteTarget(null);
+            } catch (err: any) {
+              console.error("Delete error:", err);
+              const msg = err?.response?.data?.error?.message || err?.error?.message || err?.message || "Kateqoriya istifadə olunur və silinə bilməz";
+              setDeleteErrorMessage(msg);
+              setDeleteTarget(null);
+            } finally {
+              setIsDeleting(false);
+            }
+          }}
+        />
+      )}
+
+      {deleteErrorMessage && (
+        <ErrorToastModal
+          message={deleteErrorMessage}
+          onClose={() => setDeleteErrorMessage(null)}
+        />
       )}
     </div>
   );
