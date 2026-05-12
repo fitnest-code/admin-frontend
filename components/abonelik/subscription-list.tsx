@@ -7,6 +7,9 @@ import {
   type SubPackage, type PriceTier, type SubStatus,
   MOCK_SUB_PACKAGES, ENTRY_LIMIT_OPTIONS,
 } from '@/lib/subscription-data'
+import { useSubscriptions } from '@/lib/query/use-subscriptions'
+import { ErrorToastModal } from '../categories/modals/error-toast-modal'
+import { ConfirmDeleteModal } from '../gyms/modals/confirm-delete-modal'
 
 const PAGE_SIZE = 6
 
@@ -94,6 +97,59 @@ function EntryLimitSelect({ value, onChange }: { value: string; onChange: (v: st
   )
 }
 
+function PackageNameDropdown({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const STATIC_PACKAGES = ['Bronze', 'Silver', 'Gold', 'Platinum']
+
+  return (
+    <div className="w-full flex flex-col gap-1.5 text-left font-sans" ref={ref}>
+      <label className="text-[16px] leading-[24px] font-medium text-black">Adı</label>
+      <div className="relative w-full">
+        <button
+          type="button"
+          onClick={() => setOpen((p) => !p)}
+          className="w-full h-[60px] rounded-[12px] bg-[#fafafa] border border-[#ececed] px-4 flex items-center justify-between text-[18px] text-black outline-none transition-colors hover:border-[#00b4cc]"
+        >
+          <span className="leading-[28px] font-medium">{value || 'Seçilməyib'}</span>
+          <ChevronDown size={20} className={cn('transition-transform text-gray-500 shrink-0', open && 'rotate-180')} />
+        </button>
+
+        {open && (
+          <ul className="absolute left-0 top-full z-50 mt-1 w-full overflow-hidden rounded-[12px] border border-[#ececed] bg-white shadow-xl max-h-52 divide-y divide-gray-100">
+            {STATIC_PACKAGES.map((pkgName) => (
+              <li key={pkgName}>
+                <button
+                  type="button"
+                  onClick={() => { onChange(pkgName); setOpen(false) }}
+                  className={cn(
+                    "w-full flex items-center justify-between px-4 py-3 text-[16px] font-medium transition-colors hover:bg-gray-50 text-left",
+                    value === pkgName ? "text-[#00b4cc] bg-[#00b4cc]/5 font-bold" : "text-black"
+                  )}
+                >
+                  <span>{pkgName}</span>
+                  {value === pkgName && <Check size={16} className="text-[#00b4cc]" />}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── Package Form ──────────────────────────────────────────────────────────────
 function PackageForm({
   initial,
@@ -104,9 +160,10 @@ function PackageForm({
   onSave: (pkg: Omit<SubPackage, 'id'>) => void
   onCancel: () => void
 }) {
-  const [name, setName] = useState(initial?.name ?? '')
+  const { addBenefit, deleteBenefit } = useSubscriptions()
+  const [name, setName] = useState(initial?.name || 'Bronze')
   const [priceTiers, setPriceTiers] = useState<PriceTier[]>(
-    initial?.priceTiers?.length ? initial.priceTiers : [{ duration: '', price: 0, discountPrice: 0 }],
+    initial?.priceTiers?.length ? initial.priceTiers : [{ duration: '1 ay', price: 50, discountPrice: 45 }],
   )
   const [entryLimit, setEntryLimit] = useState(
     initial?.entryLimit ? `${initial.entryLimit} giriş` : '12 giriş',
@@ -116,7 +173,7 @@ function PackageForm({
   const [status, setStatus] = useState<SubStatus>(initial?.status ?? 'active')
 
   function addTier() {
-    setPriceTiers((prev) => [...prev, { duration: '', price: 0, discountPrice: 0 }])
+    setPriceTiers((prev) => [...prev, { duration: `${prev.length + 1} ay`, price: 0, discountPrice: 0 }])
   }
 
   function removeTier(i: number) {
@@ -127,208 +184,207 @@ function PackageForm({
     setPriceTiers((prev) => prev.map((t, idx) => idx === i ? { ...t, [key]: value } : t))
   }
 
-  function addService() {
+  async function handleAddService() {
     const s = serviceInput.trim()
     if (!s || services.length >= 20) return
+
     setServices((prev) => [...prev, s])
     setServiceInput('')
+
+    if (initial?.id && !initial.id.startsWith('temp') && !initial.id.startsWith('sub-')) {
+      try {
+        await addBenefit({ packageId: initial.id, description: s })
+      } catch (err) {
+        console.warn('Live service integration sync error', err)
+      }
+    }
   }
 
-  function removeService(i: number) {
+  async function handleRemoveService(i: number) {
+    const targetService = services[i]
     setServices((prev) => prev.filter((_, idx) => idx !== i))
+
+    if (initial?.id && !initial.id.startsWith('temp') && !initial.id.startsWith('sub-')) {
+      try {
+        await deleteBenefit({ packageId: initial.id, description: targetService })
+      } catch (err) {
+        console.warn('Live service deletion sync error', err)
+      }
+    }
   }
 
   function handleSave() {
-    const entryLimitNum = parseInt(entryLimit) || 0
+    const entryLimitNum = parseInt(entryLimit) || 12
     onSave({ name, priceTiers, entryLimit: entryLimitNum, services, status })
   }
 
   return (
-    <div className="rounded-xl border border-[#00B4CC] bg-card p-5 flex flex-col gap-5">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-foreground">Yeni abunəlik formu</h2>
-        <button onClick={onCancel} className="text-muted-foreground hover:text-foreground transition-colors">
-          <X size={16} />
+    <div className="w-full max-w-[1095px] relative rounded-[20px] bg-white border border-[#00b4cc] flex flex-col items-stretch p-8 gap-8 text-left text-[20px] font-sans text-black shadow-2xl">
+      {/* Top Title Bar Wrapper (.yeniAbunlikFormuParent) */}
+      <div className="w-full flex items-center justify-between">
+        <div className="relative leading-[30px] font-semibold text-[20px]">
+          {initial ? 'Paketi redaktə et' : 'Yeni abunəlik formu'}
+        </div>
+        <button
+          onClick={onCancel}
+          className="h-[28px] w-[28px] rounded-[4px] bg-[#ececed] flex items-center justify-center p-1 transition-colors hover:bg-gray-300"
+          aria-label="Bağla"
+        >
+          <X size={15} className="text-black" />
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {/* Left column */}
-        <div className="flex flex-col gap-4">
-          {/* Adı */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground">Adı</label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Paket adı"
-              className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-[#00B4CC] transition-colors"
-            />
+      {/* Dividing Line (.frameChild) */}
+      <div className="w-full h-[1px] border-t border-[#cecfd2]" />
+
+      {/* Content Body Grid (.frameGroup) */}
+      <div className="w-full flex flex-col md:flex-row items-stretch justify-between gap-6 text-[16px]">
+
+        {/* Left Column (.frameContainer) */}
+        <div className="w-full md:w-[503px] flex flex-col items-start gap-4 shrink-0">
+
+          {/* Package Selector Dropdown Container */}
+          <div className="w-full">
+            <PackageNameDropdown value={name} onChange={setName} />
           </div>
 
-          {/* Müddət və qiymətlər */}
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <label className="text-xs text-muted-foreground">Müddət və qiymətlər</label>
+          {/* Pricing / Tiers Wrapper */}
+          <div className="w-full flex flex-col gap-3 pt-2">
+            <div className="w-full rounded-[12px] bg-[#fafafa] border border-[#ececed] flex items-center justify-between p-2 px-3">
+              <span className="text-[18px] leading-[28px] font-medium text-black">
+                Müddət və qiymətlər
+              </span>
               <button
                 type="button"
                 onClick={addTier}
-                className="flex h-6 w-6 items-center justify-center rounded-md border border-[#00B4CC] text-[#00B4CC] hover:bg-[#00B4CC] hover:text-white transition-colors"
+                className="h-[40px] w-[40px] rounded-[8px] bg-white border border-[#ececed] flex items-center justify-center transition-colors hover:bg-gray-100 shadow-2xs"
               >
-                <Plus size={13} />
+                <Plus size={18} className="text-[#00b4cc]" />
               </button>
             </div>
 
             {priceTiers.length > 0 && (
-              <div className="flex flex-col gap-1">
-                <div className="grid grid-cols-[1fr_1fr_1fr_1.5rem] gap-2">
-                  <span className="text-xs text-muted-foreground">Müddət (Ay)</span>
-                  <span className="text-xs text-muted-foreground">Qiymət (Azn)</span>
-                  <span className="text-xs text-muted-foreground">Qiymət (Endirimli)</span>
+              <div className="w-full flex flex-col gap-1.5 pt-1">
+                <div className="grid grid-cols-[1.1fr_1fr_1fr_1fr_2rem] gap-1 px-1">
+                  <span className="text-[12px] text-gray-500 font-medium truncate">Müddət</span>
+                  <span className="text-[12px] text-gray-500 font-medium truncate">Qiymət</span>
+                  <span className="text-[12px] text-gray-500 font-medium truncate">Endirimli</span>
+                  <span className="text-[12px] text-gray-500 font-medium truncate">Giriş (Limit)</span>
                   <span />
                 </div>
                 {priceTiers.map((tier, i) => (
-                  <div key={i} className="grid grid-cols-[1fr_1fr_1fr_1.5rem] gap-2 items-center">
+                  <div key={i} className="grid grid-cols-[1.1fr_1fr_1fr_1fr_2rem] gap-1 items-center">
                     <input
                       value={tier.duration}
                       onChange={(e) => updateTier(i, 'duration', e.target.value)}
                       placeholder="1 ay"
-                      className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-[#00B4CC] transition-colors"
+                      className="h-[38px] rounded-[8px] border border-gray-300 bg-white px-2 text-[13px] outline-none focus:border-[#00b4cc] w-full"
                     />
                     <input
                       type="number"
                       value={tier.price || ''}
                       onChange={(e) => updateTier(i, 'price', Number(e.target.value))}
                       placeholder="0"
-                      className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-[#00B4CC] transition-colors"
+                      className="h-[38px] rounded-[8px] border border-gray-300 bg-white px-2 text-[13px] outline-none focus:border-[#00b4cc] w-full"
                     />
                     <input
                       type="number"
                       value={tier.discountPrice || ''}
                       onChange={(e) => updateTier(i, 'discountPrice', Number(e.target.value))}
                       placeholder="0"
-                      className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-[#00B4CC] transition-colors"
+                      className="h-[38px] rounded-[8px] border border-gray-300 bg-white px-2 text-[13px] outline-none focus:border-[#00b4cc] w-full"
+                    />
+                    <input
+                      type="number"
+                      value={tier.entryLimit ?? 12}
+                      onChange={(e) => updateTier(i, 'entryLimit', Number(e.target.value))}
+                      placeholder="12"
+                      className="h-[38px] rounded-[8px] border border-gray-300 bg-white px-2 text-[13px] outline-none focus:border-[#00b4cc] w-full"
                     />
                     <button
                       type="button"
                       onClick={() => removeTier(i)}
                       disabled={priceTiers.length === 1}
-                      className={cn(
-                        'flex h-6 w-6 items-center justify-center rounded-md transition-colors disabled:opacity-30',
-                        i === priceTiers.length - 1
-                          ? 'bg-red-500 text-white hover:bg-red-600'
-                          : 'text-muted-foreground hover:text-foreground',
-                      )}
+                      className="h-[32px] w-[32px] rounded-[6px] flex items-center justify-center transition-colors hover:bg-red-50 text-gray-400 hover:text-red-500 disabled:opacity-20 mx-auto"
                     >
-                      <X size={12} />
+                      <X size={15} />
                     </button>
                   </div>
                 ))}
               </div>
             )}
           </div>
-
-          {/* Giriş sayı */}
-          <EntryLimitSelect value={entryLimit} onChange={setEntryLimit} />
         </div>
 
-        {/* Right column */}
-        <div className="flex flex-col gap-4">
-          {/* Xidmətlər */}
-          <div className="flex flex-col gap-2">
-            <label className="text-xs text-muted-foreground">Xidmətlər (1-20)</label>
-            <div className="flex gap-2">
-              <input
-                value={serviceInput}
-                onChange={(e) => setServiceInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addService())}
-                placeholder="Xidmət adı"
-                className="flex-1 rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-[#00B4CC] transition-colors"
-              />
-              <button
-                type="button"
-                onClick={addService}
-                disabled={!serviceInput.trim() || services.length >= 20}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#00B4CC] text-[#00B4CC] hover:bg-[#00B4CC] hover:text-white disabled:opacity-40 transition-colors"
-              >
-                <Plus size={16} />
-              </button>
+        {/* Right Column (.frameParent2) */}
+        <div className="w-full md:w-[503px] flex flex-col items-stretch justify-between gap-6 shrink-0 h-full">
+
+          {/* Services Wrapper (.frameParent3) */}
+          <div className="w-full flex flex-col items-stretch gap-3">
+            <div className="w-full flex flex-col gap-1.5">
+              <label className="text-[16px] leading-[24px] font-medium text-black">Xidmətlər (1-20)</label>
+              <div className="w-full flex items-center gap-2">
+                <input
+                  value={serviceInput}
+                  onChange={(e) => setServiceInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddService())}
+                  placeholder="Xidmət adı"
+                  className="flex-1 h-[50px] rounded-[12px] bg-[#fafafa] border border-[#ececed] px-3 text-[16px] outline-none focus:border-[#00b4cc]"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddService}
+                  disabled={!serviceInput.trim() || services.length >= 20}
+                  className="h-[50px] w-[50px] rounded-[8px] bg-[#fafafa] border border-[#ececed] flex items-center justify-center transition-colors hover:bg-gray-200 disabled:opacity-40 shrink-0"
+                >
+                  <Plus size={18} className="text-[#00b4cc]" />
+                </button>
+              </div>
             </div>
 
-            <div className="min-h-25 rounded-lg border border-border bg-background">
+            {/* Added Services Box (.frameParent6) */}
+            <div className="w-full h-[238px] rounded-[16px] bg-[#fafafa] p-3 flex flex-col gap-2.5 overflow-y-auto border border-gray-100">
               {services.length === 0 ? (
-                <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
+                <div className="w-full h-full flex items-center justify-center text-[15px] text-gray-400 italic">
                   Heç bir xidmət əlavə edilməyib
                 </div>
               ) : (
-                <div className="flex flex-col divide-y divide-border">
-                  {services.map((s, i) => (
-                    <div key={i} className="flex items-center justify-between px-4 py-2.5">
-                      <span className="text-sm text-foreground">{s}</span>
-                      <button
-                        onClick={() => removeService(i)}
-                        className={cn(
-                          'flex h-6 w-6 items-center justify-center rounded-md transition-colors',
-                          i === services.length - 1
-                            ? 'bg-red-500 text-white hover:bg-red-600'
-                            : 'text-muted-foreground hover:text-foreground',
-                        )}
-                      >
-                        <X size={12} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                services.map((srv, idx) => (
+                  <div key={idx} className="w-full min-h-[50px] rounded-[12px] bg-white border border-[#ececed] px-3 flex items-center justify-between shadow-2xs shrink-0">
+                    <span className="text-[16px] font-medium text-black">{srv}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveService(idx)}
+                      className="h-[28px] w-[28px] rounded-[4px] bg-[#e7272c] flex items-center justify-center transition-colors hover:bg-red-700"
+                      aria-label="Sil"
+                    >
+                      <X size={14} className="text-white" />
+                    </button>
+                  </div>
+                ))
               )}
             </div>
-            <div className="text-right text-xs text-muted-foreground">{services.length}/20 xidmət</div>
-          </div>
-
-          {/* Status */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground">Status</label>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setStatus('active')}
-                className={cn(
-                  'flex-1 rounded-lg py-2.5 text-sm font-semibold transition-colors',
-                  status === 'active'
-                    ? 'bg-[#00B4CC] text-white'
-                    : 'border border-border text-foreground hover:bg-secondary',
-                )}
-              >
-                Aktiv et
-              </button>
-              <button
-                type="button"
-                onClick={() => setStatus('inactive')}
-                className={cn(
-                  'flex-1 rounded-lg py-2.5 text-sm font-semibold transition-colors',
-                  status === 'inactive'
-                    ? 'bg-foreground text-background'
-                    : 'border border-border text-foreground hover:bg-secondary',
-                )}
-              >
-                Deaktiv et
-              </button>
+            <div className="w-full text-right text-[16px] text-gray-500 font-medium">
+              {services.length}/20 xidmət
             </div>
           </div>
+
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="flex justify-end gap-3 border-t border-border pt-4">
+      {/* Action Controls Toolbar / Footer */}
+      <div className="w-full flex justify-end gap-3 border-t border-border pt-4">
         <button
+          type="button"
           onClick={onCancel}
-          className="rounded-lg border border-border px-6 py-2.5 text-sm font-medium text-foreground hover:bg-secondary transition-colors"
+          className="h-[46px] rounded-[10px] border border-gray-300 px-6 text-[16px] font-medium text-black hover:bg-gray-50 transition-colors cursor-pointer"
         >
           Ləğv et
         </button>
         <button
+          type="button"
           onClick={handleSave}
-          className="rounded-lg bg-[#00B4CC] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#008799] transition-colors"
+          className="h-[46px] rounded-[10px] bg-[#00b4cc] px-8 text-[16px] font-semibold text-white hover:bg-[#009bb0] transition-colors shadow-sm cursor-pointer"
         >
           Yadda saxla
         </button>
@@ -342,101 +398,117 @@ function PackageCard({
   pkg,
   onEdit,
   onDelete,
+  onToggleStatus,
 }: {
   pkg: SubPackage
   onEdit: (p: SubPackage) => void
   onDelete: (id: string) => void
+  onToggleStatus: (p: SubPackage) => void
 }) {
-  const firstTier = pkg.priceTiers[0]
   return (
-    <div className="flex flex-col rounded-xl border border-border bg-card p-4 gap-3">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <span className="text-base font-bold text-foreground">{pkg.name}</span>
-        <span className={cn(
-          'rounded-full px-2.5 py-0.5 text-xs font-semibold flex items-center gap-1',
-          pkg.status === 'active' ? 'bg-green-600 text-white' : 'bg-[#6B7280] text-white',
-        )}>
-          <span className="h-1.5 w-1.5 rounded-full bg-white/80 shrink-0" />
-          {pkg.status === 'active' ? 'Aktiv' : 'Deaktiv'}
-        </span>
-      </div>
-
-      {/* Price tiers */}
-      <div className="flex flex-col gap-1">
-        {pkg.priceTiers.map((tier, i) => (
-          <div key={i} className="flex items-baseline justify-between gap-2">
-            <span className="text-xs text-muted-foreground shrink-0">{tier.duration}</span>
-            <div className="flex items-baseline gap-1.5">
-              {tier.discountPrice > 0 && tier.discountPrice !== tier.price && (
-                <span className="text-xs text-muted-foreground line-through">{tier.price}</span>
-              )}
-              <span className="text-lg font-bold text-foreground">{tier.discountPrice || tier.price}</span>
-              <span className="text-xs text-muted-foreground">AZN</span>
+    <div className="w-full relative rounded-[12px] bg-white border border-[#00b4cc] flex flex-col items-start p-5 gap-[34px] text-center font-sans text-black shadow-sm transition-all hover:shadow-md">
+      {/* Header Wrapper */}
+      <div className="w-full flex flex-col items-end">
+        <div className="w-full flex items-center justify-between gap-5">
+          <b className="text-[18px] font-bold text-black leading-[28px]">{pkg.name}</b>
+          <div className="flex items-center gap-2">
+            <div className={cn(
+              "h-[26px] rounded-[20px] flex items-center justify-center px-3 py-1 gap-1 text-[12px] font-medium text-white transition-colors",
+              pkg.status === 'active' ? "bg-[#166728]" : "bg-gray-500"
+            )}>
+              <div className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
+              <span className="leading-[18px] font-medium">{pkg.status === 'active' ? 'Aktiv' : 'Deaktiv'}</span>
             </div>
-          </div>
-        ))}
-      </div>
 
-      {/* Details */}
-      <div className="flex flex-col gap-1 text-sm border-t border-border pt-2">
-        <div className="flex items-center justify-between">
-          <span className="text-muted-foreground">Limit:</span>
-          <span className="font-medium text-foreground">{pkg.entryLimit} giriş</span>
-        </div>
-        {firstTier && (
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Başlanğıc müddət:</span>
-            <span className="font-medium text-foreground">{firstTier.duration}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Services */}
-      {pkg.services.length > 0 && (
-        <div className="flex flex-col gap-1.5">
-          <span className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">Xidmətlər</span>
-          <div className="flex flex-wrap gap-1.5">
-            {pkg.services.map((s) => (
-              <span key={s} className="rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground">
-                {s}
-              </span>
-            ))}
+            {/* Visual native CSS switch matching the design asset knobs */}
+            <button
+              type="button"
+              onClick={() => onToggleStatus(pkg)}
+              className={cn(
+                "w-[51px] h-[31px] rounded-full p-1 transition-colors duration-200 ease-in-out shrink-0 flex items-center cursor-pointer outline-none border-none",
+                pkg.status === 'active' ? "bg-[#00b4cc]" : "bg-gray-300"
+              )}
+              aria-label="Statusu dəyiş"
+            >
+              <div className={cn(
+                "w-[23px] h-[23px] rounded-full bg-white shadow-md transform transition-transform duration-200 ease-in-out",
+                pkg.status === 'active' ? "translate-x-[20px]" : "translate-x-0"
+              )} />
+            </button>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Actions */}
-      <div className="flex gap-2 pt-1">
+      {/* Middle Section / Pricing & Entry Limit */}
+      <div className="w-full flex flex-col items-start gap-[22px] text-left text-[#4a5565]">
+        <div className="w-full flex flex-col items-start gap-3">
+          {pkg.priceTiers.map((tier, i) => (
+            <div key={i} className="w-full flex flex-col gap-3">
+              <div className="w-full flex items-center justify-between gap-5">
+                <span className="text-[16px] leading-[24px] text-[#4a5565]">{tier.duration || 'Müddət'}</span>
+                <div className="flex items-baseline gap-1.5">
+                  {tier.discountPrice > 0 && tier.discountPrice !== tier.price ? (
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-[16px] leading-[24px] font-medium text-red-500 line-through decoration-red-500 decoration-2">
+                        {tier.price} AZN
+                      </span>
+                      <span className="text-[16px] leading-[24px] font-bold text-[#101828]">
+                        / {tier.discountPrice} AZN
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-[16px] leading-[24px] font-medium text-[#101828]">
+                      {tier.price} AZN
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="w-full h-[1px] border-t border-[#ececed] transform rotate-[0.3deg]" />
+            </div>
+          ))}
+
+          <div className="w-full flex items-center justify-between gap-5 pt-1">
+            <span className="text-[16px] leading-[24px] text-[#4a5565]">Limit:</span>
+            <span className="text-[16px] leading-[24px] font-medium text-[#101828]">{pkg.entryLimit} giriş</span>
+          </div>
+          <div className="w-full h-[1px] border-t border-[#ececed] transform rotate-[0.3deg]" />
+        </div>
+
+        {/* Services List Block */}
+        <div className="w-full flex flex-col items-start gap-[11px] pt-1">
+          <span className="text-[12px] font-bold tracking-wider text-[#4a5565] uppercase">XİDMƏTLƏR</span>
+          <div className="w-full flex flex-wrap items-center gap-2">
+            {pkg.services.length > 0 ? (
+              pkg.services.map((s) => (
+                <div key={s} className="rounded-[20px] bg-white border border-[#ececed] flex items-center justify-center px-3 py-1 gap-1.5 text-[14px] text-black font-medium shadow-2xs">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#00b4cc] shrink-0" />
+                  <span className="leading-[20px] font-medium">{s}</span>
+                </div>
+              ))
+            ) : (
+              <span className="text-xs text-gray-400 italic">Xidmət təyin edilməyib</span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Buttons Block */}
+      <div className="w-full flex items-center gap-3 pt-1">
         <button
           onClick={() => onEdit(pkg)}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#00B4CC] py-2 text-sm font-medium text-[#00B4CC] hover:bg-[#00B4CC0D] transition-colors"
+          className="flex-1 h-[41px] rounded-[10px] bg-white border border-[#00b4cc] flex items-center justify-center px-4 gap-2 hover:bg-[#00b4cc]/5 transition-colors"
         >
-          <Pencil size={14} /> Dəyiş
+          <Pencil size={15} className="text-[#00b4cc] shrink-0" />
+          <span className="text-[15px] font-medium text-black leading-[24px]">Dəyiş</span>
         </button>
+
         <button
           onClick={() => onDelete(pkg.id)}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-red-200 py-2 text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+          className="flex-1 h-[41px] rounded-[10px] bg-white border border-[#f10303] flex items-center justify-center px-4 gap-2 hover:bg-[#f10303]/5 transition-colors"
         >
-          <Trash2 size={14} /> Sil
+          <Trash2 size={15} className="text-[#f10303] shrink-0" />
+          <span className="text-[15px] font-medium text-black leading-[24px]">Sil</span>
         </button>
-      </div>
-    </div>
-  )
-}
-
-// ── Delete confirm modal ───────────────────────────────────────────────────────
-function DeleteModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onCancel}>
-      <div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-2xl flex flex-col gap-5" onClick={(e) => e.stopPropagation()}>
-        <p className="text-center text-sm font-medium text-foreground">
-          Bu paketi silmək istədiyinizə əminsiniz?
-        </p>
-        <div className="flex gap-3">
-          <button onClick={onCancel} className="flex-1 rounded-lg border border-border py-2.5 text-sm font-medium hover:bg-secondary transition-colors">Ləğv et</button>
-          <button onClick={onConfirm} className="flex-1 rounded-lg bg-red-500 py-2.5 text-sm font-semibold text-white hover:bg-red-600 transition-colors">Sil</button>
-        </div>
       </div>
     </div>
   )
@@ -444,22 +516,69 @@ function DeleteModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel:
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export function SubscriptionList() {
-  const [packages, setPackages] = useState<SubPackage[]>(MOCK_SUB_PACKAGES)
+  const { packages: backendPackages, isLoading, createPackage, updatePackage, deletePackage, updatePackageStatus } = useSubscriptions()
+  const [localPackages, setLocalPackages] = useState<SubPackage[]>(MOCK_SUB_PACKAGES)
   const [showForm, setShowForm] = useState(false)
   const [editingPkg, setEditingPkg] = useState<SubPackage | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [page, setPage] = useState(1)
 
-  const paginated = packages.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-
-  function handleSave(data: Omit<SubPackage, 'id'>) {
-    if (editingPkg) {
-      setPackages((prev) => prev.map((p) => p.id === editingPkg.id ? { ...editingPkg, ...data } : p))
-    } else {
-      setPackages((prev) => [...prev, { id: `sub-${Date.now()}`, ...data }])
+  async function handleToggleStatus(pkg: SubPackage) {
+    const newStatus = pkg.status === 'active' ? 'inactive' : 'active'
+    setLocalPackages((prev) => prev.map((p) => p.id === pkg.id ? { ...p, status: newStatus } : p))
+    
+    if (!pkg.id.startsWith('temp') && !pkg.id.startsWith('sub-')) {
+      try {
+        await updatePackageStatus({ id: pkg.id, isActive: newStatus === 'active' })
+      } catch (err) {
+        console.warn('Backend status toggle sync error', err)
+      }
     }
-    setShowForm(false)
-    setEditingPkg(null)
+  }
+
+  const currentPackages = backendPackages?.length > 0 ? backendPackages : localPackages
+  const paginated = currentPackages.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+  async function handleSave(data: Omit<SubPackage, 'id'>) {
+    if (editingPkg) {
+      const targetId = editingPkg.id
+      setLocalPackages((prev) => prev.map((p) => p.id === targetId ? { ...editingPkg, ...data } : p))
+      setShowForm(false)
+      setEditingPkg(null)
+
+      if (!targetId.startsWith('temp') && !targetId.startsWith('sub-')) {
+        try {
+          await updatePackage({
+            id: targetId,
+            name: data.name,
+            status: data.status,
+            entryLimit: data.entryLimit,
+            services: data.services,
+            priceTiers: data.priceTiers,
+          })
+        } catch (err) {
+          console.warn('Backend subscription update sync error', err)
+        }
+      }
+    } else {
+      const tempId = `sub-${Date.now()}`
+      setLocalPackages((prev) => [...prev, { id: tempId, ...data }])
+      setShowForm(false)
+      setEditingPkg(null)
+
+      try {
+        await createPackage({
+          name: data.name,
+          status: data.status,
+          entryLimit: data.entryLimit,
+          services: data.services,
+          priceTiers: data.priceTiers,
+        })
+      } catch (err) {
+        console.warn('Backend subscription creation sync error', err)
+      }
+    }
   }
 
   function handleEdit(pkg: SubPackage) {
@@ -468,20 +587,41 @@ export function SubscriptionList() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (!deletingId) return
-    setPackages((prev) => prev.filter((p) => p.id !== deletingId))
+    const targetId = deletingId
+    setLocalPackages((prev) => prev.filter((p) => p.id !== targetId))
     setDeletingId(null)
+
+    if (!targetId.startsWith('temp') && !targetId.startsWith('sub-')) {
+      try {
+        await deletePackage(targetId)
+      } catch (err) {
+        console.warn('Backend subscription deletion sync error', err)
+      }
+    }
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-5 font-sans">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-foreground">Abunəlik Paketləri</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-bold text-foreground">Abunəlik Paketləri</h1>
+          {isLoading && (
+            <span className="text-xs text-[#00b4cc] font-medium animate-pulse">Yüklənir...</span>
+          )}
+        </div>
         {!showForm && (
           <button
-            onClick={() => { setEditingPkg(null); setShowForm(true) }}
-            className="flex items-center gap-1.5 rounded-lg bg-[#00B4CC] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#008799] transition-colors"
+            onClick={() => {
+              if (currentPackages.length >= 4) {
+                setErrorMsg('Hal-hazırda bütün paketlər yaradılıb. Zəhmət olmasa mövcud paketləri redaktə edin.')
+                return
+              }
+              setEditingPkg(null)
+              setShowForm(true)
+            }}
+            className="flex items-center gap-1.5 rounded-lg bg-[#00B4CC] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#008799] transition-colors shadow-2xs"
           >
             <Plus size={15} /> Yeni Paket
           </button>
@@ -496,8 +636,8 @@ export function SubscriptionList() {
         />
       )}
 
-      {packages.length === 0 ? (
-        <div className="flex items-center justify-center py-24 text-sm text-muted-foreground">
+      {currentPackages.length === 0 ? (
+        <div className="flex items-center justify-center py-24 text-sm text-muted-foreground italic">
           Hələ paket əlavə edilməyib
         </div>
       ) : (
@@ -508,15 +648,24 @@ export function SubscriptionList() {
               pkg={pkg}
               onEdit={handleEdit}
               onDelete={(id) => setDeletingId(id)}
+              onToggleStatus={handleToggleStatus}
             />
           ))}
         </div>
       )}
 
-      <Pagination total={packages.length} page={page} perPage={PAGE_SIZE} onChange={setPage} />
+      <Pagination total={currentPackages.length} page={page} perPage={PAGE_SIZE} onChange={setPage} />
 
       {deletingId && (
-        <DeleteModal onConfirm={confirmDelete} onCancel={() => setDeletingId(null)} />
+        <ConfirmDeleteModal
+          name={currentPackages.find((p) => p.id === deletingId)?.name ?? 'Paket'}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeletingId(null)}
+        />
+      )}
+
+      {errorMsg && (
+        <ErrorToastModal message={errorMsg} onClose={() => setErrorMsg(null)} />
       )}
     </div>
   )

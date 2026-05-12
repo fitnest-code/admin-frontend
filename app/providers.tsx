@@ -11,7 +11,20 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      <Toaster position="top-right" richColors />
+      <Toaster 
+        position="top-center" 
+        toastOptions={{
+          style: {
+            borderRadius: '12px',
+            padding: '16px',
+            background: '#fff',
+            border: '1px solid #ececed',
+            color: '#101828',
+            fontSize: '16px',
+            fontFamily: 'sans-serif'
+          }
+        }} 
+      />
     </QueryClientProvider>
   )
 }
