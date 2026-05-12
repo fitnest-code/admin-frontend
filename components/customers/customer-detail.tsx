@@ -2,10 +2,12 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { ArrowLeft, Ban, Bell, Mail, MessageSquare, Upload } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CustomerProfile } from '@/modules/customers'
 import { getCustomerStatusLabel, normalizeCustomerStatus, type UiCustomerStatus } from './list/customer-list-utils'
+import { PushModal, SmsModal } from './list/customer-message-modals'
 import { SubscriptionTab } from './tabs/subscription-tab'
 import { PaymentsTab } from './tabs/payments-tab'
 import { AccessTab } from './tabs/access-tab'
@@ -18,7 +20,7 @@ const CUSTOMER_TABS = [
 ]
 
 const STATUS_STYLES = {
-  active: 'bg-green-600 text-white',
+  active: 'bg-[#166728] text-white',
   inactive: 'bg-[#6B7280] text-white',
   blocked: 'bg-red-600 text-white',
 } satisfies Record<UiCustomerStatus, string>
@@ -28,20 +30,11 @@ function formatValue(value: string | number | null | undefined, suffix?: string)
   return suffix ? `${value} ${suffix}` : String(value)
 }
 
-function PlaceholderTab({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="rounded-xl border border-border bg-card p-6">
-      <h2 className="text-base font-semibold text-foreground">{title}</h2>
-      <p className="mt-2 text-sm text-muted-foreground">{description}</p>
-    </div>
-  )
-}
-
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-1 border-b border-border/50 last:border-0">
-      <span className="text-sm text-muted-foreground shrink-0">{label}</span>
-      <span className="text-sm font-medium text-foreground text-right">{value}</span>
+    <div className="flex items-center justify-between gap-4 py-3.5 border-b border-border/40 last:border-0 first:pt-0 last:pb-0">
+      <span className="text-sm font-medium text-muted-foreground shrink-0">{label}</span>
+      <span className="text-base font-semibold text-foreground text-right">{value}</span>
     </div>
   )
 }
@@ -61,13 +54,14 @@ function OpsBtn({
     <button
       onClick={onClick}
       className={cn(
-        'flex w-full items-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors',
+        'flex w-full items-center gap-3 rounded-xl border px-4 py-3.5 text-sm font-semibold transition-all duration-200 active:scale-[0.98]',
         danger
-          ? 'border-red-200 text-red-500 hover:bg-red-50'
-          : 'border-border text-foreground hover:border-[#00B4CC] hover:text-[#00B4CC]',
+          ? 'border-red-200 bg-red-50/40 text-red-600 hover:bg-red-50 hover:border-red-300'
+          : 'border-border bg-white text-foreground hover:border-[#00B4CC] hover:text-[#00B4CC] hover:bg-[#00B4CC]/5 shadow-xs',
       )}
     >
-      <Icon size={14} className="shrink-0" /> {label}
+      <Icon size={18} className={cn('shrink-0', danger ? 'text-red-500' : 'text-[#00B4CC]')} /> 
+      <span>{label}</span>
     </button>
   )
 }
@@ -75,27 +69,37 @@ function OpsBtn({
 export function CustomerDetail({ customer }: { customer: CustomerProfile }) {
   const router = useRouter()
   const [tab, setTab] = useState('profile')
+  const [pushOpen, setPushOpen] = useState(false)
+  const [smsOpen, setSmsOpen] = useState(false)
+
   const status = normalizeCustomerStatus(customer.userStatus)
   const initials = `${customer.name?.[0] ?? ''}${customer.surname?.[0] ?? ''}`.toUpperCase()
+  const fullName = customer.fullName || [customer.name, customer.surname].filter(Boolean).join(' ') || 'Adsız'
 
   return (
-    <div className="flex flex-col gap-4">
-      <button
-        onClick={() => router.push('/customers')}
-        className="flex w-fit items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowLeft size={15} /> Geri qayıt
-      </button>
+    <div className="flex flex-col gap-6 max-w-[1440px] mx-auto w-full pb-12 animate-in fade-in-50 duration-300">
+      {/* Top Header Controls */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => router.push('/customers')}
+          className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors group"
+        >
+          <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-0.5" /> Geri qayıt
+        </button>
+      </div>
 
+      {/* Tabs Navigation */}
       <div className="border-b border-border">
-        <nav className="-mb-px flex overflow-x-auto">
+        <nav className="-mb-px flex overflow-x-auto gap-2">
           {CUSTOMER_TABS.map((item) => (
             <button
               key={item.key}
               onClick={() => setTab(item.key)}
               className={cn(
-                'shrink-0 border-b-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors',
-                tab === item.key ? 'border-[#00B4CC] text-[#00B4CC]' : 'border-transparent text-muted-foreground hover:text-foreground',
+                'shrink-0 border-b-2 px-5 py-3 text-sm font-semibold whitespace-nowrap transition-all duration-200',
+                tab === item.key 
+                  ? 'border-[#00B4CC] text-[#00B4CC]' 
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border/60',
               )}
             >
               {item.label}
@@ -104,39 +108,68 @@ export function CustomerDetail({ customer }: { customer: CustomerProfile }) {
         </nav>
       </div>
 
-      {tab === 'profile' && (
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-stretch lg:gap-6">
-          <div className="flex flex-1 flex-col gap-5">
-            <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-4">
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#00B4CC26] text-xl font-bold text-[#00B4CC]">
-                {initials || 'FN'}
-              </div>
-              <div className="flex flex-col gap-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-base font-bold text-foreground">
-                    {[customer.name, customer.surname].filter(Boolean).join(' ') || 'Adsız'}
-                  </span>
-                  <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-semibold', STATUS_STYLES[status])}>
-                    {getCustomerStatusLabel(status)}
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-                  <span>
-                    User ID: <strong className="text-foreground">{customer.id}</strong>
-                  </span>
-                  <span>
-                    Qeydiyyat tarixi: <strong className="text-foreground">{formatValue(customer.registeredAt)}</strong>
-                  </span>
-                  <span>
-                    Platforma: <strong className="text-foreground">{formatValue(customer.platform)}</strong>
-                  </span>
-                </div>
+      {/* Top Profile Card Header */}
+      <div className="rounded-2xl bg-white border border-border p-7 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all">
+        <div className="flex items-center gap-6">
+          {customer.photoUrl ? (
+            <Image 
+              src={customer.photoUrl} 
+              width={100} 
+              height={100} 
+              alt="" 
+              className="h-[100px] w-[100px] rounded-full object-cover shrink-0 ring-4 ring-[#00B4CC]/10" 
+            />
+          ) : (
+            <div className="flex h-[100px] w-[100px] shrink-0 items-center justify-center rounded-full bg-[#00B4CC]/10 font-bold text-3xl text-[#00B4CC] ring-4 ring-[#00B4CC]/5">
+              {initials || 'FN'}
+            </div>
+          )}
+          <div className="flex flex-col gap-2.5">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                {fullName}
+              </h1>
+              <div className={cn('flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold shadow-2xs', STATUS_STYLES[status])}>
+                <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                <span>{getCustomerStatusLabel(status)}</span>
               </div>
             </div>
+            {customer.subscriptionStatus && (
+              <span className="text-sm font-medium text-muted-foreground">
+                Abunəlik: <strong className="text-[#00B4CC] font-semibold">{customer.subscriptionStatus}</strong>
+              </span>
+            )}
+          </div>
+        </div>
 
-            <div className="rounded-xl border border-border bg-card p-5">
-              <h3 className="mb-4 text-sm font-semibold text-foreground">Şəxsi məlumatlar</h3>
-              <div className="flex flex-col gap-3">
+        {/* Right Metadata Flex Grid */}
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-6 divide-x divide-border bg-[#FAFAFA] p-4.5 rounded-xl border border-border/60">
+          <div className="flex flex-col gap-1 pl-0">
+            <span className="text-xs font-medium text-muted-foreground">User ID:</span>
+            <strong className="text-base font-bold text-foreground">{customer.id}</strong>
+          </div>
+          <div className="flex flex-col gap-1 pl-6">
+            <span className="text-xs font-medium text-muted-foreground">Qeydiyyat tarixi:</span>
+            <strong className="text-base font-bold text-foreground">{formatValue(customer.registeredAt)}</strong>
+          </div>
+          <div className="flex flex-col gap-1 pl-6">
+            <span className="text-xs font-medium text-muted-foreground">Platforma:</span>
+            <strong className="text-base font-bold text-foreground">{formatValue(customer.platform) || 'İOS'}</strong>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Areas based on selected tab */}
+      {tab === 'profile' && (
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-stretch lg:gap-6">
+          {/* Left Area: Profile Information Categories */}
+          <div className="flex flex-1 flex-col gap-6">
+            {/* Personal Data Card */}
+            <div className="rounded-2xl bg-white border border-border p-6 shadow-xs flex flex-col gap-5">
+              <div className="border-b border-border pb-3.5">
+                <h2 className="text-lg font-bold text-foreground tracking-tight">Şəxsi məlumatlar</h2>
+              </div>
+              <div className="flex flex-col">
                 <InfoRow label="Telefon nömrəsi:" value={formatValue(customer.phoneNumber)} />
                 <InfoRow label="Email:" value={formatValue(customer.email)} />
                 <InfoRow label="Doğum tarixi:" value={formatValue(customer.birthDate)} />
@@ -144,9 +177,12 @@ export function CustomerDetail({ customer }: { customer: CustomerProfile }) {
               </div>
             </div>
 
-            <div className="rounded-xl border border-border bg-card p-5">
-              <h3 className="mb-4 text-sm font-semibold text-foreground">Bədən göstəriciləri</h3>
-              <div className="flex flex-col gap-3">
+            {/* Physical Metrics Card */}
+            <div className="rounded-2xl bg-white border border-border p-6 shadow-xs flex flex-col gap-5">
+              <div className="border-b border-border pb-3.5">
+                <h2 className="text-lg font-bold text-foreground tracking-tight">Bədən göstəriciləri</h2>
+              </div>
+              <div className="flex flex-col">
                 <InfoRow label="Boy:" value={formatValue(customer.height, 'cm')} />
                 <InfoRow label="Çəki:" value={formatValue(customer.weight, 'kg')} />
                 <InfoRow label="BMI indeksi:" value={formatValue(customer.bmi)} />
@@ -154,30 +190,33 @@ export function CustomerDetail({ customer }: { customer: CustomerProfile }) {
             </div>
           </div>
 
-          <div className="w-full lg:w-56 shrink-0 lg:self-stretch">
-            <div className="flex h-full flex-col rounded-xl border border-border bg-card p-4">
-              <h3 className="mb-3 text-sm font-semibold text-foreground">Əməliyyatlar</h3>
-              <div className="flex flex-col gap-2">
-                <OpsBtn icon={Bell} label="Push bildiriş göndər" onClick={() => {}} />
-                <OpsBtn icon={MessageSquare} label="SMS göndər" onClick={() => {}} />
+          {/* Right Area: Admin Actions Panel */}
+          <div className="w-full lg:w-[411px] shrink-0">
+            <div className="flex flex-col rounded-2xl bg-white border border-border p-6 shadow-xs gap-6">
+              <div className="border-b border-border pb-3.5">
+                <h2 className="text-lg font-bold text-foreground tracking-tight">Əməliyyatlar</h2>
+              </div>
+              <div className="flex flex-col gap-3.5">
+                <OpsBtn icon={Bell} label="Push bildiriş göndər" onClick={() => setPushOpen(true)} />
+                <OpsBtn icon={MessageSquare} label="SMS göndər" onClick={() => setSmsOpen(true)} />
                 <OpsBtn icon={Mail} label="Email göndər" onClick={() => {}} />
                 <OpsBtn icon={Upload} label="Export" onClick={() => {}} />
-                <OpsBtn icon={Ban} label="Block" onClick={() => {}} danger />
+                <div className="pt-2 border-t border-border/60">
+                  <OpsBtn icon={Ban} label="Block" onClick={() => {}} danger />
+                </div>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {tab === 'subscription' && (
-        <SubscriptionTab userId={String(customer.id)} />
-      )}
-      {tab === 'payments' && (
-        <PaymentsTab userId={String(customer.id)} />
-      )}
-      {tab === 'access' && (
-        <AccessTab userId={String(customer.id)} />
-      )}
+      {tab === 'subscription' && <SubscriptionTab userId={String(customer.id)} />}
+      {tab === 'payments' && <PaymentsTab userId={String(customer.id)} />}
+      {tab === 'access' && <AccessTab userId={String(customer.id)} />}
+
+      {/* Render Invoked Modals */}
+      {pushOpen && <PushModal onClose={() => setPushOpen(false)} />}
+      {smsOpen && <SmsModal onClose={() => setSmsOpen(false)} />}
     </div>
   )
 }
