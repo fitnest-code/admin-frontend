@@ -9,6 +9,7 @@ import { useSupportedServices, useCreateGymStep6, useCreateSupportedService, use
 import { toast } from "sonner";
 import { ServiceSelectorModal } from "../modals/service-selector-modal";
 import { ConfirmDeleteModal } from "../modals/confirm-delete-modal";
+import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 
 type Package = "Bronze" | "Silver" | "Gold" | "Platinum";
 
@@ -69,6 +70,7 @@ export function PlansTab({ gym }: { gym?: any }) {
   const [packageServices, setPackageServices] = useState<Record<Package, string[]>>(initialData.services);
   const [hasSynced, setHasSynced] = useState(false);
   const [pendingService, setPendingService] = useState<string | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Sync state when gym data arrives
   useEffect(() => {
@@ -194,6 +196,7 @@ export function PlansTab({ gym }: { gym?: any }) {
     }, {
       onSuccess: () => {
         toast.success("Abunəlik məlumatları uğurla yeniləndi");
+        setShowSuccessModal(true);
       },
       onError: (err: any) => {
         toast.error(err?.response?.data?.message || err?.message || "Xəta baş verdi");
@@ -385,6 +388,12 @@ export function PlansTab({ gym }: { gym?: any }) {
           isLoading={deleteServiceMutation.isPending}
         />
       )}
+
+      <SuccessAnimationModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        message="Abunəlik məlumatları uğurla yeniləndi!"
+      />
     </div>
   );
 }

@@ -10,6 +10,7 @@ import {
 import { useSubscriptions } from '@/lib/query/use-subscriptions'
 import { ErrorToastModal } from '../categories/modals/error-toast-modal'
 import { ConfirmDeleteModal } from '../gyms/modals/confirm-delete-modal'
+import { SuccessAnimationModal } from '../ui/success-animation-modal'
 
 const PAGE_SIZE = 6
 
@@ -627,6 +628,7 @@ export function SubscriptionList() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [view, setView] = useState<'grid' | 'list'>('grid')
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
 
   async function handleToggleStatus(pkg: SubPackage) {
     const newStatus = pkg.status === 'active' ? 'inactive' : 'active'
@@ -635,9 +637,12 @@ export function SubscriptionList() {
     if (!pkg.id.startsWith('temp') && !pkg.id.startsWith('sub-')) {
       try {
         await updatePackageStatus({ id: pkg.id, isActive: newStatus === 'active' })
+        setShowSuccessModal(true)
       } catch (err) {
         console.warn('Backend status toggle sync error', err)
       }
+    } else {
+      setShowSuccessModal(true)
     }
   }
 
@@ -660,9 +665,12 @@ export function SubscriptionList() {
             services: data.services,
             priceTiers: data.priceTiers,
           })
+          setShowSuccessModal(true)
         } catch (err) {
           console.warn('Backend subscription update sync error', err)
         }
+      } else {
+        setShowSuccessModal(true)
       }
     } else {
       const tempId = `sub-${Date.now()}`
@@ -677,6 +685,7 @@ export function SubscriptionList() {
           services: data.services,
           priceTiers: data.priceTiers,
         })
+        setShowSuccessModal(true)
       } catch (err) {
         console.warn('Backend subscription creation sync error', err)
       }
@@ -811,6 +820,8 @@ export function SubscriptionList() {
       {errorMsg && (
         <ErrorToastModal message={errorMsg} onClose={() => setErrorMsg(null)} />
       )}
+
+      <SuccessAnimationModal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)} />
     </div>
   )
 }

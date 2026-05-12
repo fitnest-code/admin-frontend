@@ -7,11 +7,12 @@ import { cn } from '@/lib/utils'
 import { 
     useAddLessonHour, 
     useGymTrainers, 
-    useGymLessonTypes 
+    useCategories,
+    useGymDetailsAdmin
 } from '@/lib/query/gym-query'
 import { CustomCalendar } from '@/components/ui/custom-calendar'
 import { format, parse } from 'date-fns'
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { Calendar as CalendarIcon, Loader2 } from 'lucide-react'
 
 interface Props {
     gymId: number
@@ -26,18 +27,39 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
     const [startTime, setStartTime] = useState('09:00')
     const [endTime, setEndTime] = useState('10:00')
     const [maxSlots, setMaxSlots] = useState(12)
-    const [trainerPage, setTrainerPage] = useState(1)
 
-    const { data: trainers, isLoading: trainersLoading } = useGymTrainers(gymId, { 
-        page: trainerPage, 
-        pageSize: 4 
+    // Fetch gym details & categories to extract all lesson types belonging to the gym's category
+    const { data: gymDetails } = useGymDetailsAdmin(gymId)
+    const { data: categoriesData } = useCategories()
+    const activeCategoryId = gymDetails?.categoryId
+    const selectedCategory = categoriesData?.items?.find((c: any) => c.id === activeCategoryId)
+    const availableLessonTypes = selectedCategory?.lessonTypes || []
+
+    // Fetch all trainers without strict pagination to filter properly client-side
+    const { data: trainersData, isLoading: trainersLoading } = useGymTrainers(gymId, { 
+        page: 1, 
+        pageSize: 100 
     })
-    const { data: lessonTypes } = useGymLessonTypes(gymId)
+    
+    const allTrainers = trainersData?.items || []
+    
+    // Filter trainers available for selectedLessonType
+    const currentTrainers = selectedLessonType 
+        ? allTrainers.filter((t: any) => t.lessonTypeIds?.includes(selectedLessonType))
+        : allTrainers
+
     const addMutation = useAddLessonHour()
 
-    const trainerItems = trainers?.items || []
-    const totalTrainerPages = trainers ? Math.ceil(trainers.total / 4) : 0
-    const currentTrainers = trainerItems
+    const handleLessonTypeSelect = (ltId: number) => {
+        setSelectedLessonType(ltId)
+        // Check if selectedTrainer has this lesson type, otherwise reset
+        if (selectedTrainer) {
+            const tr = allTrainers.find((t: any) => String(t.trainer_id || t.id) === String(selectedTrainer))
+            if (!tr || !tr.lessonTypeIds?.includes(ltId)) {
+                setSelectedTrainer(null)
+            }
+        }
+    }
 
     const handleSubmit = () => {
         if (!selectedLessonType || !selectedTrainer || !date) {
@@ -76,16 +98,16 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                     {/* Lesson Type Selection */}
                     <div className={styles.section}>
                         <div className={styles.lessonTypesList}>
-                            {lessonTypes?.map((type: any) => (
+                            {availableLessonTypes.map((type: any) => (
                                 <div 
                                     key={type.id}
                                     className={`${styles.lessonTypeCard} ${selectedLessonType === type.id ? styles.selected : ''}`}
-                                    onClick={() => setSelectedLessonType(type.id)}
+                                    onClick={() => handleLessonTypeSelect(type.id)}
                                 >
                                     {type.name}
                                 </div>
                             ))}
-                            {(!lessonTypes || lessonTypes.length === 0) && (
+                            {availableLessonTypes.length === 0 && (
                                 <p className={styles.emptyText}>Dərs növü tapılmadı</p>
                             )}
                         </div>
@@ -95,29 +117,13 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                     <div className={styles.section}>
                         <div className="flex items-center justify-between mb-2">
                             <h3 className={styles.sectionTitle}>Məşqçi seçin</h3>
-                            {totalTrainerPages > 1 && (
-                                <div className="flex items-center gap-2">
-                                    <button 
-                                        disabled={trainerPage === 1}
-                                        onClick={() => setTrainerPage(p => Math.max(1, p - 1))}
-                                        className="p-1 rounded-full hover:bg-slate-100 disabled:opacity-30 transition-colors"
-                                    >
-                                        <ChevronLeft size={20} />
-                                    </button>
-                                    <span className="text-xs font-medium text-slate-500">
-                                        {trainerPage} / {totalTrainerPages}
-                                    </span>
-                                    <button 
-                                        disabled={trainerPage >= totalTrainerPages}
-                                        onClick={() => setTrainerPage(p => Math.min(totalTrainerPages, p + 1))}
-                                        className="p-1 rounded-full hover:bg-slate-100 disabled:opacity-30 transition-colors"
-                                    >
-                                        <ChevronRight size={20} />
-                                    </button>
-                                </div>
+                            {selectedLessonType && (
+                                <span className="text-xs font-medium text-[#00b4cc] bg-[#00b4cc]/10 px-2 py-1 rounded">
+                                    Seçilmiş dərs növü üzrə filtrlənib
+                                </span>
                             )}
                         </div>
-                        <div className={cn(styles.trainersList, "min-h-[140px] relative")}>
+                        <div className={cn(styles.trainersList, "max-h-[220px] overflow-y-auto relative p-1")}>
                             {trainersLoading ? (
                                 <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-10">
                                     <Loader2 className="w-6 h-6 animate-spin text-[#00b4cc]" />
@@ -143,8 +149,12 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                                     </div>
                                 </div>
                             ))}
-                            {!trainersLoading && trainerItems.length === 0 && (
-                                <p className={styles.emptyText}>Məşqçi tapılmadı</p>
+                            {!trainersLoading && currentTrainers.length === 0 && (
+                                <p className={styles.emptyText}>
+                                    {selectedLessonType 
+                                        ? "Bu dərs növü üzrə məşqçi tapılmadı" 
+                                        : "Məşqçi tapılmadı"}
+                                </p>
                             )}
                         </div>
                     </div>

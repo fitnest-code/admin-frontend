@@ -33,6 +33,7 @@ export const useAddTrainer = () => {
           professionIds: data.professionIds,
           emails: data.emails,
           phones: data.phones,
+          ...(data.lessonTypesPerTrainer ? { lessonTypesPerTrainer: data.lessonTypesPerTrainer } : {}),
         },
         auth: true,
       });

@@ -47,6 +47,7 @@ export function StepTrainers({ onNext }: { onNext: () => void }) {
         emails: step2Trainers.map((t) => t.email),
         phones: step2Trainers.map((t) => t.phone),
         photos: step2Trainers.map((t) => t.photo),
+        lessonTypesPerTrainer: step2Trainers.map((t) => t.lessonTypeIds?.join(",") || ""),
       },
       {
         onSuccess: () => {

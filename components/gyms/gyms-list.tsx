@@ -9,6 +9,7 @@ import { useAdminGymsQuery, useToggleGymStatus, type AdminGymListItem, type Admi
 import { GymStatusToggle } from './gym-status-toggle'
 import { ConfirmDeleteModal } from './modals/confirm-delete-modal'
 import { useDeleteGym } from '@/lib/query/gym-query'
+import { SuccessAnimationModal } from '@/components/ui/success-animation-modal'
 import { toast } from 'sonner'
 
 const PER_PAGE = 10
@@ -24,6 +25,7 @@ export function GymsList() {
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [openMenuId, setOpenMenuId] = useState<number | null>(null)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -54,7 +56,18 @@ export function GymsList() {
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
 
   function handleToggle(id: number, currentEnabled: boolean) {
-    toggleStatus.mutate({ id: String(id), enabled: !currentEnabled })
+    toggleStatus.mutate(
+      { id: String(id), enabled: !currentEnabled },
+      {
+        onSuccess: () => {
+          toast.success("Status uğurla yeniləndi")
+          setShowSuccessModal(true)
+        },
+        onError: () => {
+          toast.error("Statusu yeniləmək mümkün olmadı")
+        }
+      }
+    )
   }
 
   function handleDelete() {
@@ -199,6 +212,12 @@ export function GymsList() {
       {gymsQuery.isError && (
         <p className="text-sm text-red-500">Zal siyahısı yüklənmədi. Yenidən cəhd edin.</p>
       )}
+
+      <SuccessAnimationModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        message="Status uğurla yeniləndi!"
+      />
     </div>
   )
 }

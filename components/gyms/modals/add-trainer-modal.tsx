@@ -4,9 +4,11 @@ import { useState, useRef, useEffect } from "react";
 import { X, Upload, Loader2, RefreshCw, ChevronDown, MoreVertical } from "lucide-react";
 import { toast } from "sonner";
 import { 
-  useAddTrainer, 
-  useProfessions 
+  useProfessions,
+  useCategories,
+  useGymDetailsAdmin
 } from "@/lib/query/gym-query";
+import { useCreateTrainer } from "@/lib/query/trainers";
 import { useGymStore } from "@/lib/store/gym-store";
 import { useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
@@ -25,20 +27,57 @@ export function AddTrainerModal({ onClose, isDashboard = false }: { onClose: () 
   const id = useGymStore((state) => state.gymId);
 
   const { data: professions, isLoading: professionsLoading } = useProfessions();
-  const { mutate: createTrainerAPI, isPending: createPending } = useAddTrainer();
+  const { mutate: createTrainerAPI, isPending: createPending } = useCreateTrainer(Number(id));
   
   const isPending = createPending;
 
   const [form, setForm] = useState({
     name: "",
     surname: "",
-    professionId: "",
     phone: "",
     email: "",
   });
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [selectedLessonTypeIds, setSelectedLessonTypeIds] = useState<Set<number>>(new Set());
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const { data: gymDetails } = useGymDetailsAdmin(id);
+
+  const availableLessonTypes = gymDetails?.lessonTypes || [];
+  const selectedLessonTypesList = availableLessonTypes.filter((lt: any) => selectedLessonTypeIds.has(lt.id));
+
+  let dropdownLabel = "Dərs növü seçin";
+  if (selectedLessonTypesList.length === 1) {
+    dropdownLabel = selectedLessonTypesList[0].name;
+  } else if (selectedLessonTypesList.length > 1) {
+    dropdownLabel = `${selectedLessonTypesList[0].name} +${selectedLessonTypesList.length - 1}`;
+  }
+
+  const toggleLessonType = (ltId: number) => {
+    setSelectedLessonTypeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(ltId)) {
+        next.delete(ltId);
+      } else {
+        next.add(ltId);
+      }
+      return next;
+    });
+  };
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -68,36 +107,42 @@ export function AddTrainerModal({ onClose, isDashboard = false }: { onClose: () 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!id && isDashboard) return toast.error("Zal ID tapılmadı.");
-    if (!form.name || !form.surname || !form.professionId || !selectedFile) {
+    if (!form.name || !form.surname || !selectedFile) {
       return toast.error("Zəhmət olmasa ulduzlu (*) sahələri doldurun və şəkil seçin.");
     }
+    if (selectedLessonTypeIds.size === 0) {
+      return toast.error("Zəhmət olmasa ən azı bir dərs növü seçin.");
+    }
+
+    const professionNameDisplay = dropdownLabel;
 
     if (isDashboard) {
       createTrainerAPI(
         {
-          gymId: Number(id),
-          payload: {
-            name: form.name,
-            surname: form.surname,
-            professionId: Number(form.professionId),
-            phone: form.phone,
-            email: form.email,
-            photo: selectedFile,
-          }
+          ...form,
+          professionId: undefined,
+          photo: selectedFile,
+          lessonTypeIds: Array.from(selectedLessonTypeIds),
         },
         {
           onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["gym-trainers"] });
+            toast.success("Məşqçi uğurla əlavə edildi");
             onClose();
           },
+          onError: (err: any) => {
+            toast.error(err?.message || "Xəta baş verdi");
+          }
         }
       );
     } else {
-      const professionName = professions?.find((p) => String(p.id) === form.professionId)?.name;
       addStep2Trainer({
         ...form,
+        professionId: "",
         photo: selectedFile,
         preview: preview!,
-        professionName,
+        professionName: professionNameDisplay,
+        lessonTypeIds: Array.from(selectedLessonTypeIds),
       });
       toast.success("Məşqçi siyahıya əlavə edildi");
       onClose();
@@ -169,22 +214,50 @@ export function AddTrainerModal({ onClose, isDashboard = false }: { onClose: () 
                 />
               </div>
 
-              <div className="w-full flex flex-col items-start gap-2.5">
+              <div className="w-full flex flex-col items-start gap-2.5" ref={dropdownRef}>
                 <div className="w-full text-[16px] leading-6 text-black font-semibold">Növ</div>
                 <div className="relative w-full">
-                  <select 
-                    value={form.professionId} 
-                    onChange={e => setForm({...form, professionId: e.target.value})} 
-                    className="w-full h-[60px] rounded-xl bg-[#fafafa] border border-[#ececed] px-4 text-[18px] font-semibold outline-none focus:border-[#00B4CC] appearance-none cursor-pointer transition-all font-sans" 
+                  <div 
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="w-full h-[60px] rounded-xl bg-[#fafafa] border border-[#ececed] px-4 text-[18px] font-semibold outline-none flex items-center justify-between cursor-pointer hover:border-[#00B4CC] transition-all font-sans select-none"
                   >
-                    <option value="">İxtisas seçin</option>
-                    {professions?.map((p: any) => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-black/40">
-                     <ChevronDown size={24} />
+                    <span className={selectedLessonTypeIds.size > 0 ? "text-black" : "text-[#94979c]"}>
+                      {dropdownLabel}
+                    </span>
+                    <ChevronDown size={24} className={`text-black/40 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`} />
                   </div>
+
+                  {isDropdownOpen && (
+                    <div className="absolute left-0 top-[calc(100%+8px)] w-full bg-white border border-[#ececed] rounded-xl shadow-lg z-50 max-h-[220px] overflow-y-auto p-2 flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-150">
+                      {availableLessonTypes.map((lt: any) => {
+                        const isSelected = selectedLessonTypeIds.has(lt.id);
+                        return (
+                          <div
+                            key={lt.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleLessonType(lt.id);
+                            }}
+                            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg cursor-pointer transition-colors ${
+                              isSelected ? "bg-[#00B4CC]/10 text-[#00B4CC] font-medium" : "hover:bg-gray-50 text-black"
+                            }`}
+                          >
+                            <span className="text-[16px]">{lt.name}</span>
+                            <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
+                              isSelected ? "border-[#00B4CC] bg-[#00B4CC] text-white" : "border-gray-300"
+                            }`}>
+                              {isSelected && <span className="text-[12px] font-bold">✓</span>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {availableLessonTypes.length === 0 && (
+                        <div className="px-3 py-3 text-sm text-gray-400 text-center">
+                          Dərs növü tapılmadı
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
