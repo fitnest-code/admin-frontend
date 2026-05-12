@@ -5,6 +5,7 @@ export interface PriceTier {
   duration: string
   price: number
   discountPrice: number
+  entryLimit?: number
 }
 
 export interface SubPackage {

@@ -7,6 +7,7 @@ import {
   type SubPackage, type PriceTier, type SubStatus,
   MOCK_SUB_PACKAGES, ENTRY_LIMIT_OPTIONS,
 } from '@/lib/subscription-data'
+import { useSubscriptions } from '@/lib/query/use-subscriptions'
 
 const PAGE_SIZE = 6
 
@@ -94,6 +95,59 @@ function EntryLimitSelect({ value, onChange }: { value: string; onChange: (v: st
   )
 }
 
+function PackageNameDropdown({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const STATIC_PACKAGES = ['Bronze', 'Silver', 'Gold', 'Platinum']
+
+  return (
+    <div className="w-full flex flex-col gap-1.5 text-left font-sans" ref={ref}>
+      <label className="text-[16px] leading-[24px] font-medium text-black">Adı</label>
+      <div className="relative w-full">
+        <button
+          type="button"
+          onClick={() => setOpen((p) => !p)}
+          className="w-full h-[60px] rounded-[12px] bg-[#fafafa] border border-[#ececed] px-4 flex items-center justify-between text-[18px] text-black outline-none transition-colors hover:border-[#00b4cc]"
+        >
+          <span className="leading-[28px] font-medium">{value || 'Seçilməyib'}</span>
+          <ChevronDown size={20} className={cn('transition-transform text-gray-500 shrink-0', open && 'rotate-180')} />
+        </button>
+        
+        {open && (
+          <ul className="absolute left-0 top-full z-50 mt-1 w-full overflow-hidden rounded-[12px] border border-[#ececed] bg-white shadow-xl max-h-52 divide-y divide-gray-100">
+            {STATIC_PACKAGES.map((pkgName) => (
+              <li key={pkgName}>
+                <button
+                  type="button"
+                  onClick={() => { onChange(pkgName); setOpen(false) }}
+                  className={cn(
+                    "w-full flex items-center justify-between px-4 py-3 text-[16px] font-medium transition-colors hover:bg-gray-50 text-left",
+                    value === pkgName ? "text-[#00b4cc] bg-[#00b4cc]/5 font-bold" : "text-black"
+                  )}
+                >
+                  <span>{pkgName}</span>
+                  {value === pkgName && <Check size={16} className="text-[#00b4cc]" />}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── Package Form ──────────────────────────────────────────────────────────────
 function PackageForm({
   initial,
@@ -104,9 +158,10 @@ function PackageForm({
   onSave: (pkg: Omit<SubPackage, 'id'>) => void
   onCancel: () => void
 }) {
-  const [name, setName] = useState(initial?.name ?? '')
+  const { addBenefit, deleteBenefit } = useSubscriptions()
+  const [name, setName] = useState(initial?.name || 'Bronze')
   const [priceTiers, setPriceTiers] = useState<PriceTier[]>(
-    initial?.priceTiers?.length ? initial.priceTiers : [{ duration: '', price: 0, discountPrice: 0 }],
+    initial?.priceTiers?.length ? initial.priceTiers : [{ duration: '1 ay', price: 50, discountPrice: 45 }],
   )
   const [entryLimit, setEntryLimit] = useState(
     initial?.entryLimit ? `${initial.entryLimit} giriş` : '12 giriş',
@@ -116,7 +171,7 @@ function PackageForm({
   const [status, setStatus] = useState<SubStatus>(initial?.status ?? 'active')
 
   function addTier() {
-    setPriceTiers((prev) => [...prev, { duration: '', price: 0, discountPrice: 0 }])
+    setPriceTiers((prev) => [...prev, { duration: `${prev.length + 1} ay`, price: 0, discountPrice: 0 }])
   }
 
   function removeTier(i: number) {
@@ -127,101 +182,122 @@ function PackageForm({
     setPriceTiers((prev) => prev.map((t, idx) => idx === i ? { ...t, [key]: value } : t))
   }
 
-  function addService() {
+  async function handleAddService() {
     const s = serviceInput.trim()
     if (!s || services.length >= 20) return
+    
     setServices((prev) => [...prev, s])
     setServiceInput('')
+    
+    if (initial?.id && !initial.id.startsWith('temp') && !initial.id.startsWith('sub-')) {
+      try {
+        await addBenefit({ packageId: initial.id, description: s })
+      } catch (err) {
+        console.warn('Live service integration sync error', err)
+      }
+    }
   }
 
-  function removeService(i: number) {
+  async function handleRemoveService(i: number) {
+    const targetService = services[i]
     setServices((prev) => prev.filter((_, idx) => idx !== i))
+    
+    if (initial?.id && !initial.id.startsWith('temp') && !initial.id.startsWith('sub-')) {
+      try {
+        await deleteBenefit({ packageId: initial.id, description: targetService })
+      } catch (err) {
+        console.warn('Live service deletion sync error', err)
+      }
+    }
   }
 
   function handleSave() {
-    const entryLimitNum = parseInt(entryLimit) || 0
+    const entryLimitNum = parseInt(entryLimit) || 12
     onSave({ name, priceTiers, entryLimit: entryLimitNum, services, status })
   }
 
   return (
-    <div className="rounded-xl border border-[#00B4CC] bg-card p-5 flex flex-col gap-5">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-foreground">Yeni abunəlik formu</h2>
-        <button onClick={onCancel} className="text-muted-foreground hover:text-foreground transition-colors">
-          <X size={16} />
+    <div className="w-full relative rounded-[20px] bg-white border border-[#00b4cc] flex flex-col items-start p-8 gap-8 text-left text-[20px] font-sans text-black shadow-2xl">
+      {/* Top Title Bar Wrapper (.yeniAbunlikFormuParent) */}
+      <div className="w-full flex items-center justify-between">
+        <div className="relative leading-[30px] font-semibold text-[20px]">
+          {initial ? 'Paketi redaktə et' : 'Yeni abunəlik formu'}
+        </div>
+        <button
+          onClick={onCancel}
+          className="h-[28px] w-[28px] rounded-[4px] bg-[#ececed] flex items-center justify-center p-1 transition-colors hover:bg-gray-300"
+          aria-label="Bağla"
+        >
+          <X size={15} className="text-black" />
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {/* Left column */}
-        <div className="flex flex-col gap-4">
-          {/* Adı */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground">Adı</label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Paket adı"
-              className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-[#00B4CC] transition-colors"
-            />
+      {/* Dividing Line (.frameChild) */}
+      <div className="w-full h-[1px] border-t border-[#cecfd2]" />
+
+      {/* Content Body Grid (.frameGroup) */}
+      <div className="w-full flex flex-col md:flex-row items-start gap-6 text-[16px]">
+        
+        {/* Left Column (.frameContainer) */}
+        <div className="flex-1 flex flex-col items-start gap-4 w-full">
+          
+          {/* Package Selector Dropdown Container */}
+          <div className="w-full">
+            <PackageNameDropdown value={name} onChange={setName} />
           </div>
 
-          {/* Müddət və qiymətlər */}
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <label className="text-xs text-muted-foreground">Müddət və qiymətlər</label>
+          {/* Pricing / Tiers Wrapper */}
+          <div className="w-full flex flex-col gap-3 pt-2">
+            <div className="w-full rounded-[12px] bg-[#fafafa] border border-[#ececed] flex items-center justify-between p-2 px-3">
+              <span className="text-[18px] leading-[28px] font-medium text-black">
+                Müddət və qiymətlər
+              </span>
               <button
                 type="button"
                 onClick={addTier}
-                className="flex h-6 w-6 items-center justify-center rounded-md border border-[#00B4CC] text-[#00B4CC] hover:bg-[#00B4CC] hover:text-white transition-colors"
+                className="h-[40px] w-[40px] rounded-[8px] bg-white border border-[#ececed] flex items-center justify-center transition-colors hover:bg-gray-100 shadow-2xs"
               >
-                <Plus size={13} />
+                <Plus size={18} className="text-[#00b4cc]" />
               </button>
             </div>
 
             {priceTiers.length > 0 && (
-              <div className="flex flex-col gap-1">
-                <div className="grid grid-cols-[1fr_1fr_1fr_1.5rem] gap-2">
-                  <span className="text-xs text-muted-foreground">Müddət (Ay)</span>
-                  <span className="text-xs text-muted-foreground">Qiymət (Azn)</span>
-                  <span className="text-xs text-muted-foreground">Qiymət (Endirimli)</span>
+              <div className="w-full flex flex-col gap-2">
+                <div className="grid grid-cols-[1.2fr_1fr_1fr_2.5rem] gap-2 px-1">
+                  <span className="text-[13px] text-gray-500 font-medium">Müddət</span>
+                  <span className="text-[13px] text-gray-500 font-medium">Qiymət</span>
+                  <span className="text-[13px] text-gray-500 font-medium">Endirimli</span>
                   <span />
                 </div>
                 {priceTiers.map((tier, i) => (
-                  <div key={i} className="grid grid-cols-[1fr_1fr_1fr_1.5rem] gap-2 items-center">
+                  <div key={i} className="grid grid-cols-[1.2fr_1fr_1fr_2.5rem] gap-2 items-center">
                     <input
                       value={tier.duration}
                       onChange={(e) => updateTier(i, 'duration', e.target.value)}
                       placeholder="1 ay"
-                      className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-[#00B4CC] transition-colors"
+                      className="h-[44px] rounded-[10px] border border-gray-300 bg-white px-3 text-[15px] outline-none focus:border-[#00b4cc]"
                     />
                     <input
                       type="number"
                       value={tier.price || ''}
                       onChange={(e) => updateTier(i, 'price', Number(e.target.value))}
                       placeholder="0"
-                      className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-[#00B4CC] transition-colors"
+                      className="h-[44px] rounded-[10px] border border-gray-300 bg-white px-3 text-[15px] outline-none focus:border-[#00b4cc]"
                     />
                     <input
                       type="number"
                       value={tier.discountPrice || ''}
                       onChange={(e) => updateTier(i, 'discountPrice', Number(e.target.value))}
                       placeholder="0"
-                      className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-[#00B4CC] transition-colors"
+                      className="h-[44px] rounded-[10px] border border-gray-300 bg-white px-3 text-[15px] outline-none focus:border-[#00b4cc]"
                     />
                     <button
                       type="button"
                       onClick={() => removeTier(i)}
                       disabled={priceTiers.length === 1}
-                      className={cn(
-                        'flex h-6 w-6 items-center justify-center rounded-md transition-colors disabled:opacity-30',
-                        i === priceTiers.length - 1
-                          ? 'bg-red-500 text-white hover:bg-red-600'
-                          : 'text-muted-foreground hover:text-foreground',
-                      )}
+                      className="h-[36px] w-[36px] rounded-[8px] flex items-center justify-center transition-colors hover:bg-red-50 text-gray-400 hover:text-red-500 disabled:opacity-20"
                     >
-                      <X size={12} />
+                      <X size={16} />
                     </button>
                   </div>
                 ))}
@@ -229,74 +305,77 @@ function PackageForm({
             )}
           </div>
 
-          {/* Giriş sayı */}
-          <EntryLimitSelect value={entryLimit} onChange={setEntryLimit} />
+          {/* Entry Limit Select block */}
+          <div className="w-full pt-1">
+            <EntryLimitSelect label="Giriş sayı (Limit)" value={entryLimit} onChange={setEntryLimit} />
+          </div>
         </div>
 
-        {/* Right column */}
-        <div className="flex flex-col gap-4">
-          {/* Xidmətlər */}
-          <div className="flex flex-col gap-2">
-            <label className="text-xs text-muted-foreground">Xidmətlər (1-20)</label>
-            <div className="flex gap-2">
-              <input
-                value={serviceInput}
-                onChange={(e) => setServiceInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addService())}
-                placeholder="Xidmət adı"
-                className="flex-1 rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-[#00B4CC] transition-colors"
-              />
-              <button
-                type="button"
-                onClick={addService}
-                disabled={!serviceInput.trim() || services.length >= 20}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#00B4CC] text-[#00B4CC] hover:bg-[#00B4CC] hover:text-white disabled:opacity-40 transition-colors"
-              >
-                <Plus size={16} />
-              </button>
+        {/* Right Column (.frameParent2) */}
+        <div className="flex-1 flex flex-col items-stretch justify-between gap-6 w-full h-full">
+          
+          {/* Services Wrapper (.frameParent3) */}
+          <div className="w-full flex flex-col items-stretch gap-3">
+            <div className="w-full flex flex-col gap-1.5">
+              <label className="text-[16px] leading-[24px] font-medium text-black">Xidmətlər (1-20)</label>
+              <div className="w-full flex items-center gap-2">
+                <input
+                  value={serviceInput}
+                  onChange={(e) => setServiceInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddService())}
+                  placeholder="Xidmət adı"
+                  className="flex-1 h-[50px] rounded-[12px] bg-[#fafafa] border border-[#ececed] px-3 text-[16px] outline-none focus:border-[#00b4cc]"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddService}
+                  disabled={!serviceInput.trim() || services.length >= 20}
+                  className="h-[50px] w-[50px] rounded-[8px] bg-[#fafafa] border border-[#ececed] flex items-center justify-center transition-colors hover:bg-gray-200 disabled:opacity-40 shrink-0"
+                >
+                  <Plus size={18} className="text-[#00b4cc]" />
+                </button>
+              </div>
             </div>
 
-            <div className="min-h-25 rounded-lg border border-border bg-background">
+            {/* Added Services Box (.frameParent6) */}
+            <div className="w-full h-[238px] rounded-[16px] bg-[#fafafa] p-3 flex flex-col gap-2.5 overflow-y-auto border border-gray-100">
               {services.length === 0 ? (
-                <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
+                <div className="w-full h-full flex items-center justify-center text-[15px] text-gray-400 italic">
                   Heç bir xidmət əlavə edilməyib
                 </div>
               ) : (
-                <div className="flex flex-col divide-y divide-border">
-                  {services.map((s, i) => (
-                    <div key={i} className="flex items-center justify-between px-4 py-2.5">
-                      <span className="text-sm text-foreground">{s}</span>
-                      <button
-                        onClick={() => removeService(i)}
-                        className={cn(
-                          'flex h-6 w-6 items-center justify-center rounded-md transition-colors',
-                          i === services.length - 1
-                            ? 'bg-red-500 text-white hover:bg-red-600'
-                            : 'text-muted-foreground hover:text-foreground',
-                        )}
-                      >
-                        <X size={12} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                services.map((srv, idx) => (
+                  <div key={idx} className="w-full min-h-[50px] rounded-[12px] bg-white border border-[#ececed] px-3 flex items-center justify-between shadow-2xs shrink-0">
+                    <span className="text-[16px] font-medium text-black">{srv}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveService(idx)}
+                      className="h-[28px] w-[28px] rounded-[4px] bg-[#e7272c] flex items-center justify-center transition-colors hover:bg-red-700"
+                      aria-label="Sil"
+                    >
+                      <X size={14} className="text-white" />
+                    </button>
+                  </div>
+                ))
               )}
             </div>
-            <div className="text-right text-xs text-muted-foreground">{services.length}/20 xidmət</div>
+            <div className="w-full text-right text-[16px] text-gray-500 font-medium">
+              {services.length}/20 xidmət
+            </div>
           </div>
 
-          {/* Status */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground">Status</label>
-            <div className="flex gap-2">
+          {/* Status Segment Controls (.statusParent) */}
+          <div className="w-full flex flex-col items-start gap-2 pt-1">
+            <label className="text-[16px] leading-[24px] font-medium text-black">Status</label>
+            <div className="w-full flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => setStatus('active')}
                 className={cn(
-                  'flex-1 rounded-lg py-2.5 text-sm font-semibold transition-colors',
+                  "h-[48px] flex-1 rounded-[10px] flex items-center justify-center text-[16px] font-medium transition-all",
                   status === 'active'
-                    ? 'bg-[#00B4CC] text-white'
-                    : 'border border-border text-foreground hover:bg-secondary',
+                    ? "bg-[#00b4cc] text-white shadow-sm"
+                    : "bg-white border border-[#00b4cc] text-black hover:bg-gray-50"
                 )}
               >
                 Aktiv et
@@ -305,10 +384,10 @@ function PackageForm({
                 type="button"
                 onClick={() => setStatus('inactive')}
                 className={cn(
-                  'flex-1 rounded-lg py-2.5 text-sm font-semibold transition-colors',
+                  "h-[48px] flex-1 rounded-[10px] flex items-center justify-center text-[16px] font-medium transition-all",
                   status === 'inactive'
-                    ? 'bg-foreground text-background'
-                    : 'border border-border text-foreground hover:bg-secondary',
+                    ? "bg-black text-white shadow-sm"
+                    : "bg-white border border-gray-300 text-black hover:bg-gray-50"
                 )}
               >
                 Deaktiv et
@@ -318,17 +397,17 @@ function PackageForm({
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="flex justify-end gap-3 border-t border-border pt-4">
+      {/* Action Controls Toolbar / Footer */}
+      <div className="w-full flex justify-end gap-3 border-t border-border pt-4">
         <button
           onClick={onCancel}
-          className="rounded-lg border border-border px-6 py-2.5 text-sm font-medium text-foreground hover:bg-secondary transition-colors"
+          className="h-[46px] rounded-[10px] border border-gray-300 px-6 text-[16px] font-medium text-black hover:bg-gray-50 transition-colors"
         >
           Ləğv et
         </button>
         <button
           onClick={handleSave}
-          className="rounded-lg bg-[#00B4CC] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#008799] transition-colors"
+          className="h-[46px] rounded-[10px] bg-[#00b4cc] px-8 text-[16px] font-semibold text-white hover:bg-[#009bb0] transition-colors shadow-sm"
         >
           Yadda saxla
         </button>
@@ -470,22 +549,55 @@ function DeleteModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel:
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export function SubscriptionList() {
-  const [packages, setPackages] = useState<SubPackage[]>(MOCK_SUB_PACKAGES)
+  const { packages: backendPackages, isLoading, createPackage, updatePackage, deletePackage } = useSubscriptions()
+  const [localPackages, setLocalPackages] = useState<SubPackage[]>(MOCK_SUB_PACKAGES)
   const [showForm, setShowForm] = useState(false)
   const [editingPkg, setEditingPkg] = useState<SubPackage | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [page, setPage] = useState(1)
 
-  const paginated = packages.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const currentPackages = backendPackages?.length > 0 ? backendPackages : localPackages
+  const paginated = currentPackages.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
-  function handleSave(data: Omit<SubPackage, 'id'>) {
+  async function handleSave(data: Omit<SubPackage, 'id'>) {
     if (editingPkg) {
-      setPackages((prev) => prev.map((p) => p.id === editingPkg.id ? { ...editingPkg, ...data } : p))
+      const targetId = editingPkg.id
+      setLocalPackages((prev) => prev.map((p) => p.id === targetId ? { ...editingPkg, ...data } : p))
+      setShowForm(false)
+      setEditingPkg(null)
+
+      if (!targetId.startsWith('temp') && !targetId.startsWith('sub-')) {
+        try {
+          await updatePackage({
+            id: targetId,
+            name: data.name,
+            status: data.status,
+            entryLimit: data.entryLimit,
+            services: data.services,
+            priceTiers: data.priceTiers,
+          })
+        } catch (err) {
+          console.warn('Backend subscription update sync error', err)
+        }
+      }
     } else {
-      setPackages((prev) => [...prev, { id: `sub-${Date.now()}`, ...data }])
+      const tempId = `sub-${Date.now()}`
+      setLocalPackages((prev) => [...prev, { id: tempId, ...data }])
+      setShowForm(false)
+      setEditingPkg(null)
+
+      try {
+        await createPackage({
+          name: data.name,
+          status: data.status,
+          entryLimit: data.entryLimit,
+          services: data.services,
+          priceTiers: data.priceTiers,
+        })
+      } catch (err) {
+        console.warn('Backend subscription creation sync error', err)
+      }
     }
-    setShowForm(false)
-    setEditingPkg(null)
   }
 
   function handleEdit(pkg: SubPackage) {
@@ -494,20 +606,48 @@ export function SubscriptionList() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (!deletingId) return
-    setPackages((prev) => prev.filter((p) => p.id !== deletingId))
+    const targetId = deletingId
+    setLocalPackages((prev) => prev.filter((p) => p.id !== targetId))
     setDeletingId(null)
+
+    if (!targetId.startsWith('temp') && !targetId.startsWith('sub-')) {
+      try {
+        await deletePackage(targetId)
+      } catch (err) {
+        console.warn('Backend subscription deletion sync error', err)
+      }
+    }
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-5 font-sans">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-foreground">Abunəlik Paketləri</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-bold text-foreground">Abunəlik Paketləri</h1>
+          {isLoading && (
+            <span className="text-xs text-[#00b4cc] font-medium animate-pulse">Yüklənir...</span>
+          )}
+        </div>
         {!showForm && (
           <button
-            onClick={() => { setEditingPkg(null); setShowForm(true) }}
-            className="flex items-center gap-1.5 rounded-lg bg-[#00B4CC] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#008799] transition-colors"
+            onClick={() => {
+              if (currentPackages.length >= 4) {
+                alert('Maksimum 4 paket (Bronze, Silver, Gold, Platinum) yaradıla bilər. Yeni paket əlavə etmək bloklanıb, yalnız mövcud paketləri redaktə edə bilərsiniz.')
+                return
+              }
+              setEditingPkg(null)
+              setShowForm(true)
+            }}
+            disabled={currentPackages.length >= 4}
+            title={currentPackages.length >= 4 ? 'Maksimum 4 paket limitinə çatılıb' : undefined}
+            className={cn(
+              "flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors shadow-2xs",
+              currentPackages.length >= 4
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                : "bg-[#00B4CC] text-white hover:bg-[#008799]"
+            )}
           >
             <Plus size={15} /> Yeni Paket
           </button>
@@ -522,8 +662,8 @@ export function SubscriptionList() {
         />
       )}
 
-      {packages.length === 0 ? (
-        <div className="flex items-center justify-center py-24 text-sm text-muted-foreground">
+      {currentPackages.length === 0 ? (
+        <div className="flex items-center justify-center py-24 text-sm text-muted-foreground italic">
           Hələ paket əlavə edilməyib
         </div>
       ) : (
@@ -539,7 +679,7 @@ export function SubscriptionList() {
         </div>
       )}
 
-      <Pagination total={packages.length} page={page} perPage={PAGE_SIZE} onChange={setPage} />
+      <Pagination total={currentPackages.length} page={page} perPage={PAGE_SIZE} onChange={setPage} />
 
       {deletingId && (
         <DeleteModal onConfirm={confirmDelete} onCancel={() => setDeletingId(null)} />
