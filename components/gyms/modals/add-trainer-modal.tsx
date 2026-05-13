@@ -67,7 +67,7 @@ export function AddTrainerModal({ onClose, isDashboard = false }: { onClose: () 
 
   const selectedLessonTypesList = availableLessonTypes.filter((lt: any) => selectedLessonTypeIds.has(lt.id));
 
-  let dropdownLabel = "Dərs növü seçin";
+  let dropdownLabel = "Dərs növü seçin (İstəyə bağlı)";
   if (selectedLessonTypesList.length === 1) {
     dropdownLabel = selectedLessonTypesList[0].name;
   } else if (selectedLessonTypesList.length > 1) {
@@ -114,9 +114,7 @@ export function AddTrainerModal({ onClose, isDashboard = false }: { onClose: () 
     if (!form.name || !form.surname || !selectedFile) {
       return toast.error("Zəhmət olmasa ulduzlu (*) sahələri doldurun və şəkil seçin.");
     }
-    if (selectedLessonTypeIds.size === 0) {
-      return toast.error("Zəhmət olmasa ən azı bir dərs növü seçin.");
-    }
+    // Dərs növü seçimi artıq məcburi deyil, boş ola bilər.
 
     const professionNameDisplay = dropdownLabel;
 

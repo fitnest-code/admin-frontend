@@ -130,6 +130,17 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
     });
   };
 
+  const deleteServiceMutation = useDeleteSupportedService();
+  const handleDeleteService = async (id: number, e: React.MouseEvent) => {
+    e.stopPropagation(); // prevent triggering service selection toggle
+    try {
+      await deleteServiceMutation.mutateAsync(id);
+      toast.success("Xidmət silindi");
+    } catch (err: any) {
+      toast.error("Xidməti silmək mümkün olmadı");
+    }
+  };
+
   const handleNext = async () => {
     if (!allPackageNames) return;
 
@@ -319,12 +330,19 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
                     </span>
                   </div>
 
-                  <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
-                    {isSelected ? (
-                       <Check size={18} className="text-[#00B4CC]" strokeWidth={3} />
-                    ) : (
-                       <Plus size={18} className="text-slate-300" />
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {isSelected && (
+                      <Check size={18} className="text-[#00B4CC]" strokeWidth={3} />
                     )}
+                    <button
+                      type="button"
+                      onClick={(e) => handleDeleteService(svc.id, e)}
+                      disabled={deleteServiceMutation.isPending}
+                      className="w-7 h-7 rounded-md hover:bg-red-50 flex items-center justify-center transition-colors text-slate-300 hover:text-red-500"
+                      title="Xidməti sil"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 </div>
               );
