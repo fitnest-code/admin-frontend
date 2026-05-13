@@ -12,15 +12,15 @@ import {
 import * as Label from "@radix-ui/react-label";
 import { useAdminStoreDetailQuery } from "@/modules/stores";
 import type { AdminStoreDetailViewModel } from "@/modules/stores/types/store.types";
-import { STORE_PACKAGE_OPTIONS } from "@/components/stores/components/store-discounts-tab";
+import STORE_PACKAGE_OPTIONS from "@/components/stores/components/store-discounts-tab";
 import { toast } from "sonner";
 
 const readBox =
   "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 bg-gray-50/90 min-h-[42px] flex items-center";
 
-function packageLabel(packageId: number) {
-  return STORE_PACKAGE_OPTIONS.find((p) => p.id === packageId)?.name ?? `Paket #${packageId}`;
-}
+// function packageLabel(packageId: number) {
+//   return STORE_PACKAGE_OPTIONS.find((p: { id: number; }) => p.id === packageId)?.name ?? `Paket #${packageId}`;
+// }
 
 function ReadField({ label, value }: { label: string; value: string }) {
   return (
@@ -41,6 +41,10 @@ function copyText(text: string) {
 
 function DetailBody({ data, storeId }: { data: AdminStoreDetailViewModel; storeId: number }) {
   const router = useRouter();
+
+  function packageLabel(packageId: number): import("react").ReactNode {
+    throw new Error("Function not implemented.");
+  }
 
   return (
     <div className="w-full max-w-none flex flex-col gap-8 pb-10 min-h-[calc(100vh-6rem)]">
@@ -92,7 +96,7 @@ function DetailBody({ data, storeId }: { data: AdminStoreDetailViewModel; storeI
               <span className="flex items-center gap-2 text-red-400">
                 <span>Şəkli sil</span>
               </span>
-              <p className="text-xs text-gray-400 max-w-[200px]">
+              <p className="text-xs text-gray-400 max-w-50">
                 Şəkil dəyişikliyi üçün redaktə səhifəsinə keçin.
               </p>
             </div>
