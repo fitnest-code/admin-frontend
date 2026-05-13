@@ -4,12 +4,12 @@ import { useState, useMemo } from "react";
 import { Plus, Check, Loader2, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGymStore } from "@/lib/store/gym-store";
-import { useSupportedServices, useValidateGymStep6, useCreateSupportedService } from "@/lib/query/gym-query";
+import { useSupportedServices, useValidateGymStep6, useCreateSupportedService, useDeleteSupportedService } from "@/lib/query/gym-query";
 import { useSubscriptionPackages } from "@/lib/query/use-subscription-packages";
 import { GymCreateStep6Request } from "@/lib/types/gym";
 import { toast } from "sonner";
 import Image from "next/image";
-import { SuccessAnimationModal } from "../../ui/success-animation-modal";
+import { ErrorToastModal } from "../../categories/modals/error-toast-modal";
 
 const gradientsMap: Record<string, string> = {
   Bronze: "linear-gradient(111.92deg, #d8a673, #b97a3c 99.99%)",
@@ -59,14 +59,16 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
   const [activePackage, setActivePackage] = useState<string>("");
   const [prices, setPrices] = useState<Record<string, string>>({});
   const [packageServices, setPackageServices] = useState<Record<string, string[]>>({});
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isCreatingService, setIsCreatingService] = useState(false);
 
   // Sync state once data is loaded
   useMemo(() => {
     if (allPackageNames && allPackageNames.length > 0) {
         if (selectedPackages.size === 0 && !step6Data) {
             setSelectedPackages(initialPackages.size > 0 ? initialPackages : new Set([allPackageNames[0].name]));
-            setActivePackage(activePackage || allPackageNames[0].name);
+            setActivePackage(initialPackages.size > 0 ? Array.from(initialPackages)[0] : allPackageNames[0].name);
             setPrices(initialPrices);
             setPackageServices(initialServices);
         }
@@ -111,9 +113,10 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
       }
 
       setPendingService(null);
-      setShowSuccess(true);
+      setIsCreatingService(false);
     } catch (err: any) {
-      toast.error(err?.message || "Xidmət yaradıla bilmədi");
+      setErrorMessage(err?.message || "Xidmət yaradıla bilmədi");
+      setShowErrorModal(true);
     }
   };
 
@@ -135,9 +138,9 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
     e.stopPropagation(); // prevent triggering service selection toggle
     try {
       await deleteServiceMutation.mutateAsync(id);
-      toast.success("Xidmət silindi");
     } catch (err: any) {
-      toast.error("Xidməti silmək mümkün olmadı");
+      setErrorMessage("Xidməti silmək mümkün olmadı");
+      setShowErrorModal(true);
     }
   };
 
@@ -270,42 +273,57 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
 
       {/* 3. Services Section */}
       <div className="bg-white rounded-[12px] border border-[#ececed] p-7 flex flex-col gap-8 shadow-sm">
-        <div className="border-b border-[#ececed] pb-1">
-          <h2 className="text-[20px] font-semibold leading-[30px]">
-            {activePackage} paketə daxil olan xidmətlər
-          </h2>
-        </div>
-
-        {/* Add Service Section */}
-        <div className="flex flex-col gap-7 p-7 rounded-[12px] bg-white border border-[#ececed]">
-          <div className="border-b border-[#ececed] pb-1">
-            <h3 className="text-[20px] font-semibold leading-[30px]">Xidmət əlavə et</h3>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <label className="text-[16px] leading-[24px]">Xidmət adı</label>
-            <div className="h-[60px] bg-[#fafafa] border border-[#ececed] rounded-[12px] flex items-center px-3">
-              <input
-                type="text"
-                value={pendingService || ""}
-                onChange={(e) => setPendingService(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleConfirmService()}
-                placeholder="Məs: Pilates"
-                className="bg-transparent w-full h-full outline-none text-[18px] leading-[28px]"
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end">
+        {/* Add Service Section Toggle / Form */}
+        {!isCreatingService ? (
+          <div className="flex items-center justify-between border-b border-[#ececed] pb-3">
+            <h3 className="text-[20px] font-semibold leading-[30px]">{activePackage} paketə daxil olan xidmətlər</h3>
             <button
-              onClick={handleConfirmService}
-              disabled={createServiceMutation.isPending}
-              className="h-[48px] w-[193px] bg-[#00B4CC] rounded-[12px] flex items-center justify-center text-[#fafafa] text-[16px] transition-all hover:opacity-90 shadow-sm"
+              onClick={() => setIsCreatingService(true)}
+              className="h-[48px] px-6 bg-[#00B4CC] rounded-[12px] flex items-center justify-center gap-3 text-white font-medium transition-all hover:opacity-90"
             >
-              {createServiceMutation.isPending ? <Loader2 className="animate-spin" size={20} /> : "Əlavə et"}
+              <span>Xidmət əlavə et</span>
+              <Plus size={20} strokeWidth={2.5} />
             </button>
           </div>
-        </div>
+        ) : (
+          <div className="flex flex-col gap-7 p-7 rounded-[12px] bg-white border border-[#ececed] transition-all">
+            <div className="flex items-center justify-between border-b border-[#ececed] pb-3">
+              <h3 className="text-[20px] font-semibold leading-[30px]">Xidmət əlavə et</h3>
+              <button 
+                onClick={() => setIsCreatingService(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 transition-colors text-slate-500"
+                title="Bağla"
+              >
+                <X size={18} strokeWidth={2.5} />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <label className="text-[16px] leading-[24px]">Xidmət adı</label>
+              <div className="h-[60px] bg-[#fafafa] border border-[#ececed] rounded-[12px] flex items-center px-4">
+                <input
+                  type="text"
+                  value={pendingService || ""}
+                  onChange={(e) => setPendingService(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleConfirmService()}
+                  placeholder="Məs: Pilates"
+                  className="bg-transparent w-full h-full outline-none text-[18px] leading-[28px]"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                onClick={handleConfirmService}
+                disabled={createServiceMutation.isPending}
+                className="h-[48px] w-[193px] bg-[#00B4CC] rounded-[12px] flex items-center justify-center text-[#fafafa] text-[16px] font-medium transition-all hover:opacity-90 shadow-sm"
+              >
+                {createServiceMutation.isPending ? <Loader2 className="animate-spin" size={20} /> : "Əlavə et"}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Services List */}
         <div className="flex flex-col gap-5">
@@ -331,17 +349,14 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
                   </div>
 
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    {isSelected && (
-                      <Check size={18} className="text-[#00B4CC]" strokeWidth={3} />
-                    )}
                     <button
                       type="button"
                       onClick={(e) => handleDeleteService(svc.id, e)}
                       disabled={deleteServiceMutation.isPending}
-                      className="w-7 h-7 rounded-md hover:bg-red-50 flex items-center justify-center transition-colors text-slate-300 hover:text-red-500"
+                      className="w-7 h-7 flex items-center justify-center transition-opacity hover:opacity-80"
                       title="Xidməti sil"
                     >
-                      <Trash2 size={16} />
+                      <Image src="/trash.png" width={24} height={24} alt="Sil" />
                     </button>
                   </div>
                 </div>
@@ -363,11 +378,12 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
         </button>
       </div>
 
-      <SuccessAnimationModal 
-        isOpen={showSuccess} 
-        onClose={() => setShowSuccess(false)} 
-        message="Xidmət uğurla əlavə edildi!"
-      />
+      {showErrorModal && (
+        <ErrorToastModal 
+          message={errorMessage} 
+          onClose={() => setShowErrorModal(false)} 
+        />
+      )}
     </div>
   );
 }
