@@ -49,8 +49,8 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
   const t = labels[lang];
 
   // Client-side image compression helper utilizing standard HTML5 Canvas
-  const compressImage = (file: File, maxWidth = 1600, maxHeight = 1200, quality = 0.8): Promise<File> => {
-    return new Promise((resolve, reject) => {
+  const compressImage = (file: File, maxWidth = 1024, maxHeight = 768, quality = 0.7): Promise<File> => {
+    return new Promise((resolve) => {
       const img = new Image();
       img.src = URL.createObjectURL(file);
       img.onload = () => {
@@ -68,12 +68,20 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
           resolve(file);
           return;
         }
+        
+        // If converting PNG with transparent background to JPEG, fill with white background first
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, width, height);
         ctx.drawImage(img, 0, 0, width, height);
+        
+        // Always encode as image/jpeg to ensure quality reduction is applied lossily
         canvas.toBlob(
           (blob) => {
             if (blob) {
-              const compressedFile = new File([blob], file.name, {
-                type: file.type || "image/jpeg",
+              // Replace extension with .jpg if needed
+              const newName = file.name.replace(/\.[^/.]+$/, ".jpg");
+              const compressedFile = new File([blob], newName, {
+                type: "image/jpeg",
                 lastModified: Date.now(),
               });
               resolve(compressedFile);
@@ -81,7 +89,7 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
               resolve(file);
             }
           },
-          file.type || "image/jpeg",
+          "image/jpeg",
           quality
         );
       };
@@ -93,8 +101,8 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 50 * 1024 * 1024) return toast.error("Şəkil ölçüsü max 50MB ola bilər");
-      // Auto compress cover images before adding to state
-      const compressed = await compressImage(file, 1920, 1080, 0.85);
+      // Aggressively compress cover images to guarantee sub-1MB multi-file payload submission
+      const compressed = await compressImage(file, 1200, 800, 0.72);
       setCoverPhoto(compressed);
       setCoverPreview(URL.createObjectURL(compressed));
     }
@@ -104,8 +112,8 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 50 * 1024 * 1024) return toast.error("Şəkil ölçüsü max 50MB ola bilər");
-      // Auto compress room images to optimized standard resolution
-      const compressed = await compressImage(file, 1200, 900, 0.8);
+      // Optimize room images to compact resolution ensuring fast uploads and compliance with remote gateway buffers
+      const compressed = await compressImage(file, 800, 600, 0.65);
       setRoomPhotos(prev => {
         const newPhotos = [...prev];
         newPhotos[index] = { ...newPhotos[index], photo: compressed, previewUrl: URL.createObjectURL(compressed) };
@@ -279,12 +287,6 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
 
         {/* Footer Buttons */}
         <div className="flex justify-end items-center gap-6 pt-6 border-t border-slate-100">
-          <button
-            type="button"
-            className="w-[280px] h-[52px] rounded-xl border-2 border-[#00B4CC] bg-white text-[#00B4CC] font-bold text-base hover:bg-[#00B4CC08] transition-all"
-          >
-            {t.save}
-          </button>
           <button
             type="button"
             disabled={isPending}
