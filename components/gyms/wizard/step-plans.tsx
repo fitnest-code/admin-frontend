@@ -94,11 +94,22 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
     }
 
     try {
-      await createServiceMutation.mutateAsync({
+      const res = await createServiceMutation.mutateAsync({
         name: pendingService.trim(),
         gymId: gymId ? Number(gymId) : undefined
       });
       
+      const createdName = res?.name || pendingService.trim();
+      if (activePackage) {
+        setPackageServices(prev => {
+          const current = prev[activePackage] || [];
+          if (!current.includes(createdName)) {
+            return { ...prev, [activePackage]: [...current, createdName] };
+          }
+          return prev;
+        });
+      }
+
       setPendingService(null);
       setShowSuccess(true);
     } catch (err: any) {
