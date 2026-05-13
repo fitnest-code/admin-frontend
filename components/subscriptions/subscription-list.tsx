@@ -158,11 +158,13 @@ function PackageFormModal({
   onSave,
   onClose,
   existingNames = [],
+  onError,
 }: {
   initial?: SubPackage
   onSave: (pkg: Omit<SubPackage, 'id'>) => void
   onClose: () => void
   existingNames?: string[]
+  onError?: (msg: string) => void
 }) {
   const { addBenefit, deleteBenefit } = useSubscriptions()
   const STATIC_PACKAGES = ['Bronze', 'Silver', 'Gold', 'Platinum']
@@ -226,6 +228,17 @@ function PackageFormModal({
   }
 
   function handleSave() {
+    for (const tier of priceTiers) {
+      const priceVal = Number(tier.price) || 0
+      const discountVal = Number(tier.discountPrice) || 0
+      if (discountVal > priceVal) {
+        if (onError) {
+          onError("Endirimli qiymət standart qiymətdən yüksək ola bilməz")
+        }
+        return
+      }
+    }
+
     const entryLimitNum = parseInt(entryLimit) || 12
     onSave({ name, priceTiers, entryLimit: entryLimitNum, services, status })
   }
@@ -635,10 +648,14 @@ export function SubscriptionList() {
   const [localPackages, setLocalPackages] = useState<SubPackage[]>([])
   const [modalPkg, setModalPkg] = useState<SubPackage | 'new' | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [view, setView] = useState<'grid' | 'list'>('grid')
-  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  
+  const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; message: string; type: "success" | "error" }>({
+    isOpen: false,
+    message: "",
+    type: "success",
+  })
 
   async function handleToggleStatus(pkg: SubPackage) {
     const newStatus = pkg.status === 'active' ? 'inactive' : 'active'
@@ -647,12 +664,14 @@ export function SubscriptionList() {
     if (!pkg.id.startsWith('temp') && !pkg.id.startsWith('sub-')) {
       try {
         await updatePackageStatus({ id: pkg.id, isActive: newStatus === 'active' })
-        setShowSuccessModal(true)
-      } catch (err) {
+        setModalConfig({ isOpen: true, message: "Status uğurla yeniləndi!", type: "success" })
+      } catch (err: any) {
         console.warn('Backend status toggle sync error', err)
+        const msg = err?.response?.data?.error?.message || err?.message || "Statusu yeniləmək mümkün olmadı"
+        setModalConfig({ isOpen: true, message: msg, type: "error" })
       }
     } else {
-      setShowSuccessModal(true)
+      setModalConfig({ isOpen: true, message: "Status uğurla yeniləndi!", type: "success" })
     }
   }
 
@@ -675,13 +694,14 @@ export function SubscriptionList() {
             services: data.services,
             priceTiers: data.priceTiers,
           })
-          setShowSuccessModal(true)
+          setModalConfig({ isOpen: true, message: "Paket uğurla yeniləndi!", type: "success" })
         } catch (err: any) {
           console.warn('Backend subscription update sync error', err)
-          toast.error(err?.message || "Yadda saxlamaq mümkün olmadı")
+          const msg = err?.response?.data?.error?.message || err?.message || "Yadda saxlamaq mümkün olmadı"
+          setModalConfig({ isOpen: true, message: msg, type: "error" })
         }
       } else {
-        setShowSuccessModal(true)
+        setModalConfig({ isOpen: true, message: "Paket uğurla yeniləndi!", type: "success" })
       }
     } else {
       const tempId = `sub-${Date.now()}`
@@ -696,34 +716,36 @@ export function SubscriptionList() {
           services: data.services,
           priceTiers: data.priceTiers,
         })
-        setShowSuccessModal(true)
+        setModalConfig({ isOpen: true, message: "Paket uğurla yaradıldı!", type: "success" })
       } catch (err: any) {
         console.warn('Backend subscription creation sync error', err)
-        toast.error(err?.message || "Paket yaradıla bilmədi")
+        const msg = err?.response?.data?.error?.message || err?.message || "Paket yaradıla bilmədi"
+        setModalConfig({ isOpen: true, message: msg, type: "error" })
       }
     }
   }
 
-    async function confirmDelete() {
-      if (!deletingId) return
-      const targetId = deletingId
-      const originalPackages = [...localPackages]
-      setLocalPackages((prev) => prev.filter((p) => p.id !== targetId))
-      setDeletingId(null)
-  
-      if (!targetId.startsWith('temp') && !targetId.startsWith('sub-')) {
-        try {
-          await deletePackage(targetId)
-          setShowSuccessModal(true)
-        } catch (err: any) {
-          console.warn('Backend subscription deletion sync error', err)
-          setLocalPackages(originalPackages) // Revert optimistic update
-          toast.error(err?.message || "Paketi silmək mümkün olmadı")
-        }
-      } else {
-        setShowSuccessModal(true)
+  async function confirmDelete() {
+    if (!deletingId) return
+    const targetId = deletingId
+    const originalPackages = [...localPackages]
+    setLocalPackages((prev) => prev.filter((p) => p.id !== targetId))
+    setDeletingId(null)
+
+    if (!targetId.startsWith('temp') && !targetId.startsWith('sub-')) {
+      try {
+        await deletePackage(targetId)
+        setModalConfig({ isOpen: true, message: "Paket uğurla silindi!", type: "success" })
+      } catch (err: any) {
+        console.warn('Backend subscription deletion sync error', err)
+        setLocalPackages(originalPackages) // Revert optimistic update
+        const msg = err?.response?.data?.error?.message || err?.message || "Paketi silmək mümkün olmadı"
+        setModalConfig({ isOpen: true, message: msg, type: "error" })
       }
+    } else {
+      setModalConfig({ isOpen: true, message: "Paket uğurla silindi!", type: "success" })
     }
+  }
 
   return (
     <div className="flex flex-col gap-5 font-sans">
@@ -761,7 +783,11 @@ export function SubscriptionList() {
           <button
             onClick={() => {
               if (currentPackages.length >= 4) {
-                setErrorMsg('Hal-hazırda bütün paketlər yaradılıb. Zəhmət olmasa mövcud paketləri redaktə edin.')
+                setModalConfig({
+                  isOpen: true,
+                  message: "Hal-hazırda bütün paketlər yaradılıb. Zəhmət olmasa mövcud paketləri redaktə edin.",
+                  type: "error"
+                })
                 return
               }
               setModalPkg('new')
@@ -825,6 +851,7 @@ export function SubscriptionList() {
           existingNames={currentPackages.map(p => p.name)}
           onSave={handleSave}
           onClose={() => setModalPkg(null)}
+          onError={(msg) => setModalConfig({ isOpen: true, message: msg, type: "error" })}
         />
       )}
 
@@ -836,11 +863,12 @@ export function SubscriptionList() {
         />
       )}
 
-      {errorMsg && (
-        <ErrorToastModal message={errorMsg} onClose={() => setErrorMsg(null)} />
-      )}
-
-      <SuccessAnimationModal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)} />
+      <SuccessAnimationModal 
+        isOpen={modalConfig.isOpen} 
+        onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))} 
+        message={modalConfig.message}
+        type={modalConfig.type}
+      />
     </div>
   )
 }
