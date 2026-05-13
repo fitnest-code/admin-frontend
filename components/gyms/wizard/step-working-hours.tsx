@@ -177,18 +177,18 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
               <div
                 key={tab.id}
                 onClick={() => {
-                  // Clicking the box body just switches the view
-                  if (isEnabled) {
-                    setActiveTab(tab.id);
-                  }
+                  // Clicking the box body just switches the view, regardless of whether it's enabled
+                  setActiveTab(tab.id);
                 }}
                 className={cn(
                   "flex-1 h-[52px] rounded-[32px] text-sm font-bold transition-all duration-300 border flex items-center justify-center gap-2 select-none",
-                  isEnabled
-                    ? isActive
+                  isActive 
+                    ? isEnabled
                       ? "bg-[#00B4CC] text-white border-[#00B4CC] shadow-md cursor-default"
-                      : "bg-[#00B4CC15] text-[#00B4CC] border-[#00B4CC] hover:bg-[#00B4CC25] cursor-pointer"
-                    : "bg-white text-[#6B7280] border-[#E5E7EB] cursor-default"
+                      : "bg-[#F3F4F6] text-[#101828] border-[#D1D5DB] shadow-sm cursor-default" // active but not enabled
+                    : isEnabled
+                      ? "bg-[#00B4CC15] text-[#00B4CC] border-[#00B4CC] hover:bg-[#00B4CC25] cursor-pointer"
+                      : "bg-white text-[#6B7280] border-[#E5E7EB] hover:bg-slate-50 cursor-pointer"
                 )}
               >
                 {/* Checkbox — toggles enable/disable */}
@@ -201,14 +201,11 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
                     if (isEnabled) {
                       newSet.delete(tab.id);
                       setEnabledTabs(newSet);
-                      if (isActive) {
-                        const remaining = Array.from(newSet);
-                        if (remaining.length > 0) setActiveTab(remaining[0]);
-                      }
+                      // Don't auto-switch the tab away if they disable it, let them stay on the current view
                     } else {
                       newSet.add(tab.id);
                       setEnabledTabs(newSet);
-                      setActiveTab(tab.id);
+                      // Don't auto-switch tab when enabling
                     }
                   }}
                   className={cn(
