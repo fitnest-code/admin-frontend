@@ -10,7 +10,7 @@ import {
 } from '@/modules/customers'
 import { PAGE_SIZE } from './list/customer-list-constants'
 import { CustomerFilters, CustomerStats } from './list/customer-list-controls'
-import { CustomerBulkActions, PushModal, SmsModal } from './list/customer-message-modals'
+import { CustomerBulkActions, EmailModal, PushModal, SmsModal } from './list/customer-message-modals'
 import { CustomerPagination, CustomerTable } from './list/customer-list-table'
 import { sortCustomers, type CustomerSortValue } from './list/customer-list-utils'
 
@@ -26,6 +26,7 @@ export function CustomersList() {
   const [page, setPage] = useState(1)
   const [pushOpen, setPushOpen] = useState(false)
   const [smsOpen, setSmsOpen] = useState(false)
+  const [emailOpen, setEmailOpen] = useState(false)
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -125,7 +126,12 @@ export function CustomersList() {
         onSortChange={setSortBy}
       />
 
-      <CustomerBulkActions selectedCount={selected.size} onOpenPush={() => setPushOpen(true)} onOpenSms={() => setSmsOpen(true)} />
+      <CustomerBulkActions 
+        selectedCount={selected.size} 
+        onOpenPush={() => setPushOpen(true)} 
+        onOpenSms={() => setSmsOpen(true)} 
+        onOpenEmail={() => setEmailOpen(true)}
+      />
 
       <CustomerTable
         customers={sorted}
@@ -150,6 +156,7 @@ export function CustomersList() {
 
       {pushOpen && <PushModal selectedUsers={Array.from(selected).map(id => sorted.find(c => c.id === id)).filter(Boolean) as any[]} onClose={() => setPushOpen(false)} />}
       {smsOpen && <SmsModal selectedUsers={Array.from(selected).map(id => sorted.find(c => c.id === id)).filter(Boolean) as any[]} onClose={() => setSmsOpen(false)} />}
+      {emailOpen && <EmailModal selectedUsers={Array.from(selected).map(id => sorted.find(c => c.id === id)).filter(Boolean) as any[]} onClose={() => setEmailOpen(false)} />}
     </div>
   )
 }
