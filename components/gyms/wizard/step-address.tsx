@@ -57,7 +57,7 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
     }
   }, [addressData, isSearching, shouldFetchAddress, step4Data]);
 
-  // Forward Geocoding (Axtarış)
+  // Forward Geocoding via dedicated backend proxy
   const debouncedSearch = (query: string) => {
     if (searchTimeout) clearTimeout(searchTimeout);
     if (!query || query.length < 3) {
@@ -68,11 +68,12 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
     const timeout = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1&countrycodes=az`);
+        // Query the administrative backend forward geocoding proxy
+        const res = await fetch(`/api/v1/admin/gyms/geocoding/forward?query=${encodeURIComponent(query)}`);
         const data = await res.json();
-        setSuggestions(data);
+        setSuggestions(Array.isArray(data) ? data : []);
       } catch (error) {
-        console.error("Geocoding error:", error);
+        console.error("Geocoding proxy error:", error);
       } finally {
         setIsSearching(false);
       }
@@ -81,10 +82,10 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
   };
 
   const handleSelectSuggestion = (s: any) => {
-    const lat = parseFloat(s.lat);
-    const lng = parseFloat(s.lon);
+    const lat = typeof s.latitude === "number" ? s.latitude : parseFloat(s.lat || 0);
+    const lng = typeof s.longitude === "number" ? s.longitude : parseFloat(s.lon || 0);
     setCoords({ lat, lng });
-    setSearchQuery(s.display_name);
+    setSearchQuery(s.addressText || s.display_name || "");
     setSuggestions([]);
   };
 
@@ -176,17 +177,21 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
           {/* Suggestions Dropdown */}
           {suggestions.length > 0 && (
             <div className="absolute top-[100%] left-0 right-0 z-50 mt-1 bg-white border border-[#ECECED] rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2">
-              {suggestions.map((s, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => handleSelectSuggestion(s)}
-                  className="w-full text-left px-4 py-3 text-sm font-medium hover:bg-slate-50 border-b border-slate-50 last:border-0 transition-colors flex flex-col gap-0.5"
-                >
-                  <span className="text-slate-800">{s.display_name.split(',')[0]}</span>
-                  <span className="text-xs text-slate-400 truncate">{s.display_name}</span>
-                </button>
-              ))}
+              {suggestions.map((s, i) => {
+                const text = s.addressText || s.display_name || "";
+                const shortText = text.split(',')[0] || text;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => handleSelectSuggestion(s)}
+                    className="w-full text-left px-4 py-3 text-sm font-medium hover:bg-slate-50 border-b border-slate-50 last:border-0 transition-colors flex flex-col gap-0.5"
+                  >
+                    <span className="text-slate-800">{shortText}</span>
+                    <span className="text-xs text-slate-400 truncate">{text}</span>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
