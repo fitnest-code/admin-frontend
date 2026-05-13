@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { createPortal } from "react-dom";
 import errorAnimationData from "../../ui/error.json";
 
 // Dynamically import Lottie with SSR disabled to prevent hydration errors
@@ -13,7 +14,12 @@ interface ErrorToastModalProps {
 }
 
 export function ErrorToastModal({ message, onClose }: ErrorToastModalProps) {
+  const [mounted, setMounted] = useState(false);
   const lottieRef = useRef<any>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (lottieRef.current) {
@@ -25,7 +31,9 @@ export function ErrorToastModal({ message, onClose }: ErrorToastModalProps) {
     return () => clearTimeout(timer);
   }, [onClose]);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div 
       onClick={onClose}
       className="fixed inset-0 z-[999999] flex flex-col items-center justify-center p-4 bg-black/40 backdrop-blur-md animate-in fade-in duration-200 font-sans cursor-pointer"
@@ -42,6 +50,7 @@ export function ErrorToastModal({ message, onClose }: ErrorToastModalProps) {
       <div className="mt-4 text-white font-bold text-[18px] tracking-wide text-center max-w-md drop-shadow-md animate-in fade-in duration-300 pointer-events-none">
         {message}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

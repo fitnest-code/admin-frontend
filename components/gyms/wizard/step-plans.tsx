@@ -163,7 +163,9 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
     });
 
     if (subscriptions.length === 0) {
-      return toast.error("Ən azı bir abunəlik paketi seçilməlidir");
+      setErrorMessage("Ən azı bir abunəlik paketi seçilməlidir");
+      setShowErrorModal(true);
+      return;
     }
 
     try {
@@ -172,7 +174,8 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
       setStep6Data(payload);
       onNext();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || err?.message || "Abunəlik məlumatları yanlışdır");
+      setErrorMessage(err?.response?.data?.message || err?.message || "Abunəlik məlumatları yanlışdır");
+      setShowErrorModal(true);
     }
   };
 
@@ -275,7 +278,7 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
       <div className="bg-white rounded-[12px] border border-[#ececed] p-7 flex flex-col gap-8 shadow-sm">
         {/* Add Service Section Toggle / Form */}
         {!isCreatingService ? (
-          <div className="flex items-center justify-between border-b border-[#ececed] pb-3">
+          <div className="flex items-center justify-between border-b border-[#ececed] pb-3 animate-in fade-in duration-300">
             <h3 className="text-[20px] font-semibold leading-[30px]">{activePackage} paketə daxil olan xidmətlər</h3>
             <button
               onClick={() => setIsCreatingService(true)}
@@ -286,15 +289,15 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
             </button>
           </div>
         ) : (
-          <div className="flex flex-col gap-7 p-7 rounded-[12px] bg-white border border-[#ececed] transition-all">
+          <div className="flex flex-col gap-7 p-7 rounded-[12px] bg-white border border-[#ececed] animate-in fade-in duration-300">
             <div className="flex items-center justify-between border-b border-[#ececed] pb-3">
               <h3 className="text-[20px] font-semibold leading-[30px]">Xidmət əlavə et</h3>
               <button 
                 onClick={() => setIsCreatingService(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 transition-colors text-slate-500"
+                className="flex items-center justify-center text-[#1F2937] hover:opacity-70 transition-opacity"
                 title="Bağla"
               >
-                <X size={18} strokeWidth={2.5} />
+                <X size={24} strokeWidth={2} />
               </button>
             </div>
 
@@ -327,7 +330,7 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
 
         {/* Services List */}
         <div className="flex flex-col gap-5">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
+          <div className="flex flex-wrap gap-4">
             {allServices?.map((svc) => {
               const isSelected = packageServices[activePackage]?.includes(svc.name);
 
@@ -336,29 +339,25 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
                   key={svc.id}
                   onClick={() => toggleServiceSelection(svc.name)}
                   className={cn(
-                    "h-[64px] rounded-lg px-3 flex items-center justify-between gap-5 cursor-pointer transition-all border",
+                    "h-[56px] rounded-lg px-4 flex items-center gap-4 cursor-pointer transition-all border flex-shrink-0",
                     isSelected
                       ? "bg-[#00b4cc0a] border-[#00b4cc]"
                       : "bg-[#fafafa] border-[#ececed]"
                   )}
                 >
-                  <div className="flex items-center overflow-hidden">
-                    <span className="text-[16px] font-medium text-black truncate leading-[24px]">
-                      {svc.name}
-                    </span>
-                  </div>
+                  <span className="text-[16px] font-medium text-black leading-[24px] whitespace-nowrap">
+                    {svc.name}
+                  </span>
 
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <button
-                      type="button"
-                      onClick={(e) => handleDeleteService(svc.id, e)}
-                      disabled={deleteServiceMutation.isPending}
-                      className="w-7 h-7 flex items-center justify-center transition-opacity hover:opacity-80"
-                      title="Xidməti sil"
-                    >
-                      <Image src="/trash.png" width={24} height={24} alt="Sil" />
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => handleDeleteService(svc.id, e)}
+                    disabled={deleteServiceMutation.isPending}
+                    className="w-6 h-6 flex items-center justify-center transition-opacity hover:opacity-80 flex-shrink-0 ml-1"
+                    title="Xidməti sil"
+                  >
+                    <Image src="/trash.png" width={20} height={20} alt="Sil" />
+                  </button>
                 </div>
               );
             })}

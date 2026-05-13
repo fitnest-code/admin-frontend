@@ -71,6 +71,7 @@ export function PlansTab({ gym }: { gym?: any }) {
   const [hasSynced, setHasSynced] = useState(false);
   const [pendingService, setPendingService] = useState<string | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [deleteServiceId, setDeleteServiceId] = useState<number | null>(null);
 
   // Sync state when gym data arrives
   useEffect(() => {
@@ -120,7 +121,7 @@ export function PlansTab({ gym }: { gym?: any }) {
     }
   };
 
-  const [deleteServiceId, setDeleteServiceId] = useState<number | null>(null);
+
 
   const handleDeleteFromGym = async (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
