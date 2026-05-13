@@ -189,8 +189,9 @@ export function PushModal({ selectedUsers = [], onClose }: { selectedUsers?: any
       const token = localStorage.getItem('access_token') || ''
       const userIds = selectedUsers.map(u => u.id).filter(Boolean)
       
+      let res
       if (userIds.length > 0) {
-        await fetch('/api/v1/admin/notifications/bulk', {
+        res = await fetch('/api/v1/admin/notifications/bulk', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -203,7 +204,7 @@ export function PushModal({ selectedUsers = [], onClose }: { selectedUsers?: any
           })
         })
       } else {
-        await fetch('/api/v1/admin/notifications/broadcast', {
+        res = await fetch('/api/v1/admin/notifications/broadcast', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -214,6 +215,10 @@ export function PushModal({ selectedUsers = [], onClose }: { selectedUsers?: any
             body: message
           })
         })
+      }
+      
+      if (res && !res.ok) {
+        throw new Error(`Server xətası: ${res.status}`)
       }
       setState('success')
     } catch (err) {
@@ -294,7 +299,7 @@ export function SmsModal({ selectedUsers = [], onClose }: { selectedUsers?: any[
     try {
       const token = localStorage.getItem('access_token') || ''
       if (phoneList.length > 0) {
-        await fetch('/api/v1/admin/notifications/sms/bulk', {
+        const res = await fetch('/api/v1/admin/notifications/sms/bulk', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -305,6 +310,9 @@ export function SmsModal({ selectedUsers = [], onClose }: { selectedUsers?: any[
             text: message
           })
         })
+        if (!res.ok) {
+          throw new Error(`Server xətası: ${res.status}`)
+        }
       }
       setState('success')
     } catch (err) {
@@ -385,7 +393,7 @@ export function EmailModal({ selectedUsers = [], onClose }: { selectedUsers?: an
     try {
       const token = localStorage.getItem('access_token') || ''
       if (emailList.length > 0) {
-        await fetch('/api/v1/admin/notifications/email/bulk', {
+        const res = await fetch('/api/v1/admin/notifications/email/bulk', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -397,6 +405,9 @@ export function EmailModal({ selectedUsers = [], onClose }: { selectedUsers?: an
             body: message
           })
         })
+        if (!res.ok) {
+          throw new Error(`Server xətası: ${res.status}`)
+        }
       }
       setState('success')
     } catch (err) {
