@@ -186,14 +186,49 @@ function ResultDialog({ label, success, onClose }: { label: string; success?: bo
   )
 }
 
-export function PushModal({ onClose }: { onClose: () => void }) {
+export function PushModal({ selectedUsers = [], onClose }: { selectedUsers?: any[]; onClose: () => void }) {
   const [title, setTitle] = useState('')
   const [message, setMessage] = useState('')
   const [state, setState] = useState<SendState>('form')
   const [qOpen, setQOpen] = useState(false)
 
-  function handleConfirm() {
-    setTimeout(() => setState(Math.random() > 0.2 ? 'success' : 'error'), 600)
+  async function handleConfirm() {
+    try {
+      const token = localStorage.getItem('access_token') || ''
+      const userIds = selectedUsers.map(u => u.id).filter(Boolean)
+      
+      if (userIds.length > 0) {
+        await fetch('/api/v1/admin/notifications/bulk', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({
+            userIds,
+            title: title.trim() || 'Fitnest Bildiriş',
+            body: message
+          })
+        })
+      } else {
+        // Fallback to absolute system wide broadcast if zero targeted checkboxes explicitly flagged
+        await fetch('/api/v1/admin/notifications/broadcast', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({
+            title: title.trim() || 'Fitnest Bildiriş',
+            body: message
+          })
+        })
+      }
+      setState('success')
+    } catch (err) {
+      console.error('Push send error:', err)
+      setState('error')
+    }
   }
 
   return (
@@ -227,7 +262,11 @@ export function PushModal({ onClose }: { onClose: () => void }) {
               Göndər
             </button>
           </div>
-          <p className="text-center text-xs text-muted-foreground">Bu bildiriş yalnız bu müştəriyə göndəriləcək</p>
+          <p className="text-center text-xs text-muted-foreground">
+            {selectedUsers.length > 0 
+              ? `Bu bildiriş seçilmiş ${selectedUsers.length} müştəriyə göndəriləcək` 
+              : 'Bu bildiriş bütün müştərilərə göndəriləcək'}
+          </p>
         </div>
       )}
       {state === 'confirm' && <ConfirmDialog type="push" onConfirm={handleConfirm} onCancel={() => setState('form')} />}
@@ -237,13 +276,34 @@ export function PushModal({ onClose }: { onClose: () => void }) {
   )
 }
 
-export function SmsModal({ onClose }: { onClose: () => void }) {
+export function SmsModal({ selectedUsers = [], onClose }: { selectedUsers?: any[]; onClose: () => void }) {
   const [message, setMessage] = useState('')
   const [state, setState] = useState<SendState>('form')
   const [qOpen, setQOpen] = useState(false)
 
-  function handleConfirm() {
-    setTimeout(() => setState(Math.random() > 0.2 ? 'success' : 'error'), 600)
+  const phoneList = selectedUsers.map(u => u.phoneNumber).filter(Boolean)
+
+  async function handleConfirm() {
+    try {
+      const token = localStorage.getItem('access_token') || ''
+      if (phoneList.length > 0) {
+        await fetch('/api/v1/sms/bulk', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({
+            phoneNumbers: phoneList,
+            text: message
+          })
+        })
+      }
+      setState('success')
+    } catch (err) {
+      console.error('SMS send error:', err)
+      setState('error')
+    }
   }
 
   return (
@@ -251,9 +311,11 @@ export function SmsModal({ onClose }: { onClose: () => void }) {
       {state === 'form' && (
         <div className="flex flex-col gap-4">
           <h2 className="text-base font-semibold text-foreground">SMS göndər</h2>
-          <div className="flex flex-col gap-1">
-            <span className="text-xs text-muted-foreground">Telefon nömrəsi</span>
-            <span className="text-sm font-medium text-foreground">+994 00 000 00 00</span>
+          <div className="flex flex-col gap-1 max-h-24 overflow-y-auto">
+            <span className="text-xs text-muted-foreground">Telefon nömrələri ({phoneList.length})</span>
+            <span className="text-sm font-medium text-foreground">
+              {phoneList.length > 0 ? phoneList.join(', ') : 'Hədəf nömrə seçilməyib'}
+            </span>
           </div>
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
@@ -274,7 +336,7 @@ export function SmsModal({ onClose }: { onClose: () => void }) {
             </button>
             <button
               onClick={() => setState('confirm')}
-              disabled={!message}
+              disabled={!message || phoneList.length === 0}
               className="flex-1 rounded-lg bg-[#00B4CC] py-2.5 text-sm font-semibold text-white hover:bg-[#008799] disabled:opacity-40 transition-colors"
             >
               Göndər

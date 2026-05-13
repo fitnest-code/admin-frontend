@@ -148,8 +148,8 @@ export function CustomersList() {
 
       <CustomerPagination total={total} page={page} perPage={PAGE_SIZE} onChange={setPage} />
 
-      {pushOpen && <PushModal onClose={() => setPushOpen(false)} />}
-      {smsOpen && <SmsModal onClose={() => setSmsOpen(false)} />}
+      {pushOpen && <PushModal selectedUsers={Array.from(selected).map(id => sorted.find(c => c.id === id)).filter(Boolean) as any[]} onClose={() => setPushOpen(false)} />}
+      {smsOpen && <SmsModal selectedUsers={Array.from(selected).map(id => sorted.find(c => c.id === id)).filter(Boolean) as any[]} onClose={() => setSmsOpen(false)} />}
     </div>
   )
 }
