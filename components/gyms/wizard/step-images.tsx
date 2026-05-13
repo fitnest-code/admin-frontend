@@ -48,22 +48,67 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
 
   const t = labels[lang];
 
-  const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Client-side image compression helper utilizing standard HTML5 Canvas
+  const compressImage = (file: File, maxWidth = 1600, maxHeight = 1200, quality = 0.8): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width *= ratio;
+          height *= ratio;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(file);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const compressedFile = new File([blob], file.name, {
+                type: file.type || "image/jpeg",
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            } else {
+              resolve(file);
+            }
+          },
+          file.type || "image/jpeg",
+          quality
+        );
+      };
+      img.onerror = () => resolve(file);
+    });
+  };
+
+  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 50 * 1024 * 1024) return toast.error("Şəkil ölçüsü max 50MB ola bilər");
-      setCoverPhoto(file);
-      setCoverPreview(URL.createObjectURL(file));
+      // Auto compress cover images before adding to state
+      const compressed = await compressImage(file, 1920, 1080, 0.85);
+      setCoverPhoto(compressed);
+      setCoverPreview(URL.createObjectURL(compressed));
     }
   };
 
-  const handleRoomPhotoChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleRoomPhotoChange = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 50 * 1024 * 1024) return toast.error("Şəkil ölçüsü max 50MB ola bilər");
+      // Auto compress room images to optimized standard resolution
+      const compressed = await compressImage(file, 1200, 900, 0.8);
       setRoomPhotos(prev => {
         const newPhotos = [...prev];
-        newPhotos[index] = { ...newPhotos[index], photo: file, previewUrl: URL.createObjectURL(file) };
+        newPhotos[index] = { ...newPhotos[index], photo: compressed, previewUrl: URL.createObjectURL(compressed) };
         return newPhotos;
       });
     }
