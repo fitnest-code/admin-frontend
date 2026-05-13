@@ -65,13 +65,8 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
   useEffect(() => { setMounted(true); }, []);
 
   const handleNext = async () => {
-    // 1. Basic validation
+    // 1. Check if at least one slot exists for each enabled regime
     const enabledTabsArray = Array.from(enabledTabs);
-    if (enabledTabsArray.length === 0) {
-      return toast.error("Ən azı bir zal rejimi seçilməlidir (Ümumi, Kişi və ya Qadın)");
-    }
-
-    // 2. Check if at least one slot exists for each enabled regime
     for (const tab of enabledTabsArray) {
       if (slots[tab].length === 0) {
         const labels: Record<GenderTab, string> = {
@@ -83,7 +78,7 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
       }
     }
 
-    // 3. Check for slots on rest days (double check)
+    // 2. Check for slots on rest days (double check)
     for (const tab of enabledTabsArray) {
       const hasSlotsOnRestDay = slots[tab].some(s => restDays.has(s.day));
       if (hasSlotsOnRestDay) {
@@ -103,8 +98,11 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
 
   const isSubmitting = validateStep3.isPending;
 
+  const ALL_DAY_KEYS = DAY_SHORT_LABELS.map(d => d.key);
+
   const buildPayload = (): IGymWorkHoursPayload => {
     const mapToWorkHour = (key: GenderTab): IWorkHour[] => {
+      // If regime is not enabled, return empty (all days are rest days for this type)
       if (!enabledTabs.has(key)) return [];
       return slots[key].map(s => ({
         period: BACKEND_DAY_MAP[s.day] || s.day,
@@ -113,12 +111,38 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
       }));
     };
 
+    // Compute rest days: explicit rest days + all days for disabled regimes
+    // For enabled regimes: days without any work hours are implicitly rest days
+    const computeRestDays = (): IRestDay[] => {
+      // Start with explicitly selected rest days
+      const allRestDays = new Set(restDays);
+
+      // For each enabled regime, days without slots are also rest days
+      const enabledTabsArray = Array.from(enabledTabs);
+      if (enabledTabsArray.length > 0) {
+        // Find days that have NO slots in ANY enabled regime
+        for (const dayKey of ALL_DAY_KEYS) {
+          const hasSlotInAnyEnabled = enabledTabsArray.some(tab => 
+            slots[tab].some(s => s.day === dayKey)
+          );
+          if (!hasSlotInAnyEnabled) {
+            allRestDays.add(dayKey);
+          }
+        }
+      } else {
+        // No regime enabled at all — all days are rest days
+        ALL_DAY_KEYS.forEach(d => allRestDays.add(d));
+      }
+
+      return Array.from(allRestDays).map(d => ({ period: BACKEND_DAY_MAP[d] || d }));
+    };
+
     return {
       gymId: gymId ? Number(gymId) : 0,
       generalWorkHours: mapToWorkHour("generalWorkHours"),
       workHoursMan: mapToWorkHour("workHoursMan"),
       workHoursWoman: mapToWorkHour("workHoursWoman"),
-      restDays: Array.from(restDays).map(d => ({ period: BACKEND_DAY_MAP[d] || d })),
+      restDays: computeRestDays(),
     };
   };
 
@@ -150,48 +174,55 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
             const isEnabled = enabledTabs.has(tab.id);
             const isActive = activeTab === tab.id;
             return (
-              <button
+              <div
                 key={tab.id}
-                type="button"
                 onClick={() => {
-                  const newSet = new Set(enabledTabs);
+                  // Clicking the box body just switches the view
                   if (isEnabled) {
-                    // Unchecking — toggle off (but keep at least awareness)
-                    newSet.delete(tab.id);
-                    setEnabledTabs(newSet);
-                    // If this was the active view, switch to another enabled tab
-                    if (isActive) {
-                      const remaining = Array.from(newSet);
-                      if (remaining.length > 0) setActiveTab(remaining[0]);
-                    }
-                  } else {
-                    // Checking — toggle on and switch view to it
-                    newSet.add(tab.id);
-                    setEnabledTabs(newSet);
                     setActiveTab(tab.id);
                   }
                 }}
                 className={cn(
-                  "flex-1 h-[52px] rounded-[32px] text-sm font-bold transition-all duration-300 border flex items-center justify-center gap-2",
+                  "flex-1 h-[52px] rounded-[32px] text-sm font-bold transition-all duration-300 border flex items-center justify-center gap-2 select-none",
                   isEnabled
                     ? isActive
-                      ? "bg-[#00B4CC] text-white border-[#00B4CC] shadow-md"
-                      : "bg-[#00B4CC15] text-[#00B4CC] border-[#00B4CC] hover:bg-[#00B4CC25]"
-                    : "bg-white text-[#6B7280] border-[#E5E7EB] hover:border-[#00B4CC80] hover:text-[#00B4CC]"
+                      ? "bg-[#00B4CC] text-white border-[#00B4CC] shadow-md cursor-default"
+                      : "bg-[#00B4CC15] text-[#00B4CC] border-[#00B4CC] hover:bg-[#00B4CC25] cursor-pointer"
+                    : "bg-white text-[#6B7280] border-[#E5E7EB] cursor-default"
                 )}
               >
-                <span className={cn(
-                  "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all",
-                  isEnabled
-                    ? isActive
-                      ? "border-white/50 bg-white/25"
-                      : "border-[#00B4D8] bg-[#00B4D8]"
-                    : "border-slate-200 bg-white"
-                )}>
+                {/* Checkbox — toggles enable/disable */}
+                <span
+                  role="checkbox"
+                  aria-checked={isEnabled}
+                  onClick={(e) => {
+                    e.stopPropagation(); // Don't trigger the outer div click
+                    const newSet = new Set(enabledTabs);
+                    if (isEnabled) {
+                      newSet.delete(tab.id);
+                      setEnabledTabs(newSet);
+                      if (isActive) {
+                        const remaining = Array.from(newSet);
+                        if (remaining.length > 0) setActiveTab(remaining[0]);
+                      }
+                    } else {
+                      newSet.add(tab.id);
+                      setEnabledTabs(newSet);
+                      setActiveTab(tab.id);
+                    }
+                  }}
+                  className={cn(
+                    "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all cursor-pointer hover:scale-110",
+                    isEnabled
+                      ? isActive
+                        ? "border-white/50 bg-white/25"
+                        : "border-[#00B4D8] bg-[#00B4D8]"
+                      : "border-slate-300 bg-white hover:border-[#00B4CC80]"
+                  )}>
                   {isEnabled && <Check className="text-white w-3.5 h-3.5 stroke-[4]" />}
                 </span>
                 {tab.label}
-              </button>
+              </div>
             );
           })}
         </div>
@@ -351,6 +382,17 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
       <AddClassTimeModal
         open={modalOpen}
         onOpenChange={setModalOpen}
+        restDays={restDays}
+        onRestDaysChange={(newRestDays) => {
+          // Clear slots for newly added rest days across all tabs
+          setSlots(prev => ({
+            generalWorkHours: prev.generalWorkHours.filter(s => !newRestDays.has(s.day)),
+            workHoursMan: prev.workHoursMan.filter(s => !newRestDays.has(s.day)),
+            workHoursWoman: prev.workHoursWoman.filter(s => !newRestDays.has(s.day)),
+          }));
+          setRestDays(newRestDays);
+        }}
+        editData={editingId ? slots[activeTab].find(s => s.id === editingId) || null : null}
         onSubmit={(data) => {
           if (restDays.has(data.day)) {
             return toast.error("İstirahət gününə iş saatı əlavə edilə bilməz");
@@ -385,7 +427,7 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
           } else {
             setSlots(prev => ({...prev, [activeTab]: [...prev[activeTab], { id: Math.random().toString(), ...data }]}));
           }
-          setModalOpen(false);
+          // Don't close modal here — modal closes itself after iterating all days
         }}
       />
     </div>

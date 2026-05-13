@@ -51,6 +51,7 @@ export interface Step6Data {
 interface GymState {
   gymId: number | null;
   currentTab: string | null;
+  completedSteps: string[];
   step1Data: Step1Data | null;
   step2Trainers: LocalTrainer[];
   step3Data: Step3Data | null;
@@ -61,6 +62,8 @@ interface GymState {
 
   setGymId: (id: number) => void;
   setCurrentTab: (tab: string) => void;
+  markStepCompleted: (stepKey: string) => void;
+  isStepAccessible: (stepKey: string, allStepKeys: string[]) => boolean;
   setStep1Data: (data: Step1Data) => void;
   setStep2Trainers: (trainers: LocalTrainer[]) => void;
   addStep2Trainer: (trainer: LocalTrainer) => void;
@@ -78,9 +81,10 @@ interface GymState {
 
 export const useGymStore = create<GymState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       gymId: null, 
       currentTab: null,
+      completedSteps: [],
       step1Data: null,
       step2Trainers: [],
       step3Data: null,
@@ -91,6 +95,19 @@ export const useGymStore = create<GymState>()(
 
       setGymId: (id) => set({ gymId: id }),
       setCurrentTab: (tab) => set({ currentTab: tab }),
+      markStepCompleted: (stepKey) => set((state) => ({
+        completedSteps: state.completedSteps.includes(stepKey)
+          ? state.completedSteps
+          : [...state.completedSteps, stepKey]
+      })),
+      isStepAccessible: (stepKey, allStepKeys) => {
+        const state = get();
+        const stepIndex = allStepKeys.indexOf(stepKey);
+        if (stepIndex === 0) return true; // First step is always accessible
+        // A step is accessible if the previous step has been completed
+        const prevStep = allStepKeys[stepIndex - 1];
+        return state.completedSteps.includes(prevStep);
+      },
       setStep1Data: (data) => set({ step1Data: data }),
       setStep2Trainers: (trainers) => set({ step2Trainers: trainers }),
       addStep2Trainer: (trainer) => set((state) => ({ 
@@ -116,7 +133,8 @@ export const useGymStore = create<GymState>()(
       resetGym: () => {
         set({ 
           gymId: null, 
-          currentTab: null, 
+          currentTab: null,
+          completedSteps: [],
           step1Data: null,
           step2Trainers: [], 
           step3Data: null,
@@ -134,6 +152,7 @@ export const useGymStore = create<GymState>()(
       partialize: (state) => ({ 
         gymId: state.gymId,
         currentTab: state.currentTab,
+        completedSteps: state.completedSteps,
         step1Data: state.step1Data,
         step2Trainers: state.step2Trainers.map(t => ({ ...t, photo: undefined })), // Don't persist File
         step3Data: state.step3Data,

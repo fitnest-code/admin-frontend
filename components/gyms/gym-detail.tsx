@@ -46,7 +46,7 @@ interface GymDetailProps {
 }
 
 export function GymDetail({ gym, isNew = false }: GymDetailProps) {
-  const { gymId, currentTab, setCurrentTab, resetGym, setGymId } = useGymStore()
+  const { gymId, currentTab, setCurrentTab, resetGym, setGymId, markStepCompleted, completedSteps } = useGymStore()
   const { mutate: deleteGymMutate } = useDeleteGym()
   const router = useRouter()
 
@@ -101,8 +101,12 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
     resetGym()
     router.push('/gyms')
   }
+  const WIZARD_STEP_KEYS = WIZARD_TABS.map(t => t.key)
+
   const goToNext = () => {
     const currentIndex = WIZARD_TABS.findIndex(t => t.key === activeTab)
+    // Mark current step as completed
+    markStepCompleted(activeTab)
     if (currentIndex < WIZARD_TABS.length - 1) {
       const nextTab = WIZARD_TABS[currentIndex + 1].key
       setActiveTab(nextTab)
@@ -198,19 +202,18 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
             <div className="flex flex-col items-start px-2">
               {WIZARD_TABS.map((tab, index) => {
                 const isActive = activeTab === tab.key
-                const currentIndex = WIZARD_TABS.findIndex(t => t.key === activeTab)
-                const isPast = index < currentIndex
-                const isFuture = index > currentIndex
+                const isCompleted = completedSteps.includes(tab.key)
+                const isAccessible = index === 0 || completedSteps.includes(WIZARD_TABS[index - 1].key)
 
                 return (
                   <div 
                     key={tab.key} 
                     className={cn(
                       "w-full group",
-                      isPast ? "cursor-pointer" : "cursor-default"
+                      isAccessible && !isActive ? "cursor-pointer" : "cursor-default"
                     )}
                     onClick={() => {
-                      if (isPast) {
+                      if (isAccessible && !isActive) {
                         setActiveTab(tab.key)
                         setCurrentTab(tab.key)
                       }
@@ -222,13 +225,13 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
                         "w-11 h-11 rounded-full flex items-center justify-center text-[18px] font-semibold transition-all duration-300 shrink-0",
                         isActive 
                           ? "bg-[#00B4CC] text-white shadow-md scale-105" 
-                          : isPast ? "bg-[#00B4CC] text-white" : "bg-[#F3F4F6] text-[#9CA3AF]"
+                          : isCompleted ? "bg-[#00B4CC] text-white" : "bg-[#F3F4F6] text-[#9CA3AF]"
                       )}>
-                        {isPast ? <Check size={20} strokeWidth={3} /> : index + 1}
+                        {isCompleted && !isActive ? <Check size={20} strokeWidth={3} /> : index + 1}
                       </div>
                       <span className={cn(
                         "text-[18px] font-medium leading-[28px] transition-colors duration-300",
-                        isActive ? "text-black" : "text-[#C9C9C9]"
+                        isActive ? "text-black" : isCompleted ? "text-black" : "text-[#C9C9C9]"
                       )}>
                         {tab.label}
                       </span>
@@ -237,7 +240,10 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
                     {/* Connector Line */}
                     {index < WIZARD_TABS.length - 1 && (
                       <div className="w-11 flex justify-center py-2">
-                        <div className="w-[4px] h-[24px] bg-[#E8E8E8] rounded-full" />
+                        <div className={cn(
+                          "w-[4px] h-[24px] rounded-full",
+                          isCompleted ? "bg-[#00B4CC]" : "bg-[#E8E8E8]"
+                        )} />
                       </div>
                     )}
                   </div>
