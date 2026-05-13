@@ -50,12 +50,12 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
     setMounted(true);
   }, []);
 
-  // Backend-dən gələn ünvanı input-a sinxronizasiya et
+  // Backend-dən gələn ünvanı input-a sinxronizasiya et (yalnız ünvan tamamilə boşdursa)
   useEffect(() => {
-    if (addressData?.addressText && !isSearching && shouldFetchAddress && !step4Data) {
+    if (addressData?.addressText && !searchQuery && shouldFetchAddress && !step4Data) {
       setSearchQuery(addressData.addressText);
     }
-  }, [addressData, isSearching, shouldFetchAddress, step4Data]);
+  }, [addressData, searchQuery, shouldFetchAddress, step4Data]);
 
   // Forward Geocoding via dedicated backend proxy
   const debouncedSearch = (query: string) => {
@@ -85,7 +85,21 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
     const lat = typeof s.latitude === "number" ? s.latitude : parseFloat(s.lat || 0);
     const lng = typeof s.longitude === "number" ? s.longitude : parseFloat(s.lon || 0);
     setCoords({ lat, lng });
-    setSearchQuery(s.addressText || s.display_name || "");
+
+    const suggestedText = s.addressText || s.display_name || "";
+    
+    // Extract custom typed numbers/house indicators missing from the map result
+    const matchNumber = searchQuery.match(/\b\d+[A-Za-z]?\b/);
+    
+    if (matchNumber && !suggestedText.includes(matchNumber[0])) {
+      // Smartly insert the house number right after the street name
+      const parts = suggestedText.split(',');
+      parts[0] = `${parts[0].trim()} ${matchNumber[0]}`;
+      setSearchQuery(parts.join(', '));
+    } else {
+      setSearchQuery(suggestedText);
+    }
+    
     setSuggestions([]);
   };
 
@@ -133,8 +147,7 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
   const mapSrc = `https://maps.google.com/maps?q=${displayLat},${displayLng}&z=15&output=embed`;
 
   return (
-    <div className="w-full flex justify-center py-6">
-      <div className="bg-white rounded-2xl border border-[#ECECED] w-full max-w-[783px] p-7 flex flex-col gap-6 shadow-sm">
+    <div className="w-full bg-white rounded-[32px] border border-[#ECECED] p-10 flex flex-col gap-8 shadow-sm">
 
         {/* Dil Seçimi və Başlıq */}
         <div className="flex items-center justify-between">
@@ -231,7 +244,7 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
         </div>
 
         {/* Xəritə Sahəsi */}
-        <div className="rounded-xl overflow-hidden border border-[#ECECED] h-[350px] bg-gray-50">
+        <div className="rounded-2xl overflow-hidden border border-[#ECECED] h-[450px] bg-gray-50">
           <iframe
             key={`${coords.lat}-${coords.lng}`}
             src={mapSrc}
@@ -244,18 +257,24 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
           />
         </div>
 
-        <div className="flex gap-4 pt-2">
+        {/* Footer Buttons */}
+        <div className="flex justify-end items-center gap-6 pt-6 border-t border-slate-100">
+          <button
+            type="button"
+            className="w-[280px] h-[52px] rounded-xl border-2 border-[#00B4CC] bg-white text-[#00B4CC] font-bold text-base hover:bg-[#00B4CC08] transition-all"
+          >
+            {t.save}
+          </button>
           <button
             type="button"
             disabled={isPending}
             onClick={handleNext}
-            className="flex-1 py-4 rounded-xl bg-[#00B4D8] text-white text-sm font-bold hover:bg-[#0096B4] flex items-center justify-center transition shadow-lg shadow-cyan-100 disabled:opacity-70"
+            className="w-[280px] h-[52px] rounded-xl bg-[#00B4CC] text-white font-bold text-base hover:bg-[#009DB3] transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-[#00B4CC20]"
           >
-            {isPending ? <Loader2 className="animate-spin" size={20} /> : t.next}
+            {isPending ? <Loader2 className="animate-spin" size={24} /> : t.next}
           </button>
         </div>
 
-      </div>
     </div>
   );
 }

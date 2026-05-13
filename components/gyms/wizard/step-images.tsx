@@ -10,9 +10,9 @@ import { useValidateGymStep5 } from "@/lib/query/gym-query";
 type Lang = "Az" | "Ru" | "En";
 
 const labels: Record<Lang, any> = {
-  Az: { title: "Zal məlumatları", cover: "Cover Şəkil", others: "Digər şəkillər", uploadCover: "Upload cover", upload: "Upload", next: "Növbəti", namePlaceholder: "Ad (məs: SPA)" },
-  Ru: { title: "Данные зала", cover: "Обложка", others: "Другие фото", uploadCover: "Загрузить обложку", upload: "Загрузить", next: "Далее", namePlaceholder: "Название (напр: SPA)" },
-  En: { title: "Gym Details", cover: "Cover Photo", others: "Other Photos", uploadCover: "Upload cover", upload: "Upload", next: "Next", namePlaceholder: "Name (e.g. SPA)" },
+  Az: { title: "Zal məlumatları", cover: "Cover Şəkil", others: "Digər şəkillər", uploadCover: "Upload cover", upload: "Upload", save: "Yadda saxla", next: "Növbəti", namePlaceholder: "Ad (məs: SPA)" },
+  Ru: { title: "Данные зала", cover: "Обложка", others: "Другие фото", uploadCover: "Загрузить обложку", upload: "Загрузить", save: "Сохранить", next: "Далее", namePlaceholder: "Название (напр: SPA)" },
+  En: { title: "Gym Details", cover: "Cover Photo", others: "Other Photos", uploadCover: "Upload cover", upload: "Upload", save: "Save", next: "Next", namePlaceholder: "Name (e.g. SPA)" },
 };
 
 interface RoomPhotoState {
@@ -170,8 +170,7 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
   if (!mounted) return null;
 
   return (
-    <div className="w-full flex justify-center py-6">
-      <div className="bg-white rounded-2xl border border-[#ECECED] w-full max-w-[783px] p-7 flex flex-col gap-6 shadow-sm">
+    <div className="w-full bg-white rounded-[32px] border border-[#ECECED] p-10 flex flex-col gap-8 shadow-sm">
 
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -278,19 +277,24 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
           </div>
         </div>
 
-        {/* Action Button */}
-        <div className="flex gap-4 mt-6">
+        {/* Footer Buttons */}
+        <div className="flex justify-end items-center gap-6 pt-6 border-t border-slate-100">
+          <button
+            type="button"
+            className="w-[280px] h-[52px] rounded-xl border-2 border-[#00B4CC] bg-white text-[#00B4CC] font-bold text-base hover:bg-[#00B4CC08] transition-all"
+          >
+            {t.save}
+          </button>
           <button
             type="button"
             disabled={isPending}
             onClick={handleNext}
-            className="flex-1 py-4 rounded-xl bg-[#00B4D8] text-white text-sm font-bold hover:bg-[#0096B4] flex items-center justify-center transition shadow-lg shadow-cyan-100 disabled:opacity-70"
+            className="w-[280px] h-[52px] rounded-xl bg-[#00B4CC] text-white font-bold text-base hover:bg-[#009DB3] transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-[#00B4CC20]"
           >
-            {isPending ? <Loader2 className="animate-spin" size={20} /> : t.next}
+            {isPending ? <Loader2 className="animate-spin" size={24} /> : t.next}
           </button>
         </div>
 
-      </div>
     </div>
   );
 }
