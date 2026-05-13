@@ -52,6 +52,56 @@ export function useCreateGymStep1() {
   })
 }
 
+// 2.1 Validation Hooks
+export function useValidateGymStep1() {
+  return useMutation({
+    mutationFn: (payload: GymStep1Payload) =>
+      apiPost('/admin/gyms/validate/step1', payload),
+  });
+}
+
+export function useValidateGymStep2() {
+  return useMutation({
+    mutationFn: (formData: FormData) =>
+      apiPost('/admin/gyms/validate/step2', formData),
+  });
+}
+
+export function useValidateGymStep3() {
+  return useMutation({
+    mutationFn: (payload: any) =>
+      apiPost('/admin/gyms/validate/step3', payload),
+  });
+}
+
+export function useValidateGymStep4() {
+  return useMutation({
+    mutationFn: (payload: any) =>
+      apiPost('/admin/gyms/validate/step4', payload),
+  });
+}
+
+export function useValidateGymStep5() {
+  return useMutation({
+    mutationFn: (formData: FormData) =>
+      apiPost('/admin/gyms/validate/step5', formData),
+  });
+}
+
+export function useValidateGymStep6() {
+  return useMutation({
+    mutationFn: (payload: GymCreateStep6Request) =>
+      apiPost('/admin/gyms/validate/step6', payload),
+  });
+}
+
+export function useValidateGymStep7() {
+  return useMutation({
+    mutationFn: (payload: GymCreateStep7Request) =>
+      apiPost('/admin/gyms/validate/step7', payload),
+  });
+}
+
 // 3. Zalı silmək üçün
 export function useDeleteGym() {
   const queryClient = useQueryClient();
@@ -121,6 +171,69 @@ export function useCreateGymStep7() {
   return useMutation({
     mutationFn: ({ id, payload }: { id: number, payload: GymCreateStep7Request }) =>
       apiPost(`/admin/gyms/${id}/step7`, payload),
+  });
+}
+
+// 7.1 Complete Gym Creation (Sequential All Steps)
+export function useCreateGymComplete() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: {
+      step1: GymStep1Payload;
+      step2: any; // LocalTrainer[]
+      step3: any; // Step3Data
+      step4: any; // Step4Data
+      step5: any; // Step5Photos
+      step6: GymCreateStep6Request;
+      step7: GymCreateStep7Request;
+    }) => {
+      // Step 1
+      const step1Res = await apiPost<GymStep1Response>('/admin/gyms/step1', data.step1);
+      const gymId = step1Res.gymId;
+
+      // Step 2 (Trainers)
+      const fd2 = new FormData();
+      data.step2.forEach((t: any) => {
+        fd2.append("names", t.name);
+        fd2.append("surnames", t.surname);
+        fd2.append("professionIds", String(t.professionId));
+        fd2.append("emails", t.email);
+        fd2.append("phones", t.phone);
+        fd2.append("lessonTypesPerTrainer", t.lessonTypeIds?.join(",") || "");
+        if (t.photo) fd2.append("photos", t.photo);
+      });
+      await apiPost(`/admin/gyms/${gymId}/step2`, fd2);
+
+      // Step 3 (Working Hours)
+      await apiPost(`/admin/gyms/${gymId}/step3`, data.step3);
+
+      // Step 4 (Address)
+      await apiPost(`/admin/gyms/${gymId}/step4`, {
+        latitude: data.step4.lat,
+        longitude: data.step4.lng
+      });
+
+      // Step 5 (Images)
+      const fd5 = new FormData();
+      if (data.step5.cover) fd5.append("coverPhoto", data.step5.cover);
+      data.step5.rooms.forEach((r: any) => {
+        fd5.append("roomPhotos", r.file);
+        fd5.append("roomNames", r.name);
+      });
+      await apiPost(`/admin/gyms/${gymId}/step5`, fd5);
+
+      // Step 6 (Plans)
+      await apiPost(`/admin/gyms/${gymId}/step6`, data.step6);
+
+      // Step 7 (Admins)
+      await apiPost(`/admin/gyms/${gymId}/step7`, data.step7);
+
+      return gymId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gyms'] });
+    }
   });
 }
 

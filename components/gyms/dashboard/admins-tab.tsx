@@ -8,6 +8,7 @@ import { useGymStore } from "@/lib/store/gym-store";
 import { useGymAdmins, useAddGymAdmin, useDeleteGymAdmin } from "@/lib/query/gym-query";
 import { toast } from "sonner";
 import { ConfirmDeleteModal } from "../modals/confirm-delete-modal";
+import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 
 export function AdminsTab() {
   const { gymId } = useGymStore();
@@ -18,6 +19,7 @@ export function AdminsTab() {
   const [modalOpen, setModalOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [deleteAdminId, setDeleteAdminId] = useState<number | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [form, setForm] = useState({
     name: "",
     surname: "",
@@ -40,7 +42,7 @@ export function AdminsTab() {
         onSuccess: () => {
           setModalOpen(false);
           setForm({ name: "", surname: "", phoneNumber: "", email: "", password: "" });
-          toast.success("Admin uğurla əlavə edildi");
+          setShowSuccessModal(true);
         },
         onError: (err: any) => {
           toast.error(err?.response?.data?.message || "Xəta baş verdi");
@@ -54,7 +56,7 @@ export function AdminsTab() {
     deleteAdmin({ gymId: Number(gymId), adminId: deleteAdminId }, {
       onSuccess: () => {
         setDeleteAdminId(null);
-        toast.success("Admin silindi");
+        setShowSuccessModal(true);
       }
     });
   };
@@ -268,6 +270,7 @@ export function AdminsTab() {
           isLoading={isDeletingAdmin}
         />
       )}
+      <SuccessAnimationModal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)} />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 export type CustomerStatus = 'ACTIVE' | 'INACTIVE' | 'DELETED'
 
-export type CustomerSubscriptionType = 'ALL' | 'ACTIVE' | 'FINISHED' | 'FROZEN' | 'LAST_7_DAYS'
+export type CustomerSubscriptionType = 'ALL' | 'ACTIVE' | 'FINISHED' | 'FROZEN' | 'LAST_7_DAYS' | 'CHANGED'
 
 export interface CustomerListItem {
   id: number
@@ -52,6 +52,7 @@ export interface GetCustomersParams {
   packageId?: number
   packageDuration?: number
   subscriptionStatus?: CustomerSubscriptionType
+  sort?: string
 }
 
 export interface SubscriptionPackageName {

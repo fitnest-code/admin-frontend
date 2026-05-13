@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import CategoryModal, { CategoryFormData } from "./modals/category-add-modal";
 import { ConfirmDeleteModal } from "../gyms/modals/confirm-delete-modal";
 import { ErrorToastModal } from "./modals/error-toast-modal";
+import { SuccessAnimationModal } from "../ui/success-animation-modal";
 import { useCategories } from "@/lib/query/add-category";
 
 export default function CategoriesPage() {
@@ -13,7 +14,12 @@ export default function CategoriesPage() {
   const [editTarget, setEditTarget] = useState<any | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(null);
+  
+  const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; message: string; type: "success" | "error" }>({
+    isOpen: false,
+    message: "",
+    type: "success",
+  });
 
   const categoryItems = Array.isArray(categories) 
     ? categories 
@@ -28,17 +34,21 @@ export default function CategoriesPage() {
           photo: formData.photo,
           lessonTypeIds: formData.lessonTypeIds 
         });
+        setModalConfig({ isOpen: true, message: "Kateqoriya uğurla yeniləndi!", type: "success" });
       } else {
         await createCategory({ 
           name: formData.name, 
           photo: formData.photo,
           lessonTypeIds: formData.lessonTypeIds 
         });
+        setModalConfig({ isOpen: true, message: "Kateqoriya uğurla yaradıldı!", type: "success" });
       }
       setModalOpen(false);
       setEditTarget(null);
-    } catch (error) {
-      console.error("Save error:", error);
+    } catch (err: any) {
+      console.error("Save error:", err);
+      const msg = err?.response?.data?.error?.message || err?.message || "Yadda saxlamaq mümkün olmadı";
+      setModalConfig({ isOpen: true, message: msg, type: "error" });
     }
   };
 
@@ -132,11 +142,12 @@ export default function CategoriesPage() {
               await deleteCategory(deleteTarget.id);
               await refetch();
               setDeleteTarget(null);
+              setModalConfig({ isOpen: true, message: "Kateqoriya uğurla silindi!", type: "success" });
             } catch (err: any) {
               console.error("Delete error:", err);
               const msg = err?.response?.data?.error?.message || err?.error?.message || err?.message || "Kateqoriya istifadə olunur və silinə bilməz";
-              setDeleteErrorMessage(msg);
               setDeleteTarget(null);
+              setModalConfig({ isOpen: true, message: msg, type: "error" });
             } finally {
               setIsDeleting(false);
             }
@@ -144,12 +155,12 @@ export default function CategoriesPage() {
         />
       )}
 
-      {deleteErrorMessage && (
-        <ErrorToastModal
-          message={deleteErrorMessage}
-          onClose={() => setDeleteErrorMessage(null)}
-        />
-      )}
+      <SuccessAnimationModal 
+        isOpen={modalConfig.isOpen} 
+        onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))} 
+        message={modalConfig.message}
+        type={modalConfig.type}
+      />
     </div>
   );
 }

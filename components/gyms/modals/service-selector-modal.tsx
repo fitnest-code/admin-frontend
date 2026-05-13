@@ -48,7 +48,6 @@ export function ServiceSelectorModal({
         name: trimmed, 
         gymId: gymId ? Number(gymId) : undefined 
       });
-      toast.success("Xidmət yaradıldı");
       setLocalSelection(prev => [...prev, trimmed]);
       setNewServiceName("");
       setShowCreateForm(false);

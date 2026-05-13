@@ -12,6 +12,7 @@ export interface ITrainerPayload {
   emails: string[];
   phones: string[];
   photos: File[];
+  lessonTypesPerTrainer?: string[];
 }
 
 export interface IProfession {
@@ -27,6 +28,7 @@ export interface ITrainer {
   picture: string;
   phone: string;
   email: string;
+  lessonTypeIds?: number[];
 }
 
 export interface ITrainersResponse {
@@ -48,6 +50,7 @@ export interface TrainerRequest {
   phone: string;
   email: string;
   photo?: File;
+  lessonTypeIds?: number[];
 }
 
 
@@ -71,6 +74,7 @@ export interface Category {
   name: string
   photoUrl: string
   iconUrl: string
+  lessonTypes?: { id: number; name: string }[]
 }
 
 export interface CategoriesResponse {
@@ -90,6 +94,7 @@ export interface GymStep1Payload {
   description: string
   phone: string
   email: string
+  lessonTypeIds?: number[]
 }
 
 export interface SupportedServiceResponse {
@@ -181,6 +186,7 @@ export interface GymInfoAdminResponse {
   longitude: number
   status?: string
   createdAt: string
+  lessonTypes?: { id: number; name: string }[]
 }
 
 export interface GymPlanBenefitAdminResponse {

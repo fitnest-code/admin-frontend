@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { X, Upload, Loader2, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
-import { useProfessions } from "@/lib/query/gym-query";
+import { useProfessions, useCategories, useGymDetailsAdmin } from "@/lib/query/gym-query";
+import { useLessonTypes } from "@/lib/query/use-lesson-types";
 import { useGymStore } from "@/lib/store/gym-store";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -18,19 +19,61 @@ interface EditTrainerModalProps {
 export function EditTrainerModal({ onClose, trainer, index }: EditTrainerModalProps) {
   const [mounted, setMounted] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
-  const { updateStep2Trainer } = useGymStore();
+  const { gymId, step1Data, updateStep2Trainer } = useGymStore();
   const { data: professions } = useProfessions();
+  const { data: categoriesData } = useCategories();
+  const { data: gymDetails } = useGymDetailsAdmin(gymId);
+  const { lessonTypes: allLessonTypes } = useLessonTypes();
 
+  const availableLessonTypes = gymId 
+    ? (gymDetails?.lessonTypes || [])
+    : (allLessonTypes?.filter((lt: any) => step1Data?.lessonTypeIds?.includes(lt.id)) || []);
   const [form, setForm] = useState({
     name: trainer.name || "",
     surname: trainer.surname || "",
-    professionId: String(trainer.professionId || ""),
     phone: trainer.phone || "",
     email: trainer.email || "",
   });
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(trainer.preview || null);
+  const [selectedLessonTypeIds, setSelectedLessonTypeIds] = useState<Set<number>>(
+    new Set(trainer.lessonTypeIds || [])
+  );
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedLessonTypesList = availableLessonTypes.filter((lt: any) => selectedLessonTypeIds.has(lt.id));
+
+  let dropdownLabel = "Dərs növü seçin";
+  if (selectedLessonTypesList.length === 1) {
+    dropdownLabel = selectedLessonTypesList[0].name;
+  } else if (selectedLessonTypesList.length > 1) {
+    dropdownLabel = `${selectedLessonTypesList[0].name} +${selectedLessonTypesList.length - 1}`;
+  }
+
+  const toggleLessonType = (ltId: number) => {
+    setSelectedLessonTypeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(ltId)) {
+        next.delete(ltId);
+      } else {
+        next.add(ltId);
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -38,15 +81,17 @@ export function EditTrainerModal({ onClose, trainer, index }: EditTrainerModalPr
   }, []);
 
   const isDirty = useMemo(() => {
+    const origLessons = [...(trainer.lessonTypeIds || [])].sort().join(",");
+    const currLessons = Array.from(selectedLessonTypeIds).sort().join(",");
     return (
       form.name !== trainer.name ||
       form.surname !== trainer.surname ||
-      form.professionId !== String(trainer.professionId) ||
       form.phone !== trainer.phone ||
       form.email !== trainer.email ||
-      selectedFile !== null
+      selectedFile !== null ||
+      origLessons !== currLessons
     );
-  }, [form, selectedFile, trainer]);
+  }, [form, selectedFile, selectedLessonTypeIds, trainer]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -61,20 +106,24 @@ export function EditTrainerModal({ onClose, trainer, index }: EditTrainerModalPr
     e.preventDefault();
     if (!isDirty) return;
 
-    if (!form.name || !form.surname || !form.professionId) {
+    if (!form.name || !form.surname) {
       return toast.error("Zəhmət olmasa ulduzlu (*) sahələri doldurun.");
     }
+    if (selectedLessonTypeIds.size === 0) {
+      return toast.error("Zəhmət olmasa ən azı bir dərs növü seçin.");
+    }
 
-    const professionName = professions?.find((p) => String(p.id) === form.professionId)?.name;
+    const professionNameDisplay = dropdownLabel;
     
     updateStep2Trainer(index, {
       ...form,
+      professionId: "",
       photo: selectedFile || trainer.photo,
       preview: preview!,
-      professionName: professionName || trainer.professionName,
+      professionName: professionNameDisplay,
+      lessonTypeIds: Array.from(selectedLessonTypeIds),
     });
 
-    toast.success("Məşqçi məlumatları yeniləndi");
     onClose();
   };
 
@@ -149,22 +198,50 @@ export function EditTrainerModal({ onClose, trainer, index }: EditTrainerModalPr
                 </div>
               ))}
 
-              <div className="flex flex-col gap-2.5">
+              <div className="flex flex-col gap-2.5" ref={dropdownRef}>
                 <div className="text-[16px] font-semibold">Növ</div>
                 <div className="relative w-full">
-                  <select 
-                    value={form.professionId} 
-                    onChange={e => setForm({...form, professionId: e.target.value})} 
-                    className="w-full h-[60px] rounded-xl bg-[#fafafa] border border-[#ececed] px-4 text-[18px] font-semibold outline-none focus:border-[#00B4CC] appearance-none cursor-pointer transition-all" 
+                  <div 
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="w-full h-[60px] rounded-xl bg-[#fafafa] border border-[#ececed] px-4 text-[18px] font-semibold outline-none flex items-center justify-between cursor-pointer hover:border-[#00B4CC] transition-all font-sans select-none"
                   >
-                    <option value="">İxtisas seçin</option>
-                    {professions?.map((p: any) => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-black/40">
-                    <ChevronDown size={24} />
+                    <span className={selectedLessonTypeIds.size > 0 ? "text-black" : "text-[#94979c]"}>
+                      {dropdownLabel}
+                    </span>
+                    <ChevronDown size={24} className={`text-black/40 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`} />
                   </div>
+
+                  {isDropdownOpen && (
+                    <div className="absolute left-0 top-[calc(100%+8px)] w-full bg-white border border-[#ececed] rounded-xl shadow-lg z-50 max-h-[220px] overflow-y-auto p-2 flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-150">
+                      {availableLessonTypes.map((lt: any) => {
+                        const isSelected = selectedLessonTypeIds.has(lt.id);
+                        return (
+                          <div
+                            key={lt.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleLessonType(lt.id);
+                            }}
+                            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg cursor-pointer transition-colors ${
+                              isSelected ? "bg-[#00B4CC]/10 text-[#00B4CC] font-medium" : "hover:bg-gray-50 text-black"
+                            }`}
+                          >
+                            <span className="text-[16px]">{lt.name}</span>
+                            <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
+                              isSelected ? "border-[#00B4CC] bg-[#00B4CC] text-white" : "border-gray-300"
+                            }`}>
+                              {isSelected && <span className="text-[12px] font-bold">✓</span>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {availableLessonTypes.length === 0 && (
+                        <div className="px-3 py-3 text-sm text-gray-400 text-center">
+                          Dərs növü tapılmadı
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

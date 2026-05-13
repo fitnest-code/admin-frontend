@@ -110,6 +110,17 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       window.scrollTo(0, 0)
     }
   }
+
+  const goToPrevious = () => {
+    const currentIndex = WIZARD_TABS.findIndex(t => t.key === activeTab)
+    if (currentIndex > 0) {
+      const prevTab = WIZARD_TABS[currentIndex - 1].key
+      setActiveTab(prevTab)
+      setCurrentTab(prevTab)
+      window.scrollTo(0, 0)
+    }
+  }
+
   const renderTab = () => {
     if (isNew) {
       switch (activeTab) {
@@ -126,7 +137,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
         case 'plans':
           return <StepPlans onNext={goToNext} />
         case 'admins':
-          return <StepAdmins onComplete={() => { isCompletedRef.current = true }} />
+          return <StepAdmins onComplete={() => { isCompletedRef.current = true; router.push('/gyms') }} />
         default:
           return <StepInfo onNext={goToNext} />
       }
@@ -164,7 +175,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
            <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
                  <button
-                   onClick={() => setShowExitConfirm(true)}
+                   onClick={() => activeTab === 'info' ? setShowExitConfirm(true) : goToPrevious()}
                    className="text-[11px] font-bold text-slate-400 uppercase tracking-widest hover:text-[#00B4CC] transition-colors flex items-center gap-2"
                  >
                    <ArrowLeft size={14} strokeWidth={3} />
@@ -187,15 +198,21 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
             <div className="flex flex-col items-start px-2">
               {WIZARD_TABS.map((tab, index) => {
                 const isActive = activeTab === tab.key
-                const isCompleted = WIZARD_TABS.findIndex(t => t.key === activeTab) > index
+                const currentIndex = WIZARD_TABS.findIndex(t => t.key === activeTab)
+                const isPast = index < currentIndex
+                const isFuture = index > currentIndex
 
                 return (
                   <div 
                     key={tab.key} 
-                    className="w-full cursor-pointer group"
+                    className={cn(
+                      "w-full group",
+                      isPast ? "cursor-pointer" : "cursor-default"
+                    )}
                     onClick={() => {
-                      if (isCompleted) {
-                        setShowWarning(true)
+                      if (isPast) {
+                        setActiveTab(tab.key)
+                        setCurrentTab(tab.key)
                       }
                     }}
                   >
@@ -205,9 +222,9 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
                         "w-11 h-11 rounded-full flex items-center justify-center text-[18px] font-semibold transition-all duration-300 shrink-0",
                         isActive 
                           ? "bg-[#00B4CC] text-white shadow-md scale-105" 
-                          : isCompleted ? "bg-[#00B4CC] text-white group-hover:bg-[#009DB3]" : "bg-[#F3F4F6] text-[#9CA3AF]"
+                          : isPast ? "bg-[#00B4CC] text-white" : "bg-[#F3F4F6] text-[#9CA3AF]"
                       )}>
-                        {isCompleted ? <Check size={20} strokeWidth={3} /> : index + 1}
+                        {isPast ? <Check size={20} strokeWidth={3} /> : index + 1}
                       </div>
                       <span className={cn(
                         "text-[18px] font-medium leading-[28px] transition-colors duration-300",

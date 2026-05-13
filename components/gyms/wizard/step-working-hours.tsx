@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Trash2, Pencil, Plus, Loader2, Clock, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useGymStore } from "@/lib/store/gym-store";
-import { useAddGymWorkHours } from "@/lib/query/gym-work-hours";
+import { useValidateGymStep3 } from "@/lib/query/gym-query";
 import { AddClassTimeModal, ClassTimeData } from "../modals/add-hours-modal";
 import { IGymWorkHoursPayload, IWorkHour, IRestDay } from "@/lib/types/working-hours";
 import { cn } from "@/lib/utils";
@@ -36,6 +36,7 @@ const DAY_FULL_LABELS: Record<string, string> = {
 };
 
 export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
+  const { gymId, step3Data, setStep3Data } = useGymStore();
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<GenderTab>("generalWorkHours");
   const [modalOpen, setModalOpen] = useState(false);
@@ -43,29 +44,64 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
 
   const [enabledTabs, setEnabledTabs] = useState<Set<GenderTab>>(new Set(["generalWorkHours"]));
 
-  const [slots, setSlots] = useState<Record<GenderTab, SavedSlot[]>>({
+  // Map backend data back to frontend structure if exists
+  const initialSlots = step3Data ? {
+    generalWorkHours: step3Data.generalWorkHours.map((s: any) => ({ ...s, day: s.period.toLowerCase(), startTime: s.from, endTime: s.to, id: Math.random().toString() })),
+    workHoursMan: step3Data.workHoursMan.map((s: any) => ({ ...s, day: s.period.toLowerCase(), startTime: s.from, endTime: s.to, id: Math.random().toString() })),
+    workHoursWoman: step3Data.workHoursWoman.map((s: any) => ({ ...s, day: s.period.toLowerCase(), startTime: s.from, endTime: s.to, id: Math.random().toString() })),
+  } : {
     generalWorkHours: [],
     workHoursMan: [],
     workHoursWoman: [],
-  });
+  };
 
-  const [restDays, setRestDays] = useState<Set<string>>(new Set(["sunday"]));
+  const initialRestDays = step3Data ? new Set(step3Data.restDays.map((d: any) => d.period.toLowerCase())) : new Set(["sunday"]);
 
-  const gymId = useGymStore((state) => state.gymId);
-  const { mutateAsync: submitMutateAsync, isPending: isSubmitting } = useAddGymWorkHours();
+  const [slots, setSlots] = useState<Record<GenderTab, SavedSlot[]>>(initialSlots);
+  const [restDays, setRestDays] = useState<Set<string>>(initialRestDays);
+
+  const validateStep3 = useValidateGymStep3();
 
   useEffect(() => { setMounted(true); }, []);
 
   const handleNext = async () => {
-    if (!gymId) return toast.error("Zal ID tapılmadı");
+    // 1. Basic validation
+    const enabledTabsArray = Array.from(enabledTabs);
+    if (enabledTabsArray.length === 0) {
+      return toast.error("Ən azı bir zal rejimi seçilməlidir (Ümumi, Kişi və ya Qadın)");
+    }
+
+    // 2. Check if at least one slot exists for each enabled regime
+    for (const tab of enabledTabsArray) {
+      if (slots[tab].length === 0) {
+        const labels: Record<GenderTab, string> = {
+          generalWorkHours: "Ümumi zal",
+          workHoursMan: "Kişi zalı",
+          workHoursWoman: "Qadın zalı"
+        };
+        return toast.error(`${labels[tab]} rejimi üçün heç bir iş saatı əlavə edilməyib`);
+      }
+    }
+
+    // 3. Check for slots on rest days (double check)
+    for (const tab of enabledTabsArray) {
+      const hasSlotsOnRestDay = slots[tab].some(s => restDays.has(s.day));
+      if (hasSlotsOnRestDay) {
+        return toast.error("İstirahət günlərinə iş saatı təyin edilə bilməz. Zəhmət olmasa yoxlayın.");
+      }
+    }
+
     try {
-      await submitMutateAsync(buildPayload());
-      toast.success("Məlumatlar uğurla yadda saxlanıldı");
+      const payload = buildPayload();
+      await validateStep3.mutateAsync(payload);
+      setStep3Data(payload);
       onNext?.();
     } catch (error: any) {
-      toast.error(error?.message || "Server xətası baş verdi (Növbəti)");
+      toast.error(error?.response?.data?.message || error?.message || "İş saatları məlumatları yanlışdır");
     }
   };
+
+  const isSubmitting = validateStep3.isPending;
 
   const buildPayload = (): IGymWorkHoursPayload => {
     const mapToWorkHour = (key: GenderTab): IWorkHour[] => {
@@ -78,7 +114,7 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
     };
 
     return {
-      gymId: Number(gymId),
+      gymId: gymId ? Number(gymId) : 0,
       generalWorkHours: mapToWorkHour("generalWorkHours"),
       workHoursMan: mapToWorkHour("workHoursMan"),
       workHoursWoman: mapToWorkHour("workHoursWoman"),
@@ -266,7 +302,17 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
                 type="button"
                 onClick={() => {
                   const newRest = new Set(restDays);
-                  newRest.has(day.key) ? newRest.delete(day.key) : newRest.add(day.key);
+                  if (newRest.has(day.key)) {
+                    newRest.delete(day.key);
+                  } else {
+                    newRest.add(day.key);
+                    // Clear slots for this day across all tabs
+                    setSlots(prev => ({
+                      generalWorkHours: prev.generalWorkHours.filter(s => s.day !== day.key),
+                      workHoursMan: prev.workHoursMan.filter(s => s.day !== day.key),
+                      workHoursWoman: prev.workHoursWoman.filter(s => s.day !== day.key),
+                    }));
+                  }
                   setRestDays(newRest);
                 }}
                 className={cn(
@@ -288,7 +334,6 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
       <div className="flex justify-end items-center gap-6 pt-10 border-t border-slate-100">
         <button
           type="button"
-          onClick={() => toast.success("Məlumatlar müvəqqəti yadda saxlanıldı")}
           className="w-[280px] h-[52px] rounded-xl border-2 border-[#00B4CC] bg-white text-[#00B4CC] font-bold text-base hover:bg-[#00B4CC08] transition-all"
         >
           Yadda saxla
@@ -307,6 +352,10 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
         open={modalOpen}
         onOpenChange={setModalOpen}
         onSubmit={(data) => {
+          if (restDays.has(data.day)) {
+            return toast.error("İstirahət gününə iş saatı əlavə edilə bilməz");
+          }
+
           const timeToMin = (t: string) => {
             const [h, m] = t.split(':').map(Number);
             return h * 60 + m;

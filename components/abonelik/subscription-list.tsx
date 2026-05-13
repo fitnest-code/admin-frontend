@@ -5,7 +5,7 @@ import { Plus, Pencil, Trash2, X, ChevronDown, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   type SubPackage, type PriceTier, type SubStatus,
-  MOCK_SUB_PACKAGES, ENTRY_LIMIT_OPTIONS,
+  ENTRY_LIMIT_OPTIONS,
 } from '@/lib/subscription-data'
 import { useSubscriptions } from '@/lib/query/use-subscriptions'
 import { ErrorToastModal } from '../categories/modals/error-toast-modal'
@@ -406,97 +406,99 @@ function PackageCard({
   onToggleStatus: (p: SubPackage) => void
 }) {
   return (
-    <div className="w-full relative rounded-[12px] bg-white border border-[#00b4cc] flex flex-col items-start p-5 gap-[34px] text-center font-sans text-black shadow-sm transition-all hover:shadow-md">
-      {/* Header Wrapper */}
-      <div className="w-full flex flex-col items-end">
-        <div className="w-full flex items-center justify-between gap-5">
-          <b className="text-[18px] font-bold text-black leading-[28px]">{pkg.name}</b>
-          <div className="flex items-center gap-2">
-            <div className={cn(
-              "h-[26px] rounded-[20px] flex items-center justify-center px-3 py-1 gap-1 text-[12px] font-medium text-white transition-colors",
-              pkg.status === 'active' ? "bg-[#166728]" : "bg-gray-500"
-            )}>
-              <div className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
-              <span className="leading-[18px] font-medium">{pkg.status === 'active' ? 'Aktiv' : 'Deaktiv'}</span>
-            </div>
-
-            {/* Visual native CSS switch matching the design asset knobs */}
-            <button
-              type="button"
-              onClick={() => onToggleStatus(pkg)}
-              className={cn(
-                "w-[51px] h-[31px] rounded-full p-1 transition-colors duration-200 ease-in-out shrink-0 flex items-center cursor-pointer outline-none border-none",
-                pkg.status === 'active' ? "bg-[#00b4cc]" : "bg-gray-300"
-              )}
-              aria-label="Statusu dəyiş"
-            >
+    <div className="w-full h-full relative rounded-[12px] bg-white border border-[#00b4cc] flex flex-col justify-between p-5 text-center font-sans text-black shadow-sm transition-all hover:shadow-md">
+      {/* Growable Content Area */}
+      <div className="w-full flex flex-col gap-[34px] flex-1 mb-4">
+        {/* Header Wrapper */}
+        <div className="w-full flex flex-col items-end">
+          <div className="w-full flex items-center justify-between gap-5">
+            <b className="text-[18px] font-bold text-black leading-[28px]">{pkg.name}</b>
+            <div className="flex items-center gap-2">
               <div className={cn(
-                "w-[23px] h-[23px] rounded-full bg-white shadow-md transform transition-transform duration-200 ease-in-out",
-                pkg.status === 'active' ? "translate-x-[20px]" : "translate-x-0"
-              )} />
-            </button>
+                "h-[26px] rounded-[20px] flex items-center justify-center px-3 py-1 gap-1 text-[12px] font-medium text-white transition-colors",
+                pkg.status === 'active' ? "bg-[#166728]" : "bg-gray-500"
+              )}>
+                <div className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
+                <span className="leading-[18px] font-medium">{pkg.status === 'active' ? 'Aktiv' : 'Deaktiv'}</span>
+              </div>
+
+              {/* Visual native CSS switch matching the design asset knobs */}
+              <button
+                type="button"
+                onClick={() => onToggleStatus(pkg)}
+                className={cn(
+                  "w-[51px] h-[31px] rounded-full p-1 transition-colors duration-200 ease-in-out shrink-0 flex items-center cursor-pointer outline-none border-none",
+                  pkg.status === 'active' ? "bg-[#00b4cc]" : "bg-gray-300"
+                )}
+                aria-label="Statusu dəyiş"
+              >
+                <div className={cn(
+                  "w-[23px] h-[23px] rounded-full bg-white shadow-md transform transition-transform duration-200 ease-in-out",
+                  pkg.status === 'active' ? "translate-x-[20px]" : "translate-x-0"
+                )} />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Middle Section / Pricing & Entry Limit */}
-      <div className="w-full flex flex-col items-start gap-[22px] text-left text-[#4a5565]">
-        <div className="w-full flex flex-col items-start gap-3">
-          {pkg.priceTiers.map((tier, i) => (
-            <div key={i} className="w-full flex flex-col gap-3">
-              <div className="w-full flex items-center justify-between gap-5">
-                <span className="text-[16px] leading-[24px] text-[#4a5565]">{tier.duration || 'Müddət'}</span>
-                <div className="flex items-baseline gap-1.5">
-                  {tier.discountPrice > 0 && tier.discountPrice !== tier.price ? (
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-[16px] leading-[24px] font-medium text-red-500 line-through decoration-red-500 decoration-2">
+        {/* Middle Section / Pricing & Entry Limit */}
+        <div className="w-full flex flex-col items-start gap-[22px] text-left text-[#4a5565]">
+          <div className="w-full flex flex-col items-stretch gap-2.5">
+            {pkg.priceTiers.map((tier, i) => (
+              <div key={i} className="w-full flex flex-col gap-2.5">
+                <div className="flex items-center justify-between gap-2 px-1 w-full">
+                  <span className="text-[16px] leading-[24px] font-medium text-[#4a5565] text-left shrink-0">
+                    {tier.duration || 'Müddət'}
+                  </span>
+                  <div className="flex items-baseline justify-center gap-1 text-center whitespace-nowrap shrink-0">
+                    {tier.discountPrice > 0 && tier.discountPrice !== tier.price ? (
+                      <div className="flex items-baseline gap-1 whitespace-nowrap">
+                        <span className="text-[16px] leading-[24px] font-medium text-red-500 line-through whitespace-nowrap">
+                          {tier.price} AZN
+                        </span>
+                        <span className="text-[16px] leading-[24px] font-bold text-[#101828] whitespace-nowrap">
+                          / {tier.discountPrice} AZN
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-[16px] leading-[24px] font-bold text-[#101828] whitespace-nowrap">
                         {tier.price} AZN
                       </span>
-                      <span className="text-[16px] leading-[24px] font-bold text-[#101828]">
-                        / {tier.discountPrice} AZN
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-[16px] leading-[24px] font-medium text-[#101828]">
-                      {tier.price} AZN
-                    </span>
-                  )}
+                    )}
+                  </div>
+                  <span className="text-[16px] leading-[24px] font-semibold text-[#101828] text-right shrink-0">
+                    {tier.entryLimit ?? pkg.entryLimit} giriş
+                  </span>
                 </div>
+                <div className="w-full h-[1px] bg-gray-100" />
               </div>
-              <div className="w-full h-[1px] border-t border-[#ececed] transform rotate-[0.3deg]" />
-            </div>
-          ))}
-
-          <div className="w-full flex items-center justify-between gap-5 pt-1">
-            <span className="text-[16px] leading-[24px] text-[#4a5565]">Limit:</span>
-            <span className="text-[16px] leading-[24px] font-medium text-[#101828]">{pkg.entryLimit} giriş</span>
+            ))}
           </div>
-          <div className="w-full h-[1px] border-t border-[#ececed] transform rotate-[0.3deg]" />
-        </div>
 
-        {/* Services List Block */}
-        <div className="w-full flex flex-col items-start gap-[11px] pt-1">
-          <span className="text-[12px] font-bold tracking-wider text-[#4a5565] uppercase">XİDMƏTLƏR</span>
-          <div className="w-full flex flex-wrap items-center gap-2">
-            {pkg.services.length > 0 ? (
-              pkg.services.map((s) => (
-                <div key={s} className="rounded-[20px] bg-white border border-[#ececed] flex items-center justify-center px-3 py-1 gap-1.5 text-[14px] text-black font-medium shadow-2xs">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#00b4cc] shrink-0" />
-                  <span className="leading-[20px] font-medium">{s}</span>
-                </div>
-              ))
-            ) : (
-              <span className="text-xs text-gray-400 italic">Xidmət təyin edilməyib</span>
-            )}
+          {/* Services List Block */}
+          <div className="w-full flex flex-col items-start gap-[11px] pt-1">
+            <span className="text-[12px] font-bold tracking-wider text-[#4a5565] uppercase">XİDMƏTLƏR</span>
+            <div className="w-full flex flex-wrap items-center gap-2">
+              {pkg.services.length > 0 ? (
+                pkg.services.map((s, idx) => (
+                  <div key={`${s}-${idx}`} className="rounded-[20px] bg-white border border-[#ececed] flex items-center justify-center px-3 py-1 gap-1.5 text-[14px] text-black font-medium shadow-2xs">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#00b4cc] shrink-0" />
+                    <span className="leading-[20px] font-medium">{s}</span>
+                  </div>
+                ))
+              ) : (
+                <span className="text-xs text-gray-400 italic">Xidmət təyin edilməyib</span>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Buttons Block */}
-      <div className="w-full flex items-center gap-3 pt-1">
+      {/* Buttons Block pinned to bottom */}
+      <div className="w-full flex items-center gap-3 pt-2 mt-auto border-t border-gray-50/80">
         <button
           onClick={() => onEdit(pkg)}
-          className="flex-1 h-[41px] rounded-[10px] bg-white border border-[#00b4cc] flex items-center justify-center px-4 gap-2 hover:bg-[#00b4cc]/5 transition-colors"
+          className="flex-1 h-[41px] rounded-[10px] bg-white border border-[#00b4cc] flex items-center justify-center px-4 gap-2 hover:bg-[#00b4cc]/5 transition-colors cursor-pointer"
         >
           <Pencil size={15} className="text-[#00b4cc] shrink-0" />
           <span className="text-[15px] font-medium text-black leading-[24px]">Dəyiş</span>
@@ -504,7 +506,7 @@ function PackageCard({
 
         <button
           onClick={() => onDelete(pkg.id)}
-          className="flex-1 h-[41px] rounded-[10px] bg-white border border-[#f10303] flex items-center justify-center px-4 gap-2 hover:bg-[#f10303]/5 transition-colors"
+          className="flex-1 h-[41px] rounded-[10px] bg-white border border-[#f10303] flex items-center justify-center px-4 gap-2 hover:bg-[#f10303]/5 transition-colors cursor-pointer"
         >
           <Trash2 size={15} className="text-[#f10303] shrink-0" />
           <span className="text-[15px] font-medium text-black leading-[24px]">Sil</span>
@@ -517,7 +519,7 @@ function PackageCard({
 // ── Main ──────────────────────────────────────────────────────────────────────
 export function SubscriptionList() {
   const { packages: backendPackages, isLoading, createPackage, updatePackage, deletePackage, updatePackageStatus } = useSubscriptions()
-  const [localPackages, setLocalPackages] = useState<SubPackage[]>(MOCK_SUB_PACKAGES)
+  const [localPackages, setLocalPackages] = useState<SubPackage[]>([])
   const [showForm, setShowForm] = useState(false)
   const [editingPkg, setEditingPkg] = useState<SubPackage | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -537,7 +539,7 @@ export function SubscriptionList() {
     }
   }
 
-  const currentPackages = backendPackages?.length > 0 ? backendPackages : localPackages
+  const currentPackages = backendPackages || []
   const paginated = currentPackages.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   async function handleSave(data: Omit<SubPackage, 'id'>) {

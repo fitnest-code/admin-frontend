@@ -27,7 +27,6 @@ export function AddServiceModal({ onClose, onSuccess }: AddServiceModalProps) {
         name: trimmed, 
         gymId: gymId ? Number(gymId) : undefined 
       });
-      toast.success("Xidmət uğurla yaradıldı");
       onSuccess(trimmed);
       onClose();
     } catch (err: any) {

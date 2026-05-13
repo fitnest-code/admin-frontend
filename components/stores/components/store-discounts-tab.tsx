@@ -10,7 +10,7 @@ export interface PackageRow {
   discount: string;
 }
 
-/** UI sətirlərini Swagger step3 bədlinə çevirir. */
+/** UI sətirlərini Swagger step3 bədəninə çevirir. */
 export function packageRowsToStep3Payload(rows: PackageRow[]): IStoreStep3Payload {
   const byPackageId = new Map<number, { packageId: number; discountPercent: number }>();
 
@@ -20,6 +20,7 @@ export function packageRowsToStep3Payload(rows: PackageRow[]): IStoreStep3Payloa
       100,
       Math.max(0, Math.round(Number(r.discount))),
     );
+    
     if (
       !Number.isFinite(packageId) ||
       packageId <= 0 ||
@@ -33,17 +34,16 @@ export function packageRowsToStep3Payload(rows: PackageRow[]): IStoreStep3Payloa
   return { discounts: [...byPackageId.values()] };
 }
 
-export const STORE_PACKAGE_OPTIONS = [
+// Dublikat PACKAGES silindi və vahid siyahı saxlanıldı
+const PACKAGE_OPTIONS = [
   { id: 1, name: "Aylıq paket" },
   { id: 2, name: "3 Aylıq paket" },
   { id: 3, name: "Yarımlıq paket" },
   { id: 4, name: "İllik paket" },
 ] as const;
 
-const PACKAGES = [...STORE_PACKAGE_OPTIONS];
-
 const inputCls =
-  "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-[#00B4CC] focus:ring-2 focus:ring-[#00B4CC]/15 transition placeholder:text-gray-400 bg-white";
+  "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition placeholder:text-gray-400 bg-white";
 
 interface Step3Props {
   rows: PackageRow[];
@@ -51,7 +51,6 @@ interface Step3Props {
   onCancel: () => void;
   onSave: () => void | Promise<void>;
   isSaving?: boolean;
-  /** false: yalnız cədvəl (ümumi səhifə footer-i ilə saxlanılır). */
   showFooter?: boolean;
 }
 
@@ -63,6 +62,7 @@ export default function StoreDiscountsTab({
   isSaving = false,
   showFooter = true,
 }: Step3Props) {
+  
   function addRow() {
     onChange([
       ...rows,
@@ -89,7 +89,7 @@ export default function StoreDiscountsTab({
           type="button"
           onClick={addRow}
           disabled={isSaving}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00B4CC] hover:bg-[#009DB3] active:scale-95 text-white text-sm font-medium transition-all disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-500 hover:bg-teal-600 active:scale-95 text-white text-sm font-medium transition-all disabled:opacity-50"
         >
           <PlusIcon />
           Əlavə et
@@ -98,7 +98,6 @@ export default function StoreDiscountsTab({
 
       {/* Table */}
       <div className="rounded-xl border border-gray-200 overflow-hidden">
-        {/* Table header */}
         <div className="grid grid-cols-[1fr_140px_52px] gap-3 px-4 py-3 bg-gray-50 border-b border-gray-200">
           <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
             Paket adı
@@ -125,7 +124,7 @@ export default function StoreDiscountsTab({
                   disabled={isSaving}
                 >
                   <Select.Trigger
-                    className={[inputCls, "flex items-center justify-between cursor-pointer"].join(" ")}
+                    className={`${inputCls} flex items-center justify-between cursor-pointer`}
                     aria-label="Paket seçin"
                   >
                     <Select.Value placeholder="Paket seçin" />
@@ -140,11 +139,11 @@ export default function StoreDiscountsTab({
                       sideOffset={4}
                     >
                       <Select.Viewport className="p-1">
-                        {PACKAGES.map((pkg) => (
+                        {PACKAGE_OPTIONS.map((pkg) => (
                           <Select.Item
                             key={pkg.id}
                             value={String(pkg.id)}
-                            className="flex items-center px-3 py-2 text-sm rounded-lg cursor-pointer outline-none hover:bg-[#00B4CC]/10 data-highlighted:bg-[#00B4CC]/10 text-gray-800"
+                            className="flex items-center px-3 py-2 text-sm rounded-lg cursor-pointer outline-none hover:bg-teal-50 data-highlighted:bg-teal-50 text-gray-800"
                           >
                             <Select.ItemText>{pkg.name}</Select.ItemText>
                           </Select.Item>
@@ -165,7 +164,7 @@ export default function StoreDiscountsTab({
                     onChange={(e) => updateRow(row.id, { discount: e.target.value })}
                     className={inputCls + " pr-8"}
                   />
-                  <span className="absolute right-2.5 text-[#00B4CC]">
+                  <span className="absolute right-2.5 text-teal-500">
                     <EditIcon />
                   </span>
                 </div>
@@ -187,29 +186,30 @@ export default function StoreDiscountsTab({
       </div>
 
       {showFooter && (
-      <div className="flex gap-3 justify-end pt-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={isSaving}
-          className="px-6 py-2.5 rounded-xl border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition disabled:opacity-50"
-        >
-          Ləğv et
-        </button>
-        <button
-          type="button"
-          onClick={() => void onSave()}
-          disabled={isSaving}
-          className="px-6 py-2.5 rounded-xl bg-[#00B4CC] hover:bg-[#009DB3] active:scale-95 text-white text-sm font-medium transition-all disabled:opacity-60"
-        >
-          {isSaving ? "Yadda saxlanılır…" : "Yadda saxla"}
-        </button>
-      </div>
+        <div className="flex gap-3 justify-end pt-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={isSaving}
+            className="px-6 py-2.5 rounded-xl border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition disabled:opacity-50"
+          >
+            Ləğv et
+          </button>
+          <button
+            type="button"
+            onClick={() => void onSave()}
+            disabled={isSaving}
+            className="px-6 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-600 active:scale-95 text-white text-sm font-medium transition-all disabled:opacity-60"
+          >
+            {isSaving ? "Yadda saxlanılır…" : "Yadda saxla"}
+          </button>
+        </div>
       )}
     </div>
   );
 }
 
+// Ikonlar aşağıda eyni qalır
 function PlusIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">

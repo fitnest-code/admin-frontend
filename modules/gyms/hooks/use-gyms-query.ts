@@ -24,10 +24,9 @@ export function useToggleGymStatus() {
       toggleGymStatus(id, enabled),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.gyms.all })
-      toast.success('Zal statusu dəyişdirildi')
     },
     onError: (error: any) => {
-      toast.error(error?.message || 'Xəta baş verdi')
+      console.error(error)
     }
   })
 }
