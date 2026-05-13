@@ -294,7 +294,7 @@ export function SmsModal({ selectedUsers = [], onClose }: { selectedUsers?: any[
     try {
       const token = localStorage.getItem('access_token') || ''
       if (phoneList.length > 0) {
-        await fetch('/api/v1/sms/bulk', {
+        await fetch('/api/v1/admin/notifications/sms/bulk', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -385,7 +385,7 @@ export function EmailModal({ selectedUsers = [], onClose }: { selectedUsers?: an
     try {
       const token = localStorage.getItem('access_token') || ''
       if (emailList.length > 0) {
-        await fetch('/api/v1/email/bulk', {
+        await fetch('/api/v1/admin/notifications/email/bulk', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
