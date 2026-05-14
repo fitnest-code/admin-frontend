@@ -101,7 +101,7 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
         gymId: gymId ? Number(gymId) : undefined
       });
       
-      const createdName = res?.name || pendingService.trim();
+      const createdName = res?.name || pendingService!.trim();
       if (activePackage) {
         setPackageServices(prev => {
           const current = prev[activePackage] || [];

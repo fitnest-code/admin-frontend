@@ -42,7 +42,7 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
     name,
     description: about,
     phone,
-    email,
+    email: email.trim() === "" ? null : email.trim(),
     lessonTypeIds: Array.from(selectedLessonTypeIds),
   });
 

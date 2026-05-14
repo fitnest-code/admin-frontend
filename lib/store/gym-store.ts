@@ -22,11 +22,11 @@ export interface LocalAdmin {
 }
 
 export interface Step1Data {
-  categoryId: number | null;
+  categoryId: number;
   name: string;
   description: string;
   phone: string;
-  email: string;
+  email: string | null;
   lessonTypeIds: number[];
 }
 

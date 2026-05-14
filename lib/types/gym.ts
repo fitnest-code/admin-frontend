@@ -59,7 +59,7 @@ export interface GymStep1Data {
   name: string
   description: string
   phone: string
-  email: string
+  email: string | null
 }
 
 interface GymStore {
@@ -93,8 +93,8 @@ export interface GymStep1Payload {
   name: string
   description: string
   phone: string
-  email: string
-  lessonTypeIds?: number[]
+  email: string | null
+  lessonTypeIds: number[]
 }
 
 export interface SupportedServiceResponse {

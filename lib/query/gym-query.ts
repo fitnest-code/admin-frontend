@@ -130,7 +130,7 @@ export function useCreateSupportedService() {
 
   return useMutation({
     mutationFn: (payload: SupportedServiceRequest) =>
-      apiPost('/admin/gyms/services', payload),
+      apiPost<SupportedServiceResponse>('/admin/gyms/services', payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['supported-services'] });
     }
