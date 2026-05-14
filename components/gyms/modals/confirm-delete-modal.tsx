@@ -1,5 +1,7 @@
 'use client'
 
+import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
 import { Loader2 } from 'lucide-react'
 
@@ -11,9 +13,17 @@ interface ConfirmDeleteModalProps {
 }
 
 export function ConfirmDeleteModal({ name, onConfirm, onCancel, isLoading }: ConfirmDeleteModalProps) {
-  return (
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) return null
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4 animate-in fade-in duration-200 font-sans"
       onClick={(e) => !isLoading && e.target === e.currentTarget && onCancel()}
       role="dialog"
       aria-modal="true"
@@ -47,6 +57,7 @@ export function ConfirmDeleteModal({ name, onConfirm, onCancel, isLoading }: Con
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
