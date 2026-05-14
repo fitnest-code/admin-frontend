@@ -2,22 +2,36 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, ChevronDown, Check, MoreVertical, Plus, Loader2 } from 'lucide-react'
+import { Search, ChevronDown, Check, MoreVertical, Plus, Loader2, Eye, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { STORE_SORT_OPTIONS } from '@/lib/stores-data'
-import { useAdminStoresQuery, type AdminStoreSort } from '@/modules/stores'
+import { useAdminStoresQuery, type AdminStoreSort, type AdminStoreListItem } from '@/modules/stores'
+import { ConfirmDeleteModal } from '../gyms/modals/confirm-delete-modal'
+import { SuccessAnimationModal } from '@/components/ui/success-animation-modal'
+import { useDeleteStore } from '@/lib/query/store-query'
 
 const PAGE_SIZE = 10
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export function StoresList() {
   const router = useRouter()
+  const deleteStoreMutation = useDeleteStore()
   
   // State-lər
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [sortBy, setSortBy] = useState<AdminStoreSort>('newest')
   const [page, setPage] = useState(1)
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null)
+  const [deleteId, setDeleteId] = useState<number | null>(null)
+
+  const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; message: string; type: "success" | "error" }>({
+    isOpen: false,
+    message: "",
+    type: "success",
+  })
+
+  const menuRef = useRef<HTMLDivElement>(null)
 
   // Axtarış üçün Debounce (Backend-i yormamaq üçün)
   useEffect(() => {
@@ -36,9 +50,34 @@ export function StoresList() {
     pageSize: PAGE_SIZE,
   })
 
+  // Siyahıdan kənara basdıqda menyunu bağlamaq
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenMenuId(null)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
   // Backend-dən gələn data
   const stores = data?.items ?? []
   const total = data?.total ?? 0
+
+  function handleDelete() {
+    if (!deleteId) return
+    deleteStoreMutation.mutate(deleteId, {
+      onSuccess: () => {
+        setDeleteId(null)
+        setModalConfig({ isOpen: true, message: "Mağaza uğurla silindi!", type: "success" })
+      },
+      onError: (error: any) => {
+        const msg = error?.message || "Mağazanı silmək mümkün olmadı"
+        setModalConfig({ isOpen: true, message: msg, type: "error" })
+      },
+    })
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -69,14 +108,14 @@ export function StoresList() {
         </button>
       </div>
 
-      {/* Cədvəl Bölməsi */}
-      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+      {/* Cədvəl Bölməsi - menyunun kəsilməməsi üçün overflow-hidden çıxarıldı */}
+      <div className="rounded-xl border border-border bg-card shadow-sm">
         {/* Header - Swagger-dəki parametrlərə uyğun */}
-        <div className="grid grid-cols-[1fr_1.5fr_1fr_3rem] items-center gap-3 border-b border-border bg-[#00B4CC]/10 px-4 py-3">
-          <span className="text-xs font-bold text-[#111827] uppercase">Mağaza adı</span>
-          <span className="text-xs font-bold text-[#111827] uppercase">Ünvan</span>
-          <span className="text-xs font-bold text-[#111827] uppercase">Telefon nömrəsi</span>
-          <span className="text-xs font-bold text-[#111827] text-right">Ətraflı</span>
+        <div className="grid grid-cols-[1fr_1.5fr_1fr_4rem] items-center gap-3 border-b border-border bg-[#00B4CC]/10 px-4 py-3 rounded-t-xl">
+          <span className="text-xs font-bold text-[#111827] uppercase tracking-wider">Mağaza adı</span>
+          <span className="text-xs font-bold text-[#111827] uppercase tracking-wider">Ünvan</span>
+          <span className="text-xs font-bold text-[#111827] uppercase tracking-wider">Telefon nömrəsi</span>
+          <span className="text-xs font-bold text-[#111827] uppercase tracking-wider text-right">Ətraflı</span>
         </div>
 
         {/* Body */}
@@ -91,17 +130,15 @@ export function StoresList() {
           </div>
         ) : (
           stores.map((s) => (
-            <div
+            <StoreRow
               key={s.id}
-              className="grid grid-cols-[1fr_1.5fr_1fr_3rem] items-center gap-3 border-b border-border px-4 py-4 last:border-0 hover:bg-slate-50/50 transition-colors"
-            >
-              <span className="text-sm font-semibold text-[#111827] truncate">{s.name}</span>
-              <span className="text-sm text-[#4B5563] line-clamp-1" title={s.fullAddress}>
-                {s.fullAddress || '-'}
-              </span>
-              <span className="text-sm text-[#4B5563] truncate">{s.phone || '-'}</span>
-              <RowMenu storeId={s.id} />
-            </div>
+              store={s}
+              openMenuId={openMenuId}
+              menuRef={menuRef}
+              onToggleMenu={(id) => setOpenMenuId(openMenuId === id ? null : id)}
+              onView={() => router.push(`/stores/${s.id}`)}
+              onDelete={() => { setDeleteId(s.id); setOpenMenuId(null) }}
+            />
           ))
         )}
       </div>
@@ -123,11 +160,96 @@ export function StoresList() {
           </div>
         </div>
       )}
+
+      {deleteId !== null && (
+        <ConfirmDeleteModal
+          name={stores.find((s) => s.id === deleteId)?.name ?? ''}
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteId(null)}
+          isLoading={deleteStoreMutation.isPending}
+        />
+      )}
+
+      <SuccessAnimationModal
+        isOpen={modalConfig.isOpen}
+        onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
+        message={modalConfig.message}
+        type={modalConfig.type}
+      />
     </div>
   )
 }
 
-// ── Köməkçi Komponentlər (Pagination, Sort, Menu) ─────────────────────────────
+// ── StoreRow Component (Zallardakı dizayna tam uyğun) ─────────────────────────
+function StoreRow({
+  store,
+  openMenuId,
+  menuRef,
+  onToggleMenu,
+  onView,
+  onDelete,
+}: {
+  store: AdminStoreListItem
+  openMenuId: number | null
+  menuRef: React.RefObject<HTMLDivElement | null>
+  onToggleMenu: (id: number) => void
+  onView: () => void
+  onDelete: () => void
+}) {
+  const isMenuOpen = openMenuId === store.id
+
+  return (
+    <div
+      className={cn(
+        "grid grid-cols-[1fr_1.5fr_1fr_4rem] items-center gap-3 border-b border-border px-4 py-3.5 last:border-0 hover:bg-secondary/40 transition-colors relative",
+        isMenuOpen ? "z-50 shadow-sm" : "z-0"
+      )}
+    >
+      <span className="text-sm font-semibold text-[#111827] truncate">{store.name}</span>
+      <span className="text-sm text-[#4B5563] line-clamp-1" title={store.fullAddress}>
+        {store.fullAddress || '-'}
+      </span>
+      <span className="text-sm text-[#4B5563] truncate">{store.phone || '-'}</span>
+      
+      {/* Action menu */}
+      <div className="relative flex justify-end" ref={isMenuOpen ? menuRef : undefined}>
+        <button
+          onClick={() => onToggleMenu(store.id)}
+          className={cn(
+            "flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200",
+            isMenuOpen ? "bg-secondary text-[#00B4CC]" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+          )}
+          aria-label="Ətraflı seçimlər"
+          aria-haspopup="true"
+          aria-expanded={isMenuOpen}
+        >
+          <MoreVertical size={20} />
+        </button>
+
+        {isMenuOpen && (
+          <div className="absolute right-0 top-11 z-50 w-[180px] flex flex-col gap-3 rounded-[12px] border border-[#ECECED] bg-white p-3 shadow-lg animate-in fade-in zoom-in-95 duration-100">
+            <button
+              onClick={onView}
+              className="flex w-full items-center gap-2 border-b border-[#ECECED] pb-3 text-base font-normal text-black hover:opacity-70 transition-opacity"
+            >
+              <Eye size={16} className="text-[#333333]" />
+              <span className="leading-none">Detallı bax</span>
+            </button>
+            <button
+              onClick={onDelete}
+              className="flex w-full items-center gap-2 text-base font-normal text-[#F10303] hover:opacity-70 transition-opacity"
+            >
+              <Trash2 size={16} />
+              <span className="leading-none">Sil</span>
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Köməkçi Komponentlər (Pagination, Sort) ───────────────────────────────────
 
 function Pagination({ total, page, perPage, onChange }: { total: number; page: number; perPage: number; onChange: (p: number) => void }) {
   const totalPages = Math.max(1, Math.ceil(total / perPage))
@@ -186,30 +308,6 @@ function SortDropdown({ value, onChange }: { value: AdminStoreSort; onChange: (v
               {value === o.value && <Check size={14} className="text-[#00B4CC]" />}
             </button>
           ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-function RowMenu({ storeId }: { storeId: number }) {
-  const [open, setOpen] = useState(false)
-  const router = useRouter()
-  const ref = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
-    document.addEventListener('mousedown', h); return () => document.removeEventListener('mousedown', h)
-  }, [])
-
-  return (
-    <div className="relative flex justify-end" ref={ref}>
-      <button onClick={() => setOpen(!open)} className="p-1 hover:bg-gray-100 rounded-md transition-colors">
-        <MoreVertical size={16} className="text-gray-400" />
-      </button>
-      {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 w-32 rounded-lg border border-border bg-white shadow-lg py-1">
-          <button onClick={() => router.push(`/stores/${storeId}`)} className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50">Bax</button>
-          <button className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50">Sil</button>
         </div>
       )}
     </div>

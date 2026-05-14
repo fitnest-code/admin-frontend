@@ -42,3 +42,14 @@ export const useCreateStoreStep3 = () => {
     },
   });
 };
+
+export const useDeleteStore = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => StoreService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["stores"] });
+    },
+  });
+};

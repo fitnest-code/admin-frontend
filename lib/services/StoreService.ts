@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from "../api/client";
+import { apiGet, apiPost, apiDelete } from "../api/client";
 import {
   IStoreResponse,
   IStoreQueryParams,
@@ -44,5 +44,9 @@ export const StoreService = {
 
   createStep3: async (id: number, data: IStoreStep3Payload) => {
     return apiPost<IStoreStep3Response>(`/admin/stores/${id}/step3`, data);
+  },
+
+  delete: async (id: number) => {
+    return apiDelete<void>(`/admin/stores/${id}`);
   },
 };
