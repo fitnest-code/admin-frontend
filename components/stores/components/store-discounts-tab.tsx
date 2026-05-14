@@ -3,6 +3,8 @@
 import * as Select from "@radix-ui/react-select";
 import * as Separator from "@radix-ui/react-separator";
 import type { IStoreStep3Payload } from "@/lib/types/stores";
+import { useSubscriptionPackages } from "@/lib/query/use-subscription-packages";
+import { Loader2 } from "lucide-react";
 
 export interface PackageRow {
   id: string;
@@ -34,16 +36,8 @@ export function packageRowsToStep3Payload(rows: PackageRow[]): IStoreStep3Payloa
   return { discounts: [...byPackageId.values()] };
 }
 
-// Dublikat PACKAGES silindi və vahid siyahı saxlanıldı
-const PACKAGE_OPTIONS = [
-  { id: 1, name: "Aylıq paket" },
-  { id: 2, name: "3 Aylıq paket" },
-  { id: 3, name: "Yarımlıq paket" },
-  { id: 4, name: "İllik paket" },
-] as const;
-
 const inputCls =
-  "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition placeholder:text-gray-400 bg-white";
+  "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-[#00B4CC] focus:ring-2 focus:ring-[#00B4CC]/15 transition placeholder:text-gray-400 bg-white";
 
 interface Step3Props {
   rows: PackageRow[];
@@ -62,7 +56,9 @@ export default function StoreDiscountsTab({
   isSaving = false,
   showFooter = true,
 }: Step3Props) {
-  
+  const { data: loadedPackages, isLoading } = useSubscriptionPackages();
+  const packagesList = loadedPackages || [];
+
   function addRow() {
     onChange([
       ...rows,
@@ -78,6 +74,8 @@ export default function StoreDiscountsTab({
     onChange(rows.filter((r) => r.id !== id));
   }
 
+  const disabledAll = isSaving || isLoading;
+
   return (
     <div className="flex flex-col gap-5">
       {/* Header */}
@@ -88,8 +86,8 @@ export default function StoreDiscountsTab({
         <button
           type="button"
           onClick={addRow}
-          disabled={isSaving}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-500 hover:bg-teal-600 active:scale-95 text-white text-sm font-medium transition-all disabled:opacity-50"
+          disabled={disabledAll}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00B4CC] hover:bg-[#009DB3] active:scale-95 text-white text-sm font-medium transition-all disabled:opacity-50"
         >
           <PlusIcon />
           Əlavə et
@@ -121,15 +119,15 @@ export default function StoreDiscountsTab({
                 <Select.Root
                   value={row.packageId}
                   onValueChange={(v) => updateRow(row.id, { packageId: v })}
-                  disabled={isSaving}
+                  disabled={disabledAll}
                 >
                   <Select.Trigger
                     className={`${inputCls} flex items-center justify-between cursor-pointer`}
                     aria-label="Paket seçin"
                   >
-                    <Select.Value placeholder="Paket seçin" />
+                    <Select.Value placeholder={isLoading ? "Paketlər yüklənir..." : "Paket seçin"} />
                     <Select.Icon className="text-gray-400">
-                      <ChevronDownIcon />
+                      {isLoading ? <Loader2 className="animate-spin text-[#00B4CC]" size={16} /> : <ChevronDownIcon />}
                     </Select.Icon>
                   </Select.Trigger>
                   <Select.Portal>
@@ -139,11 +137,11 @@ export default function StoreDiscountsTab({
                       sideOffset={4}
                     >
                       <Select.Viewport className="p-1">
-                        {PACKAGE_OPTIONS.map((pkg) => (
+                        {packagesList.map((pkg) => (
                           <Select.Item
                             key={pkg.id}
                             value={String(pkg.id)}
-                            className="flex items-center px-3 py-2 text-sm rounded-lg cursor-pointer outline-none hover:bg-teal-50 data-highlighted:bg-teal-50 text-gray-800"
+                            className="flex items-center px-3 py-2 text-sm rounded-lg cursor-pointer outline-none hover:bg-[#00B4CC]/10 data-highlighted:bg-[#00B4CC]/10 text-gray-800"
                           >
                             <Select.ItemText>{pkg.name}</Select.ItemText>
                           </Select.Item>
@@ -160,11 +158,11 @@ export default function StoreDiscountsTab({
                     min={0}
                     max={100}
                     value={row.discount}
-                    disabled={isSaving}
+                    disabled={disabledAll}
                     onChange={(e) => updateRow(row.id, { discount: e.target.value })}
                     className={inputCls + " pr-8"}
                   />
-                  <span className="absolute right-2.5 text-teal-500">
+                  <span className="absolute right-2.5 text-[#00B4CC]">
                     <EditIcon />
                   </span>
                 </div>
@@ -173,7 +171,7 @@ export default function StoreDiscountsTab({
                 <button
                   type="button"
                   onClick={() => removeRow(row.id)}
-                  disabled={isSaving}
+                  disabled={disabledAll}
                   className="flex items-center justify-center w-9 h-9 rounded-xl bg-red-50 hover:bg-red-100 text-red-500 transition disabled:opacity-40"
                   aria-label="Sil"
                 >
@@ -190,7 +188,7 @@ export default function StoreDiscountsTab({
           <button
             type="button"
             onClick={onCancel}
-            disabled={isSaving}
+            disabled={disabledAll}
             className="px-6 py-2.5 rounded-xl border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition disabled:opacity-50"
           >
             Ləğv et
@@ -198,10 +196,10 @@ export default function StoreDiscountsTab({
           <button
             type="button"
             onClick={() => void onSave()}
-            disabled={isSaving}
-            className="px-6 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-600 active:scale-95 text-white text-sm font-medium transition-all disabled:opacity-60"
+            disabled={disabledAll}
+            className="flex items-center justify-center min-w-[120px] px-6 py-2.5 rounded-xl bg-[#00B4CC] hover:bg-[#009DB3] active:scale-95 text-white text-sm font-medium transition-all disabled:opacity-60"
           >
-            {isSaving ? "Yadda saxlanılır…" : "Yadda saxla"}
+            {isSaving ? <Loader2 size={18} className="animate-spin" /> : "Tamamla"}
           </button>
         </div>
       )}
@@ -209,7 +207,7 @@ export default function StoreDiscountsTab({
   );
 }
 
-// Ikonlar aşağıda eyni qalır
+// Ikonlar
 function PlusIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">

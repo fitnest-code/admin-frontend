@@ -11,6 +11,7 @@ import StoreDiscountsTab, {
   packageRowsToStep3Payload,
 } from "./components/store-discounts-tab";
 import StepSidebar from "./step-sidebar";
+import { SuccessAnimationModal } from "../ui/success-animation-modal";
 
 import { ApiError } from "@/lib/api/client";
 import { useCreateStoreStep1, useCreateStoreStep2, useCreateStoreStep3 } from "@/lib/query/store-query";
@@ -19,7 +20,6 @@ import { IStoreStep2Payload } from "@/lib/types/stores";
 export default function StoreCreateWizard() {
   const router = useRouter();
   const [step, setStep] = useState(1);
-  const [saved, setSaved] = useState(false);
   const [storeId, setStoreId] = useState<number | null>(null);
 
   const { mutateAsync: createStep1, isPending: isStep1Pending } = useCreateStoreStep1();
@@ -27,6 +27,18 @@ export default function StoreCreateWizard() {
   const { mutateAsync: createStep3, isPending: isStep3Pending } = useCreateStoreStep3();
 
   const isPending = isStep1Pending || isStep2Pending || isStep3Pending;
+
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean;
+    message: string;
+    type: "success" | "error";
+    navigateOnClose?: boolean;
+  }>({
+    isOpen: false,
+    message: "",
+    type: "success",
+    navigateOnClose: false,
+  });
 
   const [storeInfo, setStoreInfo] = useState<StoreInfo>({
     name: "",
@@ -65,15 +77,18 @@ export default function StoreCreateWizard() {
         const newId = response?.id;
         if (newId != null && Number.isFinite(Number(newId))) {
           setStoreId(Number(newId));
-          toast.success("Mağaza yaradıldı.");
           setStep(2);
         } else {
-          toast.error("Serverdən mağaza ID-si gəlmədi.");
+          setModalConfig({
+            isOpen: true,
+            message: "Serverdən mağaza ID-si gəlmədi.",
+            type: "error",
+          });
         }
       } catch (error: unknown) {
         const msg =
           error instanceof ApiError ? error.message : "Step 1-də xəta baş verdi";
-        toast.error(msg);
+        setModalConfig({ isOpen: true, message: msg, type: "error" });
       }
     } else if (step === 2) {
       if (!storeId) return toast.error("Mağaza ID-si tapılmadı");
@@ -88,12 +103,11 @@ export default function StoreCreateWizard() {
           data: contact,
         });
 
-        toast.success("Əlaqə məlumatları yadda saxlanıldı.");
         setStep(3);
       } catch (error: unknown) {
         const msg =
           error instanceof ApiError ? error.message : "Step 2-də xəta baş verdi";
-        toast.error(msg);
+        setModalConfig({ isOpen: true, message: msg, type: "error" });
       }
     } else {
       setStep((s) => Math.min(s + 1, 3));
@@ -114,19 +128,22 @@ export default function StoreCreateWizard() {
 
     try {
       await createStep3({ id: storeId, data: payload });
-      setSaved(true);
-      toast.success("Mağaza tamamilə hazırlandı!");
+      setModalConfig({
+        isOpen: true,
+        message: "Mağaza tamamilə hazırlandı!",
+        type: "success",
+        navigateOnClose: true,
+      });
     } catch (error: unknown) {
       const msg =
         error instanceof ApiError ? error.message : "Endirimlər yadda saxlanmadı";
-      toast.error(msg);
+      setModalConfig({ isOpen: true, message: msg, type: "error" });
     }
   }
 
   function reset() {
     setStep(1);
     setStoreId(null);
-    setSaved(false);
     setStoreInfo({ name: "", image: null, imagePreview: null });
     setContact({
       latitude: 0,
@@ -138,25 +155,6 @@ export default function StoreCreateWizard() {
       workHours: { from: "09:00", to: "18:00" },
     });
     setPackages([{ id: crypto.randomUUID(), packageId: "", discount: "10" }]);
-  }
-
-  if (saved) {
-    return (
-      <div className="w-full min-h-[calc(100vh-8rem)] flex flex-col items-center justify-center gap-4 text-center px-4">
-        <div className="w-16 h-16 rounded-full bg-[#00B4CC]/10 flex items-center justify-center text-[#00B4CC] text-2xl font-bold">
-          ✓
-        </div>
-        <h2 className="text-xl font-semibold text-[#101828]">Mağaza uğurla yaradıldı!</h2>
-        <p className="text-sm text-gray-500">“{storeInfo.name}” sistemi əlavə edildi.</p>
-        <button
-          type="button"
-          onClick={reset}
-          className="mt-4 px-6 py-2.5 rounded-xl bg-[#00B4CC] hover:bg-[#009DB3] text-white text-sm font-medium transition-colors"
-        >
-          Yeni mağaza əlavə et
-        </button>
-      </div>
-    );
   }
 
   return (
@@ -231,6 +229,19 @@ export default function StoreCreateWizard() {
           )}
         </div>
       </div>
+
+      <SuccessAnimationModal
+        isOpen={modalConfig.isOpen}
+        onClose={() => {
+          const nav = modalConfig.navigateOnClose;
+          setModalConfig((prev) => ({ ...prev, isOpen: false }));
+          if (nav) {
+            router.push("/stores");
+          }
+        }}
+        message={modalConfig.message}
+        type={modalConfig.type}
+      />
     </div>
   );
 }
