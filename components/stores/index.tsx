@@ -37,6 +37,7 @@ export default function StoreCreateWizard() {
   const [contact, setContact] = useState<IStoreStep2Payload>({
     latitude: 0,
     longitude: 0,
+    address: "",
     phone: "",
     email: "",
     socialUrl: "",
@@ -130,6 +131,7 @@ export default function StoreCreateWizard() {
     setContact({
       latitude: 0,
       longitude: 0,
+      address: "",
       phone: "",
       email: "",
       socialUrl: "",
@@ -217,10 +219,13 @@ export default function StoreCreateWizard() {
                 type="button"
                 onClick={() => void handleNext()}
                 disabled={isPending}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#00B4CC] hover:bg-[#009DB3] text-white text-sm font-medium transition-all disabled:opacity-70"
+                className="flex items-center justify-center min-w-[100px] gap-2 px-6 py-2.5 rounded-xl bg-[#00B4CC] hover:bg-[#009DB3] text-white text-sm font-medium transition-all disabled:opacity-70"
               >
-                {isPending && <Loader2 size={16} className="animate-spin" />}
-                {step === 1 ? "Yarat və Növbəti" : "Yadda saxla və Növbəti"}
+                {isPending ? (
+                  <Loader2 size={18} className="animate-spin" />
+                ) : (
+                  "Növbəti"
+                )}
               </button>
             </div>
           )}
