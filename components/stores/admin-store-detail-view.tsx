@@ -12,7 +12,7 @@ import {
 import * as Label from "@radix-ui/react-label";
 import { useAdminStoreDetailQuery } from "@/modules/stores";
 import type { AdminStoreDetailViewModel } from "@/modules/stores/types/store.types";
-import STORE_PACKAGE_OPTIONS from "@/components/stores/components/store-discounts-tab";
+import { useSubscriptionPackages } from "@/lib/query/use-subscription-packages";
 import { toast } from "sonner";
 
 const readBox =
@@ -42,8 +42,11 @@ function copyText(text: string) {
 function DetailBody({ data, storeId }: { data: AdminStoreDetailViewModel; storeId: number }) {
   const router = useRouter();
 
-  function packageLabel(packageId: number): import("react").ReactNode {
-    throw new Error("Function not implemented.");
+  const { data: packages } = useSubscriptionPackages();
+  
+  function packageLabel(packageId: number): string {
+    const pkg = packages?.find(p => p.id === packageId);
+    return pkg?.name ?? `Paket #${packageId}`;
   }
 
   return (
