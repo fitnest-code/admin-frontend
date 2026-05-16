@@ -75,15 +75,15 @@ export default function CategoriesPage() {
 
         <div className="w-full flex flex-col items-start gap-6 mt-4">
           <div className="w-full flex items-center justify-between gap-5">
-            <h3 className="text-[16px] font-semibold leading-[24px] text-black">Mövcud kateqoriyalar</h3>
+            <h3 className="text-[15px] font-semibold leading-tight text-black">Mövcud kateqoriyalar</h3>
             <button
               onClick={() => {
                 setEditTarget(null);
                 setModalOpen(true);
               }}
-              className="h-[36px] w-[160px] rounded-lg bg-[#00b4cc] flex items-center justify-center px-3 py-2 gap-2 text-[13px] font-medium text-white hover:opacity-90 transition-all shadow-md shadow-cyan-50"
+              className="h-[40px] w-[130px] rounded-lg bg-[#00b4cc] flex items-center justify-center px-3 py-2 gap-2 text-[13px] font-medium text-white hover:opacity-90 transition-all shadow-md shadow-cyan-50"
             >
-              <Plus size={16} /> Yeni kateqoriya
+              <Plus size={16} /> Kateqoriya
             </button>
           </div>
 
