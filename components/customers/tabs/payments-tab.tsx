@@ -137,7 +137,7 @@ export function PaymentsTab({ userId }: { userId: string }) {
     <div className="flex flex-col gap-6 rounded-2xl bg-white border border-border p-7 shadow-xs w-full animate-in fade-in-50 duration-300 font-sans text-black">
       {/* Container Header */}
       <div className="border-b border-border pb-3.5 flex items-center justify-between">
-        <h2 className="text-lg font-medium text-foreground tracking-tight">Ödəniş məlumatları</h2>
+        <h2 className="text-lg font-medium text-black tracking-tight">Ödəniş məlumatları</h2>
       </div>
 
       {/* Responsive Table Tracks Wrapper */}
@@ -185,18 +185,18 @@ export function PaymentsTab({ userId }: { userId: string }) {
                   className="w-full bg-white border-t border-r border-l border-[#cecfd2] flex items-center justify-between p-4 gap-4 hover:bg-[#fafafa] transition-colors duration-150 relative"
                 >
                   {/* Transaction ID */}
-                  <div className="w-[140px] shrink-0 text-left pl-2 text-xs font-medium text-foreground truncate" title={row.transactionId}>
-                    {row.transactionId || '00000000000000'}
+                  <div className="w-[140px] shrink-0 text-left pl-2 text-xs font-medium text-black truncate" title={row.transactionId}>
+                    {row.transactionId}
                   </div>
 
                   {/* Date Time */}
-                  <div className="w-[150px] shrink-0 text-center text-sm font-medium text-foreground whitespace-nowrap">
+                  <div className="w-[150px] shrink-0 text-center text-sm font-medium text-black whitespace-nowrap">
                     {formattedDate}
                   </div>
 
                   {/* Amount Value */}
-                  <div className="w-[100px] shrink-0 text-center text-sm font-medium text-[#101828] whitespace-nowrap">
-                    {row.amount ? (row.amount.includes('AZN') ? row.amount : `${row.amount} AZN`) : '1000 AZN'}
+                  <div className="w-[100px] shrink-0 text-center text-sm font-medium text-black whitespace-nowrap">
+                    {row.amount ? (row.amount.includes('AZN') ? row.amount : `${row.amount} AZN`) : ''}
                   </div>
 
                   {/* Payment Method component */}

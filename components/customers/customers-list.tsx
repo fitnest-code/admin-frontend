@@ -10,7 +10,7 @@ import {
 } from '@/modules/customers'
 import { PAGE_SIZE } from './list/customer-list-constants'
 import { CustomerFilters, CustomerStats } from './list/customer-list-controls'
-import { CustomerBulkActions, EmailModal, PushModal, SmsModal } from './list/customer-message-modals'
+import { CustomerBulkActions, EmailModal, PushModal, SmsModal, BlockModal } from './list/customer-message-modals'
 import { CustomerPagination, CustomerTable } from './list/customer-list-table'
 import { sortCustomers, type CustomerSortValue } from './list/customer-list-utils'
 
@@ -27,6 +27,7 @@ export function CustomersList() {
   const [pushOpen, setPushOpen] = useState(false)
   const [smsOpen, setSmsOpen] = useState(false)
   const [emailOpen, setEmailOpen] = useState(false)
+  const [blockOpen, setBlockOpen] = useState(false)
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -131,6 +132,7 @@ export function CustomersList() {
         onOpenPush={() => setPushOpen(true)} 
         onOpenSms={() => setSmsOpen(true)} 
         onOpenEmail={() => setEmailOpen(true)}
+        onOpenBlock={() => setBlockOpen(true)}
       />
 
       <CustomerTable
@@ -157,6 +159,16 @@ export function CustomersList() {
       {pushOpen && <PushModal selectedUsers={Array.from(selected).map(id => sorted.find(c => c.id === id)).filter(Boolean) as any[]} onClose={() => setPushOpen(false)} />}
       {smsOpen && <SmsModal selectedUsers={Array.from(selected).map(id => sorted.find(c => c.id === id)).filter(Boolean) as any[]} onClose={() => setSmsOpen(false)} />}
       {emailOpen && <EmailModal selectedUsers={Array.from(selected).map(id => sorted.find(c => c.id === id)).filter(Boolean) as any[]} onClose={() => setEmailOpen(false)} />}
+      {blockOpen && (
+        <BlockModal 
+          selectedUsers={Array.from(selected).map(id => sorted.find(c => c.id === id)).filter(Boolean) as any[]} 
+          onClose={() => setBlockOpen(false)} 
+          onSuccess={() => {
+            customersQuery.refetch()
+            setSelected(new Set())
+          }}
+        />
+      )}
     </div>
   )
 }

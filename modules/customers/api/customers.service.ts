@@ -62,3 +62,11 @@ export async function getCustomerById(id: string): Promise<CustomerProfile> {
     photoUrl: null,
   }
 }
+
+export function blockUser(userId: number) {
+  return apiPost<void>(`/api/v1/admin/users/${userId}/block`)
+}
+
+export function unblockUser(userId: number) {
+  return apiPost<void>(`/api/v1/admin/users/${userId}/unblock`)
+}

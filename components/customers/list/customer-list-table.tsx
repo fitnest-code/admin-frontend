@@ -126,7 +126,7 @@ export function CustomerTable({
         <span className="text-[11px] font-bold uppercase text-foreground/80">Email</span>
         <span className="text-[11px] font-bold uppercase text-foreground/80 text-center">Status</span>
         <span className="text-[11px] font-bold uppercase text-foreground/80">Abunəlik</span>
-        <span className="text-[11px] font-bold uppercase text-foreground/80 text-right pr-2">Ətraflı</span>
+        <span className="text-[11px] font-bold uppercase text-foreground/80 text-center">Ətraflı</span>
       </div>
       {customers.map((customer) => {
         const customerStatus = normalizeCustomerStatus(customer.userStatus)
@@ -153,12 +153,12 @@ export function CustomerTable({
                 className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded"
               />
             </div>
-            <span className="text-sm font-medium text-foreground truncate">{customer.id}</span>
-            <span className="text-sm font-medium text-foreground truncate">
-              {customer.fullName ?? '-'}
+            <span className="text-sm font-normal text-black truncate">{customer.id}</span>
+            <span className="text-sm font-normal text-black truncate">
+              {customer.fullName}
             </span>
-            <span className="text-sm font-medium text-foreground truncate">{customer.phoneNumber ?? '-'}</span>
-            <span className="text-sm font-medium text-foreground truncate">{customer.email ?? '-'}</span>
+            <span className="text-sm font-normal text-black truncate">{customer.phoneNumber}</span>
+            <span className="text-sm font-normal text-black truncate">{customer.email}</span>
             <div className="flex justify-center">
               <div className={cn('inline-flex h-[22px] w-fit items-center justify-center gap-1.5 rounded-full px-3 text-[10px] font-medium uppercase shadow-xs', badgeBg)}>
                 <div className="w-1 h-1 rounded-full bg-white shrink-0" />
@@ -177,13 +177,13 @@ export function CustomerTable({
                   <Check size={10} strokeWidth={2.5} />
                 </div>
               ) : null}
-              <span className="text-xs font-medium text-foreground truncate">
+              <span className="text-xs font-normal text-black truncate">
                 {getSubscriptionStatusLabel(subscriptionStatus)}
               </span>
             </div>
             <button
               onClick={() => onView(customer.id)}
-              className="text-muted-foreground hover:text-[#00B4CC] transition-colors"
+              className="text-muted-foreground hover:text-[#00B4CC] transition-colors flex justify-center"
               aria-label="Ətraflı bax"
             >
               <Eye size={18} />

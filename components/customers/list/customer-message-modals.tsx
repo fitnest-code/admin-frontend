@@ -14,11 +14,13 @@ export function CustomerBulkActions({
   onOpenPush,
   onOpenSms,
   onOpenEmail,
+  onOpenBlock,
 }: {
   selectedCount: number
   onOpenPush: () => void
   onOpenSms: () => void
   onOpenEmail?: () => void
+  onOpenBlock?: () => void
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 w-full transition-all duration-300 animate-in fade-in-50 bg-white/50 p-2 rounded-lg border border-dashed border-[#00B4CC]/20">
@@ -30,7 +32,7 @@ export function CustomerBulkActions({
         <ActionBtn iconSrc="/sms-icon.svg" icon={MessageSquare} label="SMS" onClick={onOpenSms} variant="cyan-outline" />
         <ActionBtn iconSrc="/mail-icon.svg" icon={Mail} label="Email " onClick={() => onOpenEmail?.()} variant="cyan-outline" />
         <ActionBtn iconSrc="/export-icon.svg" icon={Upload} label="Export" onClick={() => {}} variant="cyan-outline" />
-        <ActionBtn icon={Ban} label="Block" onClick={() => {}} variant="danger-outline" />
+        <ActionBtn icon={Ban} label="Blokla" onClick={() => onOpenBlock?.()} variant="danger-outline" />
       </div>
     </div>
   )
@@ -68,7 +70,7 @@ function ActionBtn({
 function ModalBase({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4 animate-in fade-in duration-200 font-sans" onClick={onClose}>
-      <div className="w-full max-w-[588px] rounded-[12px] bg-white border border-[#ececed] p-6 md:p-8 shadow-2xl animate-in zoom-in-95 duration-200" onClick={(event) => event.stopPropagation()}>
+      <div className="w-full max-w-[480px] rounded-[12px] bg-white border border-[#ececed] p-6 shadow-2xl animate-in zoom-in-95 duration-200" onClick={(event) => event.stopPropagation()}>
         {children}
       </div>
     </div>
@@ -87,13 +89,13 @@ function Field({
   onChange: (v: string) => void
 }) {
   return (
-    <div className="flex flex-col gap-2 w-full">
-      <label className="text-[16px] font-medium text-black leading-[24px]">{label}</label>
+    <div className="flex flex-col gap-1.5 w-full">
+      <label className="text-sm font-medium text-black">{label}</label>
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="w-full h-[60px] rounded-[4px] border border-[#ececed] bg-white px-4 py-3 text-[18px] text-black outline-none focus:border-[#00B4CC] transition-colors placeholder:text-muted-foreground/60"
+        className="w-full h-[40px] rounded-[8px] border border-[#ececed] bg-[#fafafa] px-3 text-sm text-black outline-none focus:border-[#00B4CC] transition-colors placeholder:text-muted-foreground/50"
       />
     </div>
   )
@@ -160,16 +162,16 @@ function ConfirmDialog({
   onCancel: () => void
 }) {
   return (
-    <div className="flex flex-col items-center justify-center py-6 gap-7">
-      <p className="text-[26px] font-medium text-[#131212] leading-[40px] text-center max-w-md">
+    <div className="flex flex-col items-center justify-center py-4 gap-6">
+      <p className="text-xl font-semibold text-black text-center max-w-xs leading-relaxed">
         {type === 'push' ? 'Bildirişi göndərmək istədiyinizə əminsiniz?' : 'SMS göndərmək istədiyinizə əminsiniz?'}
       </p>
-      <div className="w-full flex items-center justify-between gap-5 mt-2">
-        <button onClick={onCancel} className="flex-1 h-[48px] max-w-[250px] rounded-[10px] bg-white border border-[#00b4cc] flex items-center justify-center px-4 transition-all hover:bg-slate-50">
-          <span className="text-[16px] font-medium text-black leading-[24px]">Ləğv et</span>
+      <div className="w-full flex items-center justify-center gap-4 mt-2">
+        <button onClick={onCancel} className="flex-1 h-[40px] max-w-[140px] rounded-[8px] bg-white border border-[#cecfd2] flex items-center justify-center px-4 transition-all hover:bg-slate-50">
+          <span className="text-sm font-medium text-black">Ləğv et</span>
         </button>
-        <button onClick={onConfirm} className="flex-1 h-[48px] max-w-[250px] rounded-[10px] bg-[#00b4cc] flex items-center justify-center px-4 transition-all hover:opacity-90 shadow-md shadow-cyan-100">
-          <span className="text-[16px] font-medium text-white leading-[24px]">Göndər</span>
+        <button onClick={onConfirm} className="flex-1 h-[40px] max-w-[140px] rounded-[8px] bg-[#00b4cc] flex items-center justify-center px-4 transition-all hover:opacity-90 shadow-sm text-white text-sm font-semibold">
+          Göndər
         </button>
       </div>
     </div>
@@ -251,14 +253,14 @@ export function PushModal({ selectedUsers = [], onClose }: { selectedUsers?: any
             />
           </div>
           
-          <div className="w-full flex items-center justify-between gap-5 mt-2">
-            <button onClick={onClose} className="flex-1 h-[48px] max-w-[280px] rounded-[10px] bg-white border border-[#00b4cc] flex items-center justify-center px-4 transition-all hover:bg-slate-50">
-              <span className="text-[16px] font-medium text-black leading-[24px]">Ləğv et</span>
+          <div className="w-full flex items-center justify-end gap-3 mt-2">
+            <button onClick={onClose} className="h-[40px] px-5 rounded-[8px] bg-white border border-[#cecfd2] flex items-center justify-center transition-all hover:bg-slate-50">
+              <span className="text-sm font-medium text-black">Ləğv et</span>
             </button>
             <button
               onClick={() => setState('confirm')}
               disabled={!title.trim() || !message.trim()}
-              className="flex-1 h-[48px] max-w-[280px] rounded-[10px] bg-[#00b4cc] flex items-center justify-center px-4 transition-all hover:opacity-90 shadow-md shadow-cyan-100 text-white font-medium text-[16px] disabled:bg-[#c1c1cc] disabled:shadow-none disabled:cursor-not-allowed"
+              className="h-[40px] px-6 rounded-[8px] bg-[#00b4cc] flex items-center justify-center transition-all hover:opacity-90 shadow-sm text-white font-semibold text-sm disabled:bg-[#c1c1cc] disabled:shadow-none disabled:cursor-not-allowed"
             >
               Göndər
             </button>
@@ -346,7 +348,7 @@ export function SmsModal({ selectedUsers = [], onClose }: { selectedUsers?: any[
               onChange={(event) => setMessage(event.target.value)}
               placeholder="Mesaj"
               rows={4}
-              className="w-full min-h-[100px] resize-none rounded-[4px] border border-[#ececed] bg-white px-4 py-3 text-[18px] text-black outline-none focus:border-[#00B4CC] transition-colors placeholder:text-muted-foreground/60"
+              className="w-full min-h-[100px] resize-none rounded-[8px] border border-[#ececed] bg-[#fafafa] px-3 py-2 text-sm text-black outline-none focus:border-[#00B4CC] transition-colors placeholder:text-muted-foreground/50"
             />
           </div>
           
@@ -443,7 +445,7 @@ export function EmailModal({ selectedUsers = [], onClose }: { selectedUsers?: an
               onChange={(event) => setMessage(event.target.value)}
               placeholder="Mesaj məzmunu"
               rows={5}
-              className="w-full min-h-[120px] resize-none rounded-[4px] border border-[#ececed] bg-white px-4 py-3 text-[18px] text-black outline-none focus:border-[#00B4CC] transition-colors placeholder:text-muted-foreground/60"
+              className="w-full min-h-[120px] resize-none rounded-[8px] border border-[#ececed] bg-[#fafafa] px-3 py-2 text-sm text-black outline-none focus:border-[#00B4CC] transition-colors placeholder:text-muted-foreground/50"
             />
           </div>
           
@@ -487,6 +489,71 @@ export function EmailModal({ selectedUsers = [], onClose }: { selectedUsers?: an
         onClose={() => setState('form')}
         type="error"
         message="Email göndərilmədi. Yenidən cəhd edin."
+      />
+    </ModalBase>
+  )
+}
+
+import { blockUser } from '@/modules/customers/api/customers.service'
+
+export function BlockModal({ selectedUsers = [], onClose, onSuccess }: { selectedUsers?: any[]; onClose: () => void; onSuccess?: () => void }) {
+  const [state, setState] = useState<SendState>('form')
+  const [loading, setLoading] = useState(false)
+
+  async function handleConfirm() {
+    setLoading(true)
+    try {
+      for (const user of selectedUsers) {
+        if (user.id) {
+          await blockUser(user.id)
+        }
+      }
+      setState('success')
+      onSuccess?.()
+    } catch (err) {
+      console.error('Block error:', err)
+      setState('error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <ModalBase onClose={onClose}>
+      {state === 'form' && (
+        <div className="flex flex-col items-center justify-center py-4 gap-6">
+          <div className="h-14 w-14 rounded-full bg-red-50 flex items-center justify-center">
+            <Ban size={28} className="text-red-500" />
+          </div>
+          <div className="flex flex-col gap-2 text-center">
+            <p className="text-xl font-semibold text-black leading-tight">
+              İstifadəçiləri bloklamaq istədiyinizə əminsiniz?
+            </p>
+            <p className="text-sm text-muted-foreground px-4">
+              Seçilmiş {selectedUsers.length} istifadəçi sistemə daxil ola bilməyəcək və bütün sessiyaları sonlandırılacaq.
+            </p>
+          </div>
+          <div className="w-full flex items-center justify-center gap-4 mt-2">
+            <button onClick={onClose} disabled={loading} className="flex-1 h-[40px] max-w-[140px] rounded-[8px] bg-white border border-[#cecfd2] flex items-center justify-center px-4 transition-all hover:bg-slate-50 disabled:opacity-50">
+              <span className="text-sm font-medium text-black">Ləğv et</span>
+            </button>
+            <button onClick={handleConfirm} disabled={loading} className="flex-1 h-[40px] max-w-[140px] rounded-[8px] bg-red-500 flex items-center justify-center px-4 transition-all hover:bg-red-600 shadow-sm text-white text-sm font-semibold disabled:opacity-50">
+              {loading ? 'Gözləyin...' : 'Blokla'}
+            </button>
+          </div>
+        </div>
+      )}
+      <SuccessAnimationModal
+        isOpen={state === 'success'}
+        onClose={onClose}
+        type="success"
+        message="İstifadəçilər uğurla bloklandı"
+      />
+      <SuccessAnimationModal
+        isOpen={state === 'error'}
+        onClose={() => setState('form')}
+        type="error"
+        message="Bloklama zamanı xəta baş verdi"
       />
     </ModalBase>
   )

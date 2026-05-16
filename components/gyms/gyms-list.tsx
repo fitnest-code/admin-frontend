@@ -160,7 +160,7 @@ export function GymsList() {
           <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Ünvan</span>
           <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Məsul şəxs</span>
           <span className="text-xs font-semibold text-foreground uppercase tracking-wider text-center">Status</span>
-          <span className="text-xs font-semibold text-foreground uppercase tracking-wider text-right">Ətraflı</span>
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider text-center">Ətraflı</span>
         </div>
 
         {gymsQuery.isLoading ? (
@@ -263,15 +263,15 @@ function GymRow({
         isMenuOpen ? "z-50 shadow-sm" : "z-0"
       )}
     >
-      <span className="text-sm font-medium text-foreground truncate">{gym.name}</span>
-      <span className="text-sm text-muted-foreground truncate">{gym.fullAddress || '-'}</span>
-      <span className="text-sm text-muted-foreground truncate">{gym.ownerName === 'N/A' ? '-' : gym.ownerName}</span>
+      <span className="text-sm font-normal text-black truncate">{gym.name}</span>
+      <span className="text-sm text-black truncate">{gym.fullAddress}</span>
+      <span className="text-sm text-black truncate">{gym.ownerName === 'N/A' ? '' : gym.ownerName}</span>
       <div className="flex justify-center">
         <GymStatusToggle active={gym.status === 'ACTIVE'} onToggle={onToggle} />
       </div>
       
       {/* Action menu */}
-      <div className="relative flex justify-end" ref={isMenuOpen ? menuRef : undefined}>
+      <div className="relative flex justify-center" ref={isMenuOpen ? menuRef : undefined}>
         <button
           onClick={() => onToggleMenu(gym.id)}
           className={cn(

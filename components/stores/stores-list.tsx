@@ -115,7 +115,7 @@ export function StoresList() {
           <span className="text-xs font-bold text-[#111827] uppercase tracking-wider">Mağaza adı</span>
           <span className="text-xs font-bold text-[#111827] uppercase tracking-wider">Ünvan</span>
           <span className="text-xs font-bold text-[#111827] uppercase tracking-wider">Telefon nömrəsi</span>
-          <span className="text-xs font-bold text-[#111827] uppercase tracking-wider text-right">Ətraflı</span>
+          <span className="text-xs font-bold text-[#111827] uppercase tracking-wider text-center">Ətraflı</span>
         </div>
 
         {/* Body */}
@@ -129,35 +129,41 @@ export function StoresList() {
             {debouncedSearch ? "Axtarışa uyğun mağaza tapılmadı." : "Siyahı boşdur."}
           </div>
         ) : (
-          stores.map((s) => (
-            <StoreRow
-              key={s.id}
-              store={s}
-              openMenuId={openMenuId}
-              menuRef={menuRef}
-              onToggleMenu={(id) => setOpenMenuId(openMenuId === id ? null : id)}
-              onView={() => router.push(`/stores/${s.id}`)}
-              onDelete={() => { setDeleteId(s.id); setOpenMenuId(null) }}
-            />
-          ))
+          <>
+            {stores.map((s) => (
+              <StoreRow
+                key={s.id}
+                store={s}
+                openMenuId={openMenuId}
+                menuRef={menuRef}
+                onToggleMenu={(id) => setOpenMenuId(openMenuId === id ? null : id)}
+                onView={() => router.push(`/stores/${s.id}`)}
+                onDelete={() => { setDeleteId(s.id); setOpenMenuId(null) }}
+              />
+            ))}
+            {total > PAGE_SIZE && (
+              <div className="flex items-center justify-center gap-1 border-t border-border px-4 py-4">
+                {Array.from({ length: Math.ceil(total / PAGE_SIZE) }, (_, i) => i + 1).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p)}
+                    className={cn(
+                      'flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors',
+                      p === page ? 'bg-[#00B4CC] text-white shadow-sm' : 'text-foreground hover:bg-secondary',
+                    )}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
 
       {isError && (
         <div className="p-3 bg-red-50 border border-red-100 rounded-lg text-red-600 text-sm text-center font-medium">
           Məlumat gətirilərkən xəta baş verdi. Zəhmət olmasa yenidən cəhd edin.
-        </div>
-      )}
-
-      {/* Pagination & Total Count */}
-      {!isLoading && stores.length > 0 && (
-        <div className="flex flex-col items-center gap-3 mt-2">
-          <Pagination total={total} page={page} perPage={PAGE_SIZE} onChange={setPage} />
-          <div className="px-3 py-1 bg-slate-100 rounded-full">
-            <p className="text-[10px] text-[#6B7280] font-bold tracking-widest uppercase">
-              Cəmi: {total} Mağaza
-            </p>
-          </div>
         </div>
       )}
 
@@ -205,14 +211,14 @@ function StoreRow({
         isMenuOpen ? "z-50 shadow-sm" : "z-0"
       )}
     >
-      <span className="text-sm font-semibold text-[#111827] truncate">{store.name}</span>
-      <span className="text-sm text-[#4B5563] line-clamp-1" title={store.fullAddress}>
-        {store.fullAddress || '-'}
+      <span className="text-sm font-normal text-black truncate">{store.name}</span>
+      <span className="text-sm text-black line-clamp-1" title={store.fullAddress}>
+        {store.fullAddress}
       </span>
-      <span className="text-sm text-[#4B5563] truncate">{store.phone || '-'}</span>
+      <span className="text-sm text-black truncate">{store.phone}</span>
       
       {/* Action menu */}
-      <div className="relative flex justify-end" ref={isMenuOpen ? menuRef : undefined}>
+      <div className="relative flex justify-center" ref={isMenuOpen ? menuRef : undefined}>
         <button
           onClick={() => onToggleMenu(store.id)}
           className={cn(
@@ -249,42 +255,7 @@ function StoreRow({
   )
 }
 
-// ── Köməkçi Komponentlər (Pagination, Sort) ───────────────────────────────────
-
-function Pagination({ total, page, perPage, onChange }: { total: number; page: number; perPage: number; onChange: (p: number) => void }) {
-  const totalPages = Math.max(1, Math.ceil(total / perPage))
-  if (totalPages <= 1) return null
-  
-  const getPages = () => {
-    const pages: (number | '...')[] = []
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1)
-    pages.push(1)
-    if (page > 3) pages.push('...')
-    for (let p = Math.max(2, page - 1); p <= Math.min(totalPages - 1, page + 1); p++) pages.push(p)
-    if (page < totalPages - 2) pages.push('...')
-    pages.push(totalPages)
-    return pages
-  }
-
-  return (
-    <div className="flex items-center gap-1">
-      {getPages().map((p, i) => (
-        <button
-          key={i}
-          disabled={p === '...'}
-          onClick={() => typeof p === 'number' && onChange(p)}
-          className={cn(
-            "h-8 min-w-[32px] px-2 rounded-lg text-sm font-medium transition-all",
-            p === page ? "bg-[#00B4CC] text-white shadow-md" : "text-gray-500 hover:bg-gray-100",
-            p === '...' && "cursor-default"
-          )}
-        >
-          {p}
-        </button>
-      ))}
-    </div>
-  )
-}
+// ── Köməkçi Komponentlər (Sort) ───────────────────────────────────
 
 function SortDropdown({ value, onChange }: { value: AdminStoreSort; onChange: (v: AdminStoreSort) => void }) {
   const [open, setOpen] = useState(false)

@@ -117,15 +117,15 @@ function PackageNameDropdown({ value, onChange, existingNames = [] }: { value: s
 
   return (
     <div className="w-full flex flex-col gap-1.5 text-left font-sans" ref={ref}>
-      <label className="text-[16px] leading-[24px] font-medium text-black">Adı</label>
+      <label className="text-sm font-medium text-black">Adı</label>
       <div className="relative w-full">
         <button
           type="button"
           onClick={() => setOpen((p) => !p)}
-          className="w-full h-[60px] rounded-[12px] bg-[#fafafa] border border-[#ececed] px-4 flex items-center justify-between text-[18px] text-black outline-none transition-colors hover:border-[#00b4cc]"
+          className="w-full h-[40px] rounded-[10px] bg-[#fafafa] border border-[#ececed] px-3 flex items-center justify-between text-sm text-black outline-none transition-colors hover:border-[#00b4cc]"
         >
-          <span className="leading-[28px] font-medium">{value || 'Seçilməyib'}</span>
-          <ChevronDown size={20} className={cn('transition-transform text-gray-500 shrink-0', open && 'rotate-180')} />
+          <span className="font-medium">{value || 'Seçilməyib'}</span>
+          <ChevronDown size={16} className={cn('transition-transform text-gray-500 shrink-0', open && 'rotate-180')} />
         </button>
         
         {open && (
@@ -250,12 +250,12 @@ function PackageFormModal({
     >
       {/* Root Layout matching Frame2237 (.frameParent) */}
       <div
-        className="w-full max-w-[1095px] relative rounded-[20px] bg-white border border-[#00b4cc] flex flex-col items-stretch p-8 gap-8 text-left text-[20px] text-black shadow-2xl"
+        className="w-full max-w-[900px] relative rounded-[16px] bg-white border border-[#00b4cc] flex flex-col items-stretch p-6 gap-6 text-left text-black shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Title Bar Wrapper (.yeniAbunlikFormuParent) */}
         <div className="w-full flex items-center justify-between">
-          <div className="relative leading-[30px] font-semibold text-[20px]">
+          <div className="relative font-semibold text-lg text-black">
             {initial ? 'Paketi redaktə et' : 'Yeni abunəlik formu'}
           </div>
           <button
@@ -274,7 +274,7 @@ function PackageFormModal({
         <div className="w-full flex flex-col md:flex-row items-stretch justify-between gap-6 text-[16px]">
           
           {/* Left Column (.frameContainer) */}
-          <div className="w-full md:w-[503px] flex flex-col items-start gap-4 shrink-0">
+          <div className="w-full md:w-[calc(50%-12px)] flex flex-col items-start gap-4 shrink-0">
             
             {/* Package Selector Dropdown Container */}
             <div className="w-full">
@@ -282,9 +282,9 @@ function PackageFormModal({
             </div>
 
             {/* Pricing / Tiers Wrapper */}
-            <div className="w-full flex flex-col gap-3 pt-2">
-              <div className="w-full rounded-[12px] bg-[#fafafa] border border-[#ececed] flex items-center justify-between p-2 px-3">
-                <span className="text-[18px] leading-[28px] font-medium text-black">
+            <div className="w-full flex flex-col gap-2 pt-1">
+              <div className="w-full rounded-[10px] bg-[#fafafa] border border-[#ececed] flex items-center justify-between p-2 px-3">
+                <span className="text-base font-medium text-black">
                   Müddət və qiymətlər
                 </span>
                 <button
@@ -350,54 +350,54 @@ function PackageFormModal({
           </div>
 
           {/* Right Column (.frameParent2) */}
-          <div className="w-full md:w-[503px] flex flex-col items-stretch justify-between gap-6 shrink-0 h-full">
+          <div className="w-full md:w-[calc(50%-12px)] flex flex-col items-stretch justify-start gap-4 shrink-0">
             
             {/* Services Wrapper (.frameParent3) */}
-            <div className="w-full flex flex-col items-stretch gap-3">
+            <div className="w-full flex flex-col items-stretch gap-2.5">
               <div className="w-full flex flex-col gap-1.5">
-                <label className="text-[16px] leading-[24px] font-medium text-black">Xidmətlər (1-20)</label>
+                <label className="text-sm font-medium text-black">Xidmətlər (1-20)</label>
                 <div className="w-full flex items-center gap-2">
                   <input
                     value={serviceInput}
                     onChange={(e) => setServiceInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddService())}
                     placeholder="Xidmət adı"
-                    className="flex-1 h-[50px] rounded-[12px] bg-[#fafafa] border border-[#ececed] px-3 text-[16px] outline-none focus:border-[#00b4cc]"
+                    className="flex-1 h-[40px] rounded-[10px] bg-[#fafafa] border border-[#ececed] px-3 text-sm outline-none focus:border-[#00b4cc]"
                   />
                   <button
                     type="button"
                     onClick={handleAddService}
                     disabled={!serviceInput.trim() || services.length >= 20}
-                    className="h-[50px] w-[50px] rounded-[8px] bg-[#fafafa] border border-[#ececed] flex items-center justify-center transition-colors hover:bg-gray-200 disabled:opacity-40 shrink-0"
+                    className="h-[40px] w-[40px] rounded-[10px] bg-[#fafafa] border border-[#ececed] flex items-center justify-center transition-colors hover:bg-gray-200 disabled:opacity-40 shrink-0"
                   >
-                    <Plus size={18} className="text-[#00b4cc]" />
+                    <Plus size={16} className="text-[#00b4cc]" />
                   </button>
                 </div>
               </div>
 
               {/* Added Services Box (.frameParent6) */}
-              <div className="w-full h-[238px] rounded-[16px] bg-[#fafafa] p-3 flex flex-col gap-2.5 overflow-y-auto border border-gray-100">
+              <div className="w-full h-[140px] rounded-[12px] bg-[#fafafa] p-2.5 flex flex-col gap-1.5 overflow-y-auto border border-gray-100">
                 {services.length === 0 ? (
-                  <div className="w-full h-full flex items-center justify-center text-[15px] text-gray-400 italic">
+                  <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 italic">
                     Heç bir xidmət əlavə edilməyib
                   </div>
                 ) : (
                   services.map((srv, idx) => (
-                    <div key={idx} className="w-full min-h-[50px] rounded-[12px] bg-white border border-[#ececed] px-3 flex items-center justify-between shadow-2xs shrink-0">
-                      <span className="text-[16px] font-medium text-black">{srv}</span>
+                    <div key={idx} className="w-full h-[36px] rounded-[8px] bg-white border border-[#ececed] px-3 flex items-center justify-between shadow-2xs shrink-0">
+                      <span className="text-xs font-normal text-black truncate pr-2">{srv}</span>
                       <button
                         type="button"
                         onClick={() => handleRemoveService(idx)}
-                        className="h-[28px] w-[28px] rounded-[4px] bg-[#e7272c] flex items-center justify-center transition-colors hover:bg-red-700"
+                        className="h-[22px] w-[22px] rounded-[4px] bg-[#e7272c] flex items-center justify-center transition-colors hover:bg-red-700 shrink-0"
                         aria-label="Sil"
                       >
-                        <X size={14} className="text-white" />
+                        <X size={12} className="text-white" />
                       </button>
                     </div>
                   ))
                 )}
               </div>
-              <div className="w-full text-right text-[16px] text-gray-500 font-medium">
+              <div className="w-full text-right text-sm text-gray-500 font-normal">
                 {services.length}/20 xidmət
               </div>
             </div>
@@ -409,13 +409,13 @@ function PackageFormModal({
         <div className="w-full flex justify-end gap-3 border-t border-border pt-4">
           <button
             onClick={onClose}
-            className="h-[46px] rounded-[10px] border border-gray-300 px-6 text-[16px] font-medium text-black hover:bg-gray-50 transition-colors"
+            className="h-[40px] rounded-[8px] border border-gray-300 px-5 text-sm font-medium text-black hover:bg-gray-50 transition-colors"
           >
             Ləğv et
           </button>
           <button
             onClick={handleSave}
-            className="h-[46px] rounded-[10px] bg-[#00b4cc] px-8 text-[16px] font-semibold text-white hover:bg-[#009bb0] transition-colors shadow-sm"
+            className="h-[40px] rounded-[8px] bg-[#00b4cc] px-6 text-sm font-semibold text-white hover:bg-[#009bb0] transition-colors shadow-sm"
           >
             Yadda saxla
           </button>
@@ -452,7 +452,7 @@ function PackageRow({
 
   return (
     <tr className="border-b border-border hover:bg-secondary/40 transition-colors">
-      <td className="px-4 py-3 text-sm font-semibold text-foreground">{pkg.name}</td>
+      <td className="px-4 py-3 text-sm font-normal text-black">{pkg.name}</td>
       <td className="px-4 py-3">
         <button
           type="button"
@@ -467,30 +467,30 @@ function PackageRow({
           {pkg.status === 'active' ? 'Aktiv' : 'Deaktiv'}
         </button>
       </td>
-      <td className="px-4 py-3 text-sm text-foreground">
+      <td className="px-4 py-3 text-sm text-black">
         {pkg.priceTiers.map((t, i) => (
           <div key={i} className="flex items-baseline gap-1">
-            <span className="font-semibold">{t.discountPrice || t.price}</span>
-            <span className="text-muted-foreground text-xs">AZN</span>
-            <span className="text-muted-foreground text-xs">/ {t.duration}</span>
+            <span className="font-normal text-black">{t.discountPrice || t.price}</span>
+            <span className="text-black text-xs">AZN</span>
+            <span className="text-black text-xs">/ {t.duration}</span>
           </div>
         ))}
       </td>
-      <td className="px-4 py-3 text-sm text-foreground">{pkg.entryLimit} giriş</td>
+      <td className="px-4 py-3 text-sm text-black">{pkg.entryLimit} giriş</td>
       <td className="px-4 py-3">
         <div className="flex flex-wrap gap-1">
           {pkg.services.slice(0, 2).map((s) => (
-            <span key={s} className="rounded-md border border-border px-2 py-0.5 text-xs text-foreground">{s}</span>
+            <span key={s} className="rounded-md border border-border px-2 py-0.5 text-xs text-black">{s}</span>
           ))}
           {pkg.services.length > 2 && (
-            <span className="rounded-md border border-border px-2 py-0.5 text-xs text-muted-foreground">
+            <span className="rounded-md border border-border px-2 py-0.5 text-xs text-black">
               +{pkg.services.length - 2}
             </span>
           )}
         </div>
       </td>
       <td className="px-4 py-3">
-        <div className="relative flex justify-end" ref={menuRef}>
+        <div className="relative flex justify-center" ref={menuRef}>
           <button
             onClick={() => setMenuOpen((p) => !p)}
             className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
@@ -538,7 +538,7 @@ function PackageCard({
         {/* Header Wrapper */}
         <div className="w-full flex flex-col items-end">
           <div className="w-full flex items-center justify-between gap-5">
-            <b className="text-[18px] font-bold text-black leading-[28px]">{pkg.name}</b>
+            <b className="text-[18px] font-semibold text-black leading-[28px]">{pkg.name}</b>
             <div className="flex items-center gap-2">
               <div className={cn(
                 "h-[26px] rounded-[20px] flex items-center justify-center px-3 py-1 gap-1 text-[12px] font-medium text-white transition-colors",
@@ -568,31 +568,31 @@ function PackageCard({
         </div>
 
         {/* Middle Section / Pricing & Entry Limit */}
-        <div className="w-full flex flex-col items-start gap-[22px] text-left text-[#4a5565]">
+        <div className="w-full flex flex-col items-start gap-[22px] text-left text-black">
           <div className="w-full flex flex-col items-stretch gap-2.5">
             {pkg.priceTiers.map((tier, i) => (
               <div key={i} className="w-full flex flex-col gap-2.5">
                 <div className="flex items-center justify-between gap-2 px-1 w-full">
-                  <span className="text-[16px] leading-[24px] font-medium text-[#4a5565] text-left shrink-0">
+                  <span className="text-[16px] leading-[24px] font-normal text-black text-left shrink-0">
                     {tier.duration || 'Müddət'}
                   </span>
                   <div className="flex items-baseline justify-center gap-1 text-center whitespace-nowrap shrink-0">
                     {tier.discountPrice > 0 && tier.discountPrice !== tier.price ? (
                       <div className="flex items-baseline gap-1 whitespace-nowrap">
-                        <span className="text-[16px] leading-[24px] font-medium text-red-500 line-through whitespace-nowrap">
+                        <span className="text-[16px] leading-[24px] font-normal text-red-500 line-through whitespace-nowrap">
                           {tier.price} AZN
                         </span>
-                        <span className="text-[16px] leading-[24px] font-bold text-[#101828] whitespace-nowrap">
+                        <span className="text-[16px] leading-[24px] font-normal text-black whitespace-nowrap">
                           / {tier.discountPrice} AZN
                         </span>
                       </div>
                     ) : (
-                      <span className="text-[16px] leading-[24px] font-bold text-[#101828] whitespace-nowrap">
+                      <span className="text-[16px] leading-[24px] font-normal text-black whitespace-nowrap">
                         {tier.price} AZN
                       </span>
                     )}
                   </div>
-                  <span className="text-[16px] leading-[24px] font-semibold text-[#101828] text-right shrink-0">
+                  <span className="text-[16px] leading-[24px] font-normal text-black text-right shrink-0">
                     {tier.entryLimit ?? pkg.entryLimit} giriş
                   </span>
                 </div>
@@ -603,13 +603,13 @@ function PackageCard({
 
           {/* Services List Block */}
           <div className="w-full flex flex-col items-start gap-[11px] pt-1">
-            <span className="text-[12px] font-bold tracking-wider text-[#4a5565] uppercase">XİDMƏTLƏR</span>
+            <span className="text-[12px] font-bold tracking-wider text-black uppercase">XİDMƏTLƏR</span>
             <div className="w-full flex flex-wrap items-center gap-2">
               {pkg.services.length > 0 ? (
                 pkg.services.map((s, idx) => (
                   <div key={`${s}-${idx}`} className="rounded-[20px] bg-white border border-[#ececed] flex items-center justify-center px-3 py-1 gap-1.5 text-[14px] text-black font-medium shadow-2xs">
                     <div className="w-1.5 h-1.5 rounded-full bg-[#00b4cc] shrink-0" />
-                    <span className="leading-[20px] font-medium">{s}</span>
+                    <span className="leading-[20px] font-normal">{s}</span>
                   </div>
                 ))
               ) : (
@@ -792,9 +792,9 @@ export function SubscriptionList() {
               }
               setModalPkg('new')
             }}
-            className="flex items-center gap-1.5 rounded-lg bg-[#00B4CC] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#008799] transition-colors shadow-2xs"
+            className="flex items-center gap-1.5 rounded-lg bg-[#00B4CC] px-4 h-[40px] text-sm font-semibold text-white hover:bg-[#008799] transition-colors shadow-2xs"
           >
-            <Plus size={15} /> Yeni Paket
+            <Plus size={15} /> Paket
           </button>
         </div>
       </div>
@@ -820,12 +820,12 @@ export function SubscriptionList() {
           <table className="w-full">
             <thead>
               <tr className="bg-[#00B4CC]/10 text-left">
-                <th className="px-4 py-3 text-xs font-semibold text-foreground">Paket adı</th>
+                <th className="px-4 py-3 text-xs font-semibold text-foreground">Abunəlik Paket adı</th>
                 <th className="px-4 py-3 text-xs font-semibold text-foreground">Status</th>
                 <th className="px-4 py-3 text-xs font-semibold text-foreground">Qiymət / Müddət</th>
                 <th className="px-4 py-3 text-xs font-semibold text-foreground">Limit</th>
                 <th className="px-4 py-3 text-xs font-semibold text-foreground">Xidmətlər</th>
-                <th className="px-4 py-3" />
+                <th className="px-4 py-3 text-xs font-semibold text-foreground text-center">Ətraflı</th>
               </tr>
             </thead>
             <tbody>
