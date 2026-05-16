@@ -152,79 +152,79 @@ export function AddTrainerModal({ onClose, isDashboard = false }: { onClose: () 
   if (!mounted) return null;
 
   return createPortal(
-    <div className="fixed top-0 left-0 w-full h-full z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 font-sans">
-      <div className="w-full max-w-[1040px] max-h-[95vh] rounded-[24px] bg-white border border-[#ececed] shadow-2xl overflow-y-auto flex flex-col p-5 md:p-8 gap-6 md:gap-[34px] animate-in fade-in zoom-in duration-200 font-sans">
+    <div className="fixed top-0 left-0 w-full h-full z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 font-sans animate-in fade-in duration-300">
+      <div className="w-full max-w-[800px] max-h-[95vh] rounded-2xl bg-white border border-[#ececed] shadow-2xl overflow-y-auto flex flex-col p-6 md:p-8 gap-6 animate-in zoom-in-95 duration-300 font-sans">
         
         {/* Header */}
         <div className="w-full flex flex-col items-start">
-          <div className="w-full h-12 flex items-center justify-between">
-            <div className="flex-1 text-[24px] font-semibold text-[#101828]">Məşqçi əlavə et</div>
-            <button onClick={onClose} className="w-6 h-6 flex items-center justify-center relative cursor-pointer hover:bg-slate-100 rounded-full transition-colors">
-              <X size={20} className="text-[#6a7282]" />
+          <div className="w-full h-10 flex items-center justify-between">
+            <div className="flex-1 text-[20px] font-semibold text-[#101828]">Məşqçi əlavə et</div>
+            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center relative cursor-pointer hover:bg-slate-100 rounded-full transition-colors">
+              <X size={18} className="text-[#6a7282]" />
             </button>
           </div>
         </div>
 
-        <form onSubmit={handleSave} className="flex flex-col gap-[34px]">
-          <div className="w-full flex flex-col xl:flex-row gap-6 md:gap-8 items-start">
+        <form onSubmit={handleSave} className="flex flex-col gap-6">
+          <div className="w-full flex flex-col md:flex-row gap-6 md:gap-8 items-start">
             
             {/* Photo Section */}
-            <div className="flex flex-col items-start gap-3 w-full xl:w-[444px] shrink-0">
-              <div className="w-full text-[18px] leading-[28px] text-black font-semibold">Məşqçi şəkili</div>
-              <div className="w-full flex flex-col items-start gap-4">
+            <div className="flex flex-col items-start gap-2 w-full md:w-[320px] shrink-0">
+              <div className="w-full text-[15px] leading-6 text-black font-semibold">Məşqçi şəkili</div>
+              <div className="w-full flex flex-col items-start gap-3">
                 <input ref={fileRef} type="file" accept=".jpg,.jpeg,.png,.webp" className="hidden" onChange={handlePhotoChange} />
                 <div 
                   onClick={() => fileRef.current?.click()}
-                  className="w-full h-[240px] md:h-[308px] bg-[#fafafa] border-2 border-dashed border-[#ececed] rounded-xl relative cursor-pointer flex items-center justify-center overflow-hidden hover:border-[#00B4CC] transition-all group"
+                  className="w-full h-[200px] md:h-[240px] bg-[#fafafa] border-2 border-dashed border-[#ececed] rounded-xl relative cursor-pointer flex items-center justify-center overflow-hidden hover:border-[#00B4CC] transition-all group"
                 >
                   {preview ? (
                     <img src={preview} className="w-full h-full object-cover" alt="Trainer" />
                   ) : (
-                    <div className="text-[#6a7282] font-medium flex flex-col items-center gap-3 transition-transform group-hover:scale-105">
-                      <Image src="/upload.svg" width={32} height={32} alt="Upload" className="opacity-60" />
-                      <span className="text-[16px]">Şəkil yüklə</span>
+                    <div className="text-[#6a7282] font-medium flex flex-col items-center gap-2 transition-transform group-hover:scale-105">
+                      <Image src="/upload.svg" width={28} height={28} alt="Upload" className="opacity-60" />
+                      <span className="text-[14px]">Şəkil yüklə</span>
                     </div>
                   )}
                 </div>
-                <div className="text-[14px] leading-5 tracking-[-0.15px] text-[#6a7282] font-medium italic">JPG or PNG • Max size 2MB</div>
+                <div className="text-[12px] leading-5 text-[#6a7282] font-medium italic">JPG or PNG • Max 10MB</div>
               </div>
             </div>
 
             {/* Inputs Right Section */}
-            <div className="flex flex-col w-full xl:flex-1 gap-5">
-              <div className="w-full flex flex-col items-start gap-2.5">
-                <div className="w-full text-[16px] leading-6 text-black font-semibold">Ad</div>
+            <div className="flex flex-col w-full md:flex-1 gap-4">
+              <div className="w-full flex flex-col items-start gap-1.5">
+                <div className="w-full text-[14px] leading-5 text-black/60 font-semibold">Ad</div>
                 <input 
                   type="text" 
                   value={form.name} 
                   onChange={e => setForm({...form, name: e.target.value})} 
-                  className="w-full h-[60px] rounded-xl bg-[#fafafa] border border-[#ececed] px-4 text-[18px] font-semibold outline-none focus:border-[#00B4CC] transition-all placeholder:text-[#94979c] font-sans" 
+                  className="w-full h-[44px] rounded-lg bg-[#fafafa] border border-[#ececed] px-4 text-[15px] font-medium outline-none focus:border-[#00B4CC] transition-all placeholder:text-[#94979c] font-sans" 
                   placeholder="Məs: Aysel"
                 />
               </div>
 
-              <div className="w-full flex flex-col items-start gap-2.5">
-                <div className="w-full text-[16px] leading-6 text-black font-semibold">Soyad</div>
+              <div className="w-full flex flex-col items-start gap-1.5">
+                <div className="w-full text-[14px] leading-5 text-black/60 font-semibold">Soyad</div>
                 <input 
                   type="text" 
                   value={form.surname} 
                   onChange={e => setForm({...form, surname: e.target.value})} 
-                  className="w-full h-[60px] rounded-xl bg-[#fafafa] border border-[#ececed] px-4 text-[18px] font-semibold outline-none focus:border-[#00B4CC] transition-all placeholder:text-[#94979c] font-sans" 
+                  className="w-full h-[44px] rounded-lg bg-[#fafafa] border border-[#ececed] px-4 text-[15px] font-medium outline-none focus:border-[#00B4CC] transition-all placeholder:text-[#94979c] font-sans" 
                   placeholder="Məs: Quliyeva"
                 />
               </div>
 
-              <div className="w-full flex flex-col items-start gap-2.5" ref={dropdownRef}>
-                <div className="w-full text-[16px] leading-6 text-black font-semibold">Növ</div>
+              <div className="w-full flex flex-col items-start gap-1.5" ref={dropdownRef}>
+                <div className="w-full text-[14px] leading-5 text-black/60 font-semibold">Növ</div>
                 <div className="relative w-full">
                   <div 
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="w-full h-[60px] rounded-xl bg-[#fafafa] border border-[#ececed] px-4 text-[18px] font-semibold outline-none flex items-center justify-between cursor-pointer hover:border-[#00B4CC] transition-all font-sans select-none"
+                    className="w-full h-[44px] rounded-lg bg-[#fafafa] border border-[#ececed] px-4 text-[15px] font-medium outline-none flex items-center justify-between cursor-pointer hover:border-[#00B4CC] transition-all font-sans select-none"
                   >
                     <span className={selectedLessonTypeIds.size > 0 ? "text-black" : "text-[#94979c]"}>
                       {dropdownLabel}
                     </span>
-                    <ChevronDown size={24} className={`text-black/40 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`} />
+                    <ChevronDown size={18} className={`text-black/40 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`} />
                   </div>
 
                   {isDropdownOpen && (
@@ -238,15 +238,15 @@ export function AddTrainerModal({ onClose, isDashboard = false }: { onClose: () 
                               e.stopPropagation();
                               toggleLessonType(lt.id);
                             }}
-                            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg cursor-pointer transition-colors ${
+                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors ${
                               isSelected ? "bg-[#00B4CC]/10 text-[#00B4CC] font-medium" : "hover:bg-gray-50 text-black"
                             }`}
                           >
-                            <span className="text-[16px]">{lt.name}</span>
-                            <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
+                            <span className="text-[14px]">{lt.name}</span>
+                            <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
                               isSelected ? "border-[#00B4CC] bg-[#00B4CC] text-white" : "border-gray-300"
                             }`}>
-                              {isSelected && <span className="text-[12px] font-bold">✓</span>}
+                              {isSelected && <span className="text-[10px] font-bold">✓</span>}
                             </div>
                           </div>
                         );
@@ -263,24 +263,24 @@ export function AddTrainerModal({ onClose, isDashboard = false }: { onClose: () 
             </div>
           </div>
 
-          <div className="w-full grid grid-cols-1 md:grid-cols-2 items-center gap-5 md:gap-8">
-            <div className="flex flex-col items-start gap-2.5">
-              <div className="w-full text-[16px] leading-6 text-black font-semibold">Telefon nömrəsi</div>
+          <div className="w-full grid grid-cols-1 md:grid-cols-2 items-center gap-4 md:gap-6">
+            <div className="flex flex-col items-start gap-1.5">
+              <div className="w-full text-[14px] leading-5 text-black/60 font-semibold">Telefon nömrəsi</div>
               <input 
                 type="text" 
                 value={form.phone} 
                 onChange={e => setForm({...form, phone: e.target.value})} 
-                className="w-full h-[60px] rounded-xl bg-[#fafafa] border border-[#ececed] px-4 text-[18px] font-semibold outline-none focus:border-[#00B4CC] transition-all placeholder:text-[#94979c] font-sans" 
+                className="w-full h-[44px] rounded-lg bg-[#fafafa] border border-[#ececed] px-4 text-[15px] font-medium outline-none focus:border-[#00B4CC] transition-all placeholder:text-[#94979c] font-sans" 
                 placeholder="+994 50 578 56 56"
               />
             </div>
-            <div className="flex flex-col items-start gap-2.5">
-              <div className="w-full text-[16px] leading-6 text-black font-semibold">E-Poçt</div>
+            <div className="flex flex-col items-start gap-1.5">
+              <div className="w-full text-[14px] leading-5 text-black/60 font-semibold">E-Poçt</div>
               <input 
                 type="text" 
                 value={form.email} 
                 onChange={e => setForm({...form, email: e.target.value})} 
-                className="w-full h-[60px] rounded-xl bg-[#fafafa] border border-[#ececed] px-4 text-[18px] font-semibold outline-none focus:border-[#00B4CC] transition-all placeholder:text-[#94979c] font-sans" 
+                className="w-full h-[44px] rounded-lg bg-[#fafafa] border border-[#ececed] px-4 text-[15px] font-medium outline-none focus:border-[#00B4CC] transition-all placeholder:text-[#94979c] font-sans" 
                 placeholder="aysel.quliyeva@gmail.com"
               />
             </div>
@@ -290,10 +290,10 @@ export function AddTrainerModal({ onClose, isDashboard = false }: { onClose: () 
             <button 
               type="submit" 
               disabled={isPending}
-              className={`w-[280px] h-12 rounded-[10px] flex items-center justify-center px-4 font-medium text-[16px] text-white transition-all 
-                ${isPending ? 'bg-[#c1c1cc]' : 'bg-[#00B4CC] hover:bg-[#009DB3] shadow-sm'}`}
+              className={`w-[240px] h-[40px] rounded-lg flex items-center justify-center px-4 font-medium text-[14px] text-white transition-all 
+                ${isPending ? 'bg-[#c1c1cc]' : 'bg-[#00B4CC] hover:bg-[#009DB3] shadow-md shadow-cyan-50'}`}
             >
-              {isPending ? <Loader2 className="animate-spin" size={20} /> : "Yadda saxla"}
+              {isPending ? <Loader2 className="animate-spin" size={18} /> : "Yadda saxla"}
             </button>
           </div>
         </form>

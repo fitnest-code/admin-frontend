@@ -37,7 +37,7 @@ export function packageRowsToStep3Payload(rows: PackageRow[]): IStoreStep3Payloa
 }
 
 const inputCls =
-  "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-[#00B4CC] focus:ring-2 focus:ring-[#00B4CC]/15 transition placeholder:text-gray-400 bg-white";
+  "w-full h-[44px] rounded-lg border border-[#ececed] px-4 text-[14px] text-gray-800 outline-none focus:border-[#00B4CC] focus:ring-2 focus:ring-[#00B4CC]/15 transition placeholder:text-gray-400 bg-[#fafafa] font-medium";
 
 interface Step3Props {
   rows: PackageRow[];
@@ -79,15 +79,15 @@ export default function StoreDiscountsTab({
   return (
     <div className="flex flex-col gap-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-gray-800">
+      <div className="flex items-center justify-between border-b border-[#ececed] pb-2">
+        <h2 className="text-[18px] font-semibold text-gray-800">
           Paketlər və endirimlər
         </h2>
         <button
           type="button"
           onClick={addRow}
           disabled={disabledAll}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00B4CC] hover:bg-[#009DB3] active:scale-95 text-white text-sm font-medium transition-all disabled:opacity-50"
+          className="h-[40px] px-4 bg-[#00B4CC] rounded-lg flex items-center justify-center gap-2 text-white text-[14px] font-medium transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
         >
           <PlusIcon />
           Əlavə et
@@ -96,11 +96,11 @@ export default function StoreDiscountsTab({
 
       {/* Table */}
       <div className="rounded-xl border border-gray-200 overflow-hidden">
-        <div className="grid grid-cols-[1fr_140px_52px] gap-3 px-4 py-3 bg-gray-50 border-b border-gray-200">
-          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+        <div className="grid grid-cols-[1fr_140px_52px] gap-3 px-4 py-3 bg-[#00B4CC26] border-b border-[#CECFD2]">
+          <span className="text-[14px] font-bold text-black uppercase tracking-wide">
             Paket adı
           </span>
-          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <span className="text-[14px] font-bold text-black uppercase tracking-wide">
             Endirim (%)
           </span>
           <span />
@@ -184,20 +184,20 @@ export default function StoreDiscountsTab({
       </div>
 
       {showFooter && (
-        <div className="flex gap-3 justify-end pt-2">
+        <div className="flex gap-3 justify-end pt-4 border-t border-[#ececed] mt-4">
           <button
             type="button"
             onClick={onCancel}
             disabled={disabledAll}
-            className="px-6 py-2.5 rounded-xl border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition disabled:opacity-50"
+            className="h-[40px] px-8 rounded-lg border border-[#ececed] text-[#101828] text-[14px] font-medium hover:bg-slate-50 transition disabled:opacity-50"
           >
-            Ləğv et
+            Sıfırla
           </button>
           <button
             type="button"
             onClick={() => void onSave()}
             disabled={disabledAll}
-            className="flex items-center justify-center min-w-[120px] px-6 py-2.5 rounded-xl bg-[#00B4CC] hover:bg-[#009DB3] active:scale-95 text-white text-sm font-medium transition-all disabled:opacity-60"
+            className="flex items-center justify-center min-w-[120px] h-[40px] px-8 rounded-lg bg-[#00B4CC] hover:bg-[#009DB3] active:scale-95 text-white text-[14px] font-medium transition-all disabled:opacity-60 shadow-md shadow-cyan-50"
           >
             {isSaving ? <Loader2 size={18} className="animate-spin" /> : "Tamamla"}
           </button>

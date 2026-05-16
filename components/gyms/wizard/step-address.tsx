@@ -258,18 +258,25 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
         </div>
 
         {/* Footer Buttons */}
-        <div className="flex justify-end items-center gap-6 pt-4 border-t border-slate-100">
+        <div className="flex justify-end items-center gap-3 pt-4 border-t border-slate-100">
           <button
             type="button"
-            className="w-[200px] h-[44px] rounded-lg border-2 border-[#00B4CC] bg-white text-[#00B4CC] font-bold text-sm hover:bg-[#00B4CC08] transition-all"
+            onClick={() => {
+              const { resetStep4Data } = useGymStore.getState();
+              resetStep4Data();
+              setCoords({ lat: "", lng: "" });
+              setSearchQuery("");
+              setSuggestions([]);
+            }}
+            className="h-[44px] px-8 rounded-lg border border-[#ececed] text-[#101828] text-[14px] font-medium hover:bg-slate-50 transition-colors"
           >
-            {t.save}
+            Sıfırla
           </button>
           <button
             type="button"
             disabled={isPending}
             onClick={handleNext}
-            className="w-[200px] h-[44px] rounded-lg bg-[#00B4CC] text-white font-bold text-sm hover:bg-[#009DB3] transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-[#00B4CC20]"
+            className="w-[240px] h-[44px] rounded-lg bg-[#00B4CC] text-white text-[14px] font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-md shadow-cyan-50"
           >
             {isPending ? <Loader2 className="animate-spin" size={20} /> : t.next}
           </button>

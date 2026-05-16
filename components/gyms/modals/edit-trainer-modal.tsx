@@ -128,85 +128,85 @@ export function EditTrainerModal({ onClose, trainer, index }: EditTrainerModalPr
   if (!mounted) return null;
 
   return createPortal(
-    <div className="fixed top-0 left-0 w-full h-full z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 font-sans">
-      <div className="w-full max-w-[1040px] max-h-[95vh] rounded-[24px] bg-white border border-[#ececed] shadow-2xl overflow-y-auto flex flex-col p-5 md:p-8 gap-6 md:gap-[34px] animate-in fade-in zoom-in duration-200 font-sans">
+    <div className="fixed top-0 left-0 w-full h-full z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 font-sans animate-in fade-in duration-300">
+      <div className="w-full max-w-[800px] max-h-[95vh] rounded-2xl bg-white border border-[#ececed] shadow-2xl overflow-y-auto flex flex-col p-6 md:p-8 gap-6 animate-in zoom-in-95 duration-300 font-sans">
         
         {/* Header */}
-        <div className="w-full h-12 flex items-center justify-between">
-          <div className="text-[24px] font-semibold text-[#101828]">Məşqçi detalları</div>
-          <button onClick={onClose} className="w-6 h-6 flex items-center justify-center hover:bg-slate-100 rounded-full transition-colors">
-            <X size={20} className="text-[#6a7282]" />
+        <div className="w-full h-10 flex items-center justify-between">
+          <div className="text-[20px] font-semibold text-[#101828]">Məşqçi detalları</div>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-full transition-colors">
+            <X size={18} className="text-[#6a7282]" />
           </button>
         </div>
 
-        <form onSubmit={handleSave} className="flex flex-col gap-[34px]">
-          <div className="w-full flex flex-col xl:flex-row gap-6 md:gap-8 items-start">
+        <form onSubmit={handleSave} className="flex flex-col gap-6">
+          <div className="w-full flex flex-col md:flex-row gap-6 md:gap-8 items-start">
             
             {/* Photo Section */}
-            <div className="flex flex-col items-start gap-3 w-full xl:w-[444px] shrink-0">
-              <div className="text-[18px] leading-[28px] text-black font-semibold">Məşqçi şəkili</div>
-              <div className="w-full flex flex-col items-start gap-4">
+            <div className="flex flex-col items-start gap-2 w-full md:w-[320px] shrink-0">
+              <div className="text-[15px] leading-6 text-black font-semibold">Məşqçi şəkili</div>
+              <div className="w-full flex flex-col items-start gap-3">
                 <input ref={fileRef} type="file" accept=".jpg,.jpeg,.png,.webp" className="hidden" onChange={handlePhotoChange} />
                 <div 
                   onClick={() => fileRef.current?.click()}
-                  className="w-full h-[308px] rounded-[16px] border border-[#ececed] relative cursor-pointer flex items-center justify-center overflow-hidden hover:opacity-90 transition-all group bg-cover bg-center bg-no-repeat"
+                  className="w-full h-[200px] md:h-[240px] rounded-[16px] border border-[#ececed] relative cursor-pointer flex items-center justify-center overflow-hidden hover:opacity-90 transition-all group bg-cover bg-center bg-no-repeat"
                   style={preview ? { backgroundImage: `url(${preview})` } : { backgroundColor: '#fafafa' }}
                 >
                   {/* Overlay for "Change photo" */}
                   <div className={cn(
-                    "absolute inset-0 flex flex-col items-center justify-center gap-[30px] transition-all duration-300",
+                    "absolute inset-0 flex flex-col items-center justify-center gap-4 transition-all duration-300",
                     preview ? "bg-black/40" : ""
                   )}>
-                    <div className="flex flex-col items-center gap-[30px]">
+                    <div className="flex flex-col items-center gap-4">
                       <Image 
                         src="/Şəkil dəyiş/Icon.svg" 
-                        width={40} 
-                        height={40} 
+                        width={32} 
+                        height={32} 
                         alt="Change" 
                         className={cn(preview ? "brightness-0 invert" : "")} 
                       />
                       <span className={cn(
-                        "text-[14px] leading-[20px] font-medium tracking-[-0.15px] font-inter",
+                        "text-[13px] leading-5 font-medium tracking-[-0.15px] font-inter",
                         preview ? "text-white" : "text-black"
                       )}>
-                        Şəkili dəyiş seç
+                        Şəkili dəyiş
                       </span>
                     </div>
                   </div>
                 </div>
-                <div className="text-[14px] text-[#6a7282] font-medium italic">JPG or PNG • Max size 2MB</div>
+                <div className="text-[12px] text-[#6a7282] font-medium italic">JPG or PNG • Max size 10MB</div>
               </div>
             </div>
 
             {/* Inputs Section */}
-            <div className="flex flex-col w-full xl:flex-1 gap-5">
+            <div className="flex flex-col w-full md:flex-1 gap-4">
               {[
                 { label: "Ad", key: "name", placeholder: "Məs: Aysel" },
                 { label: "Soyad", key: "surname", placeholder: "Məs: Quliyeva" }
               ].map((field) => (
-                <div key={field.key} className="flex flex-col gap-2.5">
-                  <div className="text-[16px] font-semibold">{field.label}</div>
+                <div key={field.key} className="flex flex-col gap-1.5">
+                  <div className="text-[14px] font-semibold text-black/60">{field.label}</div>
                   <input 
                     type="text" 
                     value={(form as any)[field.key]} 
                     onChange={e => setForm({...form, [field.key]: e.target.value})} 
-                    className="w-full h-[60px] rounded-xl bg-[#fafafa] border border-[#ececed] px-4 text-[18px] font-semibold outline-none focus:border-[#00B4CC] transition-all" 
+                    className="w-full h-[44px] rounded-lg bg-[#fafafa] border border-[#ececed] px-4 text-[15px] font-medium outline-none focus:border-[#00B4CC] transition-all" 
                     placeholder={field.placeholder}
                   />
                 </div>
               ))}
 
-              <div className="flex flex-col gap-2.5" ref={dropdownRef}>
-                <div className="text-[16px] font-semibold">Növ</div>
+              <div className="flex flex-col gap-1.5" ref={dropdownRef}>
+                <div className="text-[14px] font-semibold text-black/60">Növ</div>
                 <div className="relative w-full">
                   <div 
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="w-full h-[60px] rounded-xl bg-[#fafafa] border border-[#ececed] px-4 text-[18px] font-semibold outline-none flex items-center justify-between cursor-pointer hover:border-[#00B4CC] transition-all font-sans select-none"
+                    className="w-full h-[44px] rounded-lg bg-[#fafafa] border border-[#ececed] px-4 text-[15px] font-medium outline-none flex items-center justify-between cursor-pointer hover:border-[#00B4CC] transition-all font-sans select-none"
                   >
                     <span className={selectedLessonTypeIds.size > 0 ? "text-black" : "text-[#94979c]"}>
                       {dropdownLabel}
                     </span>
-                    <ChevronDown size={24} className={`text-black/40 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`} />
+                    <ChevronDown size={18} className={`text-black/40 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`} />
                   </div>
 
                   {isDropdownOpen && (
@@ -220,15 +220,15 @@ export function EditTrainerModal({ onClose, trainer, index }: EditTrainerModalPr
                               e.stopPropagation();
                               toggleLessonType(lt.id);
                             }}
-                            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg cursor-pointer transition-colors ${
+                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors ${
                               isSelected ? "bg-[#00B4CC]/10 text-[#00B4CC] font-medium" : "hover:bg-gray-50 text-black"
                             }`}
                           >
-                            <span className="text-[16px]">{lt.name}</span>
-                            <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
+                            <span className="text-[14px]">{lt.name}</span>
+                            <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
                               isSelected ? "border-[#00B4CC] bg-[#00B4CC] text-white" : "border-gray-300"
                             }`}>
-                              {isSelected && <span className="text-[12px] font-bold">✓</span>}
+                              {isSelected && <span className="text-[10px] font-bold">✓</span>}
                             </div>
                           </div>
                         );
@@ -245,24 +245,24 @@ export function EditTrainerModal({ onClose, trainer, index }: EditTrainerModalPr
             </div>
           </div>
 
-          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8">
-            <div className="flex flex-col gap-2.5">
-              <div className="text-[16px] font-semibold">Telefon nömrəsi</div>
+          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            <div className="flex flex-col gap-1.5">
+              <div className="text-[14px] font-semibold text-black/60">Telefon nömrəsi</div>
               <input 
                 type="text" 
                 value={form.phone} 
                 onChange={e => setForm({...form, phone: e.target.value})} 
-                className="w-full h-[60px] rounded-xl bg-[#fafafa] border border-[#ececed] px-4 text-[18px] font-semibold outline-none focus:border-[#00B4CC] transition-all" 
+                className="w-full h-[44px] rounded-lg bg-[#fafafa] border border-[#ececed] px-4 text-[15px] font-medium outline-none focus:border-[#00B4CC] transition-all" 
                 placeholder="+994 50 578 56 56"
               />
             </div>
-            <div className="flex flex-col gap-2.5">
-              <div className="text-[16px] font-semibold">E-Poçt</div>
+            <div className="flex flex-col gap-1.5">
+              <div className="text-[14px] font-semibold text-black/60">E-Poçt</div>
               <input 
                 type="text" 
                 value={form.email} 
                 onChange={e => setForm({...form, email: e.target.value})} 
-                className="w-full h-[60px] rounded-xl bg-[#fafafa] border border-[#ececed] px-4 text-[18px] font-semibold outline-none focus:border-[#00B4CC] transition-all" 
+                className="w-full h-[44px] rounded-lg bg-[#fafafa] border border-[#ececed] px-4 text-[15px] font-medium outline-none focus:border-[#00B4CC] transition-all" 
                 placeholder="aysel.quliyeva@gmail.com"
               />
             </div>
@@ -273,7 +273,7 @@ export function EditTrainerModal({ onClose, trainer, index }: EditTrainerModalPr
               type="submit" 
               disabled={!isDirty}
               className={cn(
-                "w-[280px] h-12 rounded-[10px] flex items-center justify-center px-4 font-medium text-[16px] text-white transition-all shadow-sm",
+                "w-[240px] h-[40px] rounded-lg flex items-center justify-center px-4 font-medium text-[14px] text-white transition-all shadow-md shadow-cyan-50",
                 isDirty ? "bg-[#00B4CC] hover:bg-[#009DB3]" : "bg-[#c1c1cc] cursor-not-allowed"
               )}
             >

@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import * as Label from "@radix-ui/react-label";
+import { cn } from "@/lib/utils";
 
 export interface StoreInfo {
   name: string;
@@ -15,7 +16,7 @@ interface Step1Props {
 }
 
 const inputCls =
-  "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-[#00B4CC] focus:ring-2 focus:ring-[#00B4CC]/15 transition placeholder:text-gray-400 bg-white";
+  "w-full h-[44px] rounded-lg border border-[#ececed] px-4 text-[14px] text-gray-800 outline-none focus:border-[#00B4CC] focus:ring-2 focus:ring-[#00B4CC]/15 transition placeholder:text-gray-400 bg-[#fafafa] font-medium";
 
 export default function StoreInfoTab({ data, onChange }: Step1Props) {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -27,12 +28,28 @@ export default function StoreInfoTab({ data, onChange }: Step1Props) {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <h2 className="text-base font-semibold text-gray-800">Mağaza məlumatları</h2>
+    <div className="flex flex-col gap-6 animate-in fade-in duration-500">
+      <div className="flex items-center justify-between border-b border-[#ececed] pb-1">
+        <h2 className="text-[18px] font-semibold text-gray-800">Mağaza məlumatları</h2>
+        <div className="flex items-center gap-4 text-[13px] font-medium">
+          {["Az", "Ru", "En"].map((l) => (
+            <button
+              key={l}
+              type="button"
+              className={cn(
+                "px-1 pb-1 transition-all duration-300",
+                l === "Az" ? "border-b border-[#00B4CC] text-black" : "text-black/40"
+              )}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Store name */}
       <div className="flex flex-col gap-1.5">
-        <Label.Root htmlFor="store-name" className="text-sm font-medium text-gray-600">
+        <Label.Root htmlFor="store-name" className="text-[13px] font-semibold text-black/60">
           Mağaza adı
         </Label.Root>
         <input
@@ -47,7 +64,7 @@ export default function StoreInfoTab({ data, onChange }: Step1Props) {
 
       {/* Image upload */}
       <div className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-gray-600">Mağaza şəkilləri</span>
+        <span className="text-[13px] font-semibold text-black/60">Mağaza şəkilləri</span>
 
         {data.imagePreview ? (
           <div className="flex gap-6 items-start">

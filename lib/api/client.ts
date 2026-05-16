@@ -60,10 +60,20 @@ function isJsonResponse(res: Response) {
 
 function extractApiErrorMessage(payload: unknown, fallback: string) {
   if (typeof payload === "object" && payload !== null) {
-    if ("message" in payload) return String((payload as any).message);
-    if ("error" in payload && (payload as any).error?.message) {
-      return String((payload as any).error.message);
+    const p = payload as any;
+    
+    // Check for "error" wrapper (Standard Spring Boot / Custom API response)
+    const errorObj = p.error;
+    if (errorObj && typeof errorObj === 'object') {
+      // Prioritize specific field issues if present
+      const fieldIssues = errorObj.details?.fieldIssues;
+      if (Array.isArray(fieldIssues) && fieldIssues.length > 0) {
+        return fieldIssues.map((fi: any) => fi.issue).join(", ");
+      }
+      if (errorObj.message) return String(errorObj.message);
     }
+
+    if ("message" in p) return String(p.message);
   }
   return fallback;
 }

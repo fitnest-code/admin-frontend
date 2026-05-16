@@ -50,9 +50,9 @@ function formatDateTimeClean(val?: string | null) {
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-3.5 border-b border-border/40 last:border-0 first:pt-0 last:pb-0">
+    <div className="flex items-center justify-between gap-4 py-2.5 border-b border-border/40 last:border-0 first:pt-0 last:pb-0">
       <span className="text-sm font-medium text-muted-foreground shrink-0">{label}</span>
-      <span className="text-base font-semibold text-foreground text-right">{value}</span>
+      <span className="text-sm font-semibold text-foreground text-right">{value}</span>
     </div>
   )
 }
@@ -72,7 +72,7 @@ function OpsBtn({
     <button
       onClick={onClick}
       className={cn(
-        'flex w-full items-center gap-3 rounded-xl border px-4 py-3.5 text-sm font-semibold transition-all duration-200 active:scale-[0.98]',
+        'flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-sm font-semibold transition-all duration-200 active:scale-[0.98]',
         danger
           ? 'border-red-200 bg-red-50/40 text-red-600 hover:bg-red-50 hover:border-red-300'
           : 'border-border bg-white text-foreground hover:border-[#00B4CC] hover:text-[#00B4CC] hover:bg-[#00B4CC]/5 shadow-xs',
@@ -127,60 +127,58 @@ export function CustomerDetail({ customer }: { customer: CustomerProfile }) {
       </div>
 
       {/* Top Profile Card Header */}
-      <div className="rounded-2xl bg-white border border-border p-7 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all">
+      <div className="rounded-xl bg-white border border-border p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all">
         <div className="flex items-center gap-6">
           {customer.photoUrl ? (
             <Image 
               src={customer.photoUrl} 
-              width={100} 
-              height={100} 
+              width={80} 
+              height={80} 
               alt="" 
-              className="h-[100px] w-[100px] rounded-full object-cover shrink-0 ring-4 ring-[#00B4CC]/10" 
+              className="h-[80px] w-[80px] rounded-full object-cover shrink-0 ring-4 ring-[#00B4CC]/10" 
             />
           ) : (
-            <div className="flex h-[100px] w-[100px] shrink-0 items-center justify-center rounded-full bg-[#00B4CC]/10 font-bold text-3xl text-[#00B4CC] ring-4 ring-[#00B4CC]/5">
+            <div className="flex h-[80px] w-[80px] shrink-0 items-center justify-center rounded-full bg-[#00B4CC]/10 font-bold text-2xl text-[#00B4CC] ring-4 ring-[#00B4CC]/5">
               {initials || 'FN'}
             </div>
           )}
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              <h1 className="text-[20px] font-bold tracking-tight text-foreground">
                 {fullName}
               </h1>
-              <div className={cn('flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold shadow-2xs', STATUS_STYLES[status])}>
-                <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+              <div className={cn('flex items-center gap-1.5 rounded-full px-3 py-0.5 text-[10px] font-bold uppercase shadow-2xs', STATUS_STYLES[status])}>
+                <span className="h-1 w-1 rounded-full bg-white animate-pulse" />
                 <span>{getCustomerStatusLabel(status)}</span>
               </div>
             </div>
             {customer.subscriptionStatus && (
-              <span className="text-sm font-medium text-muted-foreground">
-                Abunəlik: <strong className="text-[#00B4CC] font-semibold">{customer.subscriptionStatus}</strong>
+              <span className="text-xs font-medium text-muted-foreground">
+                Abunəlik: <span className="text-[#00B4CC] font-medium">{customer.subscriptionStatus}</span>
               </span>
             )}
           </div>
         </div>
 
         {/* Right Metadata Flex Grid */}
-        <div className="flex flex-wrap sm:flex-nowrap items-center gap-5 bg-[#FAFAFA] px-6 py-4 rounded-xl border border-border/60 shadow-2xs shrink-0">
-          <div className="flex flex-col gap-1 text-left">
-            <span className="text-xs font-medium text-muted-foreground">User ID:</span>
-            <strong className="text-base font-bold text-foreground">{customer.id}</strong>
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-5 bg-[#FAFAFA] px-5 py-3 rounded-lg border border-border/60 shadow-2xs shrink-0">
+          <div className="flex flex-col gap-0.5 text-left">
+            <span className="text-[10px] font-medium uppercase text-muted-foreground">User ID</span>
+            <strong className="text-sm font-medium text-foreground">{customer.id}</strong>
           </div>
 
-          {/* Symmetrical Centered Vertical Divider */}
           <div className="h-8 w-[1px] bg-border shrink-0 self-center" />
 
-          <div className="flex flex-col gap-1 text-left">
-            <span className="text-xs font-medium text-muted-foreground">Qeydiyyat tarixi:</span>
-            <strong className="text-base font-bold text-foreground">{formatDateTimeClean(customer.registeredAt)}</strong>
+          <div className="flex flex-col gap-0.5 text-left">
+            <span className="text-[10px] font-medium uppercase text-muted-foreground">Qeydiyyat tarixi</span>
+            <strong className="text-sm font-medium text-foreground">{formatDateTimeClean(customer.registeredAt)}</strong>
           </div>
 
-          {/* Symmetrical Centered Vertical Divider */}
           <div className="h-8 w-[1px] bg-border shrink-0 self-center" />
 
-          <div className="flex flex-col gap-1 text-left">
-            <span className="text-xs font-medium text-muted-foreground">Platforma:</span>
-            <strong className="text-base font-bold text-foreground">{formatValue(customer.platform) || 'İOS'}</strong>
+          <div className="flex flex-col gap-0.5 text-left">
+            <span className="text-[10px] font-medium uppercase text-muted-foreground">Platforma</span>
+            <strong className="text-sm font-medium text-foreground">{formatValue(customer.platform) || 'İOS'}</strong>
           </div>
         </div>
       </div>
@@ -191,9 +189,9 @@ export function CustomerDetail({ customer }: { customer: CustomerProfile }) {
           {/* Left Area: Profile Information Categories */}
           <div className="flex flex-1 flex-col gap-6">
             {/* Personal Data Card */}
-            <div className="rounded-2xl bg-white border border-border p-6 shadow-xs flex flex-col gap-5">
-              <div className="border-b border-border pb-3.5">
-                <h2 className="text-lg font-bold text-foreground tracking-tight">Şəxsi məlumatlar</h2>
+            <div className="rounded-xl bg-white border border-border p-5 shadow-xs flex flex-col gap-5">
+              <div className="border-b border-border pb-3">
+                <h2 className="text-[16px] font-bold text-foreground tracking-tight">Şəxsi məlumatlar</h2>
               </div>
               <div className="flex flex-col">
                 <InfoRow label="Telefon nömrəsi:" value={formatValue(customer.phoneNumber)} />
@@ -204,9 +202,9 @@ export function CustomerDetail({ customer }: { customer: CustomerProfile }) {
             </div>
 
             {/* Physical Metrics Card */}
-            <div className="rounded-2xl bg-white border border-border p-6 shadow-xs flex flex-col gap-5">
-              <div className="border-b border-border pb-3.5">
-                <h2 className="text-lg font-bold text-foreground tracking-tight">Bədən göstəriciləri</h2>
+            <div className="rounded-xl bg-white border border-border p-5 shadow-xs flex flex-col gap-5">
+              <div className="border-b border-border pb-3">
+                <h2 className="text-[16px] font-bold text-foreground tracking-tight">Bədən göstəriciləri</h2>
               </div>
               <div className="flex flex-col">
                 <InfoRow label="Boy:" value={formatValue(customer.height, 'cm')} />
@@ -218,11 +216,11 @@ export function CustomerDetail({ customer }: { customer: CustomerProfile }) {
 
           {/* Right Area: Admin Actions Panel */}
           <div className="w-full lg:w-[411px] shrink-0">
-            <div className="flex flex-col rounded-2xl bg-white border border-border p-6 shadow-xs gap-6">
-              <div className="border-b border-border pb-3.5">
-                <h2 className="text-lg font-bold text-foreground tracking-tight">Əməliyyatlar</h2>
+            <div className="flex flex-col rounded-xl bg-white border border-border p-5 shadow-xs gap-5">
+              <div className="border-b border-border pb-3">
+                <h2 className="text-[16px] font-bold text-foreground tracking-tight">Əməliyyatlar</h2>
               </div>
-              <div className="flex flex-col gap-3.5">
+              <div className="flex flex-col gap-3">
                 <OpsBtn icon={Bell} label="Push bildiriş göndər" onClick={() => setPushOpen(true)} />
                 <OpsBtn icon={MessageSquare} label="SMS göndər" onClick={() => setSmsOpen(true)} />
                 <OpsBtn icon={Mail} label="Email göndər" onClick={() => {}} />

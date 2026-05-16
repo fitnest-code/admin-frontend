@@ -16,7 +16,7 @@ interface StepSidebarProps {
 
 export default function StepSidebar({ current, onGo }: StepSidebarProps) {
   return (
-    <aside className="w-full lg:w-[260px] shrink-0 bg-white rounded-[12px] p-4 shadow-sm border border-[#ececed]/50">
+    <aside className="w-full lg:w-[220px] shrink-0 bg-white rounded-xl p-4 shadow-sm border border-[#ececed]/50">
       <div className="flex flex-col items-start px-2">
         {steps.map((step, index) => {
           const isActive = current === step.id;
@@ -37,7 +37,7 @@ export default function StepSidebar({ current, onGo }: StepSidebarProps) {
                 <div className="flex items-center gap-3 w-full py-0.5">
                   <div
                     className={cn(
-                      "w-11 h-11 rounded-full flex items-center justify-center text-[18px] font-semibold transition-all duration-300 shrink-0",
+                      "w-9 h-9 rounded-full flex items-center justify-center text-[15px] font-semibold transition-all duration-300 shrink-0",
                       isActive
                         ? "bg-[#00B4CC] text-white shadow-md scale-105"
                         : isCompleted
@@ -45,11 +45,11 @@ export default function StepSidebar({ current, onGo }: StepSidebarProps) {
                           : "bg-[#F3F4F6] text-[#9CA3AF]",
                     )}
                   >
-                    {isCompleted ? <Check size={20} strokeWidth={3} /> : step.id}
+                    {isCompleted ? <Check size={16} strokeWidth={3} /> : step.id}
                   </div>
                   <span
                     className={cn(
-                      "text-[18px] font-medium leading-[28px] transition-colors duration-300",
+                      "text-[15px] font-medium leading-6 transition-colors duration-300",
                       isActive ? "text-black" : "text-[#C9C9C9]",
                     )}
                   >
@@ -59,8 +59,8 @@ export default function StepSidebar({ current, onGo }: StepSidebarProps) {
               </button>
 
               {index < steps.length - 1 && (
-                <div className="w-11 flex justify-center py-2">
-                  <div className="w-[4px] h-[24px] rounded-full bg-[#E8E8E8]" />
+                <div className="w-9 flex justify-center py-1">
+                  <div className="w-[3px] h-[20px] rounded-full bg-[#E8E8E8]" />
                 </div>
               )}
             </div>

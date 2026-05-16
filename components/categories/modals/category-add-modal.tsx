@@ -113,15 +113,15 @@ export default function CategoryModal({
     <div className="fixed inset-0 z-[60] flex items-center justify-center font-sans p-4 sm:py-10">
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => onOpenChange(false)} />
       
-      <div className="relative z-10 w-full max-w-[668px] max-h-[90vh] overflow-y-auto rounded-[24px] bg-white border border-[#ececed] flex flex-col items-center justify-center p-4 sm:p-6 gap-6 sm:gap-8 shadow-2xl">
+      <div className="relative z-10 w-full max-w-[600px] max-h-[90vh] overflow-y-auto rounded-3xl bg-white border border-[#ececed] flex flex-col items-center justify-center p-4 sm:p-7 gap-6 sm:gap-7 shadow-2xl">
         
         {/* Header */}
-        <div className="w-full flex items-center justify-between gap-5 text-[#101828]">
-          <h2 className="text-[20px] sm:text-[24px] font-semibold leading-[24px] sm:leading-[28px]">
+        <div className="w-full flex items-center justify-between gap-5 text-[#101828] border-b border-[#ececed] pb-3">
+          <h2 className="text-[18px] sm:text-[22px] font-semibold leading-[24px] sm:leading-[28px]">
             {mode === "create" ? "Yeni kateqoriya əlavə et" : "Kateqoriyanı redaktə et"}
           </h2>
           <button onClick={() => onOpenChange(false)} className="w-6 h-6 text-[#101828] hover:text-gray-600 transition-colors flex items-center justify-center">
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
 
@@ -130,11 +130,11 @@ export default function CategoryModal({
           
           {/* Kateqoriya şəkli */}
           <div className="w-full flex flex-col items-start gap-2 sm:gap-3">
-            <label className="text-[14px] sm:text-[16px] leading-[20px] sm:leading-[24px] font-medium">Kateqoriya şəkli</label>
+            <label className="text-[13px] sm:text-[14px] leading-[20px] font-semibold text-black/60">Kateqoriya şəkli</label>
             <div className="w-full flex flex-col items-start gap-2 sm:gap-3 text-center text-[14px] text-[#4a5565] font-inter">
               <div 
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full h-[140px] sm:h-[180px] relative rounded-[16px] border border-dashed border-[#99a1af] bg-white flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-colors hover:bg-gray-50"
+                className="w-full h-[120px] sm:h-[150px] relative rounded-xl border border-dashed border-[#99a1af] bg-[#fafafa] flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-colors hover:bg-gray-50"
               >
                 {imagePreview ? (
                   <img src={imagePreview} alt="preview" className="w-full h-full object-cover" />
@@ -154,29 +154,29 @@ export default function CategoryModal({
 
           {/* Kateqoriya adı */}
           <div className="w-full flex flex-col items-start gap-2 sm:gap-3">
-            <label className="text-[14px] sm:text-[16px] leading-[20px] sm:leading-[24px] font-medium">Kateqoriya adı</label>
+            <label className="text-[13px] sm:text-[14px] leading-[20px] font-semibold text-black/60">Kateqoriya adı</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Məs: Fitness"
-              className="w-full h-[48px] sm:h-[60px] rounded-[12px] bg-[#fafafa] border border-[#ececed] px-3 sm:px-4 text-[16px] sm:text-[18px] outline-none focus:border-[#00b4cc] transition-colors"
+              className="w-full h-[44px] sm:h-[48px] rounded-lg bg-[#fafafa] border border-[#ececed] px-3 sm:px-4 text-[14px] sm:text-[15px] font-medium outline-none focus:border-[#00b4cc] transition-colors"
             />
           </div>
 
           {/* Unified Növ Section */}
-          <div className="w-full rounded-[12px] bg-white border border-[#ececed] flex flex-col items-start p-4 sm:p-7 gap-5 sm:gap-8 text-[16px]">
+          <div className="w-full rounded-xl bg-white border border-[#ececed] flex flex-col items-start p-4 sm:p-6 gap-4 sm:gap-6 text-[14px]">
             {/* Header */}
-            <div className="w-full border-b border-[#ececed] pb-2 flex items-center justify-between text-[16px] sm:text-[20px] font-semibold text-[#000] gap-2 sm:gap-4">
+            <div className="w-full border-b border-[#ececed] pb-2 flex items-center justify-between text-[15px] sm:text-[18px] font-semibold text-[#000] gap-2 sm:gap-4">
               <span className="leading-[24px] sm:leading-[30px]">Növ ({selectedLessonTypeIds.size}/{lessonTypes?.length || 0})</span>
               {!isAddingLessonType && (
                 <button
                   type="button"
                   onClick={() => setIsAddingLessonType(true)}
-                  className="h-10 sm:h-12 rounded-[12px] bg-[#00b4cc] flex items-center justify-center px-3 sm:px-4 gap-1 sm:gap-2 text-[14px] sm:text-[16px] text-[#fafafa] font-medium hover:bg-[#00a4bd] transition-colors shrink-0"
+                  className="h-[36px] sm:h-[40px] rounded-lg bg-[#00b4cc] flex items-center justify-center px-3 sm:px-4 gap-1 sm:gap-2 text-[13px] sm:text-[14px] text-[#fafafa] font-medium hover:bg-[#00a4bd] transition-colors shrink-0"
                 >
                   <span className="leading-[20px] sm:leading-[24px]">Növ əlavə et</span>
-                  <Plus size={18} className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <Plus size={16} className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               )}
             </div>
@@ -233,20 +233,20 @@ export default function CategoryModal({
             )}
 
             {/* List of Items Grid */}
-            <div className="w-full flex flex-wrap items-center gap-2 sm:gap-4 pt-1 sm:pt-2">
+            <div className="w-full flex flex-wrap items-center gap-2 sm:gap-3 pt-1 sm:pt-2">
               {lessonTypes?.map((lt) => {
                 const isSelected = selectedLessonTypeIds.has(lt.id);
                 return (
                   <div
                     key={lt.id}
                     onClick={() => toggleLessonType(lt.id)}
-                    className={`flex-[1_1_calc(50%-4px)] sm:flex-none min-w-[120px] sm:min-w-[140px] h-[48px] sm:h-[64px] rounded-[8px] flex items-center justify-between px-2 sm:px-3 gap-2 sm:gap-3 cursor-pointer select-none transition-colors ${
+                    className={`flex-[1_1_calc(50%-4px)] sm:flex-none min-w-[120px] sm:min-w-[140px] h-[40px] sm:h-[48px] rounded-lg flex items-center justify-between px-2 sm:px-3 gap-2 sm:gap-3 cursor-pointer select-none transition-colors ${
                       isSelected 
                         ? "bg-[#00b4cc]/[0.04] border border-[#00b4cc]" 
                         : "bg-[#fafafa] border border-[#ececed]"
                     }`}
                   >
-                    <span className="text-[#101828] text-[14px] sm:text-[16px] leading-[20px] sm:leading-[24px] font-medium truncate">{lt.name}</span>
+                    <span className="text-[#101828] text-[13px] sm:text-[14px] leading-[20px] sm:leading-[24px] font-medium truncate">{lt.name}</span>
                     <button
                       type="button"
                       onClick={(e) => {
@@ -269,7 +269,7 @@ export default function CategoryModal({
         <button
           onClick={handleSave}
           disabled={!name.trim()}
-          className="w-full max-w-[280px] h-10 sm:h-12 rounded-[10px] bg-[#00b4cc] text-white flex items-center justify-center px-4 py-2 font-medium leading-[20px] sm:leading-[24px] text-[15px] sm:text-[16px] disabled:opacity-50 hover:bg-[#00a4bd] transition-colors"
+          className="w-full max-w-[240px] h-[40px] rounded-lg bg-[#00b4cc] text-white flex items-center justify-center px-4 py-2 font-medium text-[14px] sm:text-[15px] disabled:opacity-50 hover:bg-[#00a4bd] transition-all shadow-md shadow-cyan-50"
         >
           Yadda saxla
         </button>

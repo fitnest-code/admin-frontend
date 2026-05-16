@@ -73,7 +73,7 @@ export function Sidebar({ className }: SidebarProps) {
       <aside
         className={cn(
           'fixed left-0 top-0 z-40 flex h-screen flex-col bg-white border-r border-[#ececed] transition-all duration-500 ease-in-out font-sans overflow-hidden shadow-sm',
-          collapsed ? 'w-[110px]' : 'w-[272px]',
+          collapsed ? 'w-[80px]' : 'w-[230px]',
           // Mobile: translate off-screen unless open
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
           'lg:translate-x-0',
@@ -82,17 +82,17 @@ export function Sidebar({ className }: SidebarProps) {
         aria-label="Main navigation"
       >
         {/* Logo area */}
-        <div className="relative w-full h-[150px] shrink-0">
+        <div className="relative w-full h-[100px] shrink-0">
           <div className={cn(
             "absolute transition-all duration-500",
-            collapsed ? "top-[60px] left-[35px]" : "top-[71px] left-[25.5px]"
+            collapsed ? "top-[34px] left-[24px]" : "top-[34px] left-[25.5px]"
           )}>
-            <div className="flex items-center gap-4">
-               <div className="relative h-[34px] w-[34px] md:h-[41px] md:w-[41px] shrink-0">
+            <div className="flex items-center gap-3">
+               <div className="relative h-[28px] w-[28px] md:h-[32px] md:w-[32px] shrink-0">
                   <Image src="/Sidebar/Group 11.svg" fill alt="Logo" className="object-contain" />
                </div>
                {!collapsed && (
-                 <span className="text-[30px] font-semibold text-[#00b4cc] leading-[46px] animate-in fade-in slide-in-from-left-2 duration-500 whitespace-nowrap">
+                 <span className="text-[22px] font-semibold text-[#00b4cc] leading-[32px] animate-in fade-in slide-in-from-left-2 duration-500 whitespace-nowrap">
                    FitNest
                  </span>
                )}
@@ -103,9 +103,9 @@ export function Sidebar({ className }: SidebarProps) {
           {collapsed && (
             <button
               onClick={handleCollapseToggle}
-              className="absolute top-[115px] left-1/2 -translate-x-1/2 w-8 h-8 flex items-center justify-center transition-all"
+              className="absolute top-[68px] left-1/2 -translate-x-1/2 w-8 h-8 flex items-center justify-center transition-all"
             >
-              <Image src="/menu.svg" width={28} height={28} alt="Expand" />
+              <Image src="/menu.svg" width={24} height={24} alt="Expand" />
             </button>
           )}
           
@@ -113,10 +113,10 @@ export function Sidebar({ className }: SidebarProps) {
           {!collapsed && (
             <button 
               onClick={handleCollapseToggle}
-              className="absolute top-[71px] right-6 text-slate-400 hover:text-slate-600 transition-colors"
+              className="absolute top-[34px] right-5 text-slate-400 hover:text-slate-600 transition-colors"
             >
-               <div className="h-[46px] flex items-center justify-center">
-                  <Image src="/Sidebar/X.svg" width={24} height={24} alt="Collapse" />
+               <div className="h-[32px] flex items-center justify-center">
+                  <Image src="/Sidebar/X.svg" width={20} height={20} alt="Collapse" />
                </div>
             </button>
           )}
@@ -140,26 +140,26 @@ export function Sidebar({ className }: SidebarProps) {
                       href={item.href}
                       onClick={(e) => handleLinkClick(e, item.href)}
                       className={cn(
-                        'group flex items-center rounded-[12px] transition-all duration-300 relative',
+                        'group flex items-center rounded-lg transition-all duration-300 relative',
                         isActive
                           ? 'bg-white border border-[#00b4cc] text-black shadow-sm'
                           : 'text-black hover:bg-slate-50',
                         collapsed 
-                          ? 'w-[60px] h-[48px] justify-center px-0' 
-                          : 'w-[184px] h-[48px] px-6 gap-3',
+                          ? 'w-[44px] h-[40px] justify-center px-0' 
+                          : 'w-[160px] h-[40px] px-4 gap-3',
                       )}
                       aria-current={isActive ? 'page' : undefined}
                     >
-                      <div className="shrink-0 transition-all duration-300 text-black w-6 h-6 relative">
+                      <div className="shrink-0 transition-all duration-300 text-black w-[20px] h-[20px] relative">
                       {item.iconPath ? (
                         <Image src={item.iconPath} fill alt={item.label} className="object-contain" />
                       ) : (
-                        <Icon size={24} strokeWidth={2} />
+                        <Icon size={20} strokeWidth={2} />
                       )}
                     </div>
                       
                       {!collapsed && (
-                        <span className="text-[16px] leading-[24px] font-medium transition-all duration-300 whitespace-nowrap overflow-hidden">
+                        <span className="text-[14px] leading-[22px] font-medium transition-all duration-300 whitespace-nowrap overflow-hidden">
                           {item.label}
                         </span>
                       )}

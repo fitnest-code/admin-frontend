@@ -203,9 +203,9 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
     <div className="w-full flex flex-col gap-9 font-sans text-black animate-in fade-in duration-500">
       
       {/* 1. Package Selector Section */}
-      <div className="bg-white rounded-[24px] border border-[#ececed] p-7 flex flex-col gap-6 shadow-sm">
+      <div className="bg-white rounded-[12px] border border-[#ececed] p-5 flex flex-col gap-5 shadow-sm">
         <div className="border-b border-[#ececed] pb-2">
-          <h2 className="text-[20px] font-semibold leading-[30px]">Zala aid olan abunəliklər</h2>
+          <h2 className="text-[18px] font-semibold leading-[28px]">Zala aid olan abunəliklər</h2>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -219,8 +219,8 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
                 onClick={() => setActivePackage(pkg)}
                 style={{ background: gradientsMap[pkg] || gradientsMap["Bronze"] }}
                 className={cn(
-                  "relative h-[68px] rounded-[32px] flex items-center px-6 cursor-pointer transition-all duration-300",
-                  isActive ? "scale-[1.05] shadow-xl ring-2 ring-[#00B4CC]" : "hover:scale-[1.02] shadow-sm",
+                  "relative h-[56px] rounded-[28px] flex items-center px-5 cursor-pointer transition-all duration-300",
+                  isActive ? "scale-[1.03] shadow-lg ring-2 ring-[#00B4CC]" : "hover:scale-[1.01] shadow-sm",
                   !isSelected && "ring-1 ring-inset ring-black/5"
                 )}
               >
@@ -238,7 +238,7 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
                 </div>
 
                 <b className={cn(
-                  "ml-3 text-[18px] tracking-tight",
+                  "ml-3 text-[16px] tracking-tight",
                   pkg === "Platinum" ? "text-white" : "text-white drop-shadow-md"
                 )}>
                   {pkg}
@@ -254,63 +254,63 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
       </div>
 
       {/* 2. Price Section */}
-      <div className="bg-white rounded-[24px] border border-[#ececed] p-7 flex flex-col gap-6 shadow-sm">
+      <div className="bg-white rounded-[12px] border border-[#ececed] p-5 flex flex-col gap-5 shadow-sm">
         <div className="border-b border-[#ececed] pb-2">
-          <h2 className="text-[20px] font-semibold leading-[30px]">Giriş qiyməti</h2>
+          <h2 className="text-[18px] font-semibold leading-[28px]">Giriş qiyməti</h2>
         </div>
 
-        <div className="flex flex-col gap-3">
-          <label className="text-[16px] text-black/60 font-medium">Giriş qiyməti (AZN)</label>
-          <div className="h-[60px] w-full max-w-[320px] bg-[#fafafa] border border-[#ececed] rounded-[12px] flex items-center px-5">
+        <div className="flex flex-col gap-2">
+          <label className="text-[14px] text-black/60 font-medium">Giriş qiyməti (AZN)</label>
+          <div className="h-[44px] w-full max-w-[320px] bg-[#fafafa] border border-[#ececed] rounded-lg flex items-center px-4">
             <input
               type="number"
               value={prices[activePackage] || ""}
               onChange={(e) => setPrices(prev => ({ ...prev, [activePackage]: e.target.value }))}
-              className="bg-transparent w-full h-full outline-none text-[18px] font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="bg-transparent w-full h-full outline-none text-[15px] font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               placeholder="0.00"
             />
-            <span className="text-black/40 font-bold ml-2">AZN</span>
+            <span className="text-black/40 font-bold ml-2 text-sm">AZN</span>
           </div>
         </div>
       </div>
 
       {/* 3. Services Section */}
-      <div className="bg-white rounded-[12px] border border-[#ececed] p-7 flex flex-col gap-8 shadow-sm">
+      <div className="bg-white rounded-[12px] border border-[#ececed] p-5 flex flex-col gap-6 shadow-sm">
         {/* Add Service Section Toggle / Form */}
         {!isCreatingService ? (
-          <div className="flex items-center justify-between border-b border-[#ececed] pb-3 animate-in fade-in duration-300">
-            <h3 className="text-[20px] font-semibold leading-[30px]">{activePackage} paketə daxil olan xidmətlər</h3>
+          <div className="flex items-center justify-between border-b border-[#ececed] pb-2 animate-in fade-in duration-300">
+            <h3 className="text-[18px] font-semibold leading-[28px]">{activePackage} paketə daxil olan xidmətlər</h3>
             <button
               onClick={() => setIsCreatingService(true)}
-              className="h-[48px] px-6 bg-[#00B4CC] rounded-[12px] flex items-center justify-center gap-3 text-white font-medium transition-all hover:opacity-90"
+              className="h-[40px] px-4 bg-[#00B4CC] rounded-lg flex items-center justify-center gap-2 text-white text-sm font-medium transition-all hover:opacity-90"
             >
               <span>Xidmət əlavə et</span>
-              <Plus size={20} strokeWidth={2.5} />
+              <Plus size={18} strokeWidth={2.5} />
             </button>
           </div>
         ) : (
-          <div className="flex flex-col gap-7 p-7 rounded-[12px] bg-white border border-[#ececed] animate-in fade-in duration-300">
-            <div className="flex items-center justify-between border-b border-[#ececed] pb-3">
-              <h3 className="text-[20px] font-semibold leading-[30px]">Xidmət əlavə et</h3>
+          <div className="flex flex-col gap-5 p-5 rounded-xl bg-white border border-[#ececed] animate-in fade-in duration-300">
+            <div className="flex items-center justify-between border-b border-[#ececed] pb-1">
+              <h3 className="text-[18px] font-semibold leading-[28px]">Xidmət əlavə et</h3>
               <button 
                 onClick={() => setIsCreatingService(false)}
                 className="flex items-center justify-center text-[#1F2937] hover:opacity-70 transition-opacity"
                 title="Bağla"
               >
-                <X size={24} strokeWidth={2} />
+                <X size={20} strokeWidth={2} />
               </button>
             </div>
 
-            <div className="flex flex-col gap-3">
-              <label className="text-[16px] leading-[24px]">Xidmət adı</label>
-              <div className="h-[60px] bg-[#fafafa] border border-[#ececed] rounded-[12px] flex items-center px-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-[14px] leading-[20px]">Xidmət adı</label>
+              <div className="h-[44px] bg-[#fafafa] border border-[#ececed] rounded-lg flex items-center px-3">
                 <input
                   type="text"
                   value={pendingService || ""}
                   onChange={(e) => setPendingService(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleConfirmService()}
                   placeholder="Məs: Pilates"
-                  className="bg-transparent w-full h-full outline-none text-[18px] leading-[28px]"
+                  className="bg-transparent w-full h-full outline-none text-[15px] leading-[24px]"
                   autoFocus
                 />
               </div>
@@ -320,9 +320,9 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
               <button
                 onClick={handleConfirmService}
                 disabled={createServiceMutation.isPending}
-                className="h-[48px] w-[193px] bg-[#00B4CC] rounded-[12px] flex items-center justify-center text-[#fafafa] text-[16px] font-medium transition-all hover:opacity-90 shadow-sm"
+                className="h-[40px] w-[160px] bg-[#00B4CC] rounded-lg flex items-center justify-center text-[#fafafa] text-sm font-medium transition-all hover:opacity-90 shadow-sm"
               >
-                {createServiceMutation.isPending ? <Loader2 className="animate-spin" size={20} /> : "Əlavə et"}
+                {createServiceMutation.isPending ? <Loader2 className="animate-spin" size={18} /> : "Əlavə et"}
               </button>
             </div>
           </div>
@@ -339,13 +339,13 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
                   key={svc.id}
                   onClick={() => toggleServiceSelection(svc.name)}
                   className={cn(
-                    "h-[56px] rounded-lg px-4 flex items-center gap-4 cursor-pointer transition-all border flex-shrink-0",
+                    "h-[48px] rounded-lg px-3 flex items-center gap-3 cursor-pointer transition-all border flex-shrink-0",
                     isSelected
                       ? "bg-[#00b4cc0a] border-[#00b4cc]"
                       : "bg-[#fafafa] border-[#ececed]"
                   )}
                 >
-                  <span className="text-[16px] font-medium text-black leading-[24px] whitespace-nowrap">
+                  <span className="text-[14px] font-medium text-black leading-[20px] whitespace-nowrap">
                     {svc.name}
                   </span>
 
@@ -366,11 +366,23 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
       </div>
 
       {/* 4. Footer Buttons */}
-      <div className="flex items-center justify-end mt-4">
+      <div className="flex items-center justify-end gap-3">
+        <button
+          onClick={() => {
+            const { resetStep6Data } = useGymStore.getState();
+            resetStep6Data();
+            setSelectedPackages(new Set());
+            setPrices({});
+            setPackageServices({});
+          }}
+          className="h-[40px] px-8 rounded-lg border border-[#ececed] text-[#101828] text-[14px] font-medium hover:bg-slate-50 transition-colors"
+        >
+          Sıfırla
+        </button>
         <button
           onClick={handleNext}
           disabled={savingStep6}
-          className="h-[48px] w-[280px] rounded-[10px] bg-[#00B4CC] text-white text-[16px] font-medium hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-md shadow-cyan-100"
+          className="h-[40px] w-[240px] rounded-lg bg-[#00B4CC] text-white text-[14px] font-medium hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-md shadow-cyan-50"
         >
           {savingStep6 && <Loader2 className="w-4 h-4 animate-spin" />}
           Növbəti

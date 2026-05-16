@@ -77,6 +77,13 @@ interface GymState {
   addStep7Admin: (admin: LocalAdmin) => void;
   removeStep7Admin: (index: number) => void;
   resetGym: () => void;
+  resetStep1Data: () => void;
+  resetStep2Trainers: () => void;
+  resetStep3Data: () => void;
+  resetStep4Data: () => void;
+  resetStep5Photos: () => void;
+  resetStep6Data: () => void;
+  resetStep7Admins: () => void;
 }
 
 export const useGymStore = create<GymState>()(
@@ -145,6 +152,13 @@ export const useGymStore = create<GymState>()(
         });
         localStorage.removeItem('gym-storage');
       },
+      resetStep1Data: () => set({ step1Data: null }),
+      resetStep2Trainers: () => set({ step2Trainers: [] }),
+      resetStep3Data: () => set({ step3Data: null }),
+      resetStep4Data: () => set({ step4Data: null }),
+      resetStep5Photos: () => set({ step5Photos: null }),
+      resetStep6Data: () => set({ step6Data: null }),
+      resetStep7Admins: () => set({ step7Admins: [] }),
     }),
     {
       name: 'gym-storage',

@@ -135,12 +135,12 @@ export function AddClassTimeModal({
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200" />
       
       {/* Modal */}
-      <div className="relative w-full max-w-[668px] bg-white rounded-3xl border border-[#ECECED] shadow-2xl animate-in fade-in zoom-in-95 duration-300 overflow-hidden">
-        <div className="p-6 sm:p-8 flex flex-col gap-7">
+      <div className="relative w-full max-w-[500px] bg-white rounded-2xl border border-[#ECECED] shadow-2xl animate-in fade-in zoom-in-95 duration-300 overflow-hidden">
+        <div className="p-6 flex flex-col gap-5">
           
           {/* Header */}
           <div className="flex items-center justify-between">
-            <h2 className="text-xl sm:text-2xl font-semibold text-[#101828] leading-7">
+            <h2 className="text-[18px] font-semibold text-[#101828] leading-7">
               İş saatı əlavə et
             </h2>
             <button
@@ -153,8 +153,8 @@ export function AddClassTimeModal({
           </div>
 
           {/* Week Day Selector */}
-          <div className="flex flex-col gap-3">
-            <label className="text-base font-medium text-black">Həftənin günləri</label>
+          <div className="flex flex-col gap-2">
+            <label className="text-[14px] font-semibold text-black/60">Həftənin günləri</label>
             <div className="flex items-center gap-2 sm:gap-[9px]">
               {DAY_BUTTONS.map((day) => {
                 const isSelected = selectedDays.has(day.key);
@@ -166,7 +166,7 @@ export function AddClassTimeModal({
                     onClick={() => toggleDay(day.key)}
                     disabled={isRest}
                     className={cn(
-                      "flex-1 h-10 rounded-xl text-sm font-medium border transition-all duration-200 flex items-center justify-center gap-[9px]",
+                      "flex-1 h-9 rounded-lg text-[13px] font-medium border transition-all duration-200 flex items-center justify-center gap-1.5",
                       isRest
                         ? "bg-slate-50 text-slate-300 border-slate-200 cursor-not-allowed"
                         : "bg-[#F9FAFB] text-[#101828] border-[#E5E7EB] hover:border-[#00B4CC80]"
@@ -191,15 +191,15 @@ export function AddClassTimeModal({
           </div>
 
           {/* Time Picker Row */}
-          <div className="flex flex-col gap-4">
-            <label className="text-base font-medium text-black">Saat</label>
+          <div className="flex flex-col gap-2">
+            <label className="text-[14px] font-semibold text-black/60">Saat</label>
             <div className="flex items-center gap-0">
               {/* Start Time */}
               <div className="flex-1 relative">
                 <button
                   type="button"
                   onClick={() => { setStartDropdown(!startDropdown); setEndDropdown(false); }}
-                  className="w-full h-11 px-3 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] flex items-center justify-between text-sm font-medium text-[#161515] hover:border-[#00B4CC80] transition-colors"
+                  className="w-full h-[40px] px-3 rounded-lg bg-[#F9FAFB] border border-[#E5E7EB] flex items-center justify-between text-sm font-medium text-[#161515] hover:border-[#00B4CC80] transition-colors"
                 >
                   <div className="flex items-center gap-2">
                     <Clock size={14} className="text-[#00B4CC]" />
@@ -236,7 +236,7 @@ export function AddClassTimeModal({
                 <button
                   type="button"
                   onClick={() => { setEndDropdown(!endDropdown); setStartDropdown(false); }}
-                  className="w-full h-11 px-3 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] flex items-center justify-between text-sm font-medium text-[#161515] hover:border-[#00B4CC80] transition-colors"
+                  className="w-full h-[40px] px-3 rounded-lg bg-[#F9FAFB] border border-[#E5E7EB] flex items-center justify-between text-sm font-medium text-[#161515] hover:border-[#00B4CC80] transition-colors"
                 >
                   <div className="flex items-center gap-2">
                     <Clock size={14} className="text-[#00B4CC]" />
@@ -267,8 +267,8 @@ export function AddClassTimeModal({
 
           {/* Rest Days Section */}
           {onRestDaysChange && (
-            <div className="flex flex-col gap-4 pt-2">
-              <h3 className="text-lg font-semibold text-black tracking-[-0.44px]">İstirahət günü</h3>
+            <div className="flex flex-col gap-3">
+              <h3 className="text-[14px] font-semibold text-black/60">İstirahət günü</h3>
               <div className="flex items-center gap-2">
                 {DAY_BUTTONS.map((day) => {
                   const isRest = restDays.has(day.key);
@@ -278,7 +278,7 @@ export function AddClassTimeModal({
                       type="button"
                       onClick={() => toggleRestDay(day.key)}
                       className={cn(
-                        "flex-1 h-12 rounded-[10px] text-sm font-medium border-2 transition-all duration-200",
+                        "flex-1 h-[40px] rounded-lg text-[13px] font-medium border transition-all duration-200",
                         isRest
                           ? "border-[#F10303] text-[#F10303] bg-white"
                           : "border-[#E5E7EB] text-[#364153] bg-[#F9FAFB] hover:border-slate-300"
@@ -299,7 +299,7 @@ export function AddClassTimeModal({
           <button
             type="button"
             onClick={handleSubmit}
-            className="w-[280px] h-12 mx-auto rounded-[10px] bg-[#00B4CC] text-white text-base font-medium hover:bg-[#009DB3] active:scale-[0.98] transition-all shadow-lg shadow-[#00B4CC20]"
+            className="w-[240px] h-[40px] mx-auto rounded-lg bg-[#00B4CC] text-white text-[14px] font-medium hover:bg-[#009DB3] active:scale-[0.98] transition-all shadow-md shadow-cyan-50"
           >
             Yadda saxla
           </button>

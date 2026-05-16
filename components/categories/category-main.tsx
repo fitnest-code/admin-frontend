@@ -61,58 +61,57 @@ export default function CategoriesPage() {
   }
 
   return (
-    <div className="w-full p-8 font-sans">
-      <h1 className="text-2xl font-bold text-[#111827] mb-8">Kateqoriyalar</h1>
+    <div className="w-full p-4 font-sans">
 
-      <div className="w-full rounded-[12px] bg-white border border-[#ececed] flex flex-col items-start px-7 py-5">
+      <div className="w-full rounded-[12px] bg-white border border-[#ececed] flex flex-col items-start px-5 py-4">
         <div className="w-full border-b border-[#ececed] flex items-center justify-between pb-1 gap-5">
-          <h2 className="text-[20px] font-semibold leading-[30px] text-black">Zal kateqoriyaları</h2>
-          <div className="flex items-center gap-[34px] text-center text-[16px] font-medium text-[#717182]">
+          <h2 className="text-[16px] font-semibold leading-[24px] text-black">Zal kateqoriyaları</h2>
+          <div className="flex items-center gap-6 text-center text-[13px] font-medium text-[#717182]">
             <div className="w-[26px] border-b-2 border-[#00b4cc] flex flex-col items-center justify-center pb-1 text-[#00b4cc] cursor-pointer">Az</div>
-            <div className="w-[26px] flex flex-col items-center justify-center pb-1 cursor-pointer hover:text-gray-600">Ru</div>
-            <div className="w-[26px] flex flex-col items-center justify-center pb-1 cursor-pointer hover:text-gray-600">En</div>
+            <div className="w-[26px] flex flex-col items-center justify-center pb-1 cursor-pointer hover:text-gray-600 font-medium">Ru</div>
+            <div className="w-[26px] flex flex-col items-center justify-center pb-1 cursor-pointer hover:text-gray-600 font-medium">En</div>
           </div>
         </div>
 
-        <div className="w-full flex flex-col items-start gap-8 mt-6">
+        <div className="w-full flex flex-col items-start gap-6 mt-4">
           <div className="w-full flex items-center justify-between gap-5">
-            <h3 className="w-[313px] text-[20px] font-semibold leading-[30px] text-black">Mövcud kateqoriyalar</h3>
+            <h3 className="text-[16px] font-semibold leading-[24px] text-black">Mövcud kateqoriyalar</h3>
             <button
               onClick={() => {
                 setEditTarget(null);
                 setModalOpen(true);
               }}
-              className="h-12 w-[193px] rounded-[10px] bg-[#00b4cc] flex items-center justify-center px-4 py-2 gap-2 text-[16px] font-medium text-white hover:opacity-90 transition-opacity"
+              className="h-[36px] w-[160px] rounded-lg bg-[#00b4cc] flex items-center justify-center px-3 py-2 gap-2 text-[13px] font-medium text-white hover:opacity-90 transition-all shadow-md shadow-cyan-50"
             >
-              <Plus size={24} /> Yeni kateqoriya
+              <Plus size={16} /> Yeni kateqoriya
             </button>
           </div>
 
-          <div className="w-full flex items-start flex-wrap content-start gap-4">
+          <div className="w-full flex items-start flex-wrap content-start gap-3">
             {categoryItems?.map((cat: any) => (
-              <div key={cat.id} className="w-[180px] h-[224px] flex flex-col items-start gap-3">
+              <div key={cat.id} className="w-[140px] h-[170px] flex flex-col items-start gap-2 group">
                 <div 
-                  className="w-full h-[180px] rounded-[16px] flex items-start justify-end p-3 bg-cover bg-center bg-no-repeat bg-gray-100"
+                  className="w-full h-[130px] rounded-lg flex items-start justify-end p-2 bg-cover bg-center bg-no-repeat bg-gray-100 border border-[#ececed]"
                   style={{ backgroundImage: `url(${cat.photoUrl})` }}
                 >
-                  <div className="flex items-center gap-[9px]">
+                  <div className="flex items-center gap-[6px]">
                     <button 
                       onClick={() => { setEditTarget(cat); setModalOpen(true); }}
                       className="rounded-[50px] bg-white flex items-center justify-center p-1.5 shadow-sm hover:bg-gray-50 transition-colors"
                     >
-                      <Pencil size={16} className="text-gray-700" />
+                      <Pencil size={14} className="text-gray-700" />
                     </button>
                     <button 
                       onClick={() => setDeleteTarget(cat)}
                       className="rounded-[50px] bg-white flex items-center justify-center p-1.5 shadow-sm hover:bg-red-50 transition-colors"
                     >
-                      <Trash2 size={16} className="text-red-500" />
+                      <Trash2 size={14} className="text-red-500" />
                     </button>
                   </div>
                 </div>
                 
-                <div className="w-full h-8 rounded-lg bg-[#f9fafb] border border-[#e5e7eb] flex items-center px-3 py-1">
-                  <span className="text-[14px] text-[#717182] font-medium truncate tracking-[-0.15px]">{cat.name}</span>
+                <div className="w-full h-7 rounded-lg bg-[#f9fafb] border border-[#e5e7eb] flex items-center px-2 py-1">
+                  <span className="text-[12px] text-[#717182] font-medium truncate tracking-[-0.15px]">{cat.name}</span>
                 </div>
               </div>
             ))}

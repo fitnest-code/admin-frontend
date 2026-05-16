@@ -76,7 +76,7 @@ export function AdminStoreDetailView({ storeId }: { storeId: number }) {
       <main className={styles.mainContent}>
         {/* Back Button */}
         <div className={styles.backButton} onClick={() => router.push("/stores")}>
-          <ChevronLeft size={24} />
+          <ChevronLeft size={18} />
           <span>Geri qayıt</span>
         </div>
 

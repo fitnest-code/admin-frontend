@@ -104,7 +104,7 @@ export function StoresList() {
           onClick={() => router.push(`/stores/new`)}
           className="flex items-center gap-1.5 rounded-lg bg-[#00B4CC] px-4 py-2 text-sm font-semibold text-white hover:bg-[#008799] transition-colors"
         >
-          <Plus size={15} /> Yeni Mağaza
+          <Plus size={15} /> Mağaza yarat
         </button>
       </div>
 

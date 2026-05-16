@@ -12,20 +12,23 @@ const PAGE_SIZE = 5
 type ModalState = 'detail' | 'refund-confirm' | 'refund-success' | null
 
 function getStatusPillConfig(status: string) {
-  const s = status.trim()
-  if (s === 'Uğurlu' || s.toLowerCase() === 'success' || s.toLowerCase() === 'completed') {
+  const s = status.trim().toLowerCase()
+  if (s === 'success' || s === 'completed' || s === 'uğurlu') {
     return { bg: 'bg-[#166728]', label: 'Uğurlu' }
   }
-  if (s === 'İcradadır' || s.toLowerCase() === 'pending' || s.toLowerCase() === 'processing') {
-    return { bg: 'bg-[#ec972f]', label: 'İcradadır' }
+  if (s.includes('pending_user_action')) {
+    return { bg: 'bg-[#94979c]', label: 'Gözlənilir' }
   }
-  if (s === 'Xəta' || s === 'Xata' || s.toLowerCase() === 'failed' || s.toLowerCase() === 'error') {
-    return { bg: 'bg-[#c9373a]', label: 'Xəta' }
+  if (s.includes('pending') || s === 'processing' || s === 'icradadır') {
+    return { bg: 'bg-[#ec972f]', label: 'Gözləmədə' }
   }
-  if (s === 'Geri qaytarıldı' || s.toLowerCase() === 'refunded') {
+  if (s === 'failed' || s === 'error' || s === 'xəta' || s === 'xata' || s === 'uğursuz') {
+    return { bg: 'bg-[#c9373a]', label: 'Uğursuz' }
+  }
+  if (s === 'refunded' || s === 'geri qaytarıldı') {
     return { bg: 'bg-[#8a38f5]', label: 'Geri qaytarıldı' }
   }
-  return { bg: 'bg-[#166728]', label: s || 'Uğurlu' }
+  return { bg: 'bg-[#94979c]', label: status || 'Naməlum' }
 }
 
 function PaymentMethodBadge({ method }: { method: string }) {
@@ -63,6 +66,14 @@ function PaymentMethodBadge({ method }: { method: string }) {
       </div>
     )
   }
+  if (lower === 'unknown') {
+    return (
+      <span className="text-sm font-medium leading-none text-muted-foreground whitespace-nowrap italic">
+        Naməlum
+      </span>
+    )
+  }
+
   return (
     <div className="flex items-center justify-center gap-2">
       <div className="h-5 px-1.5 rounded bg-blue-600 text-white font-bold text-[10px] flex items-center justify-center shrink-0">
@@ -126,21 +137,21 @@ export function PaymentsTab({ userId }: { userId: string }) {
     <div className="flex flex-col gap-6 rounded-2xl bg-white border border-border p-7 shadow-xs w-full animate-in fade-in-50 duration-300 font-sans text-black">
       {/* Container Header */}
       <div className="border-b border-border pb-3.5 flex items-center justify-between">
-        <h2 className="text-lg font-bold text-foreground tracking-tight">Ödəniş məlumatları</h2>
+        <h2 className="text-lg font-medium text-foreground tracking-tight">Ödəniş məlumatları</h2>
       </div>
 
       {/* Responsive Table Tracks Wrapper */}
       <div className="w-full overflow-x-auto pb-2">
         <div className="w-full min-w-[900px] flex flex-col items-stretch">
           {/* Custom Track Header matching exact user spacing requirements */}
-          <div className="w-full bg-[#00b4cc]/15 border-t border-r border-l border-[#cecfd2] rounded-t-xl flex items-center justify-between p-4 gap-4 text-[16px] font-semibold text-[#4a5565]">
-            <div className="w-[140px] shrink-0 text-left pl-2">Əməliyyat ID</div>
-            <div className="w-[150px] shrink-0 text-center">Tarix</div>
-            <div className="w-[100px] shrink-0 text-center">Məbləğ</div>
-            <div className="w-[160px] shrink-0 text-center">Ödəniş metodu</div>
-            <div className="w-[130px] shrink-0 text-center">Status</div>
-            <div className="w-[60px] shrink-0 text-center">Ətraflı</div>
-          </div>
+        <div className="w-full bg-[#00b4cc]/15 border-t border-r border-l border-[#cecfd2] rounded-t-xl flex items-center justify-between p-4 gap-4 text-[14px] font-medium text-[#4a5565]">
+          <div className="w-[140px] shrink-0 text-left pl-2">Əməliyyat ID</div>
+          <div className="w-[150px] shrink-0 text-center">Tarix</div>
+          <div className="w-[100px] shrink-0 text-center">Məbləğ</div>
+          <div className="w-[160px] shrink-0 text-center">Ödəniş metodu</div>
+          <div className="w-[130px] shrink-0 text-center">Status</div>
+          <div className="w-[60px] shrink-0 text-center">Ətraflı</div>
+        </div>
 
           {/* Table Rows Body List */}
           <div className="w-full flex flex-col items-stretch border-b border-[#cecfd2]">
@@ -174,7 +185,7 @@ export function PaymentsTab({ userId }: { userId: string }) {
                   className="w-full bg-white border-t border-r border-l border-[#cecfd2] flex items-center justify-between p-4 gap-4 hover:bg-[#fafafa] transition-colors duration-150 relative"
                 >
                   {/* Transaction ID */}
-                  <div className="w-[140px] shrink-0 text-left pl-2 font-mono text-xs font-semibold text-foreground truncate" title={row.transactionId}>
+                  <div className="w-[140px] shrink-0 text-left pl-2 text-xs font-medium text-foreground truncate" title={row.transactionId}>
                     {row.transactionId || '00000000000000'}
                   </div>
 
@@ -184,7 +195,7 @@ export function PaymentsTab({ userId }: { userId: string }) {
                   </div>
 
                   {/* Amount Value */}
-                  <div className="w-[100px] shrink-0 text-center text-sm font-bold text-[#101828] whitespace-nowrap">
+                  <div className="w-[100px] shrink-0 text-center text-sm font-medium text-[#101828] whitespace-nowrap">
                     {row.amount ? (row.amount.includes('AZN') ? row.amount : `${row.amount} AZN`) : '1000 AZN'}
                   </div>
 
@@ -200,7 +211,7 @@ export function PaymentsTab({ userId }: { userId: string }) {
                       pill.bg
                     )}>
                       <div className="w-1.5 h-1.5 rounded-full bg-white shrink-0 animate-pulse" />
-                      <span className="leading-[18px] font-semibold">{pill.label}</span>
+                      <span className="leading-[18px] font-medium">{pill.label}</span>
                     </div>
                   </div>
 
@@ -307,7 +318,7 @@ function PaymentDetailModal({
       >
         {/* Header Strip */}
         <div className="w-full border-b border-[#ececed] pb-1 flex items-center justify-between gap-5">
-          <div className="text-[20px] leading-[30px] font-semibold text-black">Ətraflı məlumat</div>
+          <div className="text-[20px] leading-[30px] font-medium text-black">Ətraflı məlumat</div>
           <button 
             type="button"
             onClick={onClose}
@@ -328,19 +339,19 @@ function PaymentDetailModal({
             {/* Row 1: ID */}
             <div className="w-full h-[60px] flex items-center justify-between px-3 box-border gap-2.5 bg-[#fafafa]/50 rounded-lg border border-gray-100/60">
               <div className="leading-[28px] font-medium text-gray-500">ID:</div>
-              <b className="leading-[28px] text-black font-mono text-base">{payment.transactionId || '0000000'}</b>
+              <span className="leading-[28px] text-black text-base font-medium">{payment.transactionId || '0000000'}</span>
             </div>
 
             {/* Row 2: Tarix */}
             <div className="w-full h-[60px] flex items-center justify-between px-3 box-border gap-2.5 bg-[#fafafa]/50 rounded-lg border border-gray-100/60">
               <div className="leading-[28px] font-medium text-gray-500">Tarix:</div>
-              <b className="leading-[28px] text-black text-base">{payment.dateTime ? payment.dateTime.replace('T', ' / ') : '20/08/26- 18:00'}</b>
+              <span className="leading-[28px] text-black text-base font-medium">{payment.dateTime ? payment.dateTime.replace('T', ' / ') : '20/08/26- 18:00'}</span>
             </div>
 
             {/* Row 3: Məbləğ */}
             <div className="w-full h-[60px] flex items-center justify-between px-3 box-border gap-2.5 bg-[#fafafa]/50 rounded-lg border border-gray-100/60">
               <div className="leading-[28px] font-medium text-gray-500">Məbləğ :</div>
-              <b className="leading-[28px] text-[#00b4cc] text-base">{payment.amount ? (payment.amount.includes('AZN') || payment.amount.includes('Azn') ? payment.amount : `${payment.amount} Azn`) : '1000 Azn'}</b>
+              <span className="leading-[28px] text-[#00b4cc] text-base font-medium">{payment.amount ? (payment.amount.includes('AZN') || payment.amount.includes('Azn') ? payment.amount : `${payment.amount} Azn`) : '1000 Azn'}</span>
             </div>
 
             {/* Row 4: Ödəniş metodu */}

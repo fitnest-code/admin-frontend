@@ -178,11 +178,11 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
   if (!mounted) return null;
 
   return (
-    <div className="w-full bg-white rounded-[32px] border border-[#ECECED] p-10 flex flex-col gap-8 shadow-sm">
+    <div className="w-full bg-white rounded-[24px] border border-[#ECECED] p-6 flex flex-col gap-6 shadow-sm animate-in fade-in duration-500">
 
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-[#1F2937]">{t.title}</h1>
+          <h1 className="text-lg font-bold text-[#1F2937]">{t.title}</h1>
           <Tabs.Root value={lang} onValueChange={(v) => setLang(v as Lang)}>
             <Tabs.List className="flex gap-2 bg-[#F3F4F6] rounded-lg p-1">
               {["Az", "Ru", "En"].map((l) => (
@@ -201,11 +201,11 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
         </div>
 
         {/* Cover Photo */}
-        <div className="flex flex-col gap-3">
-          <label className="text-sm font-bold text-[#1F2937]">{t.cover}</label>
+        <div className="flex flex-col gap-2">
+          <label className="text-xs font-bold text-[#1F2937]">{t.cover}</label>
           <div
             onClick={() => coverInputRef.current?.click()}
-            className="relative w-full h-[220px] rounded-xl border-2 border-dashed border-[#D1D5DB] bg-[#F9FAFB] flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors overflow-hidden group"
+            className="relative w-full h-[180px] rounded-xl border-2 border-dashed border-[#D1D5DB] bg-[#F9FAFB] flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors overflow-hidden group"
           >
             <input type="file" ref={coverInputRef} className="hidden" accept="image/jpeg, image/png" onChange={handleCoverChange} />
             {coverPreview ? (
@@ -226,8 +226,8 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
         </div>
 
         {/* Room Photos */}
-        <div className="flex flex-col gap-3 mt-4">
-          <label className="text-sm font-bold text-[#1F2937]">{t.others} ( {activePhotosCount}/9 )</label>
+        <div className="flex flex-col gap-2">
+          <label className="text-xs font-bold text-[#1F2937]">{t.others} ( {activePhotosCount}/9 )</label>
 
           <div className="grid grid-cols-3 gap-4">
             {roomPhotos.map((room, index) => (
@@ -286,14 +286,27 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
         </div>
 
         {/* Footer Buttons */}
-        <div className="flex justify-end items-center gap-6 pt-6 border-t border-slate-100">
+        <div className="flex justify-end items-center gap-3 pt-4 border-t border-slate-100">
+          <button
+            type="button"
+            onClick={() => {
+              const { resetStep5Photos } = useGymStore.getState();
+              resetStep5Photos();
+              setCoverPhoto(null);
+              setCoverPreview(null);
+              setRoomPhotos(Array.from({ length: 9 }).map((_, i) => ({ id: `rp-${i}`, photo: null, name: "", previewUrl: null })));
+            }}
+            className="h-[40px] px-8 rounded-lg border border-[#ececed] text-[#101828] text-[14px] font-medium hover:bg-slate-50 transition-colors"
+          >
+            Sıfırla
+          </button>
           <button
             type="button"
             disabled={isPending}
             onClick={handleNext}
-            className="w-[280px] h-[52px] rounded-xl bg-[#00B4CC] text-white font-bold text-base hover:bg-[#009DB3] transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-[#00B4CC20]"
+            className="w-[240px] h-[40px] rounded-lg bg-[#00B4CC] text-white text-[14px] font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-md shadow-cyan-50"
           >
-            {isPending ? <Loader2 className="animate-spin" size={24} /> : t.next}
+            {isPending ? <Loader2 className="animate-spin" size={20} /> : t.next}
           </button>
         </div>
 

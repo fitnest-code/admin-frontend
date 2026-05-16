@@ -175,18 +175,17 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
     return (
       <div className="flex flex-col w-full font-sans">
         {/* Page Header */}
-        <div className="mb-6 flex items-center justify-between border-b border-[#ececed] pb-5">
-           <div className="flex flex-col gap-2">
+        <div className="mb-5 flex items-center justify-between border-b border-[#ececed] pb-4">
+           <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
                  <button
                    onClick={() => activeTab === 'info' ? setShowExitConfirm(true) : goToPrevious()}
-                   className="text-[11px] font-bold text-slate-400 uppercase tracking-widest hover:text-[#00B4CC] transition-colors flex items-center gap-2"
+                   className="text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:text-[#00B4CC] transition-colors flex items-center gap-1.5"
                  >
-                   <ArrowLeft size={14} strokeWidth={3} />
+                   <ArrowLeft size={12} strokeWidth={3} />
                    Geri qayıt
                  </button>
               </div>
-              <h1 className="text-[24px] font-semibold text-[#101828] leading-[28px]">Yeni Zal</h1>
            </div>
            
            <div className="flex items-center gap-4">
@@ -196,9 +195,9 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
            </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
           {/* Left Side: Vertical Stepper */}
-          <aside className="w-full lg:w-[260px] shrink-0 bg-white rounded-[12px] p-4 shadow-sm border border-[#ececed]/50">
+          <aside className="w-full lg:w-[220px] shrink-0 bg-white rounded-xl p-4 shadow-sm border border-[#ececed]/50">
             <div className="flex flex-col items-start px-2">
               {WIZARD_TABS.map((tab, index) => {
                 const isActive = activeTab === tab.key
@@ -222,15 +221,15 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
                     {/* Step Row */}
                     <div className="flex items-center gap-3 w-full">
                       <div className={cn(
-                        "w-11 h-11 rounded-full flex items-center justify-center text-[18px] font-semibold transition-all duration-300 shrink-0",
+                        "w-9 h-9 rounded-full flex items-center justify-center text-[15px] font-semibold transition-all duration-300 shrink-0",
                         isActive 
                           ? "bg-[#00B4CC] text-white shadow-md scale-105" 
                           : isCompleted ? "bg-[#00B4CC] text-white" : "bg-[#F3F4F6] text-[#9CA3AF]"
                       )}>
-                        {isCompleted && !isActive ? <Check size={20} strokeWidth={3} /> : index + 1}
+                        {isCompleted && !isActive ? <Check size={16} strokeWidth={3} /> : index + 1}
                       </div>
                       <span className={cn(
-                        "text-[18px] font-medium leading-[28px] transition-colors duration-300",
+                        "text-[15px] font-medium leading-6 transition-colors duration-300",
                         isActive ? "text-black" : isCompleted ? "text-black" : "text-[#C9C9C9]"
                       )}>
                         {tab.label}
@@ -239,9 +238,9 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
 
                     {/* Connector Line */}
                     {index < WIZARD_TABS.length - 1 && (
-                      <div className="w-11 flex justify-center py-2">
+                      <div className="w-9 flex justify-center py-1">
                         <div className={cn(
-                          "w-[4px] h-[24px] rounded-full",
+                          "w-[3px] h-[20px] rounded-full",
                           isCompleted ? "bg-[#00B4CC]" : "bg-[#E8E8E8]"
                         )} />
                       </div>

@@ -24,7 +24,7 @@ export const SUBSCRIPTION_STATUS_TEXT_STYLES: Record<UiSubscriptionStatus, strin
   changed: 'text-orange-500',
   last7days: 'text-[#00B4CC]',
   frozen: 'text-blue-500',
-  none: 'text-muted-foreground',
+  none: 'text-foreground/40',
 }
 
 export function normalizeCustomerStatus(status: CustomerStatus): UiCustomerStatus {
@@ -48,6 +48,9 @@ export function normalizeSubscriptionStatus(status?: string | null): UiSubscript
   if (normalized.includes('expired') || normalized.includes('finished') || normalized.includes('cancelled') || normalized.includes('bitmiş') || normalized.includes('bitib')) return 'expired'
   if (normalized.includes('frozen') || normalized.includes('dondurulmuş')) return 'frozen'
   if (normalized.includes('active') || normalized.includes('aktiv')) return 'active'
+  
+  // If it's something else but not empty, maybe default to none or active? 
+  // Given the sample, these cover it.
   return 'none'
 }
 

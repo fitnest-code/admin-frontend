@@ -21,9 +21,9 @@ export function CustomerBulkActions({
   onOpenEmail?: () => void
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-[13.4px] w-full transition-all duration-300 animate-in fade-in-50">
-      <div className="w-[196px] flex items-center px-2">
-        <span className="text-base font-medium text-foreground">{selectedCount} müştəri seçildi</span>
+    <div className="flex flex-wrap items-center justify-between gap-4 w-full transition-all duration-300 animate-in fade-in-50 bg-white/50 p-2 rounded-lg border border-dashed border-[#00B4CC]/20">
+      <div className="flex items-center px-2">
+        <span className="text-[14px] font-medium text-foreground">{selectedCount} müştəri seçildi</span>
       </div>
       <div className="flex flex-wrap items-center gap-[13.4px]">
         <ActionBtn iconSrc="/push-notification.svg" icon={Bell} label="Push" onClick={onOpenPush} variant="cyan-outline" />
@@ -53,13 +53,13 @@ function ActionBtn({
     <button
       onClick={onClick}
       className={cn(
-        'flex h-[48px] w-[160px] items-center justify-center gap-2 rounded-[10px] border text-base font-medium transition-all duration-200 active:scale-[0.98]',
+        'flex h-[40px] w-[110px] items-center justify-center gap-2 rounded-lg border text-sm font-medium transition-all duration-200 active:scale-[0.98] shadow-xs',
         variant === 'danger-outline'
-          ? 'border-[#ff5255] bg-white dark:bg-card text-foreground hover:bg-[#ff5255]/10'
-          : 'border-[#00B4CC] bg-white dark:bg-card text-foreground hover:bg-[#00B4CC]/10',
+          ? 'border-red-200 bg-white text-red-600 hover:bg-red-50 hover:border-red-300'
+          : 'border-[#00B4CC]/40 bg-white text-foreground hover:bg-[#00B4CC]/5 hover:border-[#00B4CC]',
       )}
     >
-      {iconSrc ? <Image src={iconSrc} width={24} height={24} alt="" className="shrink-0" /> : <Icon size={20} />}
+      {iconSrc ? <Image src={iconSrc} width={18} height={18} alt="" className="shrink-0" /> : <Icon size={18} />}
       <span>{label}</span>
     </button>
   )

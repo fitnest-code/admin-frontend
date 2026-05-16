@@ -25,39 +25,27 @@ export function Header() {
   }
 
   return (
-    <header className="mx-6 mt-[53px] mb-8 h-20 rounded-[16px] bg-[#00B4CC26] px-4 flex items-center justify-between gap-4 transition-all duration-300">
+    <header className="mx-6 mt-6 mb-6 h-[60px] rounded-xl bg-[#00B4CC26] px-5 flex items-center justify-between gap-4 transition-all duration-300">
       {/* Left: Profile Chip */}
       <div className="flex items-center gap-3 shrink-0">
-        <div className="w-[44px] h-[44px] rounded-full bg-white border border-[#ececed] flex items-center justify-center text-[16px] font-medium text-black">
+        <div className="w-10 h-10 rounded-full bg-white border border-[#ececed] flex items-center justify-center text-[14px] font-medium text-black">
           {initials}
         </div>
-        <div className="text-[16px] leading-[24px] text-black font-normal">
+        <div className="text-[14px] leading-[20px] text-black font-medium">
           {user?.name || (user?.role === 'SUPER_ADMIN' ? 'Owner' : 'Admin')}
         </div>
-      </div>
-
-      {/* Middle: Search bar */}
-      <div className="flex-1 max-w-[829px] h-12 bg-[#fafafa] rounded-[12px] border border-[#ececed] flex items-center px-6 gap-3">
-        <div className="w-6 h-6 flex items-center justify-center opacity-60">
-           <Search size={20} className="text-black" />
-        </div>
-        <input
-          type="text"
-          placeholder="Ümumi axtarış....."
-          className="flex-1 bg-transparent border-none outline-none text-[16px] text-black placeholder:text-black/60"
-        />
       </div>
 
       {/* Right: Exit Action */}
       <div className="flex items-center gap-4 shrink-0">
          <button 
            onClick={handleLogout}
-           className="flex items-center gap-1 text-[#F10303] hover:opacity-80 transition-opacity"
+           className="flex items-center gap-1.5 text-[#F10303] hover:opacity-80 transition-opacity font-medium"
          >
             <div className="w-5 h-5 flex items-center justify-center">
                <LogOut size={16} />
             </div>
-            <span className="text-[16px] leading-[24px]">Çıxış</span>
+            <span className="text-[14px] leading-[20px] font-medium">Çıxış</span>
          </button>
       </div>
     </header>

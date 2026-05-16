@@ -23,7 +23,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         className={cn(
           'flex flex-1 flex-col overflow-hidden transition-all duration-500 ease-in-out',
           // On desktop, push content right of sidebar
-          sidebarCollapsed ? 'lg:pl-[110px]' : 'lg:pl-[272px]',
+          sidebarCollapsed ? 'lg:pl-[80px]' : 'lg:pl-[230px]',
           // On mobile, no padding (sidebar overlays)
           'pl-0',
         )}

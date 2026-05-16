@@ -63,7 +63,7 @@ export function StoreDetail({ store, isNew }: Props) {
 
       {/* Title */}
       <h1 className="text-xl font-bold text-foreground">
-        {isNew ? 'Yeni Mağaza' : (name || 'Mağaza')}
+        {isNew ? '' : (name || 'Mağaza')}
       </h1>
 
       {/* Mağaza məlumatları */}

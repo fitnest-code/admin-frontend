@@ -11,12 +11,12 @@ interface Step2Props {
 }
 
 const inputCls =
-  "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-[#00B4CC] focus:ring-2 focus:ring-[#00B4CC]/15 transition placeholder:text-gray-400 bg-white";
+  "w-full h-[44px] rounded-lg border border-[#ececed] px-4 text-[14px] text-gray-800 outline-none focus:border-[#00B4CC] focus:ring-2 focus:ring-[#00B4CC]/15 transition placeholder:text-gray-400 bg-[#fafafa] font-medium";
 
 function Field({ label, htmlFor, children }: { label: string; htmlFor: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <Label.Root htmlFor={htmlFor} className="text-sm font-medium text-gray-600">
+      <Label.Root htmlFor={htmlFor} className="text-[13px] font-semibold text-black/60">
         {label}
       </Label.Root>
       {children}
@@ -114,14 +114,14 @@ export default function ContactInfoTab({ data, onChange }: Step2Props) {
   const mapSrc = `https://maps.google.com/maps?q=${displayLat},${displayLng}&z=15&output=embed`;
 
   return (
-    <div className="flex flex-col gap-6">
-      <h2 className="text-base font-semibold text-gray-800 border-b border-gray-100 pb-3">
+    <div className="flex flex-col gap-6 animate-in fade-in duration-500">
+      <h2 className="text-[18px] font-semibold text-gray-800 border-b border-[#ececed] pb-2">
         Məkan və Ünvan məlumatları
       </h2>
 
       {/* Ünvan (Axtarış və Seçim) */}
       <div className="flex flex-col gap-1.5 relative">
-        <label className="text-sm font-medium text-gray-600">Ünvan axtarışı (Xəritə üçün)</label>
+        <label className="text-[13px] font-semibold text-black/60">Ünvan axtarışı (Xəritə üçün)</label>
         <div className="relative">
           <input
             placeholder="Ünvanı daxil edin (Məs: Heydər Əliyev pr. 101)"
@@ -131,7 +131,7 @@ export default function ContactInfoTab({ data, onChange }: Step2Props) {
               handleChange("address", e.target.value);
               debouncedSearch(e.target.value);
             }}
-            className="w-full bg-[#F9FAFB] border border-[#ECECED] rounded-xl px-4 py-3.5 text-sm font-semibold text-[#1F2937] outline-none focus:border-[#00B4CC] transition-all"
+            className="w-full h-[44px] bg-[#fafafa] border border-[#ECECED] rounded-lg px-4 text-[14px] font-semibold text-[#1F2937] outline-none focus:border-[#00B4CC] transition-all"
           />
           {isSearching && (
             <Loader2 className="absolute right-4 top-3.5 animate-spin text-[#00B4CC]" size={20} />
@@ -163,8 +163,8 @@ export default function ContactInfoTab({ data, onChange }: Step2Props) {
       {/* Koordinat Girişləri */}
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-600">En (Latitude)</label>
-          <div className="flex items-center bg-[#F9FAFB] border border-[#ECECED] rounded-xl px-4 py-3.5 gap-2 focus-within:ring-1 focus-within:ring-[#00B4CC]">
+          <label className="text-[13px] font-semibold text-black/60">En (Latitude)</label>
+          <div className="flex items-center bg-[#fafafa] border border-[#ECECED] rounded-lg px-4 h-[44px] gap-2 focus-within:ring-1 focus-within:ring-[#00B4CC]">
             <input
               type="number"
               step="any"
@@ -179,8 +179,8 @@ export default function ContactInfoTab({ data, onChange }: Step2Props) {
           </div>
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-600">Uzunluq (Longitude)</label>
-          <div className="flex items-center bg-[#F9FAFB] border border-[#ECECED] rounded-xl px-4 py-3.5 gap-2 focus-within:ring-1 focus-within:ring-[#00B4CC]">
+          <label className="text-[13px] font-semibold text-black/60">Uzunluq (Longitude)</label>
+          <div className="flex items-center bg-[#fafafa] border border-[#ECECED] rounded-lg px-4 h-[44px] gap-2 focus-within:ring-1 focus-within:ring-[#00B4CC]">
             <input
               type="number"
               step="any"
@@ -210,7 +210,7 @@ export default function ContactInfoTab({ data, onChange }: Step2Props) {
         />
       </div>
 
-      <h2 className="text-base font-semibold text-gray-800 border-b border-gray-100 pb-3 mt-2">
+      <h2 className="text-[18px] font-semibold text-gray-800 border-b border-[#ececed] pb-2 mt-2">
         Əlaqə və İş Saatları
       </h2>
 
@@ -250,7 +250,7 @@ export default function ContactInfoTab({ data, onChange }: Step2Props) {
 
       {/* İş saatları */}
       <div>
-        <span className="text-sm font-medium text-gray-600 block mb-2">İş saatları</span>
+        <span className="text-[13px] font-semibold text-black/60 block mb-1.5">İş saatları</span>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Başlama" htmlFor="openTime">
             <input

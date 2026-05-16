@@ -131,7 +131,7 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
         </div>
 
         <div className={styles.pageHeader}>
-          <h1 className={styles.storeTitle}>{name || "Yeni Mağaza"}</h1>
+          <h1 className={styles.storeTitle}>{name || ""}</h1>
         </div>
 
         <div className={styles.detailCard}>

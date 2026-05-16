@@ -63,24 +63,24 @@ export function StepTrainers({ onNext }: { onNext: () => void }) {
     <div className="flex flex-col gap-9 font-sans text-black min-h-[500px]">
       {/* Header Section */}
       <div className="flex items-center justify-between border-b border-[#ececed] pb-1">
-        <h2 className="text-[20px] font-semibold leading-[30px]">Məşqçilər</h2>
+        <h2 className="text-[18px] font-semibold leading-[28px]">Məşqçilər</h2>
         <button
           onClick={() => setShowAdd(true)}
-          className="h-12 px-6 bg-[#00B4CC] rounded-[12px] flex items-center justify-center gap-3 text-white text-[16px] font-medium hover:opacity-90 transition-opacity whitespace-nowrap"
+          className="h-[40px] px-5 bg-[#00B4CC] rounded-lg flex items-center justify-center gap-2 text-white text-[14px] font-medium hover:opacity-90 transition-opacity whitespace-nowrap shadow-sm"
         >
           <span>Məşqçi əlavə et</span>
-          <Plus size={24} className="text-white" />
+          <Plus size={20} className="text-white" />
         </button>
       </div>
 
       {/* Trainers Table */}
       <div className="flex flex-col w-full overflow-visible border border-[#ececed] rounded-[12px] shadow-sm bg-white">
         {/* Table Head */}
-        <div className="grid grid-cols-[200px_140px_1fr_80px] items-center bg-[#00B4CC26] border-b border-[#CECFD2] px-6 py-5">
-          <div className="text-[16px] leading-[24px]">Ad / Soyad</div>
-          <div className="text-[16px] leading-[24px]">Telefon</div>
-          <div className="text-[16px] leading-[24px]">Email</div>
-          <div className="text-[16px] leading-[24px] text-center">Ətraflı</div>
+        <div className="grid grid-cols-[200px_140px_1fr_80px] items-center bg-[#00B4CC26] border-b border-[#CECFD2] px-6 py-3">
+          <div className="text-[14px] leading-[20px] font-bold">Ad / Soyad</div>
+          <div className="text-[14px] leading-[20px] font-bold">Telefon</div>
+          <div className="text-[14px] leading-[20px] font-bold">Email</div>
+          <div className="text-[14px] leading-[20px] font-bold text-center">Ətraflı</div>
         </div>
 
         {/* Table Body */}
@@ -91,31 +91,31 @@ export function StepTrainers({ onNext }: { onNext: () => void }) {
             </div>
           ) : (
             step2Trainers.map((t, idx) => (
-              <div key={idx} className="grid grid-cols-[200px_140px_1fr_80px] items-center px-6 py-4 border-b border-[#ececed] last:border-0 hover:bg-slate-50 transition-colors">
+              <div key={idx} className="grid grid-cols-[200px_140px_1fr_80px] items-center px-6 py-3 border-b border-[#ececed] last:border-0 hover:bg-slate-50 transition-colors">
                 {/* Ad / Soyad */}
                 <div className="flex items-center gap-3 overflow-hidden mr-4">
-                  <div className="w-12 h-12 rounded-full bg-slate-100 flex-shrink-0 relative overflow-hidden shadow-sm">
+                  <div className="w-10 h-10 rounded-full bg-slate-100 flex-shrink-0 relative overflow-hidden shadow-sm">
                     {t.preview ? (
                       <Image src={t.preview} fill alt={t.name} className="object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-400 font-bold text-sm">
+                      <div className="w-full h-full flex items-center justify-center text-slate-400 font-bold text-xs">
                         {t.name[0]}{t.surname[0]}
                       </div>
                     )}
                   </div>
                   <div className="flex flex-col overflow-hidden">
-                    <span className="text-[14px] leading-[18px] font-semibold text-black truncate">{t.name} {t.surname}</span>
-                    <span className="text-[12px] leading-[16px] text-[#94979C] truncate">{t.professionName}</span>
+                    <span className="text-[13px] leading-[18px] font-semibold text-black truncate">{t.name} {t.surname}</span>
+                    <span className="text-[11px] leading-[14px] text-[#94979C] truncate">{t.professionName}</span>
                   </div>
                 </div>
 
                 {/* Telefon */}
-                <div className="text-[14px] leading-[20px] font-medium text-black">
+                <div className="text-[13px] leading-[20px] font-medium text-black">
                   {t.phone}
                 </div>
 
                 {/* Email */}
-                <div className="text-[14px] leading-[20px] font-medium text-black truncate pr-4">
+                <div className="text-[13px] leading-[20px] font-medium text-black truncate pr-4">
                   {t.email}
                 </div>
 
@@ -183,11 +183,20 @@ export function StepTrainers({ onNext }: { onNext: () => void }) {
       </div>
 
       {/* Footer Buttons */}
-      <div className="flex items-center justify-end mt-4">
+      <div className="flex items-center justify-end gap-3">
+        <button
+          onClick={() => {
+            const { resetStep2Trainers } = useGymStore.getState();
+            resetStep2Trainers();
+          }}
+          className="h-[40px] px-8 rounded-lg border border-[#ececed] text-[#101828] text-[14px] font-medium hover:bg-slate-50 transition-colors"
+        >
+          Sıfırla
+        </button>
         <button
           onClick={handleNext}
           disabled={isSaving}
-          className="h-[48px] w-[280px] rounded-[10px] bg-[#00B4CC] text-white text-[16px] font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-sm"
+          className="h-[40px] w-[240px] rounded-lg bg-[#00B4CC] text-white text-[14px] font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-md shadow-cyan-50"
         >
           {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
           Növbəti

@@ -72,6 +72,7 @@ export function PlansTab({ gym }: { gym?: any }) {
   const [pendingService, setPendingService] = useState<string | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [deleteServiceId, setDeleteServiceId] = useState<number | null>(null);
+  const [isCreatingService, setIsCreatingService] = useState(false);
 
   // Sync state when gym data arrives
   useEffect(() => {
@@ -288,42 +289,58 @@ export function PlansTab({ gym }: { gym?: any }) {
 
       {/* 3. Services Section */}
       <div className="bg-white rounded-[12px] border border-[#ececed] p-5 flex flex-col gap-6 shadow-sm">
-        <div className="border-b border-[#ececed] pb-1">
-          <h2 className="text-[18px] font-semibold leading-[28px]">
-            {activePackage} paketə daxil olan xidmətlər
-          </h2>
-        </div>
-
         {/* Add Service Section (Frame Group) */}
-        <div className="flex flex-col gap-5 p-5 rounded-xl bg-white border border-[#ececed]">
-          <div className="border-b border-[#ececed] pb-1">
-            <h3 className="text-[18px] font-semibold leading-[28px]">Xidmət əlavə et</h3>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-[14px] leading-[20px]">Xidmət adı</label>
-            <div className="h-[44px] bg-[#fafafa] border border-[#ececed] rounded-lg flex items-center px-3">
-              <input
-                type="text"
-                value={pendingService || ""}
-                onChange={(e) => setPendingService(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleConfirmService()}
-                placeholder="Məs: Pilates"
-                className="bg-transparent w-full h-full outline-none text-[15px] leading-[24px]"
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end">
+        {!isCreatingService ? (
+          <div className="flex items-center justify-between border-b border-[#ececed] pb-2 animate-in fade-in duration-300">
+            <h2 className="text-[18px] font-semibold leading-[28px]">
+              {activePackage} paketə daxil olan xidmətlər
+            </h2>
             <button
-              onClick={handleConfirmService}
-              disabled={createServiceMutation.isPending}
-              className="h-[40px] w-[160px] bg-[#00B4CC] rounded-lg flex items-center justify-center text-[#fafafa] text-sm transition-all hover:opacity-90 shadow-sm"
+              onClick={() => setIsCreatingService(true)}
+              className="h-[40px] px-4 bg-[#00B4CC] rounded-lg flex items-center justify-center gap-2 text-white text-sm font-medium transition-all hover:opacity-90"
             >
-              {createServiceMutation.isPending ? <Loader2 className="animate-spin" size={18} /> : "Əlavə et"}
+              <span>Xidmət əlavə et</span>
+              <Plus size={18} />
             </button>
           </div>
-        </div>
+        ) : (
+          <div className="flex flex-col gap-5 p-5 rounded-xl bg-white border border-[#ececed] animate-in fade-in duration-300">
+            <div className="flex items-center justify-between border-b border-[#ececed] pb-1">
+              <h3 className="text-[18px] font-semibold leading-[28px]">Xidmət əlavə et</h3>
+              <button 
+                onClick={() => setIsCreatingService(false)}
+                className="flex items-center justify-center text-[#1F2937] hover:opacity-70 transition-opacity"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-[14px] leading-[20px]">Xidmət adı</label>
+              <div className="h-[44px] bg-[#fafafa] border border-[#ececed] rounded-lg flex items-center px-3">
+                <input
+                  type="text"
+                  value={pendingService || ""}
+                  onChange={(e) => setPendingService(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleConfirmService()}
+                  placeholder="Məs: Pilates"
+                  className="bg-transparent w-full h-full outline-none text-[15px] leading-[24px]"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                onClick={handleConfirmService}
+                disabled={createServiceMutation.isPending}
+                className="h-[40px] w-[160px] bg-[#00B4CC] rounded-lg flex items-center justify-center text-[#fafafa] text-sm transition-all hover:opacity-90 shadow-sm"
+              >
+                {createServiceMutation.isPending ? <Loader2 className="animate-spin" size={18} /> : "Əlavə et"}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Services List (Frame Container) */}
         <div className="flex flex-col gap-5">

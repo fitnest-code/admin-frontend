@@ -27,22 +27,22 @@ function StatCard({
     <div
       onClick={onClick}
       className={cn(
-        'flex flex-1 min-w-[210px] flex-col items-center justify-center gap-2.5 rounded-xl border bg-card p-5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md cursor-pointer select-none',
+        'flex flex-1 min-w-[210px] flex-col items-center justify-center gap-2 rounded-lg border bg-card p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md cursor-pointer select-none',
         active
-          ? 'border-[#00B4CC] shadow-sm bg-gradient-to-b from-white to-[#00b4cc]/[0.03] dark:from-background dark:to-[#00b4cc]/[0.05]'
-          : 'border-[#cecfd2]/60 dark:border-border',
+          ? 'border-[#00B4CC] shadow-sm bg-gradient-to-b from-white to-[#00b4cc]/[0.03]'
+          : 'border-[#cecfd2]/60',
       )}
     >
       <div className="flex items-center justify-center gap-2">
         {iconSrc ? (
-          <Image src={iconSrc} width={18} height={18} alt="" className={cn('shrink-0', active ? '' : 'opacity-75')} />
+          <Image src={iconSrc} width={16} height={16} alt="" className={cn('shrink-0', active ? '' : 'opacity-75')} />
         ) : (
-          <Icon size={18} className={active ? 'text-[#00B4CC]' : 'text-muted-foreground'} />
+          <Icon size={16} className={active ? 'text-[#00B4CC]' : 'text-muted-foreground'} />
         )}
-        <span className="text-sm font-medium text-foreground">{label}</span>
+        <span className="text-[13px] font-medium text-foreground">{label}</span>
       </div>
       <div className="flex items-center justify-center mt-0.5">
-        <span className="text-2xl font-bold text-foreground tracking-tight">{value}</span>
+        <span className="text-[20px] font-bold text-foreground tracking-tight">{value}</span>
       </div>
     </div>
   )
@@ -77,7 +77,7 @@ function FilterDropdown<T extends string | number>({
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((prev) => !prev)}
-        className="flex h-12 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-medium text-foreground hover:border-[#00B4CC] transition-all duration-200 shadow-sm"
+        className="flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-3 text-xs font-medium text-foreground hover:border-[#00B4CC] transition-all duration-200 shadow-sm"
       >
         {current ? current.label : label}
         <ChevronDown size={14} className={cn('transition-transform text-muted-foreground', open && 'rotate-180')} />
@@ -147,7 +147,7 @@ function SortDropdown({
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((prev) => !prev)}
-        className="flex h-12 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-medium text-foreground hover:border-[#00B4CC] transition-all duration-200 shadow-sm"
+        className="flex h-[40px] items-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-medium text-foreground hover:border-[#00B4CC] transition-all duration-200 shadow-sm"
       >
         {current ? current.label : 'Sırala'}
         <ChevronDown size={14} className={cn('transition-transform text-muted-foreground', open && 'rotate-180')} />
@@ -258,12 +258,12 @@ export function CustomerFilters({
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 w-full">
       <div className="relative flex-1 min-w-[280px]">
-        <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <input
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder="ID, Ad/Soyad , Email , Telefon üzrə axtarış....."
-          className="h-12 w-full rounded-xl border border-border bg-card pl-11 pr-4 text-sm outline-none focus:border-[#00B4CC] transition-all duration-200 shadow-sm"
+          className="h-[40px] w-full rounded-lg border border-border bg-card pl-11 pr-4 text-sm font-medium outline-none focus:border-[#00B4CC] transition-all duration-200 shadow-sm"
         />
       </div>
       <div className="flex flex-wrap items-center gap-3">

@@ -153,44 +153,44 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
   const activeDays = new Set(slots[activeTab].map(s => s.day));
 
   return (
-    <div className="w-full bg-white rounded-[32px] border border-[#ECECED] p-10 space-y-10 shadow-sm">
+    <div className="w-full bg-white rounded-[24px] border border-[#ECECED] p-6 space-y-8 shadow-sm animate-in fade-in duration-500">
       <div className="flex justify-between items-center pb-2 border-b border-[#ECECED]">
-        <h2 className="text-2xl font-bold text-[#101828]">Zal məlumatları</h2>
-        <div className="flex gap-6 text-sm font-bold text-[#9CA3AF]">
-          <span className="text-[#00B4CC] border-b-2 border-[#00B4CC] cursor-pointer pb-1">Az</span>
+        <h2 className="text-[18px] font-bold text-[#101828]">Zal məlumatları</h2>
+        <div className="flex gap-4 text-xs font-bold text-[#9CA3AF]">
+          <span className="text-[#00B4CC] border-b border-[#00B4CC] cursor-pointer pb-0.5">Az</span>
           <span className="hover:text-[#00B4CC] cursor-pointer transition-colors">Ru</span>
           <span className="hover:text-[#00B4CC] cursor-pointer transition-colors">En</span>
         </div>
       </div>
 
       {/* Gender Tabs – Checkbox-style: enable any combination */}
-      <div className="space-y-5">
-        <div className="flex items-center justify-between gap-5">
-          {[
-            { id: "generalWorkHours" as GenderTab, label: "Ümumi zal" },
-            { id: "workHoursMan" as GenderTab, label: "Yalnız kişilər" },
-            { id: "workHoursWoman" as GenderTab, label: "Yalnız qadınlar" },
-          ].map((tab) => {
-            const isEnabled = enabledTabs.has(tab.id);
-            const isActive = activeTab === tab.id;
-            return (
-              <div
-                key={tab.id}
-                onClick={() => {
-                  // Clicking the box body just switches the view, regardless of whether it's enabled
-                  setActiveTab(tab.id);
-                }}
-                className={cn(
-                  "flex-1 h-[52px] rounded-[32px] text-sm font-bold transition-all duration-300 border flex items-center justify-center gap-2 select-none",
-                  isActive 
-                    ? isEnabled
-                      ? "bg-[#00B4CC] text-white border-[#00B4CC] shadow-md cursor-default"
-                      : "bg-[#F3F4F6] text-[#101828] border-[#D1D5DB] shadow-sm cursor-default" // active but not enabled
-                    : isEnabled
-                      ? "bg-[#00B4CC15] text-[#00B4CC] border-[#00B4CC] hover:bg-[#00B4CC25] cursor-pointer"
-                      : "bg-white text-[#6B7280] border-[#E5E7EB] hover:bg-slate-50 cursor-pointer"
-                )}
-              >
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-4">
+        {[
+          { id: "generalWorkHours" as GenderTab, label: "Ümumi zal" },
+          { id: "workHoursMan" as GenderTab, label: "Yalnız kişilər" },
+          { id: "workHoursWoman" as GenderTab, label: "Yalnız qadınlar" },
+        ].map((tab) => {
+          const isEnabled = enabledTabs.has(tab.id);
+          const isActive = activeTab === tab.id;
+          return (
+            <div
+              key={tab.id}
+              onClick={() => {
+                // Clicking the box body just switches the view, regardless of whether it's enabled
+                setActiveTab(tab.id);
+              }}
+              className={cn(
+                "flex-1 h-[40px] rounded-[24px] text-xs font-bold transition-all duration-300 border flex items-center justify-center gap-2 select-none",
+                isActive 
+                  ? isEnabled
+                    ? "bg-[#00B4CC] text-white border-[#00B4CC] shadow-md cursor-default"
+                    : "bg-[#F3F4F6] text-[#101828] border-[#D1D5DB] shadow-sm cursor-default" // active but not enabled
+                  : isEnabled
+                    ? "bg-[#00B4CC15] text-[#00B4CC] border-[#00B4CC] hover:bg-[#00B4CC25] cursor-pointer"
+                    : "bg-white text-[#6B7280] border-[#E5E7EB] hover:bg-slate-50 cursor-pointer"
+              )}
+            >
                 {/* Checkbox — toggles enable/disable */}
                 <span
                   role="checkbox"
@@ -209,14 +209,14 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
                     }
                   }}
                   className={cn(
-                    "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all cursor-pointer hover:scale-110",
+                    "w-4 h-4 rounded border flex items-center justify-center transition-all cursor-pointer hover:scale-110",
                     isEnabled
                       ? isActive
                         ? "border-white/50 bg-white/25"
                         : "border-[#00B4D8] bg-[#00B4D8]"
                       : "border-slate-300 bg-white hover:border-[#00B4CC80]"
                   )}>
-                  {isEnabled && <Check className="text-white w-3.5 h-3.5 stroke-[4]" />}
+                  {isEnabled && <Check className="text-white w-2.5 h-2.5 stroke-[4]" />}
                 </span>
                 {tab.label}
               </div>
@@ -226,15 +226,15 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
       </div>
 
       {/* Week Day Selector */}
-      <div className="space-y-5">
-        <div className="flex justify-between items-center gap-4">
+      <div className="space-y-4">
+        <div className="flex justify-between items-center gap-3">
           {DAY_SHORT_LABELS.map((day) => {
             const hasSlot = activeDays.has(day.key);
             return (
               <div 
                 key={day.key} 
                 className={cn(
-                  "flex-1 h-11 flex items-center justify-center rounded-xl text-sm font-bold border transition-all duration-300",
+                  "flex-1 h-9 flex items-center justify-center rounded-lg text-xs font-bold border transition-all duration-300",
                   hasSlot 
                     ? "bg-[#00B4D8] text-white border-[#00B4D8] shadow-sm" 
                     : "bg-[#F9FAFB] text-[#101828] border-[#E5E7EB]"
@@ -248,23 +248,23 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
       </div>
 
       {/* Work Hours Section */}
-      <div className="space-y-8">
+      <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h3 className="text-xl font-bold text-[#101828]">İş saatları</h3>
+          <h3 className="text-base font-bold text-[#101828]">İş saatları</h3>
           <button 
             type="button"
             onClick={() => { setEditingId(null); setModalOpen(true); }} 
-            className="flex items-center gap-2 bg-[#00B4CC] text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-[#009DB3] active:scale-95 transition-all shadow-sm"
+            className="flex items-center gap-2 bg-[#00B4CC] text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-[#009DB3] active:scale-95 transition-all shadow-sm"
           >
-            <Plus size={18} /> Əlavə et
+            <Plus size={16} /> Əlavə et
           </button>
         </div>
 
-        <div className="space-y-5 min-h-[160px]">
+        <div className="space-y-4 min-h-[120px]">
           {slots[activeTab].length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-slate-300 border-2 border-dashed border-slate-100 rounded-[32px] bg-slate-50/50">
-              <Clock size={40} className="mb-4 opacity-20" />
-              <p className="text-base font-medium italic text-slate-400">Bu kateqoriya üçün hələ saat əlavə edilməyib</p>
+            <div className="flex flex-col items-center justify-center py-12 text-slate-300 border-2 border-dashed border-slate-100 rounded-[24px] bg-slate-50/50">
+              <Clock size={32} className="mb-3 opacity-20" />
+              <p className="text-sm font-medium italic text-slate-400">Bu kateqoriya üçün hələ saat əlavə edilməyib</p>
             </div>
           ) : (
             Object.entries(
@@ -274,22 +274,22 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
                 return acc;
               }, {} as Record<string, SavedSlot[]>)
             ).map(([dayKey, daySlots]) => (
-              <div key={dayKey} className="space-y-4">
-                <p className="text-base font-bold text-[#101828]">{DAY_FULL_LABELS[dayKey]}</p>
-                <div className="space-y-4">
+              <div key={dayKey} className="space-y-3">
+                <p className="text-sm font-bold text-[#101828]">{DAY_FULL_LABELS[dayKey]}</p>
+                <div className="space-y-3">
                   {daySlots.map((slot, index) => (
-                    <div key={slot.id} className="flex items-center justify-between bg-[#F9FAFB] p-5 rounded-[20px] border border-[#E5E7EB] hover:border-[#00B4CC40] transition-colors">
-                      <div className="flex items-center gap-5">
-                        <div className="w-11 h-11 flex items-center justify-center rounded-xl bg-white border border-[#E5E7EB] text-sm font-bold text-[#4A5565] shadow-sm">
+                    <div key={slot.id} className="flex items-center justify-between bg-[#F9FAFB] p-3 rounded-xl border border-[#E5E7EB] hover:border-[#00B4CC40] transition-colors">
+                      <div className="flex items-center gap-4">
+                        <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-white border border-[#E5E7EB] text-xs font-bold text-[#4A5565] shadow-sm">
                           {index + 1}
                         </div>
-                        <div className="flex items-center gap-3">
-                           <div className="w-[110px] h-11 bg-white px-4 flex items-center gap-2 rounded-xl border border-[#E5E7EB] text-sm font-bold text-[#161515] shadow-sm">
-                             <Clock size={16} className="text-[#00B4D8]" /> {slot.startTime}
+                        <div className="flex items-center gap-2">
+                           <div className="w-[90px] h-9 bg-white px-3 flex items-center gap-2 rounded-lg border border-[#E5E7EB] text-xs font-bold text-[#161515] shadow-sm">
+                             <Clock size={14} className="text-[#00B4D8]" /> {slot.startTime}
                            </div>
-                           <span className="text-[#99A1AF] font-bold text-lg">—</span>
-                           <div className="w-[110px] h-11 bg-white px-4 flex items-center gap-2 rounded-xl border border-[#E5E7EB] text-sm font-bold text-[#161515] shadow-sm">
-                             <Clock size={16} className="text-[#00B4D8]" /> {slot.endTime}
+                           <span className="text-[#99A1AF] font-bold text-base">—</span>
+                           <div className="w-[90px] h-9 bg-white px-3 flex items-center gap-2 rounded-lg border border-[#E5E7EB] text-xs font-bold text-[#161515] shadow-sm">
+                             <Clock size={14} className="text-[#00B4D8]" /> {slot.endTime}
                            </div>
                         </div>
                       </div>
@@ -319,9 +319,9 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
       </div>
 
       {/* Rest Days */}
-      <div className="space-y-6 pt-10 border-t border-slate-100">
-        <label className="text-xl font-bold text-[#101828]">İstirahət günü</label>
-        <div className="flex justify-between items-center gap-4">
+      <div className="space-y-4 pt-6 border-t border-slate-100">
+        <label className="text-base font-bold text-[#101828]">İstirahət günü</label>
+        <div className="flex justify-between items-center gap-3">
           {DAY_SHORT_LABELS.map((day) => {
             const isRest = restDays.has(day.key);
             return (
@@ -344,7 +344,7 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
                   setRestDays(newRest);
                 }}
                 className={cn(
-                  "flex-1 h-[52px] flex items-center justify-center rounded-xl text-sm font-bold border transition-all duration-300",
+                  "flex-1 h-[40px] flex items-center justify-center rounded-lg text-xs font-bold border transition-all duration-300",
                   isRest 
                     ? "border-[#F10303] text-[#F10303] bg-white shadow-md ring-2 ring-[#F1030305]" 
                     : "border-[#E5E7EB] text-[#364153] bg-[#F9FAFB] hover:bg-white hover:border-[#E5E7EB]"
@@ -355,24 +355,34 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
             );
           })}
         </div>
-        <p className="text-sm text-[#6A7282] italic">İstirahət günündə dərs saatları əlavə edilə bilməz</p>
+        <p className="text-[12px] text-[#6A7282] italic">İstirahət günündə dərs saatları əlavə edilə bilməz</p>
       </div>
 
       {/* Footer Buttons */}
-      <div className="flex justify-end items-center gap-6 pt-10 border-t border-slate-100">
+      <div className="flex justify-end items-center gap-3 pt-8 border-t border-slate-100">
         <button
           type="button"
-          className="w-[280px] h-[52px] rounded-xl border-2 border-[#00B4CC] bg-white text-[#00B4CC] font-bold text-base hover:bg-[#00B4CC08] transition-all"
+          onClick={() => {
+            const { resetStep3Data } = useGymStore.getState();
+            resetStep3Data();
+            setSlots({
+              generalWorkHours: [],
+              workHoursMan: [],
+              workHoursWoman: [],
+            });
+            setRestDays(new Set(["sunday"]));
+          }}
+          className="h-[40px] px-8 rounded-lg border border-[#ececed] text-[#101828] text-[14px] font-medium hover:bg-slate-50 transition-colors"
         >
-          Yadda saxla
+          Sıfırla
         </button>
         <button
           type="button"
           onClick={handleNext}
           disabled={isSubmitting}
-          className="w-[280px] h-[52px] rounded-xl bg-[#00B4CC] text-white font-bold text-base hover:bg-[#009DB3] transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-[#00B4CC20]"
+          className="w-[240px] h-[40px] rounded-lg bg-[#00B4CC] text-white font-medium text-[14px] hover:bg-[#009DB3] transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-md shadow-cyan-50"
         >
-          {isSubmitting ? <Loader2 className="animate-spin" size={24} /> : "Növbəti"}
+          {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : "Növbəti"}
         </button>
       </div>
 

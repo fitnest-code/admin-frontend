@@ -159,7 +159,7 @@ export default function StoreCreateWizard() {
 
   return (
     <div className="w-full min-h-[calc(100vh-6rem)] font-sans text-black">
-      <div className="mb-6 flex flex-col gap-2 border-b border-[#ececed] pb-5">
+      <div className="mb-5 flex flex-col gap-1 border-b border-[#ececed] pb-4">
         <button
           type="button"
           onClick={() => {
@@ -167,28 +167,28 @@ export default function StoreCreateWizard() {
             else setStep((s) => Math.max(s - 1, 1));
           }}
           disabled={isPending}
-          className="text-[11px] font-bold text-slate-400 uppercase tracking-widest hover:text-[#00B4CC] transition-colors flex items-center gap-2 disabled:opacity-40"
+          className="text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:text-[#00B4CC] transition-colors flex items-center gap-1.5 disabled:opacity-40"
         >
-          <ArrowLeft size={14} strokeWidth={3} />
+          <ArrowLeft size={12} strokeWidth={3} />
           Geri qayıt
         </button>
         <div className="flex items-center justify-between gap-4">
-          <h1 className="text-[24px] font-semibold text-[#101828] leading-[28px]">
-            {storeInfo.name?.trim() ? storeInfo.name : "Yeni Mağaza"}
+          <h1 className="text-[22px] font-semibold text-[#101828] leading-[26px]">
+            {storeInfo.name?.trim() ? storeInfo.name : ""}
           </h1>
           {isPending && (
-            <div className="flex items-center gap-2 text-[#00B4CC] text-sm font-medium shrink-0">
-              <Loader2 className="animate-spin" size={16} />
+            <div className="flex items-center gap-2 text-[#00B4CC] text-xs font-medium shrink-0">
+              <Loader2 className="animate-spin" size={14} />
               Yadda saxlanılır...
             </div>
           )}
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8 items-start w-full">
+      <div className="flex flex-col lg:flex-row gap-6 items-start w-full">
         <StepSidebar current={step} onGo={(s) => !isPending && setStep(s)} />
 
-        <div className="flex-1 w-full min-w-0 bg-white rounded-[12px] border border-[#ececed] shadow-sm overflow-hidden p-6 md:p-8">
+        <div className="flex-1 w-full min-w-0 bg-white rounded-xl border border-[#ececed] shadow-sm overflow-hidden p-6 md:p-7">
           {step === 1 && <StoreInfoTab data={storeInfo} onChange={setStoreInfo} />}
 
           {step === 2 && <ContactInfoTab data={contact} onChange={setContact} />}
@@ -209,7 +209,7 @@ export default function StoreCreateWizard() {
                 type="button"
                 onClick={reset}
                 disabled={isPending}
-                className="px-6 py-2.5 rounded-xl border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition disabled:opacity-50"
+                className="h-[40px] px-8 rounded-lg border border-[#ececed] text-[#101828] text-[14px] font-medium hover:bg-slate-50 transition disabled:opacity-50"
               >
                 Sıfırla
               </button>
@@ -217,10 +217,10 @@ export default function StoreCreateWizard() {
                 type="button"
                 onClick={() => void handleNext()}
                 disabled={isPending}
-                className="flex items-center justify-center min-w-[100px] gap-2 px-6 py-2.5 rounded-xl bg-[#00B4CC] hover:bg-[#009DB3] text-white text-sm font-medium transition-all disabled:opacity-70"
+                className="flex items-center justify-center min-w-[120px] h-[40px] gap-2 px-8 rounded-lg bg-[#00B4CC] hover:bg-[#009DB3] text-white text-[14px] font-medium transition-all disabled:opacity-70 shadow-md shadow-cyan-50"
               >
                 {isPending ? (
-                  <Loader2 size={18} className="animate-spin" />
+                  <Loader2 size={16} className="animate-spin" />
                 ) : (
                   "Növbəti"
                 )}
