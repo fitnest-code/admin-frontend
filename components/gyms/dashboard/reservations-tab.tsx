@@ -169,12 +169,12 @@ const ReservationsTab = () => {
                     <div className="relative">
                         <div 
                             onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
-                            className="h-[48px] w-[206px] bg-white border border-[#ececed] rounded-xl flex items-center justify-between px-4 cursor-pointer hover:border-[#00B4CC] transition-all shadow-sm"
+                            className="h-[40px] w-[180px] bg-white border border-[#ececed] rounded-lg flex items-center justify-between px-4 cursor-pointer hover:border-[#00B4CC] transition-all shadow-sm"
                         >
-                            <span className="text-[16px] text-black">
+                            <span className="text-[14px] text-black">
                                 {statusFilter ? STATUS_OPTIONS.find(o => o.key === statusFilter)?.label : "Hamısı"}
                             </span>
-                            <ChevronDown size={20} className={cn("text-black transition-transform flex-shrink-0", isStatusDropdownOpen && "rotate-180")} />
+                            <ChevronDown size={18} className={cn("text-black transition-transform flex-shrink-0", isStatusDropdownOpen && "rotate-180")} />
                         </div>
                         {isStatusDropdownOpen && (
                             <>

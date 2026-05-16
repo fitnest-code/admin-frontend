@@ -73,38 +73,38 @@ export function AdminsTab() {
   return (
     <div className="flex flex-col gap-6 py-2 font-sans text-black">
       {/* Main Container */}
-      <div className="w-full bg-white rounded-[12px] border border-[#ececed] flex flex-col items-start p-5 gap-7">
+      <div className="w-full bg-white rounded-[12px] border border-[#ececed] flex flex-col items-start p-4 gap-5">
         
         {/* Title Section */}
         <div className="w-full border-b border-[#ececed] flex items-center justify-between pb-1">
-          <h2 className="text-[20px] font-semibold leading-[30px] text-black">Zalı idarə edən admin</h2>
+          <h2 className="text-[18px] font-semibold leading-[28px] text-black">Zalı idarə edən admin</h2>
         </div>
 
         {/* Table Section */}
         <div className="w-full flex flex-col items-start">
           {/* Table Header */}
-          <div className="w-full grid grid-cols-[1.5fr_1fr_2fr_2fr_2fr_40px] items-center bg-[#00b4cc]/15 border border-[#cecfd2] rounded-t-[12px] px-[20px] py-5 gap-4">
-            <div className="text-[16px] leading-[24px] font-normal text-black">Rol</div>
-            <div className="text-[16px] leading-[24px] font-normal text-black">ID</div>
-            <div className="text-[16px] leading-[24px] font-normal text-black">Ad / Soyad</div>
-            <div className="text-[16px] leading-[24px] font-normal text-black">Telefon</div>
-            <div className="text-[16px] leading-[24px] font-normal text-black">E-poçt</div>
-            <div className="w-10"></div>
+          <div className="w-full grid grid-cols-[1.5fr_1fr_2fr_2fr_2fr_40px] items-center bg-[#00b4cc]/10 border border-[#ececed] rounded-t-lg px-[16px] py-3.5 gap-4">
+            <div className="text-[14px] leading-[20px] font-semibold text-black">Rol</div>
+            <div className="text-[14px] leading-[20px] font-semibold text-black">ID</div>
+            <div className="text-[14px] leading-[20px] font-semibold text-black">Ad / Soyad</div>
+            <div className="text-[14px] leading-[20px] font-semibold text-black">Telefon</div>
+            <div className="text-[14px] leading-[20px] font-semibold text-black">E-poçt</div>
+            <div className="w-8"></div>
           </div>
 
           {/* Table Body */}
           <div className="w-full flex flex-col">
             {admins?.length === 0 ? (
-              <div className="w-full bg-white border-x border-b border-[#ececed] p-10 text-center text-slate-400">
+              <div className="w-full bg-white border-x border-b border-[#ececed] p-8 text-center text-slate-400 text-sm">
                 Admin tapılmadı
               </div>
             ) : (
               admins?.map((admin: any) => (
-                <div key={admin.id} className="w-full grid grid-cols-[1.5fr_1fr_2fr_2fr_2fr_40px] items-center bg-white border-x border-b border-[#ececed] px-[20px] py-5 gap-4 hover:bg-slate-50 transition-colors">
+                <div key={admin.id} className="w-full grid grid-cols-[1.5fr_1fr_2fr_2fr_2fr_40px] items-center bg-white border-x border-b border-[#ececed] px-[16px] py-3 gap-4 hover:bg-slate-50 transition-colors text-[14px]">
                   {/* Role Badge */}
                   <div>
-                    <div className="inline-flex w-[142px] items-center justify-center bg-[#00b4cc] border border-[#ececed] rounded-[4px] px-2 py-1 gap-2 text-white">
-                      <div className="w-5 h-5 relative shrink-0">
+                    <div className="inline-flex w-[120px] items-center justify-center bg-[#00b4cc] border border-[#ececed] rounded-[4px] px-2 py-0.5 gap-2 text-white">
+                      <div className="w-4 h-4 relative shrink-0">
                         <Image 
                           src={admin.role === "Super admin" ? "/superAdmin.svg" : "/admin.svg"} 
                           fill 
@@ -112,7 +112,7 @@ export function AdminsTab() {
                           className={cn("object-contain", admin.role === "Super admin" ? "p-[2px]" : "p-[1px]")}
                         />
                       </div>
-                      <span className="text-[16px] font-medium leading-[24px] truncate">{admin.role}</span>
+                      <span className="text-[13px] font-medium leading-[20px] truncate">{admin.role}</span>
                     </div>
                   </div>
 
@@ -147,11 +147,11 @@ export function AdminsTab() {
         <div className="w-full flex justify-end mt-1">
           <button 
             onClick={() => setModalOpen(true)}
-            className="w-[193px] h-12 bg-[#00b4cc] rounded-[12px] flex items-center justify-end px-3 gap-3 text-[#fafafa] hover:opacity-90 transition-opacity"
+            className="w-[180px] h-10 bg-[#00b4cc] rounded-lg flex items-center justify-end px-3 gap-3 text-[#fafafa] hover:opacity-90 transition-opacity shadow-sm"
           >
-            <span className="text-[16px] leading-[24px]">Admin əlavə et</span>
-            <div className="w-6 h-6 flex items-center justify-center">
-              <Image src="/trainer-add.svg" width={24} height={24} alt="Add" />
+            <span className="text-sm font-medium leading-[20px]">Admin əlavə et</span>
+            <div className="w-5 h-5 flex items-center justify-center">
+              <Image src="/trainer-add.svg" width={20} height={20} alt="Add" />
             </div>
           </button>
         </div>

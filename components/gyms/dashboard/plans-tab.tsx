@@ -215,9 +215,9 @@ export function PlansTab({ gym }: { gym?: any }) {
     <div className="w-full flex flex-col gap-9 font-sans text-black animate-in fade-in duration-500">
 
       {/* 1. Package Selector Section */}
-      <div className="bg-white rounded-[24px] border border-[#ececed] p-7 flex flex-col gap-6 shadow-sm">
+      <div className="bg-white rounded-[12px] border border-[#ececed] p-5 flex flex-col gap-5 shadow-sm">
         <div className="border-b border-[#ececed] pb-2">
-          <h2 className="text-[20px] font-semibold leading-[30px]">Zala aid olan abunəliklər</h2>
+          <h2 className="text-[18px] font-semibold leading-[28px]">Zala aid olan abunəliklər</h2>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -231,8 +231,8 @@ export function PlansTab({ gym }: { gym?: any }) {
                 onClick={() => setActivePackage(pkg)}
                 style={{ background: gradients[pkg] }}
                 className={cn(
-                  "relative h-[68px] rounded-[32px] flex items-center px-6 cursor-pointer transition-all duration-300",
-                  isActive ? "scale-[1.05] shadow-xl ring-2 ring-[#00B4CC]" : "hover:scale-[1.02] shadow-sm",
+                  "relative h-[56px] rounded-[28px] flex items-center px-5 cursor-pointer transition-all duration-300",
+                  isActive ? "scale-[1.03] shadow-lg ring-2 ring-[#00B4CC]" : "hover:scale-[1.01] shadow-sm",
                   !isSelected && "ring-1 ring-inset ring-black/5"
                 )}
               >
@@ -250,7 +250,7 @@ export function PlansTab({ gym }: { gym?: any }) {
                 </div>
 
                 <b className={cn(
-                  "ml-3 text-[18px] tracking-tight",
+                  "ml-3 text-[16px] tracking-tight",
                   pkg === "Platinum" ? "text-white" : "text-white drop-shadow-md"
                 )}>
                   {pkg}
@@ -266,50 +266,50 @@ export function PlansTab({ gym }: { gym?: any }) {
       </div>
 
       {/* 2. Price Section */}
-      <div className="bg-white rounded-[24px] border border-[#ececed] p-7 flex flex-col gap-6 shadow-sm">
+      <div className="bg-white rounded-[12px] border border-[#ececed] p-5 flex flex-col gap-5 shadow-sm">
         <div className="border-b border-[#ececed] pb-2">
-          <h2 className="text-[20px] font-semibold leading-[30px]">Giriş qiyməti</h2>
+          <h2 className="text-[18px] font-semibold leading-[28px]">Giriş qiyməti</h2>
         </div>
 
-        <div className="flex flex-col gap-3">
-          <label className="text-[16px] text-black/60 font-medium">Giriş qiyməti (AZN)</label>
-          <div className="h-[60px] w-full max-w-[320px] bg-[#fafafa] border border-[#ececed] rounded-[12px] flex items-center px-5">
+        <div className="flex flex-col gap-2">
+          <label className="text-[14px] text-black/60 font-medium">Giriş qiyməti (AZN)</label>
+          <div className="h-[44px] w-full max-w-[320px] bg-[#fafafa] border border-[#ececed] rounded-lg flex items-center px-4">
             <input
               type="number"
               value={prices[activePackage] || ""}
               onChange={(e) => setPrices(prev => ({ ...prev, [activePackage]: e.target.value }))}
-              className="bg-transparent w-full h-full outline-none text-[18px] font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="bg-transparent w-full h-full outline-none text-[15px] font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               placeholder="0.00"
             />
-            <span className="text-black/40 font-bold ml-2">AZN</span>
+            <span className="text-black/40 font-bold ml-2 text-sm">AZN</span>
           </div>
         </div>
       </div>
 
       {/* 3. Services Section */}
-      <div className="bg-white rounded-[12px] border border-[#ececed] p-7 flex flex-col gap-8 shadow-sm">
+      <div className="bg-white rounded-[12px] border border-[#ececed] p-5 flex flex-col gap-6 shadow-sm">
         <div className="border-b border-[#ececed] pb-1">
-          <h2 className="text-[20px] font-semibold leading-[30px]">
+          <h2 className="text-[18px] font-semibold leading-[28px]">
             {activePackage} paketə daxil olan xidmətlər
           </h2>
         </div>
 
         {/* Add Service Section (Frame Group) */}
-        <div className="flex flex-col gap-7 p-7 rounded-[12px] bg-white border border-[#ececed]">
+        <div className="flex flex-col gap-5 p-5 rounded-xl bg-white border border-[#ececed]">
           <div className="border-b border-[#ececed] pb-1">
-            <h3 className="text-[20px] font-semibold leading-[30px]">Xidmət əlavə et</h3>
+            <h3 className="text-[18px] font-semibold leading-[28px]">Xidmət əlavə et</h3>
           </div>
 
-          <div className="flex flex-col gap-3">
-            <label className="text-[16px] leading-[24px]">Xidmət adı</label>
-            <div className="h-[60px] bg-[#fafafa] border border-[#ececed] rounded-[12px] flex items-center px-3">
+          <div className="flex flex-col gap-2">
+            <label className="text-[14px] leading-[20px]">Xidmət adı</label>
+            <div className="h-[44px] bg-[#fafafa] border border-[#ececed] rounded-lg flex items-center px-3">
               <input
                 type="text"
                 value={pendingService || ""}
                 onChange={(e) => setPendingService(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleConfirmService()}
                 placeholder="Məs: Pilates"
-                className="bg-transparent w-full h-full outline-none text-[18px] leading-[28px]"
+                className="bg-transparent w-full h-full outline-none text-[15px] leading-[24px]"
               />
             </div>
           </div>
@@ -318,9 +318,9 @@ export function PlansTab({ gym }: { gym?: any }) {
             <button
               onClick={handleConfirmService}
               disabled={createServiceMutation.isPending}
-              className="h-[48px] w-[193px] bg-[#00B4CC] rounded-[12px] flex items-center justify-center text-[#fafafa] text-[16px] transition-all hover:opacity-90 shadow-sm"
+              className="h-[40px] w-[160px] bg-[#00B4CC] rounded-lg flex items-center justify-center text-[#fafafa] text-sm transition-all hover:opacity-90 shadow-sm"
             >
-              {createServiceMutation.isPending ? <Loader2 className="animate-spin" size={20} /> : "Əlavə et"}
+              {createServiceMutation.isPending ? <Loader2 className="animate-spin" size={18} /> : "Əlavə et"}
             </button>
           </div>
         </div>
@@ -344,14 +344,14 @@ export function PlansTab({ gym }: { gym?: any }) {
                   key={svc.id}
                   onClick={() => toggleServiceSelection(svc.name)}
                   className={cn(
-                    "h-[64px] rounded-lg px-3 flex items-center justify-between gap-5 cursor-pointer transition-all border",
+                    "h-[48px] rounded-lg px-3 flex items-center justify-between gap-3 cursor-pointer transition-all border",
                     isSelected
                       ? "bg-[#00b4cc0a] border-[#00b4cc]"
                       : "bg-[#fafafa] border-[#ececed]"
                   )}
                 >
                   <div className="flex items-center overflow-hidden">
-                    <span className="text-[16px] font-medium text-black truncate leading-[24px]">
+                    <span className="text-[14px] font-medium text-black truncate leading-[20px]">
                       {svc.name}
                     </span>
                   </div>
@@ -361,9 +361,9 @@ export function PlansTab({ gym }: { gym?: any }) {
                       e.stopPropagation();
                       setDeleteServiceId(svc.id);
                     }}
-                    className="w-6 h-6 flex-shrink-0 flex items-center justify-center hover:scale-110 transition-transform opacity-60 hover:opacity-100"
+                    className="w-5 h-5 flex-shrink-0 flex items-center justify-center hover:scale-110 transition-transform opacity-60 hover:opacity-100"
                   >
-                    <Image src="/icons/trash.svg" width={24} height={24} alt="Delete" />
+                    <Trash2 size={16} />
                   </button>
                 </div>
               );
@@ -377,7 +377,7 @@ export function PlansTab({ gym }: { gym?: any }) {
         <button
           onClick={handleSave}
           disabled={savingUpdate}
-          className="h-[48px] w-[280px] rounded-[10px] bg-[#00B4CC] text-white text-[16px] font-medium hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-md shadow-cyan-100"
+          className="h-[40px] w-[240px] rounded-lg bg-[#00B4CC] text-white text-sm font-medium hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-md shadow-cyan-100"
         >
           {savingUpdate && <Loader2 className="w-4 h-4 animate-spin" />}
           Yadda saxla

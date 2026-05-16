@@ -62,22 +62,22 @@ export function TrainersTab() {
     <div className="flex flex-col gap-6 py-4 w-full font-sans">
       {/* Search & Add Button Header */}
       <div className="w-full flex flex-col lg:flex-row items-center justify-between gap-5">
-        <div className="flex-1 w-full lg:w-[846px] h-12 bg-white rounded-xl border border-[#ececed] flex items-center px-6 py-1.5 gap-3 shadow-sm focus-within:border-[#00B4CC] transition-colors">
-          <Image src="/search.svg" width={24} height={24} alt="search" className="shrink-0 opacity-50" />
+        <div className="flex-1 w-full lg:w-[846px] h-10 bg-white rounded-lg border border-[#ececed] flex items-center px-4 py-1.5 gap-3 shadow-sm focus-within:border-[#00B4CC] transition-colors">
+          <Image src="/search.svg" width={20} height={20} alt="search" className="shrink-0 opacity-50" />
           <input
             type="text"
             placeholder="Ad/Soyad , Zal , Telefon üzrə axtarış....."
-            className="flex-1 bg-transparent text-[14px] text-black outline-none placeholder:text-[#94979c]"
+            className="flex-1 bg-transparent text-[13px] text-black outline-none placeholder:text-[#94979c]"
           />
         </div>
 
         <button
           onClick={() => setShowAdd(true)}
-          className="h-12 w-full lg:w-[193px] flex items-center justify-center gap-3 bg-[#00B4CC] text-white px-6 rounded-xl text-base font-medium hover:bg-[#009DB3] transition-all shadow-sm active:scale-[0.98]"
+          className="h-10 w-full lg:w-[190px] flex items-center justify-center gap-3 bg-[#00B4CC] text-white px-5 rounded-lg text-sm font-medium hover:bg-[#009DB3] transition-all shadow-sm active:scale-[0.98]"
         >
           <span className="leading-[24px]">Məşqçi əlavə et</span>
-          <div className="h-6 w-6 relative">
-            <Image src="/trainer-add.svg" width={24} height={24} alt="plus" />
+          <div className="h-5 w-5 relative">
+            <Image src="/trainer-add.svg" width={20} height={20} alt="plus" />
           </div>
         </button>
       </div>
@@ -105,11 +105,11 @@ export function TrainersTab() {
             <table className="w-full border-separate border-spacing-0">
               {/* Header */}
               <thead>
-                <tr className="bg-[rgba(0,180,204,0.15)] h-[64px] text-[16px] font-bold text-black font-sans">
-                  <th className="border-y border-l border-[#cecfd2] rounded-tl-[12px] pl-[105px] text-left whitespace-nowrap">Ad / Soyad</th>
-                  <th className="border-y border-[#cecfd2] px-10 text-left whitespace-nowrap">Telefon</th>
-                  <th className="border-y border-[#cecfd2] px-10 text-left whitespace-nowrap">Email</th>
-                  <th className="border-y border-r border-[#cecfd2] rounded-tr-[12px] px-10 text-center whitespace-nowrap">Ətraflı</th>
+                <tr className="bg-[rgba(0,180,204,0.1)] h-[48px] text-[14px] font-bold text-black font-sans">
+                  <th className="border-y border-l border-[#ececed] rounded-tl-[12px] pl-[84px] text-left whitespace-nowrap">Ad / Soyad</th>
+                  <th className="border-y border-[#ececed] px-10 text-left whitespace-nowrap">Telefon</th>
+                  <th className="border-y border-[#ececed] px-10 text-left whitespace-nowrap">Email</th>
+                  <th className="border-y border-r border-[#ececed] rounded-tr-[12px] px-10 text-center whitespace-nowrap">Ətraflı</th>
                 </tr>
               </thead>
 
@@ -130,27 +130,27 @@ export function TrainersTab() {
                       : null;
 
                     return (
-                      <tr key={trainerUid} className="h-[100px] hover:bg-slate-50/80 transition-colors group font-sans">
+                      <tr key={trainerUid} className="h-[72px] hover:bg-slate-50/80 transition-colors group font-sans text-[14px]">
                         {/* Name Section */}
                         <td className={cn(
-                          "border-b border-l border-[#ececed] pl-10",
+                          "border-b border-l border-[#ececed] pl-6",
                           i === trainers.length - 1 && "rounded-bl-[12px]"
                         )}>
-                          <div className="flex items-center gap-[14px]">
-                            <div className="h-[54px] w-[54px] relative rounded-full overflow-hidden shrink-0 bg-[#00B4CC10] flex items-center justify-center">
+                          <div className="flex items-center gap-[12px]">
+                            <div className="h-[44px] w-[44px] relative rounded-full overflow-hidden shrink-0 bg-[#00B4CC10] flex items-center justify-center">
                               {fullPicUrl ? (
                                 <img src={fullPicUrl} className="object-cover w-full h-full" alt="Trainer" />
                               ) : (
-                                <div className="text-[#00B4CC] font-bold text-xl italic uppercase">
+                                <div className="text-[#00B4CC] font-bold text-lg italic uppercase">
                                   {firstName[0]}
                                 </div>
                               )}
                             </div>
                             <div className="flex flex-col justify-center overflow-hidden">
-                              <div className="text-black leading-[24px] group-hover:text-[#00B4CC] transition-colors whitespace-nowrap">
+                              <div className="text-black leading-[20px] group-hover:text-[#00B4CC] transition-colors whitespace-nowrap font-semibold">
                                 {firstName} {lastName}
                               </div>
-                              <div className="text-[14px] leading-[24px] text-[#94979c] whitespace-nowrap">
+                              <div className="text-[12px] leading-[18px] text-[#94979c] whitespace-nowrap">
                                 {role}
                               </div>
                             </div>

@@ -147,11 +147,11 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
   const mapSrc = `https://maps.google.com/maps?q=${displayLat},${displayLng}&z=15&output=embed`;
 
   return (
-    <div className="w-full bg-white rounded-[32px] border border-[#ECECED] p-10 flex flex-col gap-8 shadow-sm">
+    <div className="w-full bg-white rounded-[24px] border border-[#ECECED] p-6 flex flex-col gap-6 shadow-sm">
 
         {/* Dil Seçimi və Başlıq */}
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-[#1F2937]">{t.title}</h1>
+          <h1 className="text-lg font-bold text-[#1F2937]">{t.title}</h1>
           <Tabs.Root value={lang} onValueChange={(v) => setLang(v as Lang)}>
             <Tabs.List className="flex gap-2 bg-[#F3F4F6] rounded-lg p-1">
               {["Az", "Ru", "En"].map((l) => (
@@ -180,7 +180,7 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
                 setSearchQuery(e.target.value);
                 debouncedSearch(e.target.value);
               }}
-              className="w-full bg-[#F9FAFB] border border-[#ECECED] rounded-xl px-4 py-4 text-sm font-semibold text-[#1F2937] outline-none focus:border-[#00B4D8] transition-all"
+              className="w-full bg-[#F9FAFB] border border-[#ECECED] rounded-lg px-4 py-3 text-sm font-semibold text-[#1F2937] outline-none focus:border-[#00B4D8] transition-all"
             />
             {(isAddressFetching || isSearching) && (
               <Loader2 className="absolute right-4 top-4 animate-spin text-[#00B4D8]" size={20} />
@@ -213,7 +213,7 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-[#6B7280]">{t.lat}</label>
-            <div className="flex items-center bg-[#F9FAFB] border border-[#ECECED] rounded-xl px-4 py-4 gap-2 focus-within:ring-1 focus-within:ring-[#00B4D8]">
+            <div className="flex items-center bg-[#F9FAFB] border border-[#ECECED] rounded-lg px-4 py-2.5 gap-2 focus-within:ring-1 focus-within:ring-[#00B4D8]">
               <input
                 type="number"
                 step="any"
@@ -222,13 +222,13 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
                 className="flex-1 bg-transparent text-sm font-semibold text-[#1F2937] outline-none"
               />
               <button onClick={() => copyToClipboard(coords.lat, "lat")} type="button">
-                {copied === "lat" ? <Check size={18} className="text-[#00B4D8]" /> : <Copy size={18} className="text-[#D1D5DB]" />}
+                {copied === "lat" ? <Check size={16} className="text-[#00B4D8]" /> : <Copy size={16} className="text-[#D1D5DB]" />}
               </button>
             </div>
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-[#6B7280]">{t.lng}</label>
-            <div className="flex items-center bg-[#F9FAFB] border border-[#ECECED] rounded-xl px-4 py-4 gap-2 focus-within:ring-1 focus-within:ring-[#00B4D8]">
+            <div className="flex items-center bg-[#F9FAFB] border border-[#ECECED] rounded-lg px-4 py-2.5 gap-2 focus-within:ring-1 focus-within:ring-[#00B4D8]">
               <input
                 type="number"
                 step="any"
@@ -237,7 +237,7 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
                 className="flex-1 bg-transparent text-sm font-semibold text-[#1F2937] outline-none"
               />
               <button onClick={() => copyToClipboard(coords.lng, "lng")} type="button">
-                {copied === "lng" ? <Check size={18} className="text-[#00B4D8]" /> : <Copy size={18} className="text-[#D1D5DB]" />}
+                {copied === "lng" ? <Check size={16} className="text-[#00B4D8]" /> : <Copy size={16} className="text-[#D1D5DB]" />}
               </button>
             </div>
           </div>
@@ -258,10 +258,10 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
         </div>
 
         {/* Footer Buttons */}
-        <div className="flex justify-end items-center gap-6 pt-6 border-t border-slate-100">
+        <div className="flex justify-end items-center gap-6 pt-4 border-t border-slate-100">
           <button
             type="button"
-            className="w-[280px] h-[52px] rounded-xl border-2 border-[#00B4CC] bg-white text-[#00B4CC] font-bold text-base hover:bg-[#00B4CC08] transition-all"
+            className="w-[200px] h-[44px] rounded-lg border-2 border-[#00B4CC] bg-white text-[#00B4CC] font-bold text-sm hover:bg-[#00B4CC08] transition-all"
           >
             {t.save}
           </button>
@@ -269,9 +269,9 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
             type="button"
             disabled={isPending}
             onClick={handleNext}
-            className="w-[280px] h-[52px] rounded-xl bg-[#00B4CC] text-white font-bold text-base hover:bg-[#009DB3] transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-[#00B4CC20]"
+            className="w-[200px] h-[44px] rounded-lg bg-[#00B4CC] text-white font-bold text-sm hover:bg-[#009DB3] transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-[#00B4CC20]"
           >
-            {isPending ? <Loader2 className="animate-spin" size={24} /> : t.next}
+            {isPending ? <Loader2 className="animate-spin" size={20} /> : t.next}
           </button>
         </div>
 

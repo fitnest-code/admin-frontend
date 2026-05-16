@@ -81,20 +81,20 @@ export function CustomersTab() {
   function handleFilter(v: EntryResult | 'all') { setFilter(v); setPage(1); setFilterOpen(false) }
 
   return (
-    <div className="w-full rounded-[12px] bg-white border border-[#ececed] flex flex-col p-6 sm:p-8 gap-8 font-sans shadow-sm">
-      <div className="flex flex-col gap-6">
-        <div className="text-[20px] font-bold text-black">Müştəri girişləri</div>
+    <div className="w-full rounded-[12px] bg-white border border-[#ececed] flex flex-col p-5 gap-6 font-sans shadow-sm">
+      <div className="flex flex-col gap-4">
+        <div className="text-[18px] font-bold text-black">Müştəri girişləri</div>
         
         <div className="w-full flex flex-col lg:flex-row items-center justify-between gap-5">
           {/* Search Bar */}
-          <div className="flex-1 w-full lg:w-[527px] h-12 bg-white rounded-xl border border-[#ececed] flex items-center px-6 py-1.5 gap-3 shadow-sm focus-within:border-[#00B4CC] transition-colors">
-            <Image src="/search.svg" width={24} height={24} alt="search" className="opacity-50" />
+          <div className="flex-1 w-full lg:w-[527px] h-10 bg-white rounded-lg border border-[#ececed] flex items-center px-4 py-1 gap-3 shadow-sm focus-within:border-[#00B4CC] transition-colors">
+            <Image src="/search.svg" width={20} height={20} alt="search" className="opacity-50" />
             <input
               type="text"
               value={query}
               onChange={(e) => handleQueryChange(e.target.value)}
               placeholder="Axtar..."
-              className="flex-1 bg-transparent text-[14px] text-black outline-none placeholder:text-[#94979c]"
+              className="flex-1 bg-transparent text-[13px] text-black outline-none placeholder:text-[#94979c]"
             />
           </div>
 
@@ -103,10 +103,10 @@ export function CustomersTab() {
             <div className="relative" ref={filterRef}>
               <button
                 onClick={() => setFilterOpen(!filterOpen)}
-                className="h-12 w-[216px] px-6 rounded-xl border border-[#ececed] bg-white flex items-center justify-between text-[14px] font-medium text-[#101828] hover:border-[#00B4CC] transition-all shadow-sm"
+                className="h-10 w-[180px] px-4 rounded-lg border border-[#ececed] bg-white flex items-center justify-between text-[13px] font-medium text-[#101828] hover:border-[#00B4CC] transition-all shadow-sm"
               >
                 <span>{FILTER_OPTIONS.find(o => o.value === filter)?.label || 'Filter'}</span>
-                <ChevronDown size={18} className={cn('transition-transform text-slate-400', filterOpen && 'rotate-180')} />
+                <ChevronDown size={16} className={cn('transition-transform text-slate-400', filterOpen && 'rotate-180')} />
               </button>
               {filterOpen && (
                 <div className="absolute right-0 top-full z-30 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in duration-150">
@@ -128,10 +128,10 @@ export function CustomersTab() {
             <div className="relative" ref={sortRef}>
               <button
                 onClick={() => setSortOpen(!sortOpen)}
-                className="h-12 w-[216px] px-6 rounded-xl border border-[#ececed] bg-white flex items-center justify-between text-[14px] font-medium text-[#101828] hover:border-[#00B4CC] transition-all shadow-sm"
+                className="h-10 w-[180px] px-4 rounded-lg border border-[#ececed] bg-white flex items-center justify-between text-[13px] font-medium text-[#101828] hover:border-[#00B4CC] transition-all shadow-sm"
               >
                 <span>{sort === 'date_desc' ? 'Yeni-Köhnə' : 'Köhnə-Yeni'}</span>
-                <ChevronDown size={18} className={cn('transition-transform text-slate-400', sortOpen && 'rotate-180')} />
+                <ChevronDown size={16} className={cn('transition-transform text-slate-400', sortOpen && 'rotate-180')} />
               </button>
               {sortOpen && (
                 <div className="absolute right-0 top-full z-30 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in duration-150">
@@ -148,14 +148,14 @@ export function CustomersTab() {
       <div className="w-full overflow-x-auto rounded-[12px] border border-[#cecfd2]">
         <div className="min-w-[1000px] flex flex-col bg-white">
           {/* Header */}
-          <div className="w-full h-[64px] bg-[rgba(0,180,204,0.15)] flex items-center px-[28px] gap-[48px] text-[16px] font-bold text-[#101828]">
-            <div className="w-[71px] shrink-0 opacity-80 uppercase text-[13px] tracking-wider">ID</div>
-            <div className="w-[110px] shrink-0 opacity-80 uppercase text-[13px] tracking-wider">Ad / Soyad</div>
-            <div className="w-[150px] shrink-0 opacity-80 uppercase text-[13px] tracking-wider">Telefon</div>
-            <div className="w-[111px] shrink-0 opacity-80 uppercase text-[13px] tracking-wider">Tarix / Saat</div>
-            <div className="w-[120px] shrink-0 opacity-80 uppercase text-[13px] tracking-wider text-center">Giriş məbləği</div>
-            <div className="w-[73px] shrink-0 opacity-80 uppercase text-[13px] tracking-wider text-center">Nəticə</div>
-            <div className="w-[60px] shrink-0 opacity-80 uppercase text-[13px] tracking-wider text-center">Səbəb</div>
+          <div className="w-full h-[48px] bg-[rgba(0,180,204,0.1)] flex items-center px-[20px] gap-[48px] text-[14px] font-bold text-[#101828]">
+            <div className="w-[71px] shrink-0 opacity-80 uppercase text-[12px] tracking-wider">ID</div>
+            <div className="w-[110px] shrink-0 opacity-80 uppercase text-[12px] tracking-wider">Ad / Soyad</div>
+            <div className="w-[150px] shrink-0 opacity-80 uppercase text-[12px] tracking-wider">Telefon</div>
+            <div className="w-[111px] shrink-0 opacity-80 uppercase text-[12px] tracking-wider">Tarix / Saat</div>
+            <div className="w-[120px] shrink-0 opacity-80 uppercase text-[12px] tracking-wider text-center">Giriş məbləği</div>
+            <div className="w-[73px] shrink-0 opacity-80 uppercase text-[12px] tracking-wider text-center">Nəticə</div>
+            <div className="w-[60px] shrink-0 opacity-80 uppercase text-[12px] tracking-wider text-center">Səbəb</div>
           </div>
 
           <div className="flex flex-col bg-white divide-y divide-[#ececed]">
@@ -165,7 +165,7 @@ export function CustomersTab() {
               const [date, time] = entry.datetime.split(' / ');
 
               return (
-                <div key={entry.id} className="w-full h-[84px] flex items-center px-[28px] gap-[48px] text-[16px] hover:bg-slate-50 transition-colors group">
+                <div key={entry.id} className="w-full h-[64px] flex items-center px-[20px] gap-[48px] text-[14px] hover:bg-slate-50 transition-colors group">
                   <div className="w-[71px] shrink-0 text-slate-400 font-medium">#{entry.id}</div>
                   <div className="w-[110px] shrink-0 font-bold text-[#101828] group-hover:text-[#00B4CC] transition-colors truncate">{entry.fullName}</div>
                   <div className="w-[150px] shrink-0 text-slate-600 font-medium">{entry.phone}</div>

@@ -253,7 +253,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
           </aside>
 
           {/* Right Side: Form Content */}
-          <div className="flex-1 w-full bg-white rounded-[12px] border border-[#ececed] shadow-sm overflow-hidden p-6 md:p-8">
+          <div className="flex-1 w-full bg-white rounded-[12px] border border-[#ececed] shadow-sm overflow-hidden p-4 md:p-6">
             {renderTab()}
           </div>
         </div>
@@ -280,9 +280,9 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       </div>
 
       {/* Header with Status */}
-      <div className="w-full flex items-center justify-between border-b border-[#ececed] pb-6">
+      <div className="w-full flex items-center justify-between border-b border-[#ececed] pb-3">
         <div className="flex flex-col gap-1">
-           <h1 className="text-[28px] font-bold text-[#101828] tracking-tight">{gym.name}</h1>
+           <h1 className="text-[20px] font-bold text-[#101828] tracking-tight">{gym.name}</h1>
         </div>
 
         <div className="flex items-center gap-3">
@@ -315,7 +315,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={cn(
-                'flex-1 min-w-[150px] border-b-[3px] pb-5 text-[15px] font-bold transition-all duration-200 whitespace-nowrap tracking-wide text-center',
+                'flex-1 min-w-[130px] border-b-[3px] pb-3 text-[13px] font-bold transition-all duration-200 whitespace-nowrap tracking-wide text-center',
                 activeTab === tab.key
                   ? 'border-[#00B4CC] text-[#101828]'
                   : 'border-transparent text-slate-400 hover:text-slate-600 hover:border-slate-200',

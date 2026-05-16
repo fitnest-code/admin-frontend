@@ -98,14 +98,14 @@ export function ReviewsTab() {
     <div className="flex flex-col gap-6 py-2 font-sans text-black">
       {/* Search & Filters */}
       <div className="flex items-center gap-6">
-        <div className="flex-1 h-[48px] bg-white border border-[#ececed] rounded-xl flex items-center px-6 gap-3 shadow-sm">
-          <Search size={20} className="text-slate-400" />
+        <div className="flex-1 h-[40px] bg-white border border-[#ececed] rounded-lg flex items-center px-4 gap-3 shadow-sm focus-within:border-[#00B4CC] transition-colors">
+          <Search size={18} className="text-slate-400" />
           <input 
             type="text" 
             placeholder="Ad/Soyad , Zal adı , Status....." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 bg-transparent outline-none text-[14px] text-[#94979c]"
+            className="flex-1 bg-transparent outline-none text-[13px] text-[#94979c]"
           />
         </div>
 
@@ -113,12 +113,12 @@ export function ReviewsTab() {
         <div className="relative">
           <div 
             onClick={() => setIsOpenStatus(!isOpenStatus)}
-            className="h-[48px] w-[183px] bg-white border border-[#ececed] rounded-xl flex items-center justify-between px-4 cursor-pointer hover:border-[#00B4CC] transition-all shadow-sm"
+            className="h-[40px] w-[180px] bg-white border border-[#ececed] rounded-lg flex items-center justify-between px-4 cursor-pointer hover:border-[#00B4CC] transition-all shadow-sm"
           >
-            <span className="text-[14px] font-medium truncate">
+            <span className="text-[13px] font-medium truncate">
               {status ? STATUS_OPTIONS.find(o => o.key === status)?.label : "Bütün statuslar"}
             </span>
-            <ChevronDown size={18} className={cn("text-slate-400 transition-transform flex-shrink-0", isOpenStatus && "rotate-180")} />
+            <ChevronDown size={16} className={cn("text-slate-400 transition-transform flex-shrink-0", isOpenStatus && "rotate-180")} />
           </div>
           {isOpenStatus && (
             <>
@@ -146,12 +146,12 @@ export function ReviewsTab() {
         <div className="relative">
           <div 
             onClick={() => setIsOpenSort(!isOpenSort)}
-            className="h-[48px] w-[193px] bg-white border border-[#ececed] rounded-xl flex items-center justify-between px-4 cursor-pointer hover:border-[#00B4CC] transition-all shadow-sm"
+            className="h-[40px] w-[180px] bg-white border border-[#ececed] rounded-lg flex items-center justify-between px-4 cursor-pointer hover:border-[#00B4CC] transition-all shadow-sm"
           >
-            <span className="text-[14px] font-medium truncate">
+            <span className="text-[13px] font-medium truncate">
               {SORT_OPTIONS.find(o => o.key === sort)?.label || "Sırala"}
             </span>
-            <ChevronDown size={18} className={cn("text-slate-400 transition-transform flex-shrink-0", isOpenSort && "rotate-180")} />
+            <ChevronDown size={16} className={cn("text-slate-400 transition-transform flex-shrink-0", isOpenSort && "rotate-180")} />
           </div>
           {isOpenSort && (
             <>
@@ -176,13 +176,13 @@ export function ReviewsTab() {
       </div>
 
       {/* Table Content */}
-      <div className="w-full bg-white rounded-2xl border border-[#ececed] overflow-hidden shadow-sm">
-        <div className="grid grid-cols-[1fr_180px_180px_180px_60px] items-center bg-[#00B4CC]/15 border-b border-[#cecfd2] px-6 py-5">
-          <div className="text-[16px] font-semibold">Müştəri</div>
-          <div className="text-[16px] font-semibold">Tarix</div>
-          <div className="text-[16px] font-semibold">Zalın adı</div>
-          <div className="text-[16px] font-semibold">Status</div>
-          <div className="text-[16px] font-semibold text-center">Detallı</div>
+      <div className="w-full bg-white rounded-xl border border-[#ececed] overflow-hidden shadow-sm">
+        <div className="grid grid-cols-[1fr_180px_180px_180px_60px] items-center bg-[#00B4CC]/10 border-b border-[#ececed] px-6 py-3.5">
+          <div className="text-[14px] font-bold text-black uppercase tracking-wider">Müştəri</div>
+          <div className="text-[14px] font-bold text-black uppercase tracking-wider">Tarix</div>
+          <div className="text-[14px] font-bold text-black uppercase tracking-wider">Zalın adı</div>
+          <div className="text-[14px] font-bold text-black uppercase tracking-wider">Status</div>
+          <div className="text-[14px] font-bold text-black uppercase tracking-wider text-center">Detallı</div>
         </div>
 
         <div className="flex flex-col">
@@ -190,13 +190,13 @@ export function ReviewsTab() {
             <div className="py-20 text-center text-slate-400">Rəy tapılmadı</div>
           ) : (
             reviews.map((review: any) => (
-              <div key={review.id} className="grid grid-cols-[1fr_180px_180px_180px_60px] items-center px-6 py-4 border-b border-[#ececed] last:border-0 hover:bg-slate-50 transition-colors">
+              <div key={review.id} className="grid grid-cols-[1fr_180px_180px_180px_60px] items-center px-6 py-3 border-b border-[#ececed] last:border-0 hover:bg-slate-50 transition-colors">
                 {/* Customer */}
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-full bg-[#d5f0f3] border border-[#ececed] flex items-center justify-center text-[18px] font-bold">
+                  <div className="w-9 h-9 rounded-full bg-[#d5f0f3] border border-[#ececed] flex items-center justify-center text-[15px] font-bold">
                     {review.author?.full_name?.[0] || "N"}
                   </div>
-                  <span className="text-[14px] font-semibold">{review.author?.full_name}</span>
+                  <span className="text-[13px] font-semibold">{review.author?.full_name}</span>
                 </div>
 
                 {/* Date */}

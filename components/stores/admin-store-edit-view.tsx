@@ -1,15 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Clock, Copy, Loader2 } from "lucide-react";
+import { 
+  ArrowLeft, 
+  Clock, 
+  Copy, 
+  Loader2, 
+  Plus, 
+  Trash2, 
+  Upload, 
+  RefreshCw,
+  ChevronDown,
+  PenLine,
+  ChevronLeft
+} from "lucide-react";
 import * as Label from "@radix-ui/react-label";
 import { toast } from "sonner";
-import StoreInfoTab, { type StoreInfo } from "@/components/stores/components/store-info-tab";
-import StoreDiscountsTab, {
-  type PackageRow,
-  packageRowsToStep3Payload,
-} from "@/components/stores/components/store-discounts-tab";
 import { ApiError } from "@/lib/api/client";
 import { IStoreStep2Payload } from "@/lib/types/stores";
 import {
@@ -17,36 +24,9 @@ import {
   useAdminStoreDetailQuery,
   useUpdateAdminStoreMutation,
 } from "@/modules/stores";
-
-const inputCls =
-  "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-[#00B4CC] focus:ring-2 focus:ring-[#00B4CC]/15 transition placeholder:text-gray-400 bg-white";
-
-function Field({
-  label,
-  htmlFor,
-  children,
-}: {
-  label: string;
-  htmlFor: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <Label.Root htmlFor={htmlFor} className="text-sm font-medium text-gray-600">
-        {label}
-      </Label.Root>
-      {children}
-    </div>
-  );
-}
-
-function copyText(text: string) {
-  if (!text) return;
-  void navigator.clipboard.writeText(text).then(
-    () => toast.success("Kopyalandı"),
-    () => toast.error("Kopyalanmadı"),
-  );
-}
+import { useSubscriptionPackages } from "@/lib/query/use-subscription-packages";
+import styles from "./index.module.css";
+import { cn } from "@/lib/utils";
 
 const defaultContact: IStoreStep2Payload = {
   latitude: 0,
@@ -59,35 +39,27 @@ const defaultContact: IStoreStep2Payload = {
 
 export function AdminStoreEditView({ storeId }: { storeId: number }) {
   const router = useRouter();
+  const [activeLang, setActiveLang] = React.useState<"Az" | "Ru" | "En">("Az");
   const { data, isLoading, isError, error } = useAdminStoreDetailQuery(storeId);
   const { mutateAsync: saveStore, isPending } = useUpdateAdminStoreMutation();
+  const { data: allPackages } = useSubscriptionPackages();
 
   const seededForId = useRef<number | null>(null);
-  useEffect(() => {
-    seededForId.current = null;
-  }, [storeId]);
-
-  const [storeInfo, setStoreInfo] = useState<StoreInfo>({
-    name: "",
-    image: null,
-    imagePreview: null,
-  });
+  const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [contact, setContact] = useState<IStoreStep2Payload>(defaultContact);
-  const [packages, setPackages] = useState<PackageRow[]>([
-    { id: crypto.randomUUID(), packageId: "", discount: "10" },
-  ]);
+  const [discounts, setDiscounts] = useState<{ id: string; packageId: string; discount: string }[]>([]);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
     if (!data) return;
     if (seededForId.current === data.id) return;
     seededForId.current = data.id;
-    setStoreInfo({
-      name: data.name,
-      image: null,
-      imagePreview: data.coverImageUrl,
-    });
+    
+    setName(data.name);
     setAddress(data.address);
+    setImagePreview(data.coverImageUrl);
     setContact({
       latitude: data.latitude,
       longitude: data.longitude,
@@ -96,272 +68,308 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
       socialUrl: data.socialUrl,
       workHours: { ...data.workHours },
     });
-    setPackages(
+    setDiscounts(
       data.discounts.length > 0
         ? data.discounts.map((d) => ({
-            id: crypto.randomUUID(),
+            id: Math.random().toString(36).substr(2, 9),
             packageId: String(d.packageId),
             discount: String(d.discountPercent),
           }))
-        : [{ id: crypto.randomUUID(), packageId: "", discount: "10" }],
+        : [{ id: Math.random().toString(36).substr(2, 9), packageId: "", discount: "10" }]
     );
   }, [data]);
 
-  async function handleSave() {
-    if (!storeInfo.name.trim()) {
-      toast.error("Mağaza adı mütləqdir");
-      return;
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
     }
-    if (!address.trim()) {
-      toast.error("Ünvan mütləqdir");
-      return;
-    }
-    if (!contact.phone.trim() || !contact.email.trim()) {
-      toast.error("Telefon və e-poçt mütləqdir");
-      return;
-    }
+  };
 
-    const discounts = packageRowsToStep3Payload(packages).discounts;
+  async function handleSave() {
+    if (!name.trim()) return toast.error("Mağaza adı mütləqdir");
+    if (!address.trim()) return toast.error("Ünvan mütləqdir");
+
     const patchData: AdminStorePatchData = {
-      name: storeInfo.name.trim(),
+      name: name.trim(),
       latitude: Number(contact.latitude),
       longitude: Number(contact.longitude),
       phone: contact.phone.trim(),
       email: contact.email.trim(),
       socialUrl: contact.socialUrl.trim(),
       socialUrlProvided: true,
-      workHours: {
-        from: contact.workHours.from,
-        to: contact.workHours.to,
-      },
+      workHours: { ...contact.workHours },
       workHoursProvided: true,
-      discounts,
+      discounts: discounts
+        .filter(d => d.packageId)
+        .map(d => ({ packageId: Number(d.packageId), discountPercent: Number(d.discount) })),
       address: address.trim(),
     };
 
     try {
-      await saveStore({
-        id: storeId,
-        data: patchData,
-        photo: storeInfo.image,
-      });
+      await saveStore({ id: storeId, data: patchData, photo: imageFile });
       toast.success("Mağaza yeniləndi");
       router.push(`/stores/${storeId}`);
     } catch (e: unknown) {
-      const msg = e instanceof ApiError ? e.message : "Yeniləmə alınmadı";
-      toast.error(msg);
+      toast.error(e instanceof ApiError ? e.message : "Yeniləmə alınmadı");
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[40vh] gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-[#00B4CC]" />
-        <p className="text-sm text-gray-500">Məlumatlar yüklənir…</p>
-      </div>
-    );
-  }
-
-  if (isError || !data) {
-    const msg = error instanceof Error ? error.message : "Mağaza tapılmadı";
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4 text-center px-4">
-        <p className="text-sm font-medium text-red-600">{msg}</p>
-        <button
-          type="button"
-          onClick={() => router.push("/stores")}
-          className="text-sm text-[#00B4CC] font-medium hover:underline"
-        >
-          Mağazalar siyahısına qayıt
-        </button>
-      </div>
-    );
-  }
+  if (isLoading) return (
+    <div className="flex items-center justify-center min-h-screen">
+      <Loader2 className="animate-spin text-[#00B4CC]" size={32} />
+    </div>
+  );
 
   return (
-    <div className="w-full max-w-none flex flex-col gap-8 pb-10 min-h-[calc(100vh-6rem)]">
-      <button
-        type="button"
-        onClick={() => router.push(`/stores/${storeId}`)}
-        disabled={isPending}
-        className="flex w-fit items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-[#00B4CC] transition-colors disabled:opacity-40"
-      >
-        <ArrowLeft size={16} /> Geri qayıt
-      </button>
+    <div className={styles.superAdminYeniMaaza}>
+      <main className={styles.mainContent}>
+        <div className={styles.backButton} onClick={() => router.push(`/stores/${storeId}`)}>
+          <ChevronLeft size={18} />
+          <span>Geri qayıt</span>
+        </div>
 
-      <h1 className="text-[24px] font-semibold text-[#101828] leading-[28px]">Mağazanın redaktəsi</h1>
+        <div className={styles.pageHeader}>
+          <h1 className={styles.storeTitle}>{name || "Yeni Mağaza"}</h1>
+        </div>
 
-      <section className="flex flex-col gap-5">
-        <h2 className="text-base font-semibold text-gray-800">Mağaza məlumatları</h2>
-        <StoreInfoTab data={storeInfo} onChange={setStoreInfo} />
-      </section>
-
-      <section className="flex flex-col gap-5">
-        <h2 className="text-base font-semibold text-gray-800">Əlaqə</h2>
-        <Field label="Ünvan" htmlFor="addr">
-          <input
-            id="addr"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            className={inputCls}
-            placeholder="Bakı, Nərimanov rayonu"
-          />
-        </Field>
-        <div>
-          <span className="text-sm font-medium text-gray-600 block mb-2">Koordinatlar</span>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="En (Latitude)" htmlFor="lat">
-              <div className="relative">
-                <input
-                  id="lat"
-                  type="number"
-                  step="any"
-                  value={contact.latitude}
-                  onChange={(e) =>
-                    setContact({
-                      ...contact,
-                      latitude: e.target.valueAsNumber || 0,
-                    })
-                  }
-                  className={inputCls + " pr-10"}
-                />
-                <button
-                  type="button"
-                  onClick={() => copyText(String(contact.latitude))}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-gray-400 hover:text-[#00B4CC]"
-                  aria-label="Kopyala"
-                >
-                  <Copy size={16} />
-                </button>
+        <div className={styles.detailCard}>
+          {/* Mağaza Məlumatları */}
+          <section className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <h2 className={styles.sectionTitle}>Mağaza məlumatları</h2>
+              <div className={styles.langSelector}>
+                {(["Az", "Ru", "En"] as const).map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => setActiveLang(l)}
+                    className={cn(styles.langButton, activeLang === l && styles.langButtonActive)}
+                  >
+                    {l}
+                  </button>
+                ))}
               </div>
-            </Field>
-            <Field label="Uzunluq (Longitude)" htmlFor="lng">
-              <div className="relative">
-                <input
-                  id="lng"
-                  type="number"
-                  step="any"
-                  value={contact.longitude}
-                  onChange={(e) =>
-                    setContact({
-                      ...contact,
-                      longitude: e.target.valueAsNumber || 0,
-                    })
-                  }
-                  className={inputCls + " pr-10"}
+            </div>
+
+            <div className={styles.infoGroup}>
+              <label className={styles.label}>Mağaza adı</label>
+              <input 
+                className={styles.input} 
+                value={name} 
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Vitamin club"
+              />
+            </div>
+
+            <div className={styles.infoGroup}>
+              <label className={styles.label}>Mağaza şəkilləri</label>
+              <div className={styles.imageSection}>
+                <img 
+                  src={imagePreview || "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2670&auto=format&fit=crop"} 
+                  className={styles.storeImage} 
+                  alt="Preview" 
                 />
-                <button
-                  type="button"
-                  onClick={() => copyText(String(contact.longitude))}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-gray-400 hover:text-[#00B4CC]"
-                  aria-label="Kopyala"
-                >
-                  <Copy size={16} />
-                </button>
+                <div className={styles.imageActions}>
+                  <label className={styles.imageAction}>
+                    <Upload size={20} />
+                    <span>Şəkil yüklə</span>
+                    <input type="file" hidden onChange={handleImageChange} accept="image/*" />
+                  </label>
+                  <label className={styles.imageAction}>
+                    <RefreshCw size={20} />
+                    <span>Şəkli dəyiş</span>
+                    <input type="file" hidden onChange={handleImageChange} accept="image/*" />
+                  </label>
+                  <div className={cn(styles.imageAction, styles.imageActionDelete)} onClick={() => { setImageFile(null); setImagePreview(null); }}>
+                    <Trash2 size={20} />
+                    <span>Şəkli sil</span>
+                  </div>
+                </div>
               </div>
-            </Field>
+            </div>
+          </section>
+
+          {/* Əlaqə */}
+          <section className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <h2 className={styles.sectionTitle}>Əlaqə</h2>
+            </div>
+            
+            <div className={styles.infoGroup}>
+              <label className={styles.label}>Ünvan</label>
+              <input 
+                className={styles.input} 
+                value={address} 
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="Bakı, Nərimanov rayonu"
+              />
+            </div>
+
+            <div className={styles.grid2}>
+              <div className={styles.infoGroup}>
+                <label className={styles.label}>En (Latitude)</label>
+                <div className="relative">
+                  <input 
+                    type="number"
+                    className={cn(styles.input, styles.inputWithIcon)} 
+                    value={contact.latitude} 
+                    onChange={(e) => setContact({...contact, latitude: Number(e.target.value)})}
+                  />
+                  <Copy size={16} className={styles.inputIcon} />
+                </div>
+              </div>
+              <div className={styles.infoGroup}>
+                <label className={styles.label}>Uzunluq (Longitude)</label>
+                <div className="relative">
+                  <input 
+                    type="number"
+                    className={cn(styles.input, styles.inputWithIcon)} 
+                    value={contact.longitude} 
+                    onChange={(e) => setContact({...contact, longitude: Number(e.target.value)})}
+                  />
+                  <Copy size={16} className={styles.inputIcon} />
+                </div>
+              </div>
+            </div>
+
+            {/* Map moved here */}
+            <div className="w-full h-[240px] rounded-xl overflow-hidden border border-[#ececed] mt-4">
+              <iframe 
+                width="100%" 
+                height="100%" 
+                style={{ border: 0 }} 
+                src={`https://www.google.com/maps?q=${contact.latitude},${contact.longitude}&z=15&output=embed`} 
+                allowFullScreen 
+                loading="lazy"
+              />
+            </div>
+
+            <div className={styles.grid2}>
+              <div className={styles.infoGroup}>
+                <label className={styles.label}>Telefon nömrəsi</label>
+                <input 
+                  className={styles.input} 
+                  value={contact.phone} 
+                  onChange={(e) => setContact({...contact, phone: e.target.value})}
+                />
+              </div>
+              <div className={styles.infoGroup}>
+                <label className={styles.label}>E-Poçt</label>
+                <input 
+                  className={styles.input} 
+                  value={contact.email} 
+                  onChange={(e) => setContact({...contact, email: e.target.value})}
+                />
+              </div>
+            </div>
+
+            <div className={styles.infoGroup}>
+              <label className={styles.label}>Keçid üçün link (URL)</label>
+              <input 
+                className={styles.input} 
+                value={contact.socialUrl} 
+                onChange={(e) => setContact({...contact, socialUrl: e.target.value})}
+              />
+            </div>
+          </section>
+
+          {/* İş saatları */}
+          <section className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <h2 className={styles.sectionTitle}>İş saatları</h2>
+            </div>
+            <div className={styles.grid2}>
+              <div className={styles.infoGroup}>
+                <label className={styles.label}>Başlama saatı</label>
+                <div className="relative">
+                  <input 
+                    type="time"
+                    className={cn(styles.input, styles.inputWithIcon)} 
+                    value={contact.workHours.from} 
+                    onChange={(e) => setContact({...contact, workHours: {...contact.workHours, from: e.target.value}})}
+                  />
+                  <Clock size={20} className={styles.inputIcon} />
+                </div>
+              </div>
+              <div className={styles.infoGroup}>
+                <label className={styles.label}>Bitmə saatı</label>
+                <div className="relative">
+                  <input 
+                    type="time"
+                    className={cn(styles.input, styles.inputWithIcon)} 
+                    value={contact.workHours.to} 
+                    onChange={(e) => setContact({...contact, workHours: {...contact.workHours, to: e.target.value}})}
+                  />
+                  <Clock size={20} className={styles.inputIcon} />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Paketlər */}
+          <section className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <h2 className={styles.sectionTitle}>Paketlər və endirimlər</h2>
+              <button className={styles.addButton} onClick={() => setDiscounts([...discounts, { id: Math.random().toString(36).substr(2, 9), packageId: "", discount: "10" }])}>
+                <Plus size={18} />
+                <span>Əlavə et</span>
+              </button>
+            </div>
+            
+            <div className={styles.packagesSection}>
+              <div className={styles.tableHeader}>
+                <span>Paket adı</span>
+                <span>Endirim (%)</span>
+              </div>
+              <div className="flex flex-col gap-4 p-4">
+                {discounts.map((d, idx) => (
+                  <div key={d.id} className={styles.packageRow}>
+                    <select 
+                      className={styles.input}
+                      value={d.packageId}
+                      onChange={(e) => {
+                        const newDiscounts = [...discounts];
+                        newDiscounts[idx].packageId = e.target.value;
+                        setDiscounts(newDiscounts);
+                      }}
+                    >
+                      <option value="">Paket seçin</option>
+                      {allPackages?.map(p => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                    <div className="relative">
+                      <input 
+                        type="number"
+                        className={styles.input}
+                        value={d.discount}
+                        onChange={(e) => {
+                          const newDiscounts = [...discounts];
+                          newDiscounts[idx].discount = e.target.value;
+                          setDiscounts(newDiscounts);
+                        }}
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">%</span>
+                    </div>
+                    <button className={styles.trashBtn} onClick={() => setDiscounts(discounts.filter(item => item.id !== d.id))}>
+                      <Trash2 size={20} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <div className={styles.formActions}>
+            <button className={styles.buttonSecondary} onClick={() => router.push(`/stores/${storeId}`)}>Ləğv et</button>
+            <button className={styles.buttonPrimary} onClick={handleSave} disabled={isPending}>
+              {isPending && <Loader2 className="animate-spin" size={18} />}
+              Yadda saxla
+            </button>
           </div>
         </div>
-        <Field label="Telefon nömrəsi" htmlFor="ph">
-          <input
-            id="ph"
-            type="tel"
-            value={contact.phone}
-            onChange={(e) => setContact({ ...contact, phone: e.target.value })}
-            className={inputCls}
-          />
-        </Field>
-        <Field label="E-Poçt" htmlFor="em">
-          <input
-            id="em"
-            type="email"
-            value={contact.email}
-            onChange={(e) => setContact({ ...contact, email: e.target.value })}
-            className={inputCls}
-          />
-        </Field>
-        <Field label="Keçid üçün link" htmlFor="soc">
-          <input
-            id="soc"
-            type="url"
-            value={contact.socialUrl}
-            onChange={(e) => setContact({ ...contact, socialUrl: e.target.value })}
-            className={inputCls}
-            placeholder="https://"
-          />
-        </Field>
-      </section>
-
-      <section className="flex flex-col gap-5">
-        <h2 className="text-base font-semibold text-gray-800">İş saatları</h2>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Başlama saatı" htmlFor="whf">
-            <div className="relative">
-              <input
-                id="whf"
-                type="time"
-                value={contact.workHours.from}
-                onChange={(e) =>
-                  setContact({
-                    ...contact,
-                    workHours: { ...contact.workHours, from: e.target.value },
-                  })
-                }
-                className={inputCls + " pr-10"}
-              />
-              <Clock size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#00B4CC] pointer-events-none" />
-            </div>
-          </Field>
-          <Field label="Bitmə saatı" htmlFor="wht">
-            <div className="relative">
-              <input
-                id="wht"
-                type="time"
-                value={contact.workHours.to}
-                onChange={(e) =>
-                  setContact({
-                    ...contact,
-                    workHours: { ...contact.workHours, to: e.target.value },
-                  })
-                }
-                className={inputCls + " pr-10"}
-              />
-              <Clock size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#00B4CC] pointer-events-none" />
-            </div>
-          </Field>
-        </div>
-      </section>
-
-      <section className="flex flex-col gap-4">
-        <h2 className="text-base font-semibold text-gray-800">Paketlər və endirimlər</h2>
-        <StoreDiscountsTab
-          rows={packages}
-          onChange={setPackages}
-          onCancel={() => {}}
-          onSave={() => {}}
-          isSaving={isPending}
-          showFooter={false}
-        />
-      </section>
-
-      <div className="flex flex-wrap justify-end gap-3 pt-4 border-t border-gray-100">
-        <button
-          type="button"
-          onClick={() => router.push(`/stores/${storeId}`)}
-          disabled={isPending}
-          className="px-6 py-2.5 rounded-xl border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition disabled:opacity-50"
-        >
-          Ləğv et
-        </button>
-        <button
-          type="button"
-          onClick={() => void handleSave()}
-          disabled={isPending}
-          className="px-6 py-2.5 rounded-xl bg-[#00B4CC] hover:bg-[#009DB3] text-white text-sm font-medium transition disabled:opacity-60"
-        >
-          {isPending ? "Yadda saxlanılır…" : "Yadda saxla"}
-        </button>
-      </div>
+      </main>
     </div>
   );
 }

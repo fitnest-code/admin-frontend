@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Upload, Trash2, ChevronDown, Pencil, Loader2 } from "lucide-react";
+import { Upload, Trash2, ChevronDown, Pencil, Loader2, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGymDetailsAdmin, useUpdateGymDetails, useCategories } from "@/lib/query/gym-query";
 import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
@@ -138,31 +138,31 @@ export function InfoTab({ gymId }: InfoTabProps) {
   if (!gymInfo) return <div className="p-8 text-center text-muted-foreground">Məlumat tapılmadı</div>;
 
   return (
-    <div className="w-full rounded-[12px] bg-white border border-[#ececed] flex flex-col items-start p-5 sm:p-[20px_28px] gap-20 text-left text-base text-foreground font-sans">
+    <div className="w-full rounded-[12px] bg-white border border-[#ececed] flex flex-col items-start p-4 sm:p-5 gap-8 text-left text-sm text-foreground font-sans shadow-sm">
       
       {/* Zal məlumatları Group */}
       <div className="self-stretch flex flex-col items-start gap-[28px]">
         
       {/* Header & Languages */}
-      <div className="self-stretch border-b border-[#ececed] flex items-center justify-between pb-4">
+      <div className="self-stretch border-b border-[#ececed] flex items-center justify-between pb-3">
         <div className="flex items-center gap-3">
-          <div className="text-[24px] font-bold text-[#101828] font-sans tracking-tight">Zal məlumatları</div>
+          <div className="text-[18px] font-bold text-[#101828] font-sans tracking-tight">Zal məlumatları</div>
           <button 
             onClick={() => setIsEditing(!isEditing)}
-            className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors"
+            className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
           >
-            <Pencil size={20} className={isEditing ? "text-[#00B4CC]" : "text-[#6a7282]"} />
+            <Pencil size={18} className={isEditing ? "text-[#00B4CC]" : "text-[#6a7282]"} />
           </button>
         </div>
         
-        <div className="flex items-center gap-[34px] text-center">
+        <div className="flex items-center gap-6 text-center">
           {(["Az", "Ru", "En"] as const).map((l) => (
             <button
               key={l}
               onClick={() => setActiveLang(l)}
               className={cn(
-                "relative pb-2 text-[16px] font-medium transition-all",
-                activeLang === l ? "text-[#00B4CC] after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[3px] after:bg-[#00B4CC]" : "text-[#94979c] hover:text-[#101828]"
+                "relative pb-1.5 text-[13px] font-bold transition-all",
+                activeLang === l ? "text-[#00B4CC] after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[#00B4CC]" : "text-[#94979c] hover:text-[#101828]"
               )}
             >
               {l}
@@ -178,7 +178,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
           <div className="self-stretch flex flex-col items-start gap-3">
             <div className="self-stretch relative leading-[24px]">Kateqoriya</div>
             <div className={cn(
-              "self-stretch h-[60px] rounded-xl border flex items-center justify-between p-[0px_12px] text-lg transition-colors",
+              "self-stretch h-[44px] rounded-lg border flex items-center justify-between p-[0px_12px] text-sm transition-colors",
               isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
             )}>
               {isEditing ? (
@@ -196,7 +196,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
               ) : (
                 <span className="text-foreground">{gymInfo.categoryName || "Göstərilməyib"}</span>
               )}
-              {isEditing && <ChevronDown size={24} className="text-foreground pointer-events-none" />}
+              {isEditing && <ChevronDown size={20} className="text-foreground pointer-events-none" />}
             </div>
           </div>
 
@@ -204,7 +204,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
           <div className="flex flex-col items-start gap-3 w-full">
             <div className="self-stretch relative leading-[24px]">Zal adı</div>
             <div className={cn(
-              "self-stretch h-[60px] rounded-xl border flex items-center p-[0px_12px] text-lg transition-colors",
+              "self-stretch h-[44px] rounded-lg border flex items-center p-[0px_12px] text-sm transition-colors",
               isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
             )}>
               <input 
@@ -222,7 +222,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
           <div className="self-stretch flex flex-col items-start gap-3">
             <div className="self-stretch relative leading-[24px]">Haqqında</div>
             <div className={cn(
-              "self-stretch min-h-[100px] rounded-xl border flex flex-col items-start p-[8px_12px] text-lg transition-colors",
+              "self-stretch min-h-[80px] rounded-lg border flex flex-col items-start p-[8px_12px] text-sm transition-colors",
               isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
             )}>
               <textarea 
@@ -230,7 +230,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
                 value={formData.description}
                 onChange={handleChange}
                 readOnly={!isEditing}
-                className="bg-transparent text-foreground outline-none w-full h-full min-h-[84px] resize-none"
+                className="bg-transparent text-foreground outline-none w-full h-full min-h-[64px] resize-none"
               />
             </div>
           </div>
@@ -346,7 +346,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
             <div className="flex-1 w-full flex flex-col items-start gap-3">
               <div className="self-stretch relative leading-[24px]">Telefon nömrəsi</div>
               <div className={cn(
-                "self-stretch h-[60px] rounded-xl border flex items-center p-[0px_12px] text-lg transition-colors",
+                "self-stretch h-[44px] rounded-lg border flex items-center p-[0px_12px] text-sm transition-colors relative",
                 isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
               )}>
                 <input 
@@ -355,15 +355,16 @@ export function InfoTab({ gymId }: InfoTabProps) {
                   value={formData.phone}
                   onChange={handleChange}
                   readOnly={!isEditing}
-                  className="bg-transparent font-semibold text-foreground outline-none w-full h-full"
+                  className="bg-transparent text-foreground outline-none w-full h-full"
                 />
+                <Copy size={18} className="absolute right-4 text-[#94979c] cursor-pointer hover:text-[#00B4CC]" />
               </div>
             </div>
             {/* E-poçt */}
             <div className="flex-1 w-full flex flex-col items-start gap-3">
               <div className="self-stretch relative leading-[24px]">E-Poçt</div>
               <div className={cn(
-                "self-stretch h-[60px] rounded-xl border flex items-center p-[0px_12px] text-lg transition-colors",
+                "self-stretch h-[44px] rounded-lg border flex items-center p-[0px_12px] text-sm transition-colors",
                 isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
               )}>
                 <input 
@@ -383,7 +384,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
             <div className="flex-1 w-full flex flex-col items-start gap-3 relative">
               <div className="self-stretch relative leading-[24px]">Şəhər</div>
               <div className={cn(
-                "self-stretch h-[60px] rounded-xl border flex items-center p-[0px_12px] text-lg transition-colors relative",
+                "self-stretch h-[44px] rounded-lg border flex items-center p-[0px_12px] text-sm transition-colors relative",
                 isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
               )}>
                 <input 
@@ -398,7 +399,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
                   className="bg-transparent text-foreground outline-none w-full h-full"
                   autoComplete="off"
                 />
-                {isSearching && activeSearchField === "city" && <Loader2 size={20} className="absolute right-4 animate-spin text-[#00B4CC]" />}
+                {isSearching && activeSearchField === "city" && <Loader2 size={18} className="absolute right-4 animate-spin text-[#00B4CC]" />}
               </div>
 
               {/* Suggestions Dropdown for City */}
@@ -423,7 +424,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
             <div className="flex-1 w-full flex flex-col items-start gap-3 relative">
               <div className="self-stretch relative leading-[24px]">Ünvan</div>
               <div className={cn(
-                "self-stretch h-[60px] rounded-xl border flex items-center p-[0px_12px] text-lg transition-colors relative",
+                "self-stretch h-[44px] rounded-lg border flex items-center p-[0px_12px] text-sm transition-colors relative",
                 isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
               )}>
                 <input 
@@ -438,7 +439,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
                   className="bg-transparent text-foreground outline-none w-full h-full"
                   autoComplete="off"
                 />
-                {isSearching && activeSearchField === "address" && <Loader2 size={20} className="absolute right-4 animate-spin text-[#00B4CC]" />}
+                {isSearching && activeSearchField === "address" && <Loader2 size={18} className="absolute right-4 animate-spin text-[#00B4CC]" />}
               </div>
 
               {/* Suggestions Dropdown for Address */}
@@ -461,16 +462,16 @@ export function InfoTab({ gymId }: InfoTabProps) {
           </div>
 
           {/* Koordinatlar */}
-          <div className="self-stretch flex flex-col items-start gap-5 mt-4">
+          <div className="self-stretch flex flex-col items-start gap-4 mt-2">
             <div className="self-stretch border-b border-[#ececed] flex items-center justify-between pb-1">
-              <div className="relative leading-[30px] font-semibold text-lg sm:text-xl">Koordinatlar</div>
+              <div className="relative leading-[24px] font-semibold text-base">Koordinatlar</div>
             </div>
             
             <div className="self-stretch flex flex-col sm:flex-row items-center gap-[18px]">
-              <div className="flex-1 w-full flex flex-col items-start gap-3">
-                <div className="self-stretch relative leading-[24px]">En</div>
+              <div className="flex-1 w-full flex flex-col items-start gap-2">
+                <div className="self-stretch relative leading-[20px] text-sm">En</div>
                 <div className={cn(
-                  "self-stretch h-[60px] rounded-xl border flex items-center justify-between p-[0px_12px] text-lg transition-colors",
+                  "self-stretch h-[44px] rounded-lg border flex items-center justify-between p-[0px_12px] text-sm transition-colors",
                   isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
                 )}>
                   <input 
@@ -480,16 +481,16 @@ export function InfoTab({ gymId }: InfoTabProps) {
                     onChange={handleChange}
                     readOnly={!isEditing}
                     step="any"
-                    className="bg-transparent text-foreground outline-none w-full h-full"
+                    className="bg-transparent text-foreground outline-none w-full h-full font-semibold"
                   />
-                  {!isEditing && <ChevronDown size={16} className="text-foreground opacity-50 pointer-events-none" />}
+                  {!isEditing && <ChevronDown size={14} className="text-foreground opacity-50 pointer-events-none" />}
                 </div>
               </div>
 
-              <div className="flex-1 w-full flex flex-col items-start gap-3">
-                <div className="self-stretch relative leading-[24px]">Uzunluq</div>
+              <div className="flex-1 w-full flex flex-col items-start gap-2">
+                <div className="self-stretch relative leading-[20px] text-sm">Uzunluq</div>
                 <div className={cn(
-                  "self-stretch h-[60px] rounded-xl border flex items-center justify-between p-[0px_12px] text-lg transition-colors",
+                  "self-stretch h-[44px] rounded-lg border flex items-center justify-between p-[0px_12px] text-sm transition-colors",
                   isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
                 )}>
                   <input 
@@ -499,16 +500,16 @@ export function InfoTab({ gymId }: InfoTabProps) {
                     onChange={handleChange}
                     readOnly={!isEditing}
                     step="any"
-                    className="bg-transparent text-foreground outline-none w-full h-full"
+                    className="bg-transparent text-foreground outline-none w-full h-full font-semibold"
                   />
-                  {!isEditing && <ChevronDown size={16} className="text-foreground opacity-50 pointer-events-none" />}
+                  {!isEditing && <ChevronDown size={14} className="text-foreground opacity-50 pointer-events-none" />}
                 </div>
               </div>
             </div>
           </div>
 
           {/* Map Placeholder */}
-          <div className="self-stretch h-[400px] sm:h-[553px] rounded-2xl overflow-hidden relative border border-[#ececed] bg-slate-100 flex items-center justify-center text-muted-foreground w-full mt-4">
+          <div className="self-stretch h-[240px] sm:h-[320px] rounded-xl overflow-hidden relative border border-[#ececed] bg-slate-100 flex items-center justify-center text-muted-foreground w-full mt-4">
             {formData.latitude && formData.longitude ? (
               <iframe 
                 src={`https://www.google.com/maps?q=${formData.latitude},${formData.longitude}&z=15&output=embed`} 
@@ -528,11 +529,11 @@ export function InfoTab({ gymId }: InfoTabProps) {
       </div>
 
       {/* Yaradılma tarixi */}
-      <div className="self-stretch flex items-start text-base">
-        <div className="flex-1 flex flex-col items-start gap-3">
-          <div className="self-stretch relative leading-[24px]">Yaradılma tarixi</div>
-          <div className="self-stretch h-[60px] rounded-xl bg-[#fafafa] border border-[#ececed] flex items-center p-[0px_12px] text-lg">
-            <div className="relative leading-[28px] font-semibold">{gymInfo.createdAt || "---"}</div>
+      <div className="self-stretch flex items-start text-sm">
+        <div className="flex-1 flex flex-col items-start gap-2">
+          <div className="self-stretch relative leading-[20px]">Yaradılma tarixi</div>
+          <div className="self-stretch h-[44px] rounded-lg bg-[#fafafa] border border-[#ececed] flex items-center p-[0px_12px] text-sm">
+            <div className="relative leading-[24px] font-semibold">{gymInfo.createdAt || "---"}</div>
           </div>
         </div>
       </div>
@@ -558,7 +559,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
                   });
                 }
               }}
-              className="h-12 px-10 rounded-[10px] border border-[#ececed] bg-white text-[16px] font-medium text-[#101828] hover:bg-slate-50 transition-colors"
+              className="h-[44px] px-8 rounded-lg border border-[#ececed] bg-white text-[14px] font-medium text-[#101828] hover:bg-slate-50 transition-colors"
             >
               Ləğv et
             </button>
@@ -566,11 +567,11 @@ export function InfoTab({ gymId }: InfoTabProps) {
               onClick={handleSave}
               disabled={isPending || !hasChanges}
               className={cn(
-                "h-12 w-[280px] rounded-[10px] flex items-center justify-center text-[16px] font-semibold text-white transition-all shadow-sm",
+                "h-[44px] w-[220px] rounded-lg flex items-center justify-center text-[14px] font-semibold text-white transition-all shadow-sm",
                 hasChanges ? "bg-[#00B4CC] hover:bg-[#009DB3]" : "bg-[#c1c1cc]"
               )}
             >
-              {isPending ? <Loader2 size={20} className="animate-spin" /> : "Yadda saxla"}
+              {isPending ? <Loader2 size={18} className="animate-spin" /> : "Yadda saxla"}
             </button>
           </div>
         </div>

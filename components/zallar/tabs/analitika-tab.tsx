@@ -109,22 +109,22 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
   const totalPages = data?.history?.total ? Math.ceil(data.history.total / pageSize) : 1
 
   return (
-    <div className="w-full rounded-[12px] bg-white border border-[#ececed] flex flex-col items-start p-6 sm:p-8 gap-10 font-sans shadow-sm">
+    <div className="w-full rounded-[12px] bg-white border border-[#ececed] flex flex-col items-start p-4 sm:p-6 gap-8 font-sans shadow-sm">
       <div className="self-stretch flex flex-col items-start gap-8">
         
         {/* Zal analitikas Section Header */}
         <div className="self-stretch border-b border-[#ececed] flex items-center justify-between pb-2">
-          <div className="text-[20px] leading-[30px] font-bold text-black tracking-tight">Zal analitikası</div>
+          <div className="text-[18px] leading-[28px] font-bold text-black tracking-tight">Zal analitikası</div>
         </div>
 
         <div className="self-stretch flex flex-col items-start gap-10">
           
           {/* Controls: Date Range & Export */}
-          <div className="self-stretch rounded-xl border border-[#ececed] flex flex-col md:flex-row items-center justify-between p-3 gap-5 bg-slate-50/20">
+          <div className="self-stretch rounded-xl border border-[#ececed] flex flex-col md:flex-row items-center justify-between p-2.5 gap-4 bg-slate-50/20">
             <div className="relative">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="h-12 w-[237px] rounded-xl bg-white border border-[#ececed] flex items-center justify-center px-4 gap-5 text-base font-medium text-black transition-all hover:border-[#00B4CC] hover:shadow-sm outline-none">
+                  <button className="h-10 w-[220px] rounded-lg bg-white border border-[#ececed] flex items-center justify-center px-4 gap-4 text-sm font-medium text-black transition-all hover:border-[#00B4CC] hover:shadow-sm outline-none">
                     <span className="relative leading-[24px] truncate">
                       {dateRange === 'today' ? 'Bu gün' :
                        dateRange === 'last7' ? 'Son 7 gün' :
@@ -262,48 +262,48 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
               </DialogContent>
             </Dialog>
 
-            <button className="h-11 rounded-xl bg-[#00B4CC] flex items-center justify-center px-6 gap-3 text-sm font-semibold text-white hover:bg-[#009DB3] transition-all shadow-sm active:scale-[0.98]">
+            <button className="h-10 rounded-lg bg-[#00B4CC] flex items-center justify-center px-5 gap-2 text-sm font-semibold text-white hover:bg-[#009DB3] transition-all shadow-sm active:scale-[0.98]">
               <span className="relative leading-[18px]">Hesabatı yüklə</span>
-              <Image src="/DownloadSimple.svg" width={24} height={24} alt="download" />
+              <Image src="/DownloadSimple.svg" width={20} height={20} alt="download" />
             </button>
           </div>
 
           {/* Summary Cards */}
           <div className="self-stretch grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Profit Card */}
-            <div className="h-[110px] rounded-xl bg-white border border-[#ececed] flex items-center p-6 gap-4 shadow-sm hover:shadow-md transition-shadow">
-              <div className="h-14 w-14 rounded-lg bg-[rgba(0,180,204,0.15)] flex items-center justify-center shrink-0">
-                <Image src="/vuesax/linear/dollar-square.png" width={28} height={28} alt="Profit" />
+            <div className="h-[94px] rounded-xl bg-white border border-[#ececed] flex items-center p-4 gap-4 shadow-sm hover:shadow-md transition-shadow">
+              <div className="h-12 w-12 rounded-lg bg-[rgba(0,180,204,0.15)] flex items-center justify-center shrink-0">
+                <Image src="/vuesax/linear/dollar-square.png" width={24} height={24} alt="Profit" />
               </div>
               <div className="flex flex-col items-start justify-center">
-                <div className="text-slate-500 font-medium text-sm">Ümumi gəlir</div>
-                <b className="text-[26px] leading-[36px] text-[#001028] font-bold">
+                <div className="text-slate-500 font-medium text-xs">Ümumi gəlir</div>
+                <b className="text-[22px] leading-[30px] text-[#001028] font-bold">
                   {isLoading ? '...' : `${data?.totalProfit?.toFixed(2) || '0.00'} AZN`}
                 </b>
               </div>
             </div>
 
             {/* Success Card */}
-            <div className="h-[110px] rounded-xl bg-white border border-[#ececed] flex items-center p-6 gap-4 shadow-sm hover:shadow-md transition-shadow">
-              <div className="h-14 w-14 rounded-lg bg-[#e7f8f2] flex items-center justify-center shrink-0">
-                <Image src="/QrCode.png" width={28} height={28} alt="Success" />
+            <div className="h-[94px] rounded-xl bg-white border border-[#ececed] flex items-center p-4 gap-4 shadow-sm hover:shadow-md transition-shadow">
+              <div className="h-12 w-12 rounded-lg bg-[#e7f8f2] flex items-center justify-center shrink-0">
+                <Image src="/QrCode.png" width={24} height={24} alt="Success" />
               </div>
               <div className="flex flex-col items-start justify-center">
-                <div className="text-slate-500 font-medium text-sm">Uğurlu girişlər</div>
-                <b className="text-[26px] leading-[36px] text-black font-bold">
+                <div className="text-slate-500 font-medium text-xs">Uğurlu girişlər</div>
+                <b className="text-[22px] leading-[30px] text-black font-bold">
                   {isLoading ? '...' : data?.successfulScans || 0}
                 </b>
               </div>
             </div>
 
             {/* Failed Card */}
-            <div className="h-[110px] rounded-xl bg-white border border-[#ececed] flex items-center p-6 gap-4 shadow-sm hover:shadow-md transition-shadow">
-              <div className="h-14 w-14 rounded-lg bg-[#feebef] flex items-center justify-center shrink-0">
-                <Image src="/vuesax/linear/info-circle.png" width={28} height={28} alt="Failed" />
+            <div className="h-[94px] rounded-xl bg-white border border-[#ececed] flex items-center p-4 gap-4 shadow-sm hover:shadow-md transition-shadow">
+              <div className="h-12 w-12 rounded-lg bg-[#feebef] flex items-center justify-center shrink-0">
+                <Image src="/vuesax/linear/info-circle.png" width={24} height={24} alt="Failed" />
               </div>
               <div className="flex flex-col items-start justify-center">
-                <div className="text-slate-500 font-medium text-sm">Uğursuz girişlər</div>
-                <b className="text-[26px] leading-[36px] text-black font-bold">
+                <div className="text-slate-500 font-medium text-xs">Uğursuz girişlər</div>
+                <b className="text-[22px] leading-[30px] text-black font-bold">
                   {isLoading ? '...' : data?.failedScans || 0}
                 </b>
               </div>
@@ -311,18 +311,18 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
           </div>
 
           {/* Customer Entries Section */}
-          <div className="w-full flex flex-col items-start gap-6 pt-4">
-            <div className="text-[20px] leading-[30px] font-bold text-black tracking-tight">Müştəri girişləri</div>
+          <div className="w-full flex flex-col items-start gap-5 pt-2">
+            <div className="text-[18px] leading-[28px] font-bold text-black tracking-tight">Müştəri girişləri</div>
             
             <div className="self-stretch flex flex-col items-start gap-6">
               {/* Filters Row */}
               <div className="w-full flex flex-col lg:flex-row items-center justify-between gap-5">
-                <div className="flex-1 w-full lg:w-[527px] h-12 bg-white rounded-xl border border-[#ececed] flex items-center px-6 py-1.5 gap-3 focus-within:border-[#00B4CC] transition-colors shadow-sm">
-                  <Image src="/search.svg" width={24} height={24} alt="search" className="shrink-0 opacity-50" />
+                <div className="flex-1 w-full lg:w-[500px] h-10 bg-white rounded-lg border border-[#ececed] flex items-center px-4 py-1.5 gap-3 focus-within:border-[#00B4CC] transition-colors shadow-sm">
+                  <Image src="/search.svg" width={20} height={20} alt="search" className="shrink-0 opacity-50" />
                   <input
                     type="text"
                     placeholder="Axtar..."
-                    className="flex-1 bg-transparent text-[14px] text-black outline-none placeholder:text-[#94979c]"
+                    className="flex-1 bg-transparent text-[13px] text-black outline-none placeholder:text-[#94979c]"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                   />
@@ -331,9 +331,9 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
                 <div className="flex flex-wrap items-center gap-4">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className="h-12 w-[216px] rounded-xl bg-white border border-[#ececed] flex items-center justify-between px-6 py-1.5 outline-none hover:border-[#00B4CC] transition-all shadow-sm">
-                        <span className="text-sm font-semibold">{statusFilter === 'SUCCESSFUL' ? 'Uğurlu' : statusFilter === 'UNSUCCESSFUL' ? 'Uğursuz' : 'Filter'}</span>
-                        <ChevronDown size={20} className="text-black" />
+                      <button className="h-10 w-[180px] rounded-lg bg-white border border-[#ececed] flex items-center justify-between px-4 py-1.5 outline-none hover:border-[#00B4CC] transition-all shadow-sm">
+                        <span className="text-[13px] font-semibold">{statusFilter === 'SUCCESSFUL' ? 'Uğurlu' : statusFilter === 'UNSUCCESSFUL' ? 'Uğursuz' : 'Filter'}</span>
+                        <ChevronDown size={18} className="text-black" />
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48">
@@ -345,9 +345,9 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className="h-12 w-[216px] rounded-xl bg-white border border-[#ececed] flex items-center justify-between px-6 py-1.5 outline-none hover:border-[#00B4CC] transition-all shadow-sm">
-                        <span className="text-sm font-semibold">{sort === 'date_desc' ? 'Yeni-Köhnə' : 'Köhnə-Yeni'}</span>
-                        <ChevronDown size={20} className="text-black" />
+                      <button className="h-10 w-[180px] rounded-lg bg-white border border-[#ececed] flex items-center justify-between px-4 py-1.5 outline-none hover:border-[#00B4CC] transition-all shadow-sm">
+                        <span className="text-[13px] font-semibold">{sort === 'date_desc' ? 'Yeni-Köhnə' : 'Köhnə-Yeni'}</span>
+                        <ChevronDown size={18} className="text-black" />
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48">
@@ -362,14 +362,14 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
               <div className="w-full overflow-x-auto rounded-[12px] border border-[#cecfd2] shadow-sm bg-white">
                 <div className="min-w-[1000px] flex flex-col bg-white">
                   {/* Table Header */}
-                  <div className="w-full h-[64px] bg-[rgba(0,180,204,0.15)] flex items-center px-[28px] gap-[48px] text-[16px] font-bold text-[#101828]">
-                    <div className="w-[71px] shrink-0 opacity-80 uppercase text-[13px] tracking-wider">ID</div>
-                    <div className="w-[110px] shrink-0 opacity-80 uppercase text-[13px] tracking-wider">Ad / Soyad</div>
-                    <div className="w-[150px] shrink-0 opacity-80 uppercase text-[13px] tracking-wider">Telefon</div>
-                    <div className="w-[111px] shrink-0 opacity-80 uppercase text-[13px] tracking-wider">Tarix / Saat</div>
-                    <div className="w-[120px] shrink-0 opacity-80 uppercase text-[13px] tracking-wider text-center">Giriş məbləği</div>
-                    <div className="w-[73px] shrink-0 opacity-80 uppercase text-[13px] tracking-wider text-center">Nəticə</div>
-                    <div className="w-[60px] shrink-0 opacity-80 uppercase text-[13px] tracking-wider text-center">Səbəb</div>
+                  <div className="w-full h-[48px] bg-[rgba(0,180,204,0.1)] flex items-center px-[20px] gap-[32px] text-[13px] font-bold text-[#101828]">
+                    <div className="w-[60px] shrink-0 opacity-70 uppercase tracking-wider">ID</div>
+                    <div className="w-[120px] shrink-0 opacity-70 uppercase tracking-wider">Ad / Soyad</div>
+                    <div className="w-[130px] shrink-0 opacity-70 uppercase tracking-wider">Telefon</div>
+                    <div className="w-[110px] shrink-0 opacity-70 uppercase tracking-wider">Tarix / Saat</div>
+                    <div className="w-[110px] shrink-0 opacity-70 uppercase tracking-wider text-center">Məbləğ</div>
+                    <div className="w-[80px] shrink-0 opacity-70 uppercase tracking-wider text-center">Nəticə</div>
+                    <div className="w-[100px] flex-1 opacity-70 uppercase tracking-wider text-center">Səbəb</div>
                   </div>
 
                   {/* Rows */}
@@ -385,28 +385,28 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
                         const [date, time] = item.scanDateTime ? item.scanDateTime.split(' ') : ['---', '---'];
 
                         return (
-                          <div key={item.id || i} className="w-full h-[84px] flex items-center px-[28px] gap-[48px] text-[16px] hover:bg-slate-50/80 transition-colors group">
-                            <div className="w-[71px] shrink-0 text-slate-400 font-medium">#{item.id || '---'}</div>
-                            <div className="w-[110px] shrink-0 font-bold text-[#101828] group-hover:text-[#00B4CC] transition-colors truncate">{item.firstName} {item.lastName}</div>
-                            <div className="w-[150px] shrink-0 text-slate-600 font-medium">{item.phone || '---'}</div>
-                            <div className="w-[111px] shrink-0 flex flex-col justify-center">
+                          <div key={item.id || i} className="w-full h-[64px] flex items-center px-[20px] gap-[32px] text-[14px] hover:bg-slate-50/80 transition-colors group">
+                            <div className="w-[60px] shrink-0 text-slate-400 font-medium">#{item.id || '---'}</div>
+                            <div className="w-[120px] shrink-0 font-bold text-[#101828] group-hover:text-[#00B4CC] transition-colors truncate">{item.firstName} {item.lastName}</div>
+                            <div className="w-[130px] shrink-0 text-slate-600 font-medium">{item.phone || '---'}</div>
+                            <div className="w-[110px] shrink-0 flex flex-col justify-center">
                               <span className="font-bold text-slate-700">{date}</span>
-                              <span className="text-[14px] text-slate-400">{time}</span>
+                              <span className="text-[12px] text-slate-400">{time}</span>
                             </div>
-                            <div className="w-[120px] shrink-0 font-bold text-[#101828] text-center">{item.amount?.toFixed(2) || '0.00'} AZN</div>
-                            <div className="w-[73px] shrink-0 flex justify-center">
+                            <div className="w-[110px] shrink-0 font-bold text-[#101828] text-center">{item.amount?.toFixed(2) || '0.00'} AZN</div>
+                            <div className="w-[80px] shrink-0 flex justify-center">
                               <div className={cn(
-                                "h-[26px] w-[73px] rounded-[20px] flex items-center justify-center gap-1.5 px-3 text-[12px] font-bold text-white shadow-xs",
+                                "h-[24px] w-[73px] rounded-[20px] flex items-center justify-center gap-1.5 px-3 text-[10px] font-bold text-white shadow-xs",
                                 isSuccess ? "bg-[#166728]" : "bg-[#c9373a]"
                               )}>
-                                <div className="h-1.5 w-1.5 rounded-full bg-white shadow-sm" />
-                                <span className="uppercase tracking-tight text-[10px]">{isSuccess ? 'Uğurlu' : 'Xəta'}</span>
+                                <div className="h-1 w-1 rounded-full bg-white shadow-sm" />
+                                <span className="uppercase tracking-tight">{isSuccess ? 'Uğurlu' : 'Xəta'}</span>
                               </div>
                             </div>
-                            <div className="w-[60px] shrink-0 text-center text-slate-400 font-medium truncate">
+                            <div className="w-[100px] flex-1 text-center text-slate-400 font-medium truncate text-[13px]">
                               {isSuccess ? (
                                 <div className="flex justify-center">
-                                  <div className="h-[1.5px] w-[18px] bg-[#cecfd2]" />
+                                  <div className="h-[1px] w-[16px] bg-[#cecfd2]" />
                                 </div>
                               ) : item.reason || '—'}
                             </div>
