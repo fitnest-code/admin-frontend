@@ -21,8 +21,6 @@ export function Sidebar({ className }: SidebarProps) {
   const { 
     sidebarCollapsed: collapsed, 
     toggleSidebar,
-    mobileSidebarOpen: mobileOpen,
-    setMobileSidebarOpen: setMobileOpen
   } = useUIStore()
   const [showExitConfirm, setShowExitConfirm] = useState(false)
   const [pendingHref, setPendingHref] = useState<string | null>(null)
@@ -42,7 +40,6 @@ export function Sidebar({ className }: SidebarProps) {
       setShowExitConfirm(true)
       return
     }
-    setMobileOpen(false)
   }
 
   const handleConfirmExit = () => {
@@ -55,23 +52,11 @@ export function Sidebar({ className }: SidebarProps) {
 
   return (
     <>
-      {/* Mobile overlay */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/60 lg:hidden backdrop-blur-sm"
-          onClick={() => setMobileOpen(false)}
-          aria-hidden="true"
-        />
-      )}
-
-      {/* Sidebar panel */}
+      {/* Sidebar panel - desktop only */}
       <aside
         className={cn(
-          'fixed left-0 top-0 z-50 flex h-screen flex-col bg-white border-r border-[#ececed] transition-all duration-500 ease-in-out font-sans overflow-hidden shadow-sm',
-          collapsed ? 'lg:w-[80px] w-[230px]' : 'w-[230px]',
-          // Mobile: translate off-screen unless open
-          mobileOpen ? 'translate-x-0' : '-translate-x-full',
-          'lg:translate-x-0',
+          'fixed left-0 top-0 z-50 flex h-screen flex-col bg-white border-r border-[#ececed] transition-all duration-500 ease-in-out font-sans overflow-hidden shadow-sm hidden lg:flex',
+          collapsed ? 'w-[80px]' : 'w-[230px]',
           className,
         )}
         aria-label="Main navigation"
@@ -80,13 +65,13 @@ export function Sidebar({ className }: SidebarProps) {
         <div className="relative w-full h-[100px] shrink-0">
           <div className={cn(
             "absolute transition-all duration-500",
-            collapsed ? "lg:top-[34px] lg:left-[24px] top-[34px] left-[25.5px]" : "top-[34px] left-[25.5px]"
+            collapsed ? "top-[34px] left-[24px]" : "top-[34px] left-[25.5px]"
           )}>
             <div className="flex items-center gap-3">
                <div className="relative h-[28px] w-[28px] md:h-[32px] md:w-[32px] shrink-0">
                   <Image src="/Sidebar/Group 11.svg" fill alt="Logo" className="object-contain" />
                </div>
-               {(!collapsed || mobileOpen) && (
+               {!collapsed && (
                  <span className="text-[22px] font-semibold text-[#00b4cc] leading-[32px] animate-in fade-in slide-in-from-left-2 duration-500 whitespace-nowrap">
                    FitNest
                  </span>
@@ -94,37 +79,24 @@ export function Sidebar({ className }: SidebarProps) {
             </div>
           </div>
           
-          {/* Collapse/Expand Toggle - Visible when collapsed (desktop only) */}
+          {/* Collapse/Expand Toggle - Visible when collapsed */}
           {collapsed && (
             <button
               onClick={handleCollapseToggle}
-              className="absolute top-[68px] left-1/2 -translate-x-1/2 w-8 h-8 flex items-center justify-center transition-all lg:flex hidden"
+              className="absolute top-[68px] left-1/2 -translate-x-1/2 w-8 h-8 flex items-center justify-center transition-all"
             >
               <Image src="/menu.svg" width={24} height={24} alt="Expand" />
             </button>
           )}
           
-          {/* Collapse/Expand Toggle - Visible when expanded (desktop only) */}
+          {/* Collapse/Expand Toggle - Visible when expanded */}
           {!collapsed && (
             <button 
               onClick={handleCollapseToggle}
-              className="absolute top-[34px] right-5 text-slate-400 hover:text-slate-600 transition-colors lg:block hidden"
+              className="absolute top-[34px] right-5 text-slate-400 hover:text-slate-600 transition-colors"
             >
                <div className="h-[32px] flex items-center justify-center">
                   <Image src="/Sidebar/X.svg" width={20} height={20} alt="Collapse" />
-               </div>
-            </button>
-          )}
-
-          {/* Mobile Close Button - Visible on mobile only */}
-          {mobileOpen && (
-            <button 
-              onClick={() => setMobileOpen(false)}
-              className="absolute top-[34px] right-5 text-slate-400 hover:text-slate-600 transition-colors lg:hidden"
-              aria-label="Close navigation"
-            >
-               <div className="h-[32px] flex items-center justify-center">
-                  <X size={24} className="text-slate-500" />
                </div>
             </button>
           )}
@@ -153,7 +125,7 @@ export function Sidebar({ className }: SidebarProps) {
                           ? 'bg-white border border-[#00b4cc] text-black shadow-sm'
                           : 'text-black hover:bg-slate-50',
                         collapsed 
-                          ? 'lg:w-[44px] lg:h-[40px] lg:justify-center lg:px-0 w-[160px] h-[40px] px-4 gap-3' 
+                          ? 'w-[44px] h-[40px] justify-center px-0' 
                           : 'w-[160px] h-[40px] px-4 gap-3',
                       )}
                       aria-current={isActive ? 'page' : undefined}
@@ -166,7 +138,7 @@ export function Sidebar({ className }: SidebarProps) {
                       )}
                     </div>
                       
-                      {(!collapsed || mobileOpen) && (
+                      {!collapsed && (
                         <span className="text-[14px] leading-[22px] font-medium transition-all duration-300 whitespace-nowrap overflow-hidden">
                           {item.label}
                         </span>
