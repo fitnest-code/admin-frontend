@@ -28,14 +28,17 @@ export function StepAdmins({ onComplete }: { onComplete?: () => void }) {
   const createComplete = useCreateGymComplete();
 
   function handleAddAdmin() {
-    if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim()) {
-      return toast.error("Zəhmət olmasa bütün xanaları doldurun");
+    if (!form.firstName.trim() || !form.lastName.trim()) {
+      return toast.error("Zəhmət olmasa ulduzlu xanaları doldurun");
     }
 
-    const isDuplicateEmail = admins.some(a => a.email.toLowerCase() === form.email.toLowerCase());
-    if (isDuplicateEmail) return toast.error("Bu e-poçt ünvanı ilə admin artıq əlavə edilib");
+    const emailVal = form.email.trim();
+    if (emailVal) {
+      const isDuplicateEmail = admins.some(a => a.email && a.email.toLowerCase() === emailVal.toLowerCase());
+      if (isDuplicateEmail) return toast.error("Bu e-poçt ünvanı ilə admin artıq əlavə edilib");
+    }
 
-    addStep7Admin({ ...form });
+    addStep7Admin({ ...form, email: emailVal });
     setForm(EMPTY_FORM);
     setModalOpen(false);
   }
@@ -49,7 +52,7 @@ export function StepAdmins({ onComplete }: { onComplete?: () => void }) {
           name: a.firstName,
           surname: a.lastName,
           phoneNumber: a.phone,
-          email: a.email,
+          email: a.email.trim() === "" ? null : a.email.trim(),
           password: a.password,
         })),
       };

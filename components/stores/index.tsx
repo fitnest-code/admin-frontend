@@ -93,14 +93,22 @@ export default function StoreCreateWizard() {
     } else if (step === 2) {
       if (!storeId) return toast.error("Mağaza ID-si tapılmadı");
 
-      if (!contact.phone || !contact.email) {
-        return toast.error("Telefon və Email mütləqdir");
+      if (!contact.phone) {
+        return toast.error("Telefon mütləqdir");
       }
 
       try {
+        const contactPayload = {
+          ...contact,
+          email: contact.email.trim() === "" ? "" : contact.email.trim(), // Server DTO validates format if present
+        };
+
         await createStep2({
           id: storeId,
-          data: contact,
+          data: {
+            ...contactPayload,
+            email: contactPayload.email === "" ? undefined : contactPayload.email // undefined maps to missing/null in JSON DTO
+          },
         });
 
         setStep(3);
