@@ -2,13 +2,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "../api/client";
 import { ICategory } from "../types/categories";
 
-export const useCategories = () => {
+export const useCategories = (lang: string = "AZ") => {
   const queryClient = useQueryClient();
 
   // 1. Siyahı
   const { data: categories, isLoading, refetch } = useQuery({
-    queryKey: ["categories"],
-    queryFn: () => apiRequest<ICategory[]>("/categories"),
+    queryKey: ["categories", lang],
+    queryFn: () => apiRequest<ICategory[]>("/categories", {
+      headers: {
+        "Accept-Language": lang,
+      }
+    }),
   });
 
   // 2. POST (Create)

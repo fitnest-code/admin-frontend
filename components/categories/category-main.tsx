@@ -9,7 +9,8 @@ import { SuccessAnimationModal } from "../ui/success-animation-modal";
 import { useCategories } from "@/lib/query/add-category";
 
 export default function CategoriesPage() {
-  const { categories, isLoading, refetch, createCategory, updateCategory, deleteCategory } = useCategories();
+  const [selectedLang, setSelectedLang] = useState<"AZ" | "RU" | "EN">("AZ");
+  const { categories, isLoading, refetch, createCategory, updateCategory, deleteCategory } = useCategories(selectedLang);
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<any | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
@@ -67,9 +68,30 @@ export default function CategoriesPage() {
         <div className="w-full border-b border-[#ececed] flex items-center justify-between pb-1 gap-5">
           <h2 className="text-[16px] font-semibold leading-[24px] text-black">Zal kateqoriyaları</h2>
           <div className="flex items-center gap-6 text-center text-[13px] font-medium text-[#717182]">
-            <div className="w-[26px] border-b-2 border-[#00b4cc] flex flex-col items-center justify-center pb-1 text-[#00b4cc] cursor-pointer">Az</div>
-            <div className="w-[26px] flex flex-col items-center justify-center pb-1 cursor-pointer hover:text-gray-600 font-medium">Ru</div>
-            <div className="w-[26px] flex flex-col items-center justify-center pb-1 cursor-pointer hover:text-gray-600 font-medium">En</div>
+            <div 
+              onClick={() => setSelectedLang("AZ")}
+              className={`w-[26px] flex flex-col items-center justify-center pb-1 cursor-pointer transition-colors ${
+                selectedLang === "AZ" ? "border-b-2 border-[#00b4cc] text-[#00b4cc]" : "hover:text-gray-600 font-medium"
+              }`}
+            >
+              Az
+            </div>
+            <div 
+              onClick={() => setSelectedLang("RU")}
+              className={`w-[26px] flex flex-col items-center justify-center pb-1 cursor-pointer transition-colors ${
+                selectedLang === "RU" ? "border-b-2 border-[#00b4cc] text-[#00b4cc]" : "hover:text-gray-600 font-medium"
+              }`}
+            >
+              Ru
+            </div>
+            <div 
+              onClick={() => setSelectedLang("EN")}
+              className={`w-[26px] flex flex-col items-center justify-center pb-1 cursor-pointer transition-colors ${
+                selectedLang === "EN" ? "border-b-2 border-[#00b4cc] text-[#00b4cc]" : "hover:text-gray-600 font-medium"
+              }`}
+            >
+              En
+            </div>
           </div>
         </div>
 
