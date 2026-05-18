@@ -98,17 +98,12 @@ export default function StoreCreateWizard() {
       }
 
       try {
-        const contactPayload = {
-          ...contact,
-          email: contact.email.trim() === "" ? "" : contact.email.trim(), // Server DTO validates format if present
-        };
-
         await createStep2({
           id: storeId,
           data: {
-            ...contactPayload,
-            email: contactPayload.email === "" ? undefined : contactPayload.email // undefined maps to missing/null in JSON DTO
-          },
+            ...contact,
+            email: contact.email.trim() === "" ? null : contact.email.trim(),
+          } as any,
         });
 
         setStep(3);

@@ -52,7 +52,7 @@ export function StepAdmins({ onComplete }: { onComplete?: () => void }) {
           name: a.firstName,
           surname: a.lastName,
           phoneNumber: a.phone,
-          email: a.email.trim() === "" ? null : a.email.trim(),
+          email: a.email.trim(),
           password: a.password,
         })),
       };
