@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { IStoreStep2Payload } from "@/lib/types/stores";
 import * as Label from "@radix-ui/react-label";
 import { Copy, Loader2, Check } from "lucide-react";
+import { useGetAddressByCoords } from "@/lib/query/location-query";
 
 interface Step2Props {
   data: IStoreStep2Payload;
@@ -32,6 +33,51 @@ export default function ContactInfoTab({ data, onChange }: Step2Props) {
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  // Local inputs state for coordinates
+  const [inputLat, setInputLat] = useState((data.latitude || 40.4093).toString());
+  const [inputLng, setInputLng] = useState((data.longitude || 49.8671).toString());
+  const [isUpdatingFromCoords, setIsUpdatingFromCoords] = useState(false);
+
+  // 1. Reverse Geocoding when coordinates are typed manually
+  const { data: addressData } = useGetAddressByCoords(
+    data.latitude || 0,
+    data.longitude || 0,
+    isUpdatingFromCoords
+  );
+
+  // Sync inputs when data.latitude/longitude changes (e.g. from suggestion select)
+  useEffect(() => {
+    if (!isUpdatingFromCoords) {
+      setInputLat((data.latitude || 40.4093).toString());
+      setInputLng((data.longitude || 49.8671).toString());
+    }
+  }, [data.latitude, data.longitude, isUpdatingFromCoords]);
+
+  // Debounce coordinate changes from manual typing
+  useEffect(() => {
+    if (!isUpdatingFromCoords) return;
+    const lat = parseFloat(inputLat);
+    const lng = parseFloat(inputLng);
+    if (!isNaN(lat) && !isNaN(lng)) {
+      const timeout = setTimeout(() => {
+        onChange({ ...data, latitude: lat, longitude: lng });
+      }, 800);
+      return () => clearTimeout(timeout);
+    }
+  }, [inputLat, inputLng, isUpdatingFromCoords]);
+
+  // Sync reverse geocoding result to address field
+  useEffect(() => {
+    if (isUpdatingFromCoords && addressData?.addressText) {
+      setSearchQuery(addressData.addressText);
+      onChange({
+        ...data,
+        address: addressData.addressText
+      });
+      setIsUpdatingFromCoords(false); // Reset
+    }
+  }, [addressData, isUpdatingFromCoords]);
 
   // Ümumi string dəyərlər üçün (phone, email, socialUrl, address)
   const handleChange = (key: keyof IStoreStep2Payload, value: any) => {
@@ -80,7 +126,7 @@ export default function ContactInfoTab({ data, onChange }: Step2Props) {
     const suggestedText = s.addressText || s.display_name || "";
     
     // Extract custom typed numbers/house indicators missing from the map result
-    const matchNumber = searchQuery.match(/\b\d+[A-Za-z]?\b/);
+    const matchNumber = searchQuery.match(/\b\d+(?:\/[a-zA-Z0-9]+|-[a-zA-Z0-9]+|[a-zA-Z])?\b/);
     
     let finalAddressText = suggestedText;
     if (matchNumber && !suggestedText.includes(matchNumber[0])) {
@@ -90,6 +136,7 @@ export default function ContactInfoTab({ data, onChange }: Step2Props) {
       finalAddressText = parts.join(', ');
     }
     
+    setIsUpdatingFromCoords(false);
     setSearchQuery(finalAddressText);
     onChange({
       ...data,
@@ -97,7 +144,8 @@ export default function ContactInfoTab({ data, onChange }: Step2Props) {
       longitude: lng,
       address: finalAddressText
     });
-    
+    setInputLat(lat.toString());
+    setInputLng(lng.toString());
     setSuggestions([]);
   };
 
@@ -168,8 +216,11 @@ export default function ContactInfoTab({ data, onChange }: Step2Props) {
             <input
               type="number"
               step="any"
-              value={data.latitude || ""}
-              onChange={(e) => handleChange("latitude", parseFloat(e.target.value) || 0)}
+              value={inputLat}
+              onChange={(e) => {
+                setInputLat(e.target.value);
+                setIsUpdatingFromCoords(true);
+              }}
               className="flex-1 bg-transparent text-sm font-semibold text-[#1F2937] outline-none"
               placeholder="40.4093"
             />
@@ -184,8 +235,11 @@ export default function ContactInfoTab({ data, onChange }: Step2Props) {
             <input
               type="number"
               step="any"
-              value={data.longitude || ""}
-              onChange={(e) => handleChange("longitude", parseFloat(e.target.value) || 0)}
+              value={inputLng}
+              onChange={(e) => {
+                setInputLng(e.target.value);
+                setIsUpdatingFromCoords(true);
+              }}
               className="flex-1 bg-transparent text-sm font-semibold text-[#1F2937] outline-none"
               placeholder="49.8671"
             />
