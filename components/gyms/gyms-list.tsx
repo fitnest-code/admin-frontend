@@ -11,6 +11,7 @@ import { ConfirmDeleteModal } from './modals/confirm-delete-modal'
 import { useDeleteGym } from '@/lib/query/gym-query'
 import { SuccessAnimationModal } from '@/components/ui/success-animation-modal'
 import { toast } from 'sonner'
+import { useGymStore } from '@/lib/store/gym-store'
 
 const PER_PAGE = 10
 
@@ -145,7 +146,10 @@ export function GymsList() {
         </div>
 
         <button
-          onClick={() => router.push('/gyms/new')}
+          onClick={() => {
+            useGymStore.getState().resetGym()
+            router.push('/gyms/new')
+          }}
           className="flex items-center gap-2 rounded-lg bg-[#00B4CC] px-4 py-2 text-sm font-semibold text-white hover:bg-[#008799] transition-colors"
         >
           <Plus size={15} />
@@ -169,7 +173,10 @@ export function GymsList() {
           <div className="flex flex-col items-center justify-center gap-4 py-20">
             <p className="text-sm font-semibold text-foreground">Məlumat yoxdur</p>
             <button
-              onClick={() => router.push('/gyms/new')}
+              onClick={() => {
+                useGymStore.getState().resetGym()
+                router.push('/gyms/new')
+              }}
               className="flex items-center gap-2 rounded-lg bg-[#00B4CC] px-4 py-2 text-sm font-semibold text-white hover:bg-[#008799] transition-colors"
             >
               <Plus size={15} />
