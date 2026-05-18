@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Plus, Check, Loader2, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGymStore } from "@/lib/store/gym-store";
@@ -24,37 +24,6 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
   
   const PACKAGES = useMemo(() => allPackageNames?.map(p => p.name) || [], [allPackageNames]);
 
-  // Initialize from store if exists
-  const initialPackages = useMemo(() => {
-    if (!step6Data) {
-        // Default to first package if available
-        return new Set<string>();
-    }
-    const set = new Set<string>();
-    step6Data.subscriptions.forEach(s => {
-      const found = allPackageNames?.find(p => p.id === s.packageId);
-      if (found) set.add(found.name);
-    });
-    return set;
-  }, [step6Data, allPackageNames]);
-
-  const initialPrices = useMemo(() => {
-    const res: Record<string, string> = {};
-    if (step6Data) {
-        step6Data.subscriptions.forEach(s => {
-            const found = allPackageNames?.find(p => p.id === s.packageId);
-            if (found) res[found.name] = s.dailyPrice.toString();
-        });
-    }
-    return res;
-  }, [step6Data, allPackageNames]);
-
-  const initialServices = useMemo(() => {
-    const svcs: Record<string, string[]> = {};
-    PACKAGES.forEach(p => { svcs[p] = []; });
-    return svcs;
-  }, [PACKAGES]);
-
   const [selectedPackages, setSelectedPackages] = useState<Set<string>>(new Set());
   const [activePackage, setActivePackage] = useState<string>("");
   const [prices, setPrices] = useState<Record<string, string>>({});
@@ -62,21 +31,52 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isCreatingService, setIsCreatingService] = useState(false);
+  const [hasSynced, setHasSynced] = useState(false);
+  const { data: allServices } = useSupportedServices(gymId ? Number(gymId) : undefined);
 
-  // Sync state once data is loaded
-  useMemo(() => {
-    if (allPackageNames && allPackageNames.length > 0) {
-        if (selectedPackages.size === 0 && !step6Data) {
-            setSelectedPackages(initialPackages.size > 0 ? initialPackages : new Set([allPackageNames[0].name]));
-            setActivePackage(initialPackages.size > 0 ? Array.from(initialPackages)[0] : allPackageNames[0].name);
-            setPrices(initialPrices);
-            setPackageServices(initialServices);
+  // Robust State Synchronization
+  useEffect(() => {
+    if (!allPackageNames || allPackageNames.length === 0 || hasSynced) return;
+
+    if (step6Data) {
+      if (allServices === undefined) return; // Wait for supported services to load to resolve IDs
+      
+      const pkgs = new Set<string>();
+      const prcs: Record<string, string> = {};
+      const svcs: Record<string, string[]> = {};
+      PACKAGES.forEach(p => { svcs[p] = []; });
+
+      step6Data.subscriptions.forEach(s => {
+        const found = allPackageNames.find(p => p.id === s.packageId);
+        if (found) {
+          pkgs.add(found.name);
+          prcs[found.name] = s.dailyPrice.toString();
+          if (s.supportedServicesId && allServices) {
+            const names = s.supportedServicesId
+              .map(id => allServices.find(as => as.id === id)?.name)
+              .filter((name): name is string => !!name);
+            svcs[found.name] = names;
+          }
         }
+      });
+
+      setSelectedPackages(pkgs);
+      setActivePackage(pkgs.size > 0 ? Array.from(pkgs)[0] : allPackageNames[0].name);
+      setPrices(prcs);
+      setPackageServices(svcs);
+      setHasSynced(true);
+    } else {
+      setSelectedPackages(new Set([allPackageNames[0].name]));
+      setActivePackage(allPackageNames[0].name);
+      setPrices({});
+      const svcs: Record<string, string[]> = {};
+      PACKAGES.forEach(p => { svcs[p] = []; });
+      setPackageServices(svcs);
+      setHasSynced(true);
     }
-  }, [allPackageNames, initialPackages, initialPrices, initialServices]);
+  }, [allPackageNames, allServices, step6Data, hasSynced, PACKAGES]);
   
   const [pendingService, setPendingService] = useState<string | null>(null);
-  const { data: allServices } = useSupportedServices(gymId ? Number(gymId) : undefined);
   const createServiceMutation = useCreateSupportedService();
   const validateStep6 = useValidateGymStep6();
 
