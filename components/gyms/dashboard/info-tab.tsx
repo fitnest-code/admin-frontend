@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Upload, Trash2, ChevronDown, Pencil, Loader2, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGymDetailsAdmin, useUpdateGymDetails, useCategories } from "@/lib/query/gym-query";
+import { useGetAddressByCoords } from "@/lib/query/location-query";
 import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 
 interface InfoTabProps {
@@ -42,6 +43,18 @@ export function InfoTab({ gymId }: InfoTabProps) {
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
   const [activeSearchField, setActiveSearchField] = useState<"city" | "address" | null>(null);
 
+  // Local inputs state for coordinates
+  const [inputLat, setInputLat] = useState("0");
+  const [inputLng, setInputLng] = useState("0");
+  const [isUpdatingFromCoords, setIsUpdatingFromCoords] = useState(false);
+
+  // 1. Koordinat dəyişdikcə ünvanı gətirən query
+  const { data: revAddressData } = useGetAddressByCoords(
+    formData.latitude,
+    formData.longitude,
+    isEditing && isUpdatingFromCoords
+  );
+
   const debouncedSearch = (query: string, field: "city" | "address") => {
     setActiveSearchField(field);
     if (searchTimeout) clearTimeout(searchTimeout);
@@ -52,9 +65,9 @@ export function InfoTab({ gymId }: InfoTabProps) {
     const timeout = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1&countrycodes=az`);
+        const res = await fetch(`/api/v1/admin/gyms/geocoding/forward?query=${encodeURIComponent(query)}`);
         const data = await res.json();
-        setSuggestions(data);
+        setSuggestions(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Geocoding error:", error);
       } finally {
@@ -65,19 +78,34 @@ export function InfoTab({ gymId }: InfoTabProps) {
   };
 
   const handleSelectSuggestion = (s: any) => {
-    const lat = parseFloat(s.lat);
-    const lng = parseFloat(s.lon);
-    let city = formData.city;
-    if (s.address) {
-        city = s.address.city || s.address.town || s.address.village || city;
+    const lat = typeof s.latitude === "number" ? s.latitude : parseFloat(s.lat || 0);
+    const lng = typeof s.longitude === "number" ? s.longitude : parseFloat(s.lon || 0);
+    let city = s.city || formData.city;
+    if (!city && s.address) {
+      city = s.address.city || s.address.town || s.address.village;
     }
+    const suggestedText = s.addressText || s.display_name || "";
+    
+    // Extract custom typed numbers/house indicators missing from the map result
+    const matchNumber = formData.address.match(/\b\d+(?:\/[a-zA-Z0-9]+|-[a-zA-Z0-9]+|[a-zA-Z])?\b/);
+    let finalAddress = suggestedText;
+    
+    if (matchNumber && !suggestedText.includes(matchNumber[0])) {
+      const parts = suggestedText.split(',');
+      parts[0] = `${parts[0].trim()} ${matchNumber[0]}`;
+      finalAddress = parts.join(', ');
+    }
+
+    setIsUpdatingFromCoords(false);
     setFormData(prev => ({
-        ...prev,
-        latitude: lat,
-        longitude: lng,
-        address: s.display_name,
-        city: city
+      ...prev,
+      latitude: lat,
+      longitude: lng,
+      address: finalAddress,
+      city: city || ""
     }));
+    setInputLat(lat.toString());
+    setInputLng(lng.toString());
     setSuggestions([]);
   };
 
@@ -108,8 +136,44 @@ export function InfoTab({ gymId }: InfoTabProps) {
         latitude: gymInfo.latitude || 0,
         longitude: gymInfo.longitude || 0,
       });
+      setInputLat((gymInfo.latitude || 0).toString());
+      setInputLng((gymInfo.longitude || 0).toString());
+      setIsUpdatingFromCoords(false);
     }
   }, [gymInfo]);
+
+  // Sync manual coordinates to formData
+  useEffect(() => {
+    if (!isEditing || !isUpdatingFromCoords) return;
+    const lat = parseFloat(inputLat);
+    const lng = parseFloat(inputLng);
+    if (!isNaN(lat) && !isNaN(lng)) {
+      const timeout = setTimeout(() => {
+        setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }));
+      }, 800);
+      return () => clearTimeout(timeout);
+    }
+  }, [inputLat, inputLng, isEditing, isUpdatingFromCoords]);
+
+  // Sync inputs when formData.latitude/longitude changes (e.g. on suggestion select)
+  useEffect(() => {
+    if (!isUpdatingFromCoords) {
+      setInputLat(formData.latitude.toString());
+      setInputLng(formData.longitude.toString());
+    }
+  }, [formData.latitude, formData.longitude, isUpdatingFromCoords]);
+
+  // Sync reverse geocoding result to address field
+  useEffect(() => {
+    if (isEditing && isUpdatingFromCoords && revAddressData?.addressText) {
+      setFormData(prev => ({
+        ...prev,
+        address: revAddressData.addressText || "",
+        city: revAddressData.city || prev.city || ""
+      }));
+      setIsUpdatingFromCoords(false);
+    }
+  }, [revAddressData, isEditing, isUpdatingFromCoords]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -124,7 +188,8 @@ export function InfoTab({ gymId }: InfoTabProps) {
         ...formData,
         categoryId: Number(formData.categoryId),
         latitude: Number(formData.latitude),
-        longitude: Number(formData.longitude)
+        longitude: Number(formData.longitude),
+        email: formData.email.trim()
       }
     }, {
       onSuccess: () => {
@@ -405,17 +470,21 @@ export function InfoTab({ gymId }: InfoTabProps) {
               {/* Suggestions Dropdown for City */}
               {isEditing && suggestions.length > 0 && activeSearchField === "city" && (
                 <div className="absolute top-[90px] left-0 right-0 z-50 bg-white border border-[#ECECED] rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2">
-                  {suggestions.map((s, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => handleSelectSuggestion(s)}
-                      className="w-full text-left px-4 py-3 text-sm font-medium hover:bg-slate-50 border-b border-slate-100 last:border-0 transition-colors flex flex-col gap-0.5"
-                    >
-                      <span className="text-slate-800">{s.display_name.split(',')[0]}</span>
-                      <span className="text-xs text-slate-400 truncate">{s.display_name}</span>
-                    </button>
-                  ))}
+                  {suggestions.map((s, i) => {
+                    const text = s.addressText || s.display_name || "";
+                    const shortText = text.split(',')[0] || text;
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => handleSelectSuggestion(s)}
+                        className="w-full text-left px-4 py-3 text-sm font-medium hover:bg-slate-50 border-b border-slate-100 last:border-0 transition-colors flex flex-col gap-0.5"
+                      >
+                        <span className="text-slate-800">{shortText}</span>
+                        <span className="text-xs text-slate-400 truncate">{text}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -445,17 +514,21 @@ export function InfoTab({ gymId }: InfoTabProps) {
               {/* Suggestions Dropdown for Address */}
               {isEditing && suggestions.length > 0 && activeSearchField === "address" && (
                 <div className="absolute top-[90px] left-0 right-0 z-50 bg-white border border-[#ECECED] rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2">
-                  {suggestions.map((s, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => handleSelectSuggestion(s)}
-                      className="w-full text-left px-4 py-3 text-sm font-medium hover:bg-slate-50 border-b border-slate-100 last:border-0 transition-colors flex flex-col gap-0.5"
-                    >
-                      <span className="text-slate-800">{s.display_name.split(',')[0]}</span>
-                      <span className="text-xs text-slate-400 truncate">{s.display_name}</span>
-                    </button>
-                  ))}
+                  {suggestions.map((s, i) => {
+                    const text = s.addressText || s.display_name || "";
+                    const shortText = text.split(',')[0] || text;
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => handleSelectSuggestion(s)}
+                        className="w-full text-left px-4 py-3 text-sm font-medium hover:bg-slate-50 border-b border-slate-100 last:border-0 transition-colors flex flex-col gap-0.5"
+                      >
+                        <span className="text-slate-800">{shortText}</span>
+                        <span className="text-xs text-slate-400 truncate">{text}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -477,8 +550,11 @@ export function InfoTab({ gymId }: InfoTabProps) {
                   <input 
                     type="number" 
                     name="latitude"
-                    value={formData.latitude}
-                    onChange={handleChange}
+                    value={inputLat}
+                    onChange={(e) => {
+                      setInputLat(e.target.value);
+                      setIsUpdatingFromCoords(true);
+                    }}
                     readOnly={!isEditing}
                     step="any"
                     className="bg-transparent text-foreground outline-none w-full h-full font-semibold"
@@ -496,8 +572,11 @@ export function InfoTab({ gymId }: InfoTabProps) {
                   <input 
                     type="number" 
                     name="longitude"
-                    value={formData.longitude}
-                    onChange={handleChange}
+                    value={inputLng}
+                    onChange={(e) => {
+                      setInputLng(e.target.value);
+                      setIsUpdatingFromCoords(true);
+                    }}
                     readOnly={!isEditing}
                     step="any"
                     className="bg-transparent text-foreground outline-none w-full h-full font-semibold"

@@ -26,6 +26,11 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
   const [coords, setCoords] = useState({ lat: 40.4093, lng: 49.8671 });
   const [copied, setCopied] = useState<"lat" | "lng" | null>(null);
 
+  // Local inputs state for smooth typing
+  const [inputLat, setInputLat] = useState("40.4093");
+  const [inputLng, setInputLng] = useState("49.8671");
+  const [isUpdatingFromCoords, setIsUpdatingFromCoords] = useState(false);
+
   // Axtarış üçün state-lər
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -36,7 +41,7 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
   const { data: addressData, isFetching: isAddressFetching } = useGetAddressByCoords(
     coords.lat, 
     coords.lng, 
-    mounted
+    mounted && isUpdatingFromCoords
   );
 
   // 2. Step 4 Mutation
@@ -46,12 +51,34 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
     setMounted(true);
   }, []);
 
+  // Sync inputs when coords change (e.g., from address selection or maps click)
+  useEffect(() => {
+    if (!isUpdatingFromCoords) {
+      setInputLat(coords.lat.toString());
+      setInputLng(coords.lng.toString());
+    }
+  }, [coords, isUpdatingFromCoords]);
+
+  // Debounce coordinate changes from manual typing
+  useEffect(() => {
+    if (!isUpdatingFromCoords) return;
+    const lat = parseFloat(inputLat);
+    const lng = parseFloat(inputLng);
+    if (!isNaN(lat) && !isNaN(lng)) {
+      const timeout = setTimeout(() => {
+        setCoords({ lat, lng });
+      }, 800);
+      return () => clearTimeout(timeout);
+    }
+  }, [inputLat, inputLng, isUpdatingFromCoords]);
+
   // Backend-dən gələn ünvanı input-a sinxronizasiya et
   useEffect(() => {
-    if (addressData?.addressText && !isSearching) {
+    if (addressData?.addressText && !isSearching && isUpdatingFromCoords) {
       setSearchQuery(addressData.addressText);
+      setIsUpdatingFromCoords(false); // Reset
     }
-  }, [addressData, isSearching]);
+  }, [addressData, isSearching, isUpdatingFromCoords]);
 
   // Forward Geocoding (Axtarış)
   const debouncedSearch = (query: string) => {
@@ -64,9 +91,9 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
     const timeout = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1&countrycodes=az`);
+        const res = await fetch(`/api/v1/admin/gyms/geocoding/forward?query=${encodeURIComponent(query)}`);
         const data = await res.json();
-        setSuggestions(data);
+        setSuggestions(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Geocoding error:", error);
       } finally {
@@ -77,10 +104,27 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
   };
 
   const handleSelectSuggestion = (s: any) => {
-    const lat = parseFloat(s.lat);
-    const lng = parseFloat(s.lon);
+    const lat = typeof s.latitude === "number" ? s.latitude : parseFloat(s.lat || 0);
+    const lng = typeof s.longitude === "number" ? s.longitude : parseFloat(s.lon || 0);
+    
+    setIsUpdatingFromCoords(false); // Disable reverse geocoding!
     setCoords({ lat, lng });
-    setSearchQuery(s.display_name);
+    setInputLat(lat.toString());
+    setInputLng(lng.toString());
+
+    const suggestedText = s.addressText || s.display_name || "";
+    
+    // Extract custom typed numbers/house indicators missing from the map result
+    const matchNumber = searchQuery.match(/\b\d+(?:\/[a-zA-Z0-9]+|-[a-zA-Z0-9]+|[a-zA-Z])?\b/);
+    let finalAddress = suggestedText;
+    
+    if (matchNumber && !suggestedText.includes(matchNumber[0])) {
+      const parts = suggestedText.split(',');
+      parts[0] = `${parts[0].trim()} ${matchNumber[0]}`;
+      finalAddress = parts.join(', ');
+    }
+
+    setSearchQuery(finalAddress);
     setSuggestions([]);
   };
 
@@ -173,17 +217,21 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
           {/* Suggestions Dropdown */}
           {suggestions.length > 0 && (
             <div className="absolute top-[100%] left-0 right-0 z-50 mt-1 bg-white border border-[#ECECED] rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2">
-              {suggestions.map((s, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => handleSelectSuggestion(s)}
-                  className="w-full text-left px-4 py-3 text-sm font-medium hover:bg-slate-50 border-b border-slate-50 last:border-0 transition-colors flex flex-col gap-0.5"
-                >
-                  <span className="text-slate-800">{s.display_name.split(',')[0]}</span>
-                  <span className="text-xs text-slate-400 truncate">{s.display_name}</span>
-                </button>
-              ))}
+              {suggestions.map((s, i) => {
+                const text = s.addressText || s.display_name || "";
+                const shortText = text.split(',')[0] || text;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => handleSelectSuggestion(s)}
+                    className="w-full text-left px-4 py-3 text-sm font-medium hover:bg-slate-50 border-b border-slate-50 last:border-0 transition-colors flex flex-col gap-0.5"
+                  >
+                    <span className="text-slate-800">{shortText}</span>
+                    <span className="text-xs text-slate-400 truncate">{text}</span>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -196,8 +244,11 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
               <input
                 type="number"
                 step="any"
-                value={coords.lat}
-                onChange={(e) => setCoords(p => ({ ...p, lat: parseFloat(e.target.value) || 0 }))}
+                value={inputLat}
+                onChange={(e) => {
+                  setInputLat(e.target.value);
+                  setIsUpdatingFromCoords(true);
+                }}
                 className="flex-1 bg-transparent text-sm font-semibold text-[#1F2937] outline-none"
               />
               <button onClick={() => copyToClipboard(coords.lat, "lat")} type="button">
@@ -211,8 +262,11 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
               <input
                 type="number"
                 step="any"
-                value={coords.lng}
-                onChange={(e) => setCoords(p => ({ ...p, lng: parseFloat(e.target.value) || 0 }))}
+                value={inputLng}
+                onChange={(e) => {
+                  setInputLng(e.target.value);
+                  setIsUpdatingFromCoords(true);
+                }}
                 className="flex-1 bg-transparent text-sm font-semibold text-[#1F2937] outline-none"
               />
               <button onClick={() => copyToClipboard(coords.lng, "lng")} type="button">
