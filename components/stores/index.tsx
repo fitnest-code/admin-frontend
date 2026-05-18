@@ -160,6 +160,29 @@ export default function StoreCreateWizard() {
     setPackages([{ id: crypto.randomUUID(), packageId: "", discount: "10" }]);
   }
 
+  function handleResetStep() {
+    if (step === 1) {
+      setStoreInfo({ name: "", image: null, imagePreview: null });
+    } else if (step === 2) {
+      setContact({
+        latitude: 0,
+        longitude: 0,
+        address: "",
+        phone: "",
+        email: "",
+        socialUrl: "",
+        workHours: {
+          from: "09:00",
+          to: "18:00",
+        },
+      });
+    }
+  }
+
+  function resetStep3Data() {
+    setPackages([{ id: crypto.randomUUID(), packageId: "", discount: "10" }]);
+  }
+
   return (
     <div className="w-full min-h-[calc(100vh-6rem)] font-sans text-black">
       <div className="mb-5 flex flex-col gap-1 border-b border-[#ececed] pb-4">
@@ -200,7 +223,7 @@ export default function StoreCreateWizard() {
             <StoreDiscountsTab
               rows={packages}
               onChange={setPackages}
-              onCancel={reset}
+              onCancel={resetStep3Data}
               onSave={handleFinalSave}
               isSaving={isStep3Pending}
             />
@@ -210,7 +233,7 @@ export default function StoreCreateWizard() {
             <div className="flex flex-wrap gap-3 justify-end mt-8 pt-6 border-t border-gray-100">
               <button
                 type="button"
-                onClick={reset}
+                onClick={handleResetStep}
                 disabled={isPending}
                 className="h-[40px] px-8 rounded-lg border border-[#ececed] text-[#101828] text-[14px] font-medium hover:bg-slate-50 transition disabled:opacity-50"
               >
