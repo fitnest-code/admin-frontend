@@ -198,9 +198,9 @@ export default function CategoryModal({
                   </div>
                 )}
               </div>
-              <input ref={iconInputRef} type="file" className="hidden" accept=".svg,image/svg+xml" onChange={(e) => e.target.files?.[0] && handleIconFile(e.target.files[0])} />
+              <input ref={iconInputRef} type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleIconFile(e.target.files[0])} />
               <div className="w-full text-left text-[11px] sm:text-[12px] leading-[18px] tracking-[-0.15px] text-[#6a7282]">
-                SVG • Max size 2MB
+                JPG, PNG or SVG • Max size 2MB
               </div>
             </div>
           </div>
