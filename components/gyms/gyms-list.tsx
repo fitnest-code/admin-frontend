@@ -287,7 +287,7 @@ function GymRow({
     >
       <span className="text-sm font-normal text-black truncate">{gym.name}</span>
       <span className="text-sm text-black truncate">{gym.fullAddress}</span>
-      <span className="text-sm text-black truncate">{gym.ownerName === 'N/A' ? '' : gym.ownerName}</span>
+      <span className="text-sm text-black truncate">{gym.ownerName || ''}</span>
       <div className="flex justify-center">
         <GymStatusToggle active={gym.status === 'ACTIVE'} onToggle={onToggle} />
       </div>
