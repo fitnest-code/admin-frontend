@@ -14,10 +14,6 @@ interface I18nState {
 }
 
 function getInitialLocale(): Locale {
-  if (typeof window !== "undefined") {
-    const stored = localStorage.getItem("fitnest-language");
-    if (stored === "AZ" || stored === "EN" || stored === "RU") return stored;
-  }
   return "AZ";
 }
 
