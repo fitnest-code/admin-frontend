@@ -176,7 +176,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       case 'plans':
         return <PlansTab gym={gym} />
       case 'reviews':
-        return <ReviewsTab />
+        return <ReviewsTab gymName={gym.name} />
       case 'reservations':
         return <ReservationsTab />
       case 'lessonHours':

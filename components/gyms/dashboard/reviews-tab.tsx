@@ -46,7 +46,7 @@ const STATUS_BADGE_MAP: Record<string, { label: string, color: string, bgColor: 
   },
 };
 
-export function ReviewsTab() {
+export function ReviewsTab({ gymName }: { gymName?: string }) {
   const { gymId } = useGymStore();
   const [status, setStatus] = useState<string>("");
   const [sort, setSort] = useState<string>("newest");
@@ -206,7 +206,7 @@ export function ReviewsTab() {
 
                 {/* Gym Name */}
                 <div className="text-[14px] font-medium text-[#535353] truncate pr-4 uppercase">
-                  {review.gym_name || "FIT CLUB"}
+                  {gymName || review.gym_name || "FIT CLUB"}
                 </div>
 
                 {/* Status */}
@@ -281,7 +281,7 @@ export function ReviewsTab() {
                {/* Gym Row */}
                <div className="flex flex-col items-start gap-1.5">
                   <span className="text-[14px] font-medium text-[#364153]">Zal</span>
-                  <span className="text-[16px] leading-[24px] text-black font-medium">{selectedReview.gym_name || "FIT CLUB"}</span>
+                  <span className="text-[16px] leading-[24px] text-black font-medium">{gymName || selectedReview.gym_name || "FIT CLUB"}</span>
                </div>
 
                {/* Comment Row */}
