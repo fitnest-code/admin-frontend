@@ -467,7 +467,6 @@ export function useApproveReview() {
     onSuccess: (_, reviewId) => {
       queryClient.invalidateQueries({ queryKey: ['gym-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['review-detail', reviewId] });
-      toast.success('Rəy təsdiq edildi');
     },
   });
 }
@@ -481,7 +480,6 @@ export function useRejectReview() {
     onSuccess: (_, reviewId) => {
       queryClient.invalidateQueries({ queryKey: ['gym-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['review-detail', reviewId] });
-      toast.success('Rəy rədd edildi');
     },
   });
 }

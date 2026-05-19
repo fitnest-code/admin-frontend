@@ -8,6 +8,7 @@ import { useGymStore } from "@/lib/store/gym-store";
 import { useGymReviews, useApproveReview, useRejectReview } from "@/lib/query/gym-query";
 import { format } from "date-fns";
 import { az } from "date-fns/locale";
+import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 
 const STATUS_OPTIONS = [
   { key: "", label: "Bütün statuslar", color: "#4b5563" },
@@ -57,6 +58,11 @@ export function ReviewsTab({ gymName }: { gymName?: string }) {
 
   const [isOpenStatus, setIsOpenStatus] = useState(false);
   const [isOpenSort, setIsOpenSort] = useState(false);
+  const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; message: string; type: "success" | "error" }>({
+    isOpen: false,
+    message: "",
+    type: "success",
+  });
 
   // Debounce search input
   useEffect(() => {
@@ -77,9 +83,21 @@ export function ReviewsTab({ gymName }: { gymName?: string }) {
 
   const handleAction = (reviewId: number, type: 'approve' | 'reject') => {
     if (type === 'approve') {
-      approve(reviewId, { onSuccess: () => setSelectedReview(null) });
+      approve(reviewId, { 
+        onSuccess: () => {
+          setSelectedReview(null);
+          setModalConfig({ isOpen: true, message: "Rəy təsdiq edildi", type: "success" });
+        },
+        onError: () => setModalConfig({ isOpen: true, message: "Xəta baş verdi", type: "error" })
+      });
     } else {
-      reject(reviewId, { onSuccess: () => setSelectedReview(null) });
+      reject(reviewId, { 
+        onSuccess: () => {
+          setSelectedReview(null);
+          setModalConfig({ isOpen: true, message: "Rəy rədd edildi", type: "success" });
+        },
+        onError: () => setModalConfig({ isOpen: true, message: "Xəta baş verdi", type: "error" })
+      });
     }
   };
 
@@ -342,6 +360,12 @@ export function ReviewsTab({ gymName }: { gymName?: string }) {
           </div>
         </div>
       )}
+      <SuccessAnimationModal
+        isOpen={modalConfig.isOpen}
+        onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
+        message={modalConfig.message}
+        type={modalConfig.type}
+      />
     </div>
   );
 }

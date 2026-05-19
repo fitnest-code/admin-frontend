@@ -1,10 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
 import { Sidebar } from './sidebar'
 import { Header } from './header'
 import { cn } from '@/lib/utils'
 import { useUIStore } from '@/lib/store/ui-store'
+import { useAuthStore } from '@/lib/store/auth-store'
+import { apiGet } from '@/lib/api/client'
 
 interface AdminLayoutProps {
   children: React.ReactNode
@@ -12,18 +15,46 @@ interface AdminLayoutProps {
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const { sidebarCollapsed } = useUIStore()
+  const user = useAuthStore((state) => state.user)
+  const isGymAdmin = user?.role === 'ROLE_GYM_SUPER_ADMIN' || user?.role === 'ROLE_GYM_ADMIN'
+  const router = useRouter()
+  const pathname = usePathname()
+  const [isResolving, setIsResolving] = useState(isGymAdmin)
+
+  useEffect(() => {
+    if (isGymAdmin) {
+      apiGet<any>('/admin/gyms/list')
+        .then(res => {
+          const items = res?.data?.items || []
+          if (items.length > 0) {
+            const gymId = items[0].id
+            const expectedPath = `/gyms/${gymId}`
+            if (pathname !== expectedPath) {
+              router.replace(expectedPath)
+            } else {
+              setIsResolving(false)
+            }
+          } else {
+            setIsResolving(false)
+          }
+        })
+        .catch(() => {
+          setIsResolving(false)
+        })
+    }
+  }, [isGymAdmin, pathname, router])
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar */}
-      <Sidebar />
+      {!isGymAdmin && <Sidebar />}
 
       {/* Main content — offset by sidebar width */}
       <div
         className={cn(
           'flex flex-1 flex-col overflow-hidden transition-all duration-500 ease-in-out',
           // On desktop, push content right of sidebar
-          sidebarCollapsed ? 'lg:pl-[80px]' : 'lg:pl-[230px]',
+          isGymAdmin ? 'lg:pl-0' : (sidebarCollapsed ? 'lg:pl-[80px]' : 'lg:pl-[230px]'),
           // On mobile, no padding (sidebar overlays)
           'pl-0',
         )}
@@ -34,7 +65,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           role="main"
           id="main-content"
         >
-          {children}
+          {isResolving ? (
+            <div className="flex h-full w-full items-center justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#00B4CC] border-t-transparent" />
+            </div>
+          ) : (
+            children
+          )}
         </main>
       </div>
     </div>

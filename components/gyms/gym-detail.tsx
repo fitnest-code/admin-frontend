@@ -30,6 +30,7 @@ import { StepNavigationWarningModal } from './modals/step-navigation-warning-mod
 import { ExitConfirmationModal } from './modals/exit-confirmation-modal'
 import { useGymStore } from '@/lib/store/gym-store'
 import { useT } from '@/lib/i18n'
+import { useAuthStore } from '@/lib/store/auth-store'
 
 const WIZARD_TABS = [
   { key: 'info', label: 'Zal məlumatları' },
@@ -51,6 +52,8 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
   const { gymId, currentTab, setCurrentTab, resetGym, setGymId, markStepCompleted, completedSteps } = useGymStore()
   const { mutate: deleteGymMutate } = useDeleteGym()
   const router = useRouter()
+  const user = useAuthStore((state) => state.user)
+  const isGymAdmin = user?.role === 'ROLE_GYM_SUPER_ADMIN' || user?.role === 'ROLE_GYM_ADMIN'
 
   const getTabLabel = (key: string) => {
     switch (key) {
@@ -112,6 +115,12 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       setActiveTab(currentTab)
     }
   }, [currentTab])
+
+  useEffect(() => {
+    if (isGymAdmin && activeTab !== 'analitika') {
+      setActiveTab('analitika')
+    }
+  }, [isGymAdmin, activeTab])
 
   const handleConfirmExit = () => {
     if (isNew && gymId) {
@@ -285,17 +294,19 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
   return (
     <div className="flex flex-col gap-8 w-full font-sans">
       {/* Breadcrumbs */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <button
-            onClick={() => router.push('/gyms')}
-            className="text-[11px] font-bold text-slate-400 uppercase tracking-widest hover:text-[#00B4CC] transition-colors flex items-center gap-2"
-          >
-            <ArrowLeft size={14} strokeWidth={3} />
-            {t.gyms.goBack}
-          </button>
+      {!isGymAdmin && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <button
+              onClick={() => router.push('/gyms')}
+              className="text-[11px] font-bold text-slate-400 uppercase tracking-widest hover:text-[#00B4CC] transition-colors flex items-center gap-2"
+            >
+              <ArrowLeft size={14} strokeWidth={3} />
+              {t.gyms.goBack}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Header with Status */}
       <div className="w-full flex items-center justify-between border-b border-[#ececed] pb-3">
@@ -328,7 +339,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       {/* STRETCHED TABS */}
       <div className="w-full border-b border-[#ececed]">
         <nav className="-mb-px flex w-full overflow-x-auto no-scrollbar" aria-label="Zal bölmələri">
-          {GYM_TABS.map((tab) => (
+          {GYM_TABS.filter((tab) => !isGymAdmin || tab.key === 'analitika').map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
