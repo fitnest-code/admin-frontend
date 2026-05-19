@@ -8,6 +8,7 @@ import { useLessonTypes } from "@/lib/query/use-lesson-types";
 export interface CategoryFormData {
   name: string;
   photo: File | null;
+  icon: File | null;
   lessonTypeIds?: number[];
 }
 
@@ -15,7 +16,7 @@ interface CategoryModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (data: CategoryFormData) => void;
-  initialData?: { name: string; image: string; lessonTypes?: { id: number; name: string }[] };
+  initialData?: { name: string; image: string; iconUrl?: string; lessonTypes?: { id: number; name: string }[] };
   mode?: "create" | "edit";
 }
 
@@ -29,8 +30,11 @@ export default function CategoryModal({
   const [name, setName] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [iconPreview, setIconPreview] = useState<string | null>(null);
+  const [selectedIconFile, setSelectedIconFile] = useState<File | null>(null);
   const [selectedLessonTypeIds, setSelectedLessonTypeIds] = useState<Set<number>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const iconInputRef = useRef<HTMLInputElement>(null);
 
   const { lessonTypes, createLessonType, deleteLessonType } = useLessonTypes();
 
@@ -38,7 +42,9 @@ export default function CategoryModal({
     if (open) {
       setName(initialData?.name ?? "");
       setImagePreview(initialData?.image ?? null);
+      setIconPreview(initialData?.iconUrl ?? null);
       setSelectedFile(null);
+      setSelectedIconFile(null);
       if (initialData?.lessonTypes) {
         setSelectedLessonTypeIds(new Set(initialData.lessonTypes.map((lt) => lt.id)));
       } else {
@@ -55,6 +61,14 @@ export default function CategoryModal({
     reader.readAsDataURL(file);
   }, []);
 
+  const handleIconFile = useCallback((file: File) => {
+    // Validating for SVG or images
+    setSelectedIconFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => setIconPreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+  }, []);
+
   const [newLessonTypeName, setNewLessonTypeName] = useState("");
   const [isAddingLessonType, setIsAddingLessonType] = useState(false);
   const [isSubmittingLessonType, setIsSubmittingLessonType] = useState(false);
@@ -64,6 +78,7 @@ export default function CategoryModal({
     onSave({ 
       name: name.trim(), 
       photo: selectedFile,
+      icon: selectedIconFile,
       lessonTypeIds: Array.from(selectedLessonTypeIds)
     });
   };
@@ -134,18 +149,18 @@ export default function CategoryModal({
             <div className="w-full flex flex-col items-start gap-2 text-center text-[13px] text-[#4a5565] font-inter">
               <div 
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full h-[100px] sm:h-[120px] relative rounded-xl border border-dashed border-[#99a1af] bg-[#fafafa] flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-colors hover:bg-gray-50"
+                className="w-full h-[120px] relative rounded-2xl border border-dashed border-[#99a1af] bg-[#fafafa] flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-colors hover:bg-gray-50"
               >
                 {imagePreview ? (
                   <img src={imagePreview} alt="preview" className="w-full h-full object-cover" />
                 ) : (
                   <div className="flex flex-col items-center gap-2">
-                    <Image src="/upload.svg" width={24} height={24} alt="upload" className="w-6 h-6 sm:w-8 sm:h-8" />
+                    <Image src="/upload.svg" width={32} height={32} alt="upload" className="w-8 h-8 opacity-70" />
                     <span className="text-[12px] sm:text-[13px] font-medium leading-[20px] tracking-[-0.15px] text-[#101828]">Upload</span>
                   </div>
                 )}
               </div>
-              <input ref={fileInputRef} type="file" className="hidden" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
+              <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
               <div className="w-full text-left text-[11px] sm:text-[12px] leading-[18px] tracking-[-0.15px] text-[#6a7282]">
                 JPG or PNG • Max size 2MB
               </div>
@@ -162,6 +177,32 @@ export default function CategoryModal({
               placeholder="Məs: Fitness"
               className="w-full h-[40px] rounded-lg bg-[#fafafa] border border-[#ececed] px-3 text-[13px] sm:text-[14px] font-medium outline-none focus:border-[#00b4cc] transition-colors"
             />
+          </div>
+
+          {/* Kateqoriya Icon */}
+          <div className="w-full flex flex-col items-start gap-2">
+            <label className="text-[12px] sm:text-[13px] leading-[20px] font-medium text-black/60">Kateqoriya Icon</label>
+            <div className="w-full flex flex-col items-start gap-2 text-center text-[13px] text-[#4a5565] font-inter">
+              <div 
+                onClick={() => iconInputRef.current?.click()}
+                className="w-full h-[60px] relative rounded-2xl border border-dashed border-[#99a1af] bg-[#fafafa] flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-colors hover:bg-gray-50"
+              >
+                {iconPreview ? (
+                  <div className="w-full h-full flex items-center justify-center p-2 bg-[#ececed]/10">
+                    <img src={iconPreview} alt="icon preview" className="h-8 w-8 object-contain" />
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-2">
+                    <Image src="/upload.svg" width={20} height={20} alt="upload" className="w-5 h-5 opacity-70" />
+                    <span className="text-[12px] sm:text-[13px] font-medium leading-[20px] tracking-[-0.15px] text-[#101828]">Upload</span>
+                  </div>
+                )}
+              </div>
+              <input ref={iconInputRef} type="file" className="hidden" accept=".svg,image/svg+xml" onChange={(e) => e.target.files?.[0] && handleIconFile(e.target.files[0])} />
+              <div className="w-full text-left text-[11px] sm:text-[12px] leading-[18px] tracking-[-0.15px] text-[#6a7282]">
+                SVG • Max size 2MB
+              </div>
+            </div>
           </div>
 
           {/* Unified Növ Section */}
@@ -233,7 +274,7 @@ export default function CategoryModal({
             )}
 
             {/* List of Items Grid */}
-            <div className="w-full flex flex-wrap items-center gap-2 pt-1">
+            <div className="w-full flex flex-wrap items-center gap-2 pt-1 max-h-[160px] overflow-y-auto pr-1">
               {lessonTypes?.map((lt) => {
                 const isSelected = selectedLessonTypeIds.has(lt.id);
                 return (
@@ -269,7 +310,7 @@ export default function CategoryModal({
         <button
           onClick={handleSave}
           disabled={!name.trim()}
-          className="w-full max-w-[180px] h-[40px] rounded-lg bg-[#00b4cc] text-white flex items-center justify-center px-4 py-2 font-medium text-[14px] disabled:opacity-50 hover:bg-[#00a4bd] transition-all shadow-md shadow-cyan-50"
+          className="w-full max-w-[280px] h-[48px] rounded-xl bg-[#00b4cc] text-white flex items-center justify-center px-4 py-2 font-medium text-[14px] disabled:opacity-50 hover:bg-[#00a4bd] transition-all shadow-md shadow-cyan-50"
         >
           Yadda saxla
         </button>

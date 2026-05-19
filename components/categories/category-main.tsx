@@ -48,6 +48,7 @@ export default function CategoriesPage() {
           id: editTarget.id, 
           name: formData.name, 
           photo: formData.photo,
+          icon: formData.icon,
           lessonTypeIds: formData.lessonTypeIds 
         });
         setModalConfig({ isOpen: true, message: t.categories.updated, type: "success" });
@@ -55,6 +56,7 @@ export default function CategoriesPage() {
         await createCategory({ 
           name: formData.name, 
           photo: formData.photo,
+          icon: formData.icon,
           lessonTypeIds: formData.lessonTypeIds 
         });
         setModalConfig({ isOpen: true, message: t.categories.created, type: "success" });
@@ -143,7 +145,7 @@ export default function CategoriesPage() {
           if (!open) setEditTarget(null);
         }}
         onSave={handleSave}
-        initialData={editTarget ? { name: editTarget.name, image: editTarget.photoUrl, lessonTypes: editTarget.lessonTypes } : undefined}
+        initialData={editTarget ? { name: editTarget.name, image: editTarget.photoUrl, iconUrl: editTarget.iconUrl, lessonTypes: editTarget.lessonTypes } : undefined}
         mode={editTarget ? "edit" : "create"}
       />
 
