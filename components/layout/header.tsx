@@ -11,6 +11,7 @@ import { NAV_ITEMS } from '@/lib/nav-config'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
 import { useQueryClient } from '@tanstack/react-query'
+import { useI18nStore, useT } from '@/lib/i18n'
 
 const flagPngMap: Record<string, string> = {
   AZ: "https://flagcdn.com/w80/az.png",
@@ -19,6 +20,7 @@ const flagPngMap: Record<string, string> = {
 };
 
 export function Header() {
+  const t = useT()
   const queryClient = useQueryClient()
   const router = useRouter()
   const pathname = usePathname()
@@ -76,6 +78,7 @@ export function Header() {
       await apiPut('/me/language', { language: code })
       setCurrentLang(code)
       localStorage.setItem('fitnest-language', code)
+      useI18nStore.getState().setLocale(code as any)
       setDropdownOpen(false)
       queryClient.invalidateQueries()
     } catch (err) {
@@ -173,7 +176,7 @@ export function Header() {
           <div className="w-5 h-5 flex items-center justify-center">
             <LogOut size={16} />
           </div>
-          <span className="text-[14px] leading-[20px] font-medium">Çıxış</span>
+          <span className="text-[14px] leading-[20px] font-medium">{t.common.exit}</span>
         </button>
       </div>
 
@@ -210,13 +213,13 @@ export function Header() {
                     >
                       <div className="shrink-0 text-black w-[18px] h-[18px] relative flex items-center justify-center animate-in duration-300">
                         {item.iconPath ? (
-                          <Image src={item.iconPath} fill alt={item.label} className="object-contain" />
+                          <Image src={item.iconPath} fill alt={t.nav[item.labelKey]} className="object-contain" />
                         ) : (
                           <Icon size={18} strokeWidth={2} />
                         )}
                       </div>
                       <span className="text-[13px] font-medium leading-none truncate text-slate-800">
-                        {item.label}
+                        {t.nav[item.labelKey]}
                       </span>
                     </Link>
                   </li>

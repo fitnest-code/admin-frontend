@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import CategoryModal, { CategoryFormData } from "./modals/category-add-modal";
 import { ConfirmDeleteModal } from "../gyms/modals/confirm-delete-modal";
@@ -9,31 +9,12 @@ import { SuccessAnimationModal } from "../ui/success-animation-modal";
 import { useCategories } from "@/lib/query/add-category";
 import { CustomerPagination as Pagination } from "../customers/list/customer-list-table";
 
-export default function CategoriesPage() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [pageSize, setPageSize] = useState(20);
-  const [page, setPage] = useState(1);
-  
-  useEffect(() => {
-    if (!containerRef.current) return;
-    
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const width = entry.contentRect.width;
-        // Each item is 140px + 12px (gap-3) = 152px
-        const cols = Math.max(1, Math.floor((width + 12) / 152));
-        const targetSize = cols * 3; // Render exactly 3 rows
-        setPageSize((prev) => (prev !== targetSize ? targetSize : prev));
-      }
-    });
-    
-    observer.observe(containerRef.current);
-    return () => observer.disconnect();
-  }, []);
+import { useT } from "@/lib/i18n";
 
-  useEffect(() => {
-    setPage(1);
-  }, [pageSize]);
+export default function CategoriesPage() {
+  const t = useT();
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
 
   const [selectedLang] = useState<"AZ" | "RU" | "EN">(() => {
     if (typeof window !== "undefined") {
@@ -69,20 +50,20 @@ export default function CategoriesPage() {
           photo: formData.photo,
           lessonTypeIds: formData.lessonTypeIds 
         });
-        setModalConfig({ isOpen: true, message: "Kateqoriya uğurla yeniləndi!", type: "success" });
+        setModalConfig({ isOpen: true, message: t.categories.updated, type: "success" });
       } else {
         await createCategory({ 
           name: formData.name, 
           photo: formData.photo,
           lessonTypeIds: formData.lessonTypeIds 
         });
-        setModalConfig({ isOpen: true, message: "Kateqoriya uğurla yaradıldı!", type: "success" });
+        setModalConfig({ isOpen: true, message: t.categories.created, type: "success" });
       }
       setModalOpen(false);
       setEditTarget(null);
     } catch (err: any) {
       console.error("Save error:", err);
-      const msg = err?.response?.data?.error?.message || err?.message || "Yadda saxlamaq mümkün olmadı";
+      const msg = err?.response?.data?.error?.message || err?.message || t.categories.saveFailed;
       setModalConfig({ isOpen: true, message: msg, type: "error" });
     }
   };
@@ -99,27 +80,24 @@ export default function CategoriesPage() {
     <div className="w-full p-4 font-sans">
 
       <div className="w-full rounded-[12px] bg-white border border-[#ececed] flex flex-col items-start px-5 py-4">
-        <div className="w-full border-b border-[#ececed] flex items-center justify-between pb-1 gap-5">
-          <h2 className="text-[16px] font-semibold leading-[24px] text-black">Zal kateqoriyaları</h2>
+        <div className="w-full border-b border-[#ececed] flex items-center justify-between pb-3 gap-5">
+          <h2 className="text-[16px] font-semibold leading-[24px] text-black">{t.categories.existing}</h2>
+          <button
+            onClick={() => {
+              setEditTarget(null);
+              setModalOpen(true);
+            }}
+            className="h-[40px] w-[130px] rounded-lg bg-[#00b4cc] flex items-center justify-center px-3 py-2 gap-2 text-[13px] font-medium text-white hover:opacity-90 transition-all shadow-md shadow-cyan-50"
+          >
+            <Plus size={16} /> {t.categories.addCategory}
+          </button>
         </div>
 
         <div className="w-full flex flex-col items-start gap-6 mt-4">
-          <div className="w-full flex items-center justify-between gap-5">
-            <h3 className="text-[15px] font-semibold leading-tight text-black">Mövcud kateqoriyalar</h3>
-            <button
-              onClick={() => {
-                setEditTarget(null);
-                setModalOpen(true);
-              }}
-              className="h-[40px] w-[130px] rounded-lg bg-[#00b4cc] flex items-center justify-center px-3 py-2 gap-2 text-[13px] font-medium text-white hover:opacity-90 transition-all shadow-md shadow-cyan-50"
-            >
-              <Plus size={16} /> Kateqoriya
-            </button>
-          </div>
 
-          <div className="w-full flex items-start flex-wrap content-start gap-3" ref={containerRef}>
+          <div className="w-full grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
             {categoryItems?.map((cat: any) => (
-              <div key={cat.id} className="w-[140px] h-[170px] flex flex-col items-start gap-2 group">
+              <div key={cat.id} className="h-[170px] flex flex-col items-start gap-2 group">
                 <div 
                   className="w-full h-[130px] rounded-lg flex items-start justify-end p-2 bg-cover bg-center bg-no-repeat bg-gray-100 border border-[#ececed]"
                   style={{ backgroundImage: `url(${cat.photoUrl})` }}
@@ -179,10 +157,10 @@ export default function CategoriesPage() {
               setIsDeleting(true);
               await deleteCategory(deleteTarget.id);
               setDeleteTarget(null);
-              setModalConfig({ isOpen: true, message: "Kateqoriya uğurla silindi!", type: "success" });
+              setModalConfig({ isOpen: true, message: t.categories.deleted, type: "success" });
             } catch (err: any) {
               console.error("Delete error:", err);
-              const msg = err?.response?.data?.error?.message || err?.error?.message || err?.message || "Kateqoriya istifadə olunur və silinə bilməz";
+              const msg = err?.response?.data?.error?.message || err?.error?.message || err?.message || t.categories.deleteError;
               setDeleteTarget(null);
               setModalConfig({ isOpen: true, message: msg, type: "error" });
             } finally {

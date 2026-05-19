@@ -10,7 +10,10 @@ import { toast } from "sonner";
 import { ConfirmDeleteModal } from "../modals/confirm-delete-modal";
 import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 
+import { useT } from "@/lib/i18n";
+
 export function AdminsTab() {
+  const t = useT();
   const { gymId } = useGymStore();
   const { data: admins, isLoading } = useGymAdmins(gymId);
   const { mutate: addAdmin, isPending: isAdding } = useAddGymAdmin();
@@ -50,21 +53,21 @@ export function AdminsTab() {
     if (!gymId) return;
 
     const errors: Record<string, string> = {};
-    if (!form.name.trim()) errors.name = "Ad daxil edilməlidir";
-    else if (form.name.length < 2 || form.name.length > 50) errors.name = "Ad 2-50 simvol uzunluğunda olmalıdır";
+    if (!form.name.trim()) errors.name = t.validation.nameRequired;
+    else if (form.name.length < 2 || form.name.length > 50) errors.name = t.validation.nameLength;
 
-    if (!form.surname.trim()) errors.surname = "Soyad daxil edilməlidir";
-    else if (form.surname.length < 2 || form.surname.length > 50) errors.surname = "Soyad 2-50 simvol uzunluğunda olmalıdır";
+    if (!form.surname.trim()) errors.surname = t.validation.surnameRequired;
+    else if (form.surname.length < 2 || form.surname.length > 50) errors.surname = t.validation.surnameLength;
 
-    if (!form.email.trim()) errors.email = "E-poçt daxil edilməlidir";
-    else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(form.email)) errors.email = "Düzgün e-poçt daxil edin";
+    if (!form.email.trim()) errors.email = t.validation.emailRequired;
+    else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(form.email)) errors.email = t.validation.emailInvalid;
 
-    if (!form.phoneNumber.trim()) errors.phoneNumber = "Telefon daxil edilməlidir";
-    else if (!/^(\+994|0)?\s?(10|50|51|55|60|70|77|99)(\s?\d){7}$/.test(form.phoneNumber)) errors.phoneNumber = "Düzgün telefon nömrəsi daxil edin";
+    if (!form.phoneNumber.trim()) errors.phoneNumber = t.validation.phoneRequired;
+    else if (!/^(\+994|0)?\s?(10|50|51|55|60|70|77|99)(\s?\d){7}$/.test(form.phoneNumber)) errors.phoneNumber = t.validation.phoneInvalid;
 
     if (!editingAdminId) {
-      if (!form.password) errors.password = "Şifrə daxil edilməlidir";
-      else if (form.password.length < 8) errors.password = "Şifrə ən azı 8 simvol olmalıdır";
+      if (!form.password) errors.password = t.validation.passwordRequired;
+      else if (form.password.length < 8) errors.password = t.validation.passwordMinLength;
     }
 
     if (Object.keys(errors).length > 0) {
@@ -85,7 +88,7 @@ export function AdminsTab() {
             setShowSuccessModal(true);
           },
           onError: (err: any) => {
-            toast.error(err?.response?.data?.message || "Xəta baş verdi");
+            toast.error(err?.response?.data?.message || t.error.generic);
           }
         }
       );
@@ -99,7 +102,7 @@ export function AdminsTab() {
             setShowSuccessModal(true);
           },
           onError: (err: any) => {
-            toast.error(err?.response?.data?.message || "Xəta baş verdi");
+            toast.error(err?.response?.data?.message || t.error.generic);
           }
         }
       );
@@ -120,7 +123,7 @@ export function AdminsTab() {
     return (
       <div className="flex-1 py-20 flex flex-col justify-center items-center text-slate-400 gap-3">
         <Loader2 className="animate-spin" size={32} />
-        <span className="font-medium font-sans">Adminlər yüklənir...</span>
+        <span className="font-medium font-sans">{t.admin.adminsLoading}</span>
       </div>
     );
   }
@@ -132,26 +135,26 @@ export function AdminsTab() {
         
         {/* Title Section */}
         <div className="w-full border-b border-[#ececed] flex items-center justify-between pb-1">
-          <h2 className="text-[18px] font-semibold leading-[28px] text-black">Zalı idarə edən admin</h2>
+          <h2 className="text-[18px] font-semibold leading-[28px] text-black">{t.admin.title}</h2>
         </div>
 
         {/* Table Section */}
         <div className="w-full flex flex-col items-start">
           {/* Table Header */}
           <div className="w-full grid grid-cols-[1.5fr_1fr_2fr_2fr_2fr_40px] items-center bg-[#00b4cc]/10 border border-[#ececed] rounded-t-lg px-[16px] py-3.5 gap-4">
-            <div className="text-[14px] leading-[20px] font-semibold text-black">Rol</div>
-            <div className="text-[14px] leading-[20px] font-semibold text-black">ID</div>
-            <div className="text-[14px] leading-[20px] font-semibold text-black">Ad / Soyad</div>
-            <div className="text-[14px] leading-[20px] font-semibold text-black">Telefon</div>
-            <div className="text-[14px] leading-[20px] font-semibold text-black">E-poçt</div>
-            <div className="text-[14px] leading-[20px] font-semibold text-black text-center">Ətraflı</div>
+            <div className="text-[14px] leading-[20px] font-semibold text-black">{t.common.role}</div>
+            <div className="text-[14px] leading-[20px] font-semibold text-black">{t.common.id}</div>
+            <div className="text-[14px] leading-[20px] font-semibold text-black">{t.common.name} / {t.common.surname}</div>
+            <div className="text-[14px] leading-[20px] font-semibold text-black">{t.common.phone}</div>
+            <div className="text-[14px] leading-[20px] font-semibold text-black">{t.common.email}</div>
+            <div className="text-[14px] leading-[20px] font-semibold text-black text-center">{t.common.more}</div>
           </div>
 
           {/* Table Body */}
           <div className="w-full flex flex-col">
             {admins?.length === 0 ? (
               <div className="w-full bg-white border-x border-b border-[#ececed] p-8 text-center text-slate-400 text-sm">
-                Admin tapılmadı
+                {t.admin.noAdmins}
               </div>
             ) : (
               admins?.map((admin: any) => (
@@ -167,7 +170,9 @@ export function AdminsTab() {
                           className={cn("object-contain", admin.role === "Super admin" ? "p-[2px]" : "p-[1px]")}
                         />
                       </div>
-                      <span className="text-[13px] font-medium leading-[20px] truncate">{admin.role}</span>
+                      <span className="text-[13px] font-medium leading-[20px] truncate">
+                        {admin.role === "Super admin" ? t.admin.superAdmin : t.admin.adminRole}
+                      </span>
                     </div>
                   </div>
 
@@ -204,11 +209,11 @@ export function AdminsTab() {
                            setOpenDropdownId(null); 
                          }} className="w-full text-left px-4 py-2 text-[14px] font-medium hover:bg-slate-50 flex items-center gap-2">
                            <Edit size={16} className="text-[#6a7282]" />
-                           Yenilə
+                           {t.common.edit}
                          </button>
                          <button onClick={() => { setDeleteAdminId(admin.id); setOpenDropdownId(null); }} className="w-full text-left px-4 py-2 text-[14px] font-medium text-red-600 hover:bg-red-50 flex items-center gap-2">
                            <Trash size={16} />
-                           Sil
+                           {t.common.delete}
                          </button>
                       </div>
                     )}
@@ -230,7 +235,7 @@ export function AdminsTab() {
             }}
             className="w-[180px] h-10 bg-[#00b4cc] rounded-lg flex items-center justify-end px-3 gap-3 text-[#fafafa] hover:opacity-90 transition-opacity shadow-sm"
           >
-            <span className="text-sm font-medium leading-[20px]">Admin əlavə et</span>
+            <span className="text-sm font-medium leading-[20px]">{t.admin.addAdmin}</span>
             <div className="w-5 h-5 flex items-center justify-center">
               <Image src="/trainer-add.svg" width={20} height={20} alt="Add" />
             </div>
@@ -244,7 +249,7 @@ export function AdminsTab() {
           <div className="w-full max-w-[500px] bg-white rounded-[14px] shadow-2xl flex flex-col animate-in fade-in zoom-in duration-200 overflow-hidden">
             {/* Modal Header */}
             <div className="px-6 py-6 border-b border-black/10 flex items-center justify-between">
-              <h2 className="text-[18px] font-bold text-[#101828]">{editingAdminId ? "Admini Yenilə" : "Yeni Admin Əlavə Et"}</h2>
+              <h2 className="text-[18px] font-bold text-[#101828]">{editingAdminId ? t.admin.editAdmin : t.admin.addAdmin}</h2>
               <button 
                 onClick={() => setModalOpen(false)}
                 className="w-6 h-6 flex items-center justify-center hover:bg-slate-100 rounded-md transition-colors"
@@ -254,73 +259,73 @@ export function AdminsTab() {
             </div>
 
             <form onSubmit={handleAdd} className="p-6 flex flex-col gap-6">
-              <div className="grid grid-cols-2 gap-4">
+               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[14px] font-medium text-[#364153]">Ad</label>
+                  <label className="text-[14px] font-medium text-[#364153]">{t.common.name}</label>
                   <input 
                     type="text"
                     required
                     value={form.name}
                     onChange={e => {setForm({...form, name: e.target.value}); setFormErrors({...formErrors, name: ""});}}
                     className={cn("w-full h-11 px-4 bg-white border rounded-xl outline-none text-[14px] transition-all", formErrors.name ? "border-red-500 focus:border-red-500" : "border-[#dddcdc] focus:border-[#00b4cc]")}
-                    placeholder="Məs: Kamal"
+                    placeholder={t.placeholder.adminName}
                   />
                   {formErrors.name && <span className="text-[12px] text-red-500">{formErrors.name}</span>}
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[14px] font-medium text-[#364153]">Soyad</label>
+                  <label className="text-[14px] font-medium text-[#364153]">{t.common.surname}</label>
                   <input 
                     type="text"
                     required
                     value={form.surname}
                     onChange={e => {setForm({...form, surname: e.target.value}); setFormErrors({...formErrors, surname: ""});}}
                     className={cn("w-full h-11 px-4 bg-white border rounded-xl outline-none text-[14px] transition-all", formErrors.surname ? "border-red-500 focus:border-red-500" : "border-[#dddcdc] focus:border-[#00b4cc]")}
-                    placeholder="Məs: Aliyev"
+                    placeholder={t.placeholder.adminSurname}
                   />
                   {formErrors.surname && <span className="text-[12px] text-red-500">{formErrors.surname}</span>}
                 </div>
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[14px] font-medium text-[#364153]">E-poçt</label>
+                <label className="text-[14px] font-medium text-[#364153]">{t.common.email}</label>
                 <input 
                   type="email"
                   required
                   value={form.email}
                   onChange={e => {setForm({...form, email: e.target.value}); setFormErrors({...formErrors, email: ""});}}
                   className={cn("w-full h-11 px-4 bg-white border rounded-xl outline-none text-[14px] transition-all", formErrors.email ? "border-red-500 focus:border-red-500" : "border-[#dddcdc] focus:border-[#00b4cc]")}
-                  placeholder="admin@mail.com"
+                  placeholder={t.placeholder.email}
                 />
                 {formErrors.email && <span className="text-[12px] text-red-500">{formErrors.email}</span>}
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[14px] font-medium text-[#364153]">Telefon nömrəsi</label>
+                <label className="text-[14px] font-medium text-[#364153]">{t.common.phone}</label>
                 <input 
                   type="text"
                   value={form.phoneNumber}
                   onChange={e => {setForm({...form, phoneNumber: e.target.value}); setFormErrors({...formErrors, phoneNumber: ""});}}
                   className={cn("w-full h-11 px-4 bg-white border rounded-xl outline-none text-[14px] transition-all", formErrors.phoneNumber ? "border-red-500 focus:border-red-500" : "border-[#dddcdc] focus:border-[#00b4cc]")}
-                  placeholder="+994 00 000 00 00"
+                  placeholder={t.placeholder.phone}
                 />
                 {formErrors.phoneNumber && <span className="text-[12px] text-red-500">{formErrors.phoneNumber}</span>}
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[14px] font-medium text-[#364153]">Rol</label>
+                <label className="text-[14px] font-medium text-[#364153]">{t.common.role}</label>
                 <select 
                   value={form.role || "Admin"}
                   onChange={e => setForm({...form, role: e.target.value})}
                   className="w-full h-11 px-4 bg-white border border-[#dddcdc] rounded-xl outline-none focus:border-[#00b4cc] text-[14px]"
                 >
-                  <option value="Super admin">Super admin</option>
-                  <option value="Admin">Admin</option>
+                  <option value="Super admin">{t.admin.superAdmin}</option>
+                  <option value="Admin">{t.admin.adminRole}</option>
                 </select>
               </div>
 
               {!editingAdminId && (
               <div className="flex flex-col gap-1.5">
-                <label className="text-[14px] font-medium text-[#364153]">Şifrə</label>
+                <label className="text-[14px] font-medium text-[#364153]">{t.common.password}</label>
                 <div className="relative">
                   <input 
                     type={showPassword ? "text" : "password"}
@@ -328,7 +333,7 @@ export function AdminsTab() {
                     value={form.password}
                     onChange={e => {setForm({...form, password: e.target.value}); setFormErrors({...formErrors, password: ""});}}
                     className={cn("w-full h-11 px-4 bg-white border rounded-xl outline-none text-[14px] transition-all", formErrors.password ? "border-red-500 focus:border-red-500" : "border-[#dddcdc] focus:border-[#00b4cc]")}
-                    placeholder="••••••••"
+                    placeholder={t.placeholder.password}
                   />
                   <button 
                     type="button"
@@ -348,14 +353,14 @@ export function AdminsTab() {
                   onClick={() => setModalOpen(false)}
                   className="flex-1 h-12 rounded-[10px] border border-[#00b4cc] text-black text-[16px] font-medium hover:bg-slate-50"
                 >
-                  Bağla
+                  {t.common.close}
                 </button>
                 <button 
                   type="submit"
                   disabled={isAdding || isUpdating}
                   className="flex-1 h-12 bg-[#00b4cc] text-white rounded-[10px] font-bold text-[16px] flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50"
                 >
-                  {isAdding || isUpdating ? <Loader2 size={20} className="animate-spin" /> : "Təsdiq et"}
+                  {isAdding || isUpdating ? <Loader2 size={20} className="animate-spin" /> : t.common.confirm}
                 </button>
               </div>
             </form>

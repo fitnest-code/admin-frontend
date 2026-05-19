@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { ServiceSelectorModal } from "../modals/service-selector-modal";
 import { ConfirmDeleteModal } from "../modals/confirm-delete-modal";
 import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
+import { useT } from "@/lib/i18n";
 
 type Package = "Bronze" | "Silver" | "Gold" | "Platinum";
 
@@ -30,6 +31,7 @@ const DEFAULT_SERVICES = [
 ];
 
 export function PlansTab({ gym }: { gym?: any }) {
+  const t = useT();
   const { gymId } = useGymStore();
   const { data: adminSubs, isLoading: subsLoading } = useGymSubscriptionsAdmin(gymId);
   const { data: allServices } = useSupportedServices(gymId ? Number(gymId) : undefined);
@@ -89,7 +91,7 @@ export function PlansTab({ gym }: { gym?: any }) {
     return (
       <div className="flex-1 py-20 flex flex-col justify-center items-center text-slate-400 gap-3">
         <Loader2 className="animate-spin" size={32} />
-        <span className="font-medium">Abunəliklər yüklənir...</span>
+        <span className="font-medium">{t.plans.loading}</span>
       </div>
     );
   }
@@ -118,7 +120,7 @@ export function PlansTab({ gym }: { gym?: any }) {
       setPendingService(null);
       setShowSuccessModal(true);
     } catch (err: any) {
-      toast.error(err?.message || "Xidmət yaradıla bilmədi");
+      toast.error(err?.message || t.plans.serviceCreateFailed);
     }
   };
 
@@ -133,7 +135,7 @@ export function PlansTab({ gym }: { gym?: any }) {
       setDeleteServiceId(null);
       setShowSuccessModal(true);
     } catch (err: any) {
-      toast.error(err?.message || "Xidmət silinərkən xəta baş verdi");
+      toast.error(err?.message || t.plans.serviceDeleteFailed);
     }
   };
 
@@ -158,7 +160,7 @@ export function PlansTab({ gym }: { gym?: any }) {
   };
 
   const handleSave = () => {
-    if (!gymId) return toast.error("Zal ID tapılmadı");
+    if (!gymId) return toast.error(t.plans.gymIdNotFound);
 
     const PACKAGE_IDS: Record<Package, number> = {
       Bronze: 1, Silver: 2, Gold: 3, Platinum: 4,
@@ -189,7 +191,7 @@ export function PlansTab({ gym }: { gym?: any }) {
     });
 
     if (subscriptions.length === 0) {
-      return toast.error("Ən azı bir abunəlik paketi seçilməlidir");
+      return toast.error(t.plans.selectAtLeastOne);
     }
 
     updateSubscriptions({
@@ -200,7 +202,7 @@ export function PlansTab({ gym }: { gym?: any }) {
         setShowSuccessModal(true);
       },
       onError: (err: any) => {
-        toast.error(err?.response?.data?.message || err?.message || "Xəta baş verdi");
+        toast.error(err?.response?.data?.message || err?.message || t.plans.genericError);
       }
     });
   };
@@ -218,7 +220,7 @@ export function PlansTab({ gym }: { gym?: any }) {
       {/* 1. Package Selector Section */}
       <div className="bg-white rounded-[12px] border border-[#ececed] p-5 flex flex-col gap-5 shadow-sm">
         <div className="border-b border-[#ececed] pb-2">
-          <h2 className="text-[18px] font-semibold leading-[28px]">Zala aid olan abunəliklər</h2>
+          <h2 className="text-[18px] font-semibold leading-[28px]">{t.plans.gymSubscriptions}</h2>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -269,11 +271,11 @@ export function PlansTab({ gym }: { gym?: any }) {
       {/* 2. Price Section */}
       <div className="bg-white rounded-[12px] border border-[#ececed] p-5 flex flex-col gap-5 shadow-sm">
         <div className="border-b border-[#ececed] pb-2">
-          <h2 className="text-[18px] font-semibold leading-[28px]">Giriş qiyməti</h2>
+          <h2 className="text-[18px] font-semibold leading-[28px]">{t.plans.entrancePrice}</h2>
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-[14px] text-black/60 font-medium">Giriş qiyməti (AZN)</label>
+          <label className="text-[14px] text-black/60 font-medium">{t.plans.entrancePriceAzn}</label>
           <div className="h-[44px] w-full max-w-[320px] bg-[#fafafa] border border-[#ececed] rounded-lg flex items-center px-4">
             <input
               type="number"
@@ -293,20 +295,20 @@ export function PlansTab({ gym }: { gym?: any }) {
         {!isCreatingService ? (
           <div className="flex items-center justify-between border-b border-[#ececed] pb-2 animate-in fade-in duration-300">
             <h2 className="text-[18px] font-semibold leading-[28px]">
-              {activePackage} paketə daxil olan xidmətlər
+              {activePackage} {t.plans.includedServices}
             </h2>
             <button
               onClick={() => setIsCreatingService(true)}
               className="h-[40px] px-4 bg-[#00B4CC] rounded-lg flex items-center justify-center gap-2 text-white text-sm font-medium transition-all hover:opacity-90"
             >
-              <span>Xidmət əlavə et</span>
+              <span>{t.plans.addService}</span>
               <Plus size={18} />
             </button>
           </div>
         ) : (
           <div className="flex flex-col gap-5 p-5 rounded-xl bg-white border border-[#ececed] animate-in fade-in duration-300">
             <div className="flex items-center justify-between border-b border-[#ececed] pb-1">
-              <h3 className="text-[18px] font-semibold leading-[28px]">Xidmət əlavə et</h3>
+              <h3 className="text-[18px] font-semibold leading-[28px]">{t.plans.addService}</h3>
               <button 
                 onClick={() => setIsCreatingService(false)}
                 className="flex items-center justify-center text-[#1F2937] hover:opacity-70 transition-opacity"
@@ -316,14 +318,14 @@ export function PlansTab({ gym }: { gym?: any }) {
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="text-[14px] leading-[20px]">Xidmət adı</label>
+              <label className="text-[14px] leading-[20px]">{t.plans.serviceName}</label>
               <div className="h-[44px] bg-[#fafafa] border border-[#ececed] rounded-lg flex items-center px-3">
                 <input
                   type="text"
                   value={pendingService || ""}
                   onChange={(e) => setPendingService(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleConfirmService()}
-                  placeholder="Məs: Pilates"
+                  placeholder={t.plans.exampleService}
                   className="bg-transparent w-full h-full outline-none text-[15px] leading-[24px]"
                   autoFocus
                 />
@@ -336,7 +338,7 @@ export function PlansTab({ gym }: { gym?: any }) {
                 disabled={createServiceMutation.isPending}
                 className="h-[40px] w-[160px] bg-[#00B4CC] rounded-lg flex items-center justify-center text-[#fafafa] text-sm transition-all hover:opacity-90 shadow-sm"
               >
-                {createServiceMutation.isPending ? <Loader2 className="animate-spin" size={18} /> : "Əlavə et"}
+                {createServiceMutation.isPending ? <Loader2 className="animate-spin" size={18} /> : t.plans.add}
               </button>
             </div>
           </div>
@@ -397,13 +399,13 @@ export function PlansTab({ gym }: { gym?: any }) {
           className="h-[40px] w-[240px] rounded-lg bg-[#00B4CC] text-white text-sm font-medium hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-md shadow-cyan-100"
         >
           {savingUpdate && <Loader2 className="w-4 h-4 animate-spin" />}
-          Yadda saxla
+          {t.plans.save}
         </button>
       </div>
 
       {deleteServiceId !== null && (
         <ConfirmDeleteModal
-          name={allServices?.find(s => s.id === deleteServiceId)?.name || "Xidmət"}
+          name={allServices?.find(s => s.id === deleteServiceId)?.name || t.plans.service}
           onConfirm={() => handleDeleteFromGym()}
           onCancel={() => setDeleteServiceId(null)}
           isLoading={deleteServiceMutation.isPending}
@@ -413,7 +415,7 @@ export function PlansTab({ gym }: { gym?: any }) {
       <SuccessAnimationModal
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
-        message="Abunəlik məlumatları uğurla yeniləndi!"
+        message={t.plans.successUpdated}
       />
     </div>
   );

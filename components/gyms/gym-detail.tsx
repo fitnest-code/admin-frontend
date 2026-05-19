@@ -29,6 +29,7 @@ import { AnalitikaTab } from '@/components/zallar/tabs/analitika-tab'
 import { StepNavigationWarningModal } from './modals/step-navigation-warning-modal'
 import { ExitConfirmationModal } from './modals/exit-confirmation-modal'
 import { useGymStore } from '@/lib/store/gym-store'
+import { useT } from '@/lib/i18n'
 
 const WIZARD_TABS = [
   { key: 'info', label: 'Zal məlumatları' },
@@ -46,9 +47,27 @@ interface GymDetailProps {
 }
 
 export function GymDetail({ gym, isNew = false }: GymDetailProps) {
+  const t = useT()
   const { gymId, currentTab, setCurrentTab, resetGym, setGymId, markStepCompleted, completedSteps } = useGymStore()
   const { mutate: deleteGymMutate } = useDeleteGym()
   const router = useRouter()
+
+  const getTabLabel = (key: string) => {
+    switch (key) {
+      case 'analitika': return t.gyms.tabAnalitika;
+      case 'info': return t.gyms.tabInfo;
+      case 'trainers': return t.gyms.tabTrainers;
+      case 'plans': return t.gyms.tabPlans;
+      case 'admins': return t.gyms.tabAdmins;
+      case 'reviews': return t.gyms.tabReviews;
+      case 'reservations': return t.gyms.tabReservations;
+      case 'lessonHours': return t.gyms.tabLessonHours;
+      case 'workingHours': return t.gyms.tabWorkingHours;
+      case 'address': return t.gyms.tabAddress;
+      case 'images': return t.gyms.tabImages;
+      default: return key;
+    }
+  }
 
   useEffect(() => {
     // Only update store gymId from props if it's an existing gym (not 'new')
@@ -183,7 +202,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
                    className="text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:text-[#00B4CC] transition-colors flex items-center gap-1.5"
                  >
                    <ArrowLeft size={12} strokeWidth={3} />
-                   Geri qayıt
+                   {t.gyms.goBack}
                  </button>
               </div>
            </div>
@@ -232,7 +251,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
                         "text-[15px] font-medium leading-6 transition-colors duration-300",
                         isActive ? "text-black" : isCompleted ? "text-black" : "text-[#C9C9C9]"
                       )}>
-                        {tab.label}
+                        {getTabLabel(tab.key)}
                       </span>
                     </div>
 
@@ -273,7 +292,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
             className="text-[11px] font-bold text-slate-400 uppercase tracking-widest hover:text-[#00B4CC] transition-colors flex items-center gap-2"
           >
             <ArrowLeft size={14} strokeWidth={3} />
-            Geri qayıt
+            {t.gyms.goBack}
           </button>
         </div>
       </div>
@@ -288,19 +307,19 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
           {(gym.status?.toUpperCase() === 'ACTIVE' || !gym.status) && (
             <div className="h-[28px] rounded-full bg-[#166728] flex items-center px-4 gap-2 shadow-sm border border-green-600/20">
               <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-              <span className="text-[11px] font-bold text-white uppercase tracking-wider">Aktiv</span>
+              <span className="text-[11px] font-bold text-white uppercase tracking-wider">{t.gyms.active}</span>
             </div>
           )}
           {gym.status?.toUpperCase() === 'INACTIVE' && (
             <div className="h-[28px] rounded-full bg-[#c9373a] flex items-center px-4 gap-2 shadow-sm border border-red-600/20">
               <span className="h-1.5 w-1.5 rounded-full bg-white" />
-              <span className="text-[11px] font-bold text-white uppercase tracking-wider">Deaktiv</span>
+              <span className="text-[11px] font-bold text-white uppercase tracking-wider">{t.gyms.inactive}</span>
             </div>
           )}
           {gym.status?.toUpperCase() === 'DRAFT' && (
             <div className="h-[28px] rounded-full bg-slate-400 flex items-center px-4 gap-2 shadow-sm">
               <span className="h-1.5 w-1.5 rounded-full bg-white" />
-              <span className="text-[11px] font-bold text-white uppercase tracking-wider">Qaralama</span>
+              <span className="text-[11px] font-bold text-white uppercase tracking-wider">{t.gyms.draft}</span>
             </div>
           )}
         </div>
@@ -321,7 +340,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
               )}
               aria-current={activeTab === tab.key ? 'page' : undefined}
             >
-              {tab.label}
+              {getTabLabel(tab.key)}
             </button>
           ))}
         </nav>
