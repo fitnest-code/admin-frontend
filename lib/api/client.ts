@@ -131,6 +131,13 @@ export async function apiRequest<T>(
     requestHeaders.set("Accept", "application/json");
   }
 
+  if (typeof window !== "undefined") {
+    const storedLang = localStorage.getItem("fitnest-language");
+    if (storedLang && !requestHeaders.has("Accept-Language")) {
+      requestHeaders.set("Accept-Language", storedLang);
+    }
+  }
+
   const response = await fetch(requestUrl, {
     ...init,
     headers: requestHeaders,

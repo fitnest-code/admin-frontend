@@ -1,16 +1,50 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import CategoryModal, { CategoryFormData } from "./modals/category-add-modal";
 import { ConfirmDeleteModal } from "../gyms/modals/confirm-delete-modal";
 import { ErrorToastModal } from "./modals/error-toast-modal";
 import { SuccessAnimationModal } from "../ui/success-animation-modal";
 import { useCategories } from "@/lib/query/add-category";
+import { CustomerPagination as Pagination } from "../customers/list/customer-list-table";
 
 export default function CategoriesPage() {
-  const [selectedLang, setSelectedLang] = useState<"AZ" | "RU" | "EN">("AZ");
-  const { categories, isLoading, refetch, createCategory, updateCategory, deleteCategory } = useCategories(selectedLang);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [pageSize, setPageSize] = useState(20);
+  const [page, setPage] = useState(1);
+  
+  useEffect(() => {
+    if (!containerRef.current) return;
+    
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const width = entry.contentRect.width;
+        // Each item is 140px + 12px (gap-3) = 152px
+        const cols = Math.max(1, Math.floor((width + 12) / 152));
+        const targetSize = cols * 3; // Render exactly 3 rows
+        setPageSize((prev) => (prev !== targetSize ? targetSize : prev));
+      }
+    });
+    
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    setPage(1);
+  }, [pageSize]);
+
+  const [selectedLang] = useState<"AZ" | "RU" | "EN">(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("fitnest-language");
+      if (stored === "AZ" || stored === "RU" || stored === "EN") {
+        return stored as "AZ" | "RU" | "EN";
+      }
+    }
+    return "AZ";
+  });
+  const { categories, isLoading, refetch, createCategory, updateCategory, deleteCategory } = useCategories(selectedLang, page, pageSize);
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<any | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
@@ -67,32 +101,6 @@ export default function CategoriesPage() {
       <div className="w-full rounded-[12px] bg-white border border-[#ececed] flex flex-col items-start px-5 py-4">
         <div className="w-full border-b border-[#ececed] flex items-center justify-between pb-1 gap-5">
           <h2 className="text-[16px] font-semibold leading-[24px] text-black">Zal kateqoriyaları</h2>
-          <div className="flex items-center gap-6 text-center text-[13px] font-medium text-[#717182]">
-            <div 
-              onClick={() => setSelectedLang("AZ")}
-              className={`w-[26px] flex flex-col items-center justify-center pb-1 cursor-pointer transition-colors ${
-                selectedLang === "AZ" ? "border-b-2 border-[#00b4cc] text-[#00b4cc]" : "hover:text-gray-600 font-medium"
-              }`}
-            >
-              Az
-            </div>
-            <div 
-              onClick={() => setSelectedLang("RU")}
-              className={`w-[26px] flex flex-col items-center justify-center pb-1 cursor-pointer transition-colors ${
-                selectedLang === "RU" ? "border-b-2 border-[#00b4cc] text-[#00b4cc]" : "hover:text-gray-600 font-medium"
-              }`}
-            >
-              Ru
-            </div>
-            <div 
-              onClick={() => setSelectedLang("EN")}
-              className={`w-[26px] flex flex-col items-center justify-center pb-1 cursor-pointer transition-colors ${
-                selectedLang === "EN" ? "border-b-2 border-[#00b4cc] text-[#00b4cc]" : "hover:text-gray-600 font-medium"
-              }`}
-            >
-              En
-            </div>
-          </div>
         </div>
 
         <div className="w-full flex flex-col items-start gap-6 mt-4">
@@ -109,7 +117,7 @@ export default function CategoriesPage() {
             </button>
           </div>
 
-          <div className="w-full flex items-start flex-wrap content-start gap-3">
+          <div className="w-full flex items-start flex-wrap content-start gap-3" ref={containerRef}>
             {categoryItems?.map((cat: any) => (
               <div key={cat.id} className="w-[140px] h-[170px] flex flex-col items-start gap-2 group">
                 <div 
@@ -138,6 +146,15 @@ export default function CategoriesPage() {
               </div>
             ))}
           </div>
+          
+          <div className="w-full border-t border-[#ececed] pt-4 mt-2">
+            <Pagination 
+              total={(categories as any)?.total || categoryItems.length} 
+              page={page} 
+              perPage={pageSize} 
+              onChange={setPage} 
+            />
+          </div>
         </div>
       </div>
 
@@ -161,7 +178,6 @@ export default function CategoriesPage() {
             try {
               setIsDeleting(true);
               await deleteCategory(deleteTarget.id);
-              await refetch();
               setDeleteTarget(null);
               setModalConfig({ isOpen: true, message: "Kateqoriya uğurla silindi!", type: "success" });
             } catch (err: any) {

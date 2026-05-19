@@ -18,7 +18,6 @@ const getImageUrl = (urlOrFsId: string | undefined | null) => {
 };
 
 export function InfoTab({ gymId }: InfoTabProps) {
-  const [activeLang, setActiveLang] = useState<"Az" | "Ru" | "En">("Az");
   const [isEditing, setIsEditing] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   
@@ -208,7 +207,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
       {/* Zal məlumatları Group */}
       <div className="self-stretch flex flex-col items-start gap-[28px]">
         
-      {/* Header & Languages */}
+      {/* Header */}
       <div className="self-stretch border-b border-[#ececed] flex items-center justify-between pb-3">
         <div className="flex items-center gap-3">
           <div className="text-[18px] font-bold text-[#101828] font-sans tracking-tight">Zal məlumatları</div>
@@ -218,21 +217,6 @@ export function InfoTab({ gymId }: InfoTabProps) {
           >
             <Pencil size={18} className={isEditing ? "text-[#00B4CC]" : "text-[#6a7282]"} />
           </button>
-        </div>
-        
-        <div className="flex items-center gap-6 text-center">
-          {(["Az", "Ru", "En"] as const).map((l) => (
-            <button
-              key={l}
-              onClick={() => setActiveLang(l)}
-              className={cn(
-                "relative pb-1.5 text-[13px] font-bold transition-all",
-                activeLang === l ? "text-[#00B4CC] after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[#00B4CC]" : "text-[#94979c] hover:text-[#101828]"
-              )}
-            >
-              {l}
-            </button>
-          ))}
         </div>
       </div>
 

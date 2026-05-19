@@ -9,12 +9,9 @@ import { GymStep1Payload } from "@/lib/types/gym";
 import { toast } from "sonner";
 import Image from "next/image";
 
-type Lang = "Az" | "Ru" | "En";
-
 export function StepInfo({ onNext }: { onNext: () => void }) {
   const { step1Data, setStep1Data } = useGymStore();
-  
-  const [lang, setLang] = useState<Lang>("Az");
+
   const [categoryId, setCategoryId] = useState<number | null>(step1Data?.categoryId || null);
   const [name, setName] = useState(step1Data?.name || "");
   const [about, setAbout] = useState(step1Data?.description || "");
@@ -75,20 +72,6 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
       <div className="flex flex-col gap-5">
         <div className="flex items-center justify-between border-b border-[#ececed] pb-1">
           <h2 className="text-[18px] font-semibold leading-[28px]">Zal məlumatları</h2>
-          <div className="flex items-center gap-6 text-[14px] text-center">
-            {(["Az", "Ru", "En"] as Lang[]).map((l) => (
-              <button
-                key={l}
-                onClick={() => setLang(l)}
-                className={cn(
-                  "px-1 pb-1 transition-all duration-300",
-                  lang === l ? "border-b border-[#00B4CC] text-black" : "text-black/40"
-                )}
-              >
-                {l}
-              </button>
-            ))}
-          </div>
         </div>
 
         <div className="flex flex-col gap-4">

@@ -4,7 +4,7 @@ import { ICategory, ICreateCategoryPayload, IUpdateCategoryPayload } from "../ty
 
 export const CategoryService = {
   // 1. Siyahını gətirmək
-  getAll: () => apiGet<ICategory[]>("/categories"),
+  getAll: () => apiGet<ICategory[]>("/categories", { params: { size: 100 } }),
 
   // 2. Yaratmaq (POST)
   // name -> query (?name=...), photo -> body (FormData)

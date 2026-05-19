@@ -1,16 +1,25 @@
 'use client'
 
-import { Search, LogOut, User, Menu } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Search, LogOut, User, Menu, Globe, ChevronDown } from 'lucide-react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { apiPost } from '@/lib/api/client'
+import { apiPost, apiGet, apiPut } from '@/lib/api/client'
 import { useAuthStore } from '@/lib/store/auth-store'
 import { useUIStore } from '@/lib/store/ui-store'
 import { NAV_ITEMS } from '@/lib/nav-config'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
+import { useQueryClient } from '@tanstack/react-query'
+
+const flagPngMap: Record<string, string> = {
+  AZ: "https://flagcdn.com/w80/az.png",
+  RU: "https://flagcdn.com/w80/ru.png",
+  EN: "https://flagcdn.com/w80/gb.png",
+};
 
 export function Header() {
+  const queryClient = useQueryClient()
   const router = useRouter()
   const pathname = usePathname()
   const user = useAuthStore((state) => state.user)
@@ -20,6 +29,60 @@ export function Header() {
   const setMobileSidebarOpen = useUIStore((state) => state.setMobileSidebarOpen)
   const toggleMobileSidebar = useUIStore((state) => state.toggleMobileSidebar)
   
+  const [currentLang, setCurrentLang] = useState<string>("AZ")
+  const [languages, setLanguages] = useState<string[]>(["AZ", "RU", "EN"])
+  const [dropdownOpen, setDropdownOpen] = useState<boolean>(false)
+  const langRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    // Fetch languages list
+    apiGet<any>('/me/languages')
+      .then(res => {
+        const list = res?.data || res;
+        if (Array.isArray(list)) {
+          setLanguages(list.map((l: any) => {
+            const val = typeof l === 'object' && l !== null ? (l.code || '') : l;
+            return String(val).toUpperCase();
+          }).filter(Boolean));
+        }
+      })
+      .catch(() => {})
+
+    // Fetch current selected language
+    apiGet<any>('/me/language')
+      .then(res => {
+        const data = res?.data || res;
+        if (data?.code) {
+          const code = String(data.code).toUpperCase();
+          setCurrentLang(code);
+          localStorage.setItem('fitnest-language', code);
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (langRef.current && !langRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  const handleLangChange = async (code: string) => {
+    try {
+      await apiPut('/me/language', { language: code })
+      setCurrentLang(code)
+      localStorage.setItem('fitnest-language', code)
+      setDropdownOpen(false)
+      queryClient.invalidateQueries()
+    } catch (err) {
+      console.error("Failed to change language:", err)
+    }
+  }
+
   const initials = user?.name
     ?.split(' ')
     .filter(Boolean)
@@ -52,17 +115,66 @@ export function Header() {
         </div>
       </div>
 
-      {/* Right: Exit Action */}
-      <div className="flex items-center gap-4 shrink-0">
-         <button 
-           onClick={handleLogout}
-           className="flex items-center gap-1.5 text-[#F10303] hover:opacity-80 transition-opacity font-medium cursor-pointer"
-         >
-            <div className="w-5 h-5 flex items-center justify-center">
-               <LogOut size={16} />
+      {/* Right: Language Dropdown & Exit Action */}
+      <div className="flex items-center gap-6 shrink-0">
+        {/* Language Dropdown */}
+        <div className="relative flex items-center" ref={langRef}>
+          <button
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            className="flex items-center gap-2 text-left text-base text-black font-sans font-medium cursor-pointer relative bg-transparent border-0 outline-none select-none"
+          >
+            <div className="w-8 h-8 relative shrink-0">
+              <div className="absolute top-0 left-0 rounded-full bg-white w-8 h-8 shadow-sm border border-slate-100 flex items-center justify-center overflow-hidden">
+                {flagPngMap[currentLang] ? (
+                  <img src={flagPngMap[currentLang]} className="w-full h-full rounded-full object-cover" alt={currentLang} />
+                ) : (
+                  <span className="text-[18px] leading-none select-none">🌐</span>
+                )}
+              </div>
             </div>
-            <span className="text-[14px] leading-[20px] font-medium">Çıxış</span>
-         </button>
+            <div className="relative text-base font-semibold leading-6 text-black tracking-tight">{currentLang}</div>
+            <div className="w-4 h-4 relative flex items-center justify-center shrink-0">
+              <ChevronDown size={16} className={cn("text-slate-500 transition-transform duration-200", dropdownOpen && "rotate-180")} />
+            </div>
+          </button>
+          
+          {dropdownOpen && (
+            <div className="absolute right-0 top-full mt-2 w-[110px] rounded-lg border border-[#ececed] bg-white p-1 shadow-lg z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+              {languages.map(code => (
+                <button
+                  key={code}
+                  onClick={() => handleLangChange(code)}
+                  className={cn(
+                    "w-full text-left h-[36px] px-2.5 rounded-md text-[13px] font-semibold flex items-center gap-2.5 transition-all cursor-pointer",
+                    currentLang === code 
+                      ? "bg-[#00B4CC15] text-[#00B4CC]" 
+                      : "text-slate-700 hover:bg-slate-50"
+                  )}
+                >
+                  <div className="w-5 h-5 rounded-full bg-white border border-slate-100 flex items-center justify-center overflow-hidden shrink-0">
+                    {flagPngMap[code] ? (
+                      <img src={flagPngMap[code]} className="w-full h-full rounded-full object-cover" alt={code} />
+                    ) : (
+                      <span className="text-[12px] leading-none select-none">🌐</span>
+                    )}
+                  </div>
+                  <span>{code}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Exit Action */}
+        <button 
+          onClick={handleLogout}
+          className="flex items-center gap-1.5 text-[#F10303] hover:opacity-80 transition-opacity font-medium cursor-pointer"
+        >
+          <div className="w-5 h-5 flex items-center justify-center">
+            <LogOut size={16} />
+          </div>
+          <span className="text-[14px] leading-[20px] font-medium">Çıxış</span>
+        </button>
       </div>
 
       {/* Mobile Dropdown Menu */}

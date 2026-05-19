@@ -53,8 +53,8 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
           prcs[found.name] = s.dailyPrice.toString();
           if (s.supportedServicesId && allServices) {
             const names = s.supportedServicesId
-              .map(id => allServices.find(as => as.id === id)?.name)
-              .filter((name): name is string => !!name);
+              .map((id: number) => allServices.find(as => as.id === id)?.name)
+              .filter((name: string | undefined): name is string => !!name);
             svcs[found.name] = names;
           }
         }

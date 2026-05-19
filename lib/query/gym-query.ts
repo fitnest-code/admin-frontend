@@ -25,7 +25,7 @@ export function useCategories() {
   return useQuery({
     queryKey: ['categories'],
     queryFn: () => apiGet<CategoriesResponse>('/categories', { 
-      params: { page: 1, size: 10 } 
+      params: { page: 1, size: 100 } 
     }),
     staleTime: 5 * 60 * 1000,
   })

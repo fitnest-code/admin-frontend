@@ -2,16 +2,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "../api/client";
 import { ICategory } from "../types/categories";
 
-export const useCategories = (lang: string = "AZ") => {
+export const useCategories = (lang: string = "AZ", page: number = 1, pageSize: number = 100) => {
   const queryClient = useQueryClient();
 
   // 1. Siyahı
   const { data: categories, isLoading, refetch } = useQuery({
-    queryKey: ["categories", lang],
-    queryFn: () => apiRequest<ICategory[]>("/categories", {
+    queryKey: ["categories", lang, page, pageSize],
+    queryFn: () => apiRequest<any>("/categories", {
       headers: {
         "Accept-Language": lang,
-      }
+      },
+      params: { page, size: pageSize }
     }),
   });
 
@@ -35,7 +36,6 @@ export const useCategories = (lang: string = "AZ") => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
-      refetch();
     },
   });
 
@@ -67,16 +67,45 @@ export const useCategories = (lang: string = "AZ") => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
-      refetch();
     },
   });
 
   // 4. DELETE
   const deleteCategory = useMutation({
     mutationFn: async (id: number) => apiRequest(`/admin/categories/${id}`, { method: "DELETE" }),
-    onSuccess: () => {
+    onMutate: async (deletedId) => {
+      // Cancel any outgoing refetches so they don't overwrite optimistic update
+      await queryClient.cancelQueries({ queryKey: ["categories"] });
+
+      // Snapshot the previous value
+      const previousCategories = queryClient.getQueryData(["categories"]);
+
+      // Optimistically update to the new value by filtering out the deleted category
+      queryClient.setQueriesData({ queryKey: ["categories"] }, (oldData: any) => {
+        if (!oldData) return oldData;
+        if (Array.isArray(oldData)) {
+          return oldData.filter((item: any) => item.id !== deletedId);
+        }
+        if (oldData.items && Array.isArray(oldData.items)) {
+          return {
+            ...oldData,
+            items: oldData.items.filter((item: any) => item.id !== deletedId),
+            total: Math.max(0, (oldData.total || 0) - 1)
+          };
+        }
+        return oldData;
+      });
+
+      // Return context for rollback
+      return { previousCategories };
+    },
+    onError: (err, newTodo, context) => {
+      // If mutation fails, invalidate to restore actual state
       queryClient.invalidateQueries({ queryKey: ["categories"] });
-      refetch();
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure synchronization
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
     },
   });
 

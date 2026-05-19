@@ -40,7 +40,6 @@ const defaultContact: IStoreStep2Payload = {
 
 export function AdminStoreEditView({ storeId }: { storeId: number }) {
   const router = useRouter();
-  const [activeLang, setActiveLang] = React.useState<"Az" | "Ru" | "En">("Az");
   const { data, isLoading, isError, error } = useAdminStoreDetailQuery(storeId);
   const { mutateAsync: saveStore, isPending } = useUpdateAdminStoreMutation();
   const { data: allPackages } = useSubscriptionPackages();
@@ -184,17 +183,6 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
           <section className={styles.section}>
             <div className={styles.sectionHeader}>
               <h2 className={styles.sectionTitle}>Mağaza məlumatları</h2>
-              <div className={styles.langSelector}>
-                {(["Az", "Ru", "En"] as const).map((l) => (
-                  <button
-                    key={l}
-                    onClick={() => setActiveLang(l)}
-                    className={cn(styles.langButton, activeLang === l && styles.langButtonActive)}
-                  >
-                    {l}
-                  </button>
-                ))}
-              </div>
             </div>
 
             <div className={styles.infoGroup}>

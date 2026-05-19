@@ -1,26 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import * as Tabs from "@radix-ui/react-tabs";
 import { Copy, Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useGymStore } from "@/lib/store/gym-store";
 import { useValidateGymStep4 } from "@/lib/query/gym-query";
 import { useGetAddressByCoords } from "@/lib/query/location-query";
 
-
-type Lang = "Az" | "Ru" | "En";
-
-const labels: Record<Lang, any> = {
-  Az: { title: "Ünvan məlumatları", address: "Ünvan", coords: "Koordinatlar", lat: "En", lng: "Uzunluq", save: "Yadda saxla", next: "Növbəti" },
-  Ru: { title: "Адрес", address: "Адрес", coords: "Координаты", lat: "Широта", lng: "Долгота", save: "Сохранить", next: "Далее" },
-  En: { title: "Address Details", address: "Address", coords: "Coordinates", lat: "Latitude", lng: "Longitude", save: "Save", next: "Next" },
-};
-
 export function StepAddress({ onNext }: { onNext?: () => void }) {
   const { step4Data, setStep4Data } = useGymStore();
   const [mounted, setMounted] = useState(false);
-  const [lang, setLang] = useState<Lang>("Az");
 
   // Koordinatlar (Başlanğıcda boş olmalıdır)
   const [coords, setCoords] = useState<{ lat: number | "", lng: number | "" }>({ 
@@ -103,8 +92,6 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
     setSuggestions([]);
   };
 
-  const t = labels[lang];
-
   // Kopyalama funksiyası
   const copyToClipboard = (val: number | "", which: "lat" | "lng") => {
     if (val === "") return;
@@ -149,29 +136,14 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
   return (
     <div className="w-full bg-white rounded-[24px] border border-[#ECECED] p-6 flex flex-col gap-6 shadow-sm">
 
-        {/* Dil Seçimi və Başlıq */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-lg font-bold text-[#1F2937]">{t.title}</h1>
-          <Tabs.Root value={lang} onValueChange={(v) => setLang(v as Lang)}>
-            <Tabs.List className="flex gap-2 bg-[#F3F4F6] rounded-lg p-1">
-              {["Az", "Ru", "En"].map((l) => (
-                <Tabs.Trigger
-                  key={l}
-                  value={l}
-                  className="px-4 py-1.5 rounded-md text-sm font-bold transition-all
-                    data-[state=active]:bg-white data-[state=active]:text-[#00B4D8]
-                    data-[state=active]:shadow-sm outline-none"
-                >
-                  {l}
-                </Tabs.Trigger>
-              ))}
-            </Tabs.List>
-          </Tabs.Root>
+        {/* Başlıq */}
+        <div className="flex items-center justify-between pb-1 border-b border-[#ECECED]">
+          <h1 className="text-lg font-bold text-[#1F2937]">Ünvan məlumatları</h1>
         </div>
 
         {/* Ünvan (Axtarış və Seçim) */}
         <div className="flex flex-col gap-2 relative">
-          <label className="text-sm font-medium text-[#6B7280]">{t.address}</label>
+          <label className="text-sm font-medium text-[#6B7280]">Ünvan</label>
           <div className="relative">
             <input
               placeholder="Ünvanı daxil edin (Məs: Heydər Əliyev pr. 101)"
@@ -212,7 +184,7 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
         {/* Koordinat Girişləri */}
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-[#6B7280]">{t.lat}</label>
+            <label className="text-sm font-medium text-[#6B7280]">En</label>
             <div className="flex items-center bg-[#F9FAFB] border border-[#ECECED] rounded-lg px-4 py-2.5 gap-2 focus-within:ring-1 focus-within:ring-[#00B4D8]">
               <input
                 type="number"
@@ -227,7 +199,7 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
             </div>
           </div>
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-[#6B7280]">{t.lng}</label>
+            <label className="text-sm font-medium text-[#6B7280]">Uzunluq</label>
             <div className="flex items-center bg-[#F9FAFB] border border-[#ECECED] rounded-lg px-4 py-2.5 gap-2 focus-within:ring-1 focus-within:ring-[#00B4D8]">
               <input
                 type="number"
@@ -278,7 +250,7 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
             onClick={handleNext}
             className="w-[240px] h-[44px] rounded-lg bg-[#00B4CC] text-white text-[14px] font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-md shadow-cyan-50"
           >
-            {isPending ? <Loader2 className="animate-spin" size={20} /> : t.next}
+            {isPending ? <Loader2 className="animate-spin" size={20} /> : "Növbəti"}
           </button>
         </div>
 

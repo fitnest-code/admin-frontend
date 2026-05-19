@@ -1,19 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import * as Tabs from "@radix-ui/react-tabs";
 import { Loader2, Upload, X, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useGymStore } from "@/lib/store/gym-store";
 import { useValidateGymStep5 } from "@/lib/query/gym-query";
-
-type Lang = "Az" | "Ru" | "En";
-
-const labels: Record<Lang, any> = {
-  Az: { title: "Zal məlumatları", cover: "Cover Şəkil", others: "Digər şəkillər", uploadCover: "Upload cover", upload: "Upload", save: "Yadda saxla", next: "Növbəti", namePlaceholder: "Ad (məs: SPA)" },
-  Ru: { title: "Данные зала", cover: "Обложка", others: "Другие фото", uploadCover: "Загрузить обложку", upload: "Загрузить", save: "Сохранить", next: "Далее", namePlaceholder: "Название (напр: SPA)" },
-  En: { title: "Gym Details", cover: "Cover Photo", others: "Other Photos", uploadCover: "Upload cover", upload: "Upload", save: "Save", next: "Next", namePlaceholder: "Name (e.g. SPA)" },
-};
 
 interface RoomPhotoState {
   id: string;
@@ -25,7 +16,6 @@ interface RoomPhotoState {
 export function StepImages({ onNext }: { onNext?: () => void }) {
   const { step5Photos, setStep5Photos } = useGymStore();
   const [mounted, setMounted] = useState(false);
-  const [lang, setLang] = useState<Lang>("Az");
 
   const [coverPhoto, setCoverPhoto] = useState<File | null>(step5Photos?.cover || null);
   const [coverPreview, setCoverPreview] = useState<string | null>(step5Photos?.cover ? URL.createObjectURL(step5Photos.cover) : null);
@@ -45,8 +35,6 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
   const validateStep5 = useValidateGymStep5();
 
   useEffect(() => { setMounted(true); }, []);
-
-  const t = labels[lang];
 
   // Client-side image compression helper utilizing standard HTML5 Canvas
   const compressImage = (file: File, maxWidth = 1024, maxHeight = 768, quality = 0.7): Promise<File> => {
@@ -181,28 +169,13 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
     <div className="w-full bg-white rounded-[24px] border border-[#ECECED] p-6 flex flex-col gap-6 shadow-sm animate-in fade-in duration-500">
 
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-lg font-bold text-[#1F2937]">{t.title}</h1>
-          <Tabs.Root value={lang} onValueChange={(v) => setLang(v as Lang)}>
-            <Tabs.List className="flex gap-2 bg-[#F3F4F6] rounded-lg p-1">
-              {["Az", "Ru", "En"].map((l) => (
-                <Tabs.Trigger
-                  key={l}
-                  value={l}
-                  className="px-4 py-1.5 rounded-md text-sm font-bold transition-all
-                    data-[state=active]:bg-white data-[state=active]:text-[#00B4D8]
-                    data-[state=active]:shadow-sm outline-none"
-                >
-                  {l}
-                </Tabs.Trigger>
-              ))}
-            </Tabs.List>
-          </Tabs.Root>
+        <div className="flex items-center justify-between pb-1 border-b border-[#ECECED]">
+          <h1 className="text-lg font-bold text-[#1F2937]">Zal şəkilləri</h1>
         </div>
 
         {/* Cover Photo */}
         <div className="flex flex-col gap-2">
-          <label className="text-xs font-bold text-[#1F2937]">{t.cover}</label>
+          <label className="text-xs font-bold text-[#1F2937]">Cover Şəkil</label>
           <div
             onClick={() => coverInputRef.current?.click()}
             className="relative w-full h-[180px] rounded-xl border-2 border-dashed border-[#D1D5DB] bg-[#F9FAFB] flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors overflow-hidden group"
@@ -218,7 +191,7 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
             ) : (
               <div className="flex flex-col items-center text-[#6B7280]">
                 <Upload size={28} className="mb-2 text-[#9CA3AF]" />
-                <span className="text-sm font-semibold">{t.uploadCover}</span>
+                <span className="text-sm font-semibold">Cover şəkil yüklə</span>
               </div>
             )}
           </div>
@@ -227,7 +200,7 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
 
         {/* Room Photos */}
         <div className="flex flex-col gap-2">
-          <label className="text-xs font-bold text-[#1F2937]">{t.others} ( {activePhotosCount}/9 )</label>
+          <label className="text-xs font-bold text-[#1F2937]">Digər şəkillər ( {activePhotosCount}/9 )</label>
 
           <div className="grid grid-cols-3 gap-4">
             {roomPhotos.map((room, index) => (
@@ -268,14 +241,14 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
                   ) : (
                     <div className="flex flex-col items-center text-[#9CA3AF]">
                       <Upload size={20} className="mb-2" />
-                      <span className="text-xs font-semibold">{t.upload}</span>
+                      <span className="text-xs font-semibold">Yüklə</span>
                     </div>
                   )}
                 </div>
 
                 <input
                   type="text"
-                  placeholder={t.namePlaceholder}
+                  placeholder="Ad (məs: SPA)"
                   value={room.name}
                   onChange={(e) => handleRoomNameChange(index, e.target.value)}
                   className="w-full bg-[#F9FAFB] border border-[#ECECED] rounded-lg px-3 py-2 text-xs font-semibold text-[#1F2937] outline-none focus:border-[#00B4D8]"
@@ -306,7 +279,7 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
             onClick={handleNext}
             className="w-[240px] h-[40px] rounded-lg bg-[#00B4CC] text-white text-[14px] font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-md shadow-cyan-50"
           >
-            {isPending ? <Loader2 className="animate-spin" size={20} /> : t.next}
+            {isPending ? <Loader2 className="animate-spin" size={20} /> : "Növbəti"}
           </button>
         </div>
 
