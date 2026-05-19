@@ -9,22 +9,14 @@ import { SuccessAnimationModal } from "../ui/success-animation-modal";
 import { useCategories } from "@/lib/query/add-category";
 import { CustomerPagination as Pagination } from "../customers/list/customer-list-table";
 
-import { useT } from "@/lib/i18n";
+import { useT, useI18nStore } from "@/lib/i18n";
 
 export default function CategoriesPage() {
   const t = useT();
+  const selectedLang = useI18nStore((s) => s.locale);
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
-  const [selectedLang] = useState<"AZ" | "RU" | "EN">(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("fitnest-language");
-      if (stored === "AZ" || stored === "RU" || stored === "EN") {
-        return stored as "AZ" | "RU" | "EN";
-      }
-    }
-    return "AZ";
-  });
   const { categories, isLoading, refetch, createCategory, updateCategory, deleteCategory } = useCategories(selectedLang, page, pageSize);
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<any | null>(null);

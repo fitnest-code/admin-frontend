@@ -58,6 +58,7 @@ export function Header() {
           const code = String(data.code).toUpperCase();
           setCurrentLang(code);
           localStorage.setItem('fitnest-language', code);
+          useI18nStore.getState().setLocale(code as any);
         }
       })
       .catch(() => {})

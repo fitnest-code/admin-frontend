@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "../api/client";
 import { SubPackage, PriceTier } from "../subscription-data";
+import { useI18nStore } from "../i18n";
 
 export interface BackendPackageOption {
   option_id?: number;
@@ -23,12 +24,17 @@ export interface BackendPackageResponse {
 
 export const useSubscriptions = () => {
   const queryClient = useQueryClient();
+  const locale = useI18nStore((s) => s.locale);
 
   // 1. Get grouped packages mapped to SubPackage array
   const { data: packagesData, isLoading, refetch } = useQuery({
-    queryKey: ["subscriptions"],
+    queryKey: ["subscriptions", locale],
     queryFn: async () => {
-      const res = await apiRequest<BackendPackageResponse[]>("/admin/subscription-packages");
+      const res = await apiRequest<BackendPackageResponse[]>("/admin/subscription-packages", {
+        headers: {
+          "Accept-Language": locale,
+        }
+      });
       if (!Array.isArray(res)) return [];
       
       return res.map((pkg): SubPackage => {
@@ -54,8 +60,12 @@ export const useSubscriptions = () => {
 
   // 2. Get flat options (as requested by user)
   const { data: flatOptions } = useQuery({
-    queryKey: ["subscription-options"],
-    queryFn: () => apiRequest<any[]>("/admin/subscription-packages/options"),
+    queryKey: ["subscription-options", locale],
+    queryFn: () => apiRequest<any[]>("/admin/subscription-packages/options", {
+      headers: {
+        "Accept-Language": locale,
+      }
+    }),
   });
 
   // 3. Create Package with options

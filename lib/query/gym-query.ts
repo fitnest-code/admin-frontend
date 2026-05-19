@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiGet, apiPost, apiDelete, apiPut } from "@/lib/api/client" 
+import { useI18nStore } from '@/lib/i18n' 
 import { 
   CategoriesResponse, 
   GymStep1Payload, 
@@ -22,8 +23,9 @@ import { toast } from 'sonner'
 
 // 1. Kateqoriyaları çəkmək üçün
 export function useCategories() {
+  const locale = useI18nStore((s) => s.locale)
   return useQuery({
-    queryKey: ['categories'],
+    queryKey: ['categories', locale],
     queryFn: () => apiGet<CategoriesResponse>('/categories', { 
       params: { page: 1, size: 100 } 
     }),
@@ -116,8 +118,9 @@ export function useDeleteGym() {
 
 // 4. Dəstəklənən xidmətləri çəkmək üçün
 export function useSupportedServices(gymId?: number) {
+  const locale = useI18nStore((s) => s.locale)
   return useQuery({
-    queryKey: ['supported-services', gymId],
+    queryKey: ['supported-services', gymId, locale],
     queryFn: () => apiGet<SupportedServiceResponse[]>('/admin/gyms/services', {
       params: gymId ? { gymId } : {}
     }),
@@ -249,8 +252,9 @@ export function useGymAnalytics(
     pageSize?: number
   }
 ) {
+  const locale = useI18nStore((s) => s.locale)
   return useQuery({
-    queryKey: ['gym-analytics', gymId ? Number(gymId) : null, params],
+    queryKey: ['gym-analytics', gymId ? Number(gymId) : null, params, locale],
     queryFn: () => {
       if (!gymId) return Promise.resolve(null)
       return apiGet<GymAnalyticsResponse>(`/admin/gyms/${gymId}/analytics`, { params })
@@ -262,8 +266,9 @@ export function useGymAnalytics(
 
 // 9. Zal məlumatlarını çəkmək üçün (Admin)
 export function useGymDetailsAdmin(gymId: number | string | null | undefined) {
+  const locale = useI18nStore((s) => s.locale)
   return useQuery({
-    queryKey: ['gym-details', gymId ? Number(gymId) : null],
+    queryKey: ['gym-details', gymId ? Number(gymId) : null, locale],
     queryFn: () => {
       if (!gymId) return Promise.resolve(null)
       return apiGet<GymInfoAdminResponse>(`/admin/gyms/${gymId}/details`)
@@ -275,8 +280,9 @@ export function useGymDetailsAdmin(gymId: number | string | null | undefined) {
 
 // 9.1 Zal abunəliklərini çəkmək üçün (Admin)
 export function useGymSubscriptionsAdmin(gymId: number | string | null | undefined) {
+  const locale = useI18nStore((s) => s.locale)
   return useQuery({
-    queryKey: ['gym-subscriptions-admin', gymId ? Number(gymId) : null],
+    queryKey: ['gym-subscriptions-admin', gymId ? Number(gymId) : null, locale],
     queryFn: () => {
       if (!gymId) return Promise.resolve(null)
       return apiGet<GymSubscriptionsAdminResponse>(`/admin/gyms/${gymId}/subscriptions`)
@@ -310,8 +316,9 @@ export function useGymTrainers(gymId: number | string | null | undefined, params
     sort_dir: params?.sort_dir?.toUpperCase() || 'DESC'
   };
 
+  const locale = useI18nStore((s) => s.locale)
   return useQuery({
-    queryKey: ['gym-trainers', gymId ? Number(gymId) : null, normalizedParams],
+    queryKey: ['gym-trainers', gymId ? Number(gymId) : null, normalizedParams, locale],
     queryFn: () => {
       if (!gymId) return Promise.resolve(null)
       return apiGet<PaginatedResponse<ITrainer>>(`/admin/gyms/${gymId}/trainers`, { params: normalizedParams })
@@ -364,8 +371,9 @@ export function useDeleteTrainer() {
 
 // 14. Peşələri (Professions) çəkmək üçün
 export function useProfessions() {
+  const locale = useI18nStore((s) => s.locale)
   return useQuery({
-    queryKey: ['professions'],
+    queryKey: ['professions', locale],
     queryFn: () => apiGet<IProfession[]>('/professions'),
     staleTime: 10 * 60 * 1000,
   });
