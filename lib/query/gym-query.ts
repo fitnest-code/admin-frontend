@@ -463,7 +463,7 @@ export function useApproveReview() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (reviewId: number | string) =>
-      apiPost(`/admin/gyms/reviews/${reviewId}/approve`, {}),
+      apiPut(`/admin/gyms/reviews/${reviewId}/approve`, {}),
     onSuccess: (_, reviewId) => {
       queryClient.invalidateQueries({ queryKey: ['gym-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['review-detail', reviewId] });
@@ -477,7 +477,7 @@ export function useRejectReview() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (reviewId: number | string) =>
-      apiPost(`/admin/gyms/reviews/${reviewId}/reject`, {}),
+      apiPut(`/admin/gyms/reviews/${reviewId}/reject`, {}),
     onSuccess: (_, reviewId) => {
       queryClient.invalidateQueries({ queryKey: ['gym-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['review-detail', reviewId] });
