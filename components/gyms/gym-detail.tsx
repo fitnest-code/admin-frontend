@@ -31,6 +31,7 @@ import { ExitConfirmationModal } from './modals/exit-confirmation-modal'
 import { useGymStore } from '@/lib/store/gym-store'
 import { useT } from '@/lib/i18n'
 import { useAuthStore } from '@/lib/store/auth-store'
+import { apiGet } from '@/lib/api/client'
 
 const WIZARD_TABS = [
   { key: 'info', label: 'Zal məlumatları' },
@@ -54,6 +55,18 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
   const router = useRouter()
   const user = useAuthStore((state) => state.user)
   const isGymAdmin = user?.role === 'ROLE_GYM_SUPER_ADMIN' || user?.role === 'ROLE_GYM_ADMIN'
+
+  const [adminGyms, setAdminGyms] = useState<any[]>([])
+  const [isSwitcherOpen, setIsSwitcherOpen] = useState(false)
+
+  useEffect(() => {
+    if (isGymAdmin) {
+      apiGet<any>('/admin/gyms/list').then(res => {
+        const items = res?.data?.items || []
+        setAdminGyms(items)
+      }).catch(console.error)
+    }
+  }, [isGymAdmin])
 
   const getTabLabel = (key: string) => {
     switch (key) {
@@ -309,9 +322,43 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       )}
 
       {/* Header with Status */}
-      <div className="w-full flex items-center justify-between border-b border-[#ececed] pb-3">
+      <div className="w-full flex items-center justify-between border-b border-[#ececed] pb-3 relative">
         <div className="flex flex-col gap-1">
-           <h1 className="text-[20px] font-bold text-[#101828] tracking-tight">{gym.name}</h1>
+          {isGymAdmin && adminGyms.length > 1 ? (
+            <div className="relative">
+              <button 
+                onClick={() => setIsSwitcherOpen(true)} 
+                className="flex items-center gap-2 outline-none"
+              >
+                <h1 className="text-[20px] font-bold text-[#101828] tracking-tight">{gym.name}</h1>
+                <Image src="/left-right-arrow.svg" width={24} height={24} alt="Switch gym" className="shrink-0" />
+              </button>
+
+              {isSwitcherOpen && (
+                <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setIsSwitcherOpen(false)}>
+                  <div className="bg-[#fafafa] w-full sm:w-[400px] rounded-t-2xl sm:rounded-2xl p-4 flex flex-col gap-4 animate-in slide-in-from-bottom-8 duration-300 shadow-2xl" onClick={e => e.stopPropagation()}>
+                    <div className="text-[16px] font-semibold text-black sm:text-center text-right w-full mb-2">Zallar</div>
+                    <div className="flex flex-col gap-2 w-full max-h-[60vh] overflow-y-auto">
+                      {adminGyms.map(g => (
+                        <button 
+                          key={g.id} 
+                          onClick={() => { router.push(`/gyms/${g.id}`); setIsSwitcherOpen(false) }} 
+                          className="w-full bg-white rounded-xl border border-[#ececed] flex items-center justify-between p-5 hover:bg-slate-50 transition-colors shadow-sm cursor-pointer"
+                        >
+                          <div className="text-[16px] font-medium text-black uppercase text-left">{g.name}</div>
+                          <div className="w-[28px] h-[28px] rounded-full border border-[#cecfd2] flex items-center justify-center relative shrink-0">
+                            {g.id === gym.id && <div className="w-3.5 h-3.5 rounded-full bg-[#00B4CC]" />}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <h1 className="text-[20px] font-bold text-[#101828] tracking-tight">{gym.name}</h1>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
