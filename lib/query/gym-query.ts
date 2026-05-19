@@ -399,11 +399,7 @@ export function useAddGymAdmin() {
       apiPost(`/admin/gyms/${gymId}/admins`, payload),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['gym-admins', variables.gymId] });
-      toast.success('Admin uğurla əlavə edildi');
     },
-    onError: (err: any) => {
-      toast.error(err?.message || 'Xəta baş verdi');
-    }
   });
 }
 
@@ -415,11 +411,7 @@ export function useUpdateGymAdmin() {
       apiPut(`/admin/gyms/${gymId}/admins/${adminId}`, payload),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['gym-admins', variables.gymId] });
-      toast.success('Admin məlumatları uğurla yeniləndi');
     },
-    onError: (err: any) => {
-      toast.error(err?.message || 'Yenilənmə zamanı xəta baş verdi');
-    }
   });
 }
 
@@ -431,11 +423,7 @@ export function useDeleteGymAdmin() {
       apiDelete(`/admin/gyms/${gymId}/admins/${adminId}`),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['gym-admins', variables.gymId] });
-      toast.success('Admin silindi');
     },
-    onError: (err: any) => {
-      toast.error(err?.message || 'Silinmə zamanı xəta baş verdi');
-    }
   });
 }
 

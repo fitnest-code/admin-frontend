@@ -6,7 +6,7 @@ import { X, Loader2, Eye, EyeOff, Edit, Trash } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGymStore } from "@/lib/store/gym-store";
 import { useGymAdmins, useAddGymAdmin, useDeleteGymAdmin, useUpdateGymAdmin } from "@/lib/query/gym-query";
-import { toast } from "sonner";
+
 import { ConfirmDeleteModal } from "../modals/confirm-delete-modal";
 import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 
@@ -25,7 +25,11 @@ export function AdminsTab() {
   const [deleteAdminId, setDeleteAdminId] = useState<number | null>(null);
   const [editingAdminId, setEditingAdminId] = useState<number | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; message: string; type: "success" | "error" }>({
+    isOpen: false,
+    message: "",
+    type: "success",
+  });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -85,10 +89,11 @@ export function AdminsTab() {
             setModalOpen(false);
             setEditingAdminId(null);
             setForm({ name: "", surname: "", phoneNumber: "", email: "", password: "", role: "Admin" });
-            setShowSuccessModal(true);
+            setModalConfig({ isOpen: true, message: t.admin.adminUpdated || "Admin uğurla yeniləndi", type: "success" });
           },
           onError: (err: any) => {
-            toast.error(err?.response?.data?.message || t.error.generic);
+            const msg = err?.response?.data?.message || err?.message || t.error.generic;
+            setModalConfig({ isOpen: true, message: msg, type: "error" });
           }
         }
       );
@@ -99,10 +104,11 @@ export function AdminsTab() {
           onSuccess: () => {
             setModalOpen(false);
             setForm({ name: "", surname: "", phoneNumber: "", email: "", password: "", role: "Admin" });
-            setShowSuccessModal(true);
+            setModalConfig({ isOpen: true, message: t.admin.adminAdded || "Admin uğurla əlavə edildi", type: "success" });
           },
           onError: (err: any) => {
-            toast.error(err?.response?.data?.message || t.error.generic);
+            const msg = err?.response?.data?.message || err?.message || t.error.generic;
+            setModalConfig({ isOpen: true, message: msg, type: "error" });
           }
         }
       );
@@ -114,7 +120,12 @@ export function AdminsTab() {
     deleteAdmin({ gymId: Number(gymId), adminId: deleteAdminId }, {
       onSuccess: () => {
         setDeleteAdminId(null);
-        setShowSuccessModal(true);
+        setModalConfig({ isOpen: true, message: t.admin.adminDeleted || "Admin silindi", type: "success" });
+      },
+      onError: (err: any) => {
+        setDeleteAdminId(null);
+        const msg = err?.response?.data?.message || err?.message || t.error.generic;
+        setModalConfig({ isOpen: true, message: msg, type: "error" });
       }
     });
   };
@@ -375,7 +386,12 @@ export function AdminsTab() {
           isLoading={isDeletingAdmin}
         />
       )}
-      <SuccessAnimationModal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)} />
+      <SuccessAnimationModal 
+        isOpen={modalConfig.isOpen} 
+        onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))} 
+        message={modalConfig.message}
+        type={modalConfig.type}
+      />
     </div>
   );
 }
