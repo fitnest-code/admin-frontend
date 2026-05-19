@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { X, Loader2, UserPlus, User, Key, Eye, EyeOff } from "lucide-react";
+import { X, Loader2, Eye, EyeOff, Edit, Trash } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGymStore } from "@/lib/store/gym-store";
-import { useGymAdmins, useAddGymAdmin, useDeleteGymAdmin } from "@/lib/query/gym-query";
+import { useGymAdmins, useAddGymAdmin, useDeleteGymAdmin, useUpdateGymAdmin } from "@/lib/query/gym-query";
 import { toast } from "sonner";
 import { ConfirmDeleteModal } from "../modals/confirm-delete-modal";
 import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
@@ -14,41 +14,96 @@ export function AdminsTab() {
   const { gymId } = useGymStore();
   const { data: admins, isLoading } = useGymAdmins(gymId);
   const { mutate: addAdmin, isPending: isAdding } = useAddGymAdmin();
+  const { mutate: updateAdmin, isPending: isUpdating } = useUpdateGymAdmin();
   const { mutate: deleteAdmin, isPending: isDeletingAdmin } = useDeleteGymAdmin();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [deleteAdminId, setDeleteAdminId] = useState<number | null>(null);
+  const [editingAdminId, setEditingAdminId] = useState<number | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpenDropdownId(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const [form, setForm] = useState({
     name: "",
     surname: "",
     phoneNumber: "",
     email: "",
     password: "",
+    role: "Admin"
   });
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
     if (!gymId) return;
-    
-    if (!form.name || !form.surname || !form.email || !form.password) {
-      return toast.error("Zəhmət olmasa bütün vacib xanaları doldurun");
+
+    const errors: Record<string, string> = {};
+    if (!form.name.trim()) errors.name = "Ad daxil edilməlidir";
+    else if (form.name.length < 2 || form.name.length > 50) errors.name = "Ad 2-50 simvol uzunluğunda olmalıdır";
+
+    if (!form.surname.trim()) errors.surname = "Soyad daxil edilməlidir";
+    else if (form.surname.length < 2 || form.surname.length > 50) errors.surname = "Soyad 2-50 simvol uzunluğunda olmalıdır";
+
+    if (!form.email.trim()) errors.email = "E-poçt daxil edilməlidir";
+    else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(form.email)) errors.email = "Düzgün e-poçt daxil edin";
+
+    if (!form.phoneNumber.trim()) errors.phoneNumber = "Telefon daxil edilməlidir";
+    else if (!/^(\+994|0)?\s?(10|50|51|55|60|70|77|99)(\s?\d){7}$/.test(form.phoneNumber)) errors.phoneNumber = "Düzgün telefon nömrəsi daxil edin";
+
+    if (!editingAdminId) {
+      if (!form.password) errors.password = "Şifrə daxil edilməlidir";
+      else if (form.password.length < 8) errors.password = "Şifrə ən azı 8 simvol olmalıdır";
     }
 
-    addAdmin(
-      { gymId: Number(gymId), payload: form },
-      {
-        onSuccess: () => {
-          setModalOpen(false);
-          setForm({ name: "", surname: "", phoneNumber: "", email: "", password: "" });
-          setShowSuccessModal(true);
-        },
-        onError: (err: any) => {
-          toast.error(err?.response?.data?.message || "Xəta baş verdi");
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+
+    setFormErrors({});
+
+    if (editingAdminId) {
+      updateAdmin(
+        { gymId: Number(gymId), adminId: editingAdminId, payload: { ...form, password: undefined } },
+        {
+          onSuccess: () => {
+            setModalOpen(false);
+            setEditingAdminId(null);
+            setForm({ name: "", surname: "", phoneNumber: "", email: "", password: "", role: "Admin" });
+            setShowSuccessModal(true);
+          },
+          onError: (err: any) => {
+            toast.error(err?.response?.data?.message || "Xəta baş verdi");
+          }
         }
-      }
-    );
+      );
+    } else {
+      addAdmin(
+        { gymId: Number(gymId), payload: form },
+        {
+          onSuccess: () => {
+            setModalOpen(false);
+            setForm({ name: "", surname: "", phoneNumber: "", email: "", password: "", role: "Admin" });
+            setShowSuccessModal(true);
+          },
+          onError: (err: any) => {
+            toast.error(err?.response?.data?.message || "Xəta baş verdi");
+          }
+        }
+      );
+    }
   };
 
   const handleDelete = () => {
@@ -89,7 +144,7 @@ export function AdminsTab() {
             <div className="text-[14px] leading-[20px] font-semibold text-black">Ad / Soyad</div>
             <div className="text-[14px] leading-[20px] font-semibold text-black">Telefon</div>
             <div className="text-[14px] leading-[20px] font-semibold text-black">E-poçt</div>
-            <div className="w-8"></div>
+            <div className="text-[14px] leading-[20px] font-semibold text-black text-center">Ətraflı</div>
           </div>
 
           {/* Table Body */}
@@ -128,14 +183,35 @@ export function AdminsTab() {
                   {/* Email */}
                   <div className="text-[16px] leading-[24px] truncate">{admin.email}</div>
 
-                  {/* Delete Action */}
-                  <div className="flex justify-center">
+                  {/* Actions */}
+                  <div className="flex justify-center relative">
                     <button 
-                      onClick={() => setDeleteAdminId(admin.id)}
-                      className="w-5 h-5 flex items-center justify-center hover:opacity-70 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenDropdownId(openDropdownId === admin.id ? null : admin.id);
+                      }}
+                      className="w-8 h-8 flex items-center justify-center hover:opacity-70 transition-opacity"
                     >
-                      <Image src="/trash.png" width={20} height={20} alt="Delete" />
+                      <Image src="/more.png" width={20} height={20} alt="More" />
                     </button>
+                    {openDropdownId === admin.id && (
+                      <div ref={dropdownRef} className="absolute right-0 top-10 w-[140px] bg-white rounded-lg shadow-xl border border-[#ececed] py-1 z-[10]">
+                         <button onClick={() => { 
+                           setEditingAdminId(admin.id); 
+                           setForm({ name: admin.name, surname: admin.surname, phoneNumber: admin.phone || "", email: admin.email || "", password: "", role: admin.role || "Admin" }); 
+                           setFormErrors({});
+                           setModalOpen(true); 
+                           setOpenDropdownId(null); 
+                         }} className="w-full text-left px-4 py-2 text-[14px] font-medium hover:bg-slate-50 flex items-center gap-2">
+                           <Edit size={16} className="text-[#6a7282]" />
+                           Yenilə
+                         </button>
+                         <button onClick={() => { setDeleteAdminId(admin.id); setOpenDropdownId(null); }} className="w-full text-left px-4 py-2 text-[14px] font-medium text-red-600 hover:bg-red-50 flex items-center gap-2">
+                           <Trash size={16} />
+                           Sil
+                         </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))
@@ -146,7 +222,12 @@ export function AdminsTab() {
         {/* Footer Action */}
         <div className="w-full flex justify-end mt-1">
           <button 
-            onClick={() => setModalOpen(true)}
+            onClick={() => {
+              setEditingAdminId(null);
+              setForm({ name: "", surname: "", phoneNumber: "", email: "", password: "", role: admins?.length === 0 ? "Super admin" : "Admin" });
+              setFormErrors({});
+              setModalOpen(true);
+            }}
             className="w-[180px] h-10 bg-[#00b4cc] rounded-lg flex items-center justify-end px-3 gap-3 text-[#fafafa] hover:opacity-90 transition-opacity shadow-sm"
           >
             <span className="text-sm font-medium leading-[20px]">Admin əlavə et</span>
@@ -163,7 +244,7 @@ export function AdminsTab() {
           <div className="w-full max-w-[500px] bg-white rounded-[14px] shadow-2xl flex flex-col animate-in fade-in zoom-in duration-200 overflow-hidden">
             {/* Modal Header */}
             <div className="px-6 py-6 border-b border-black/10 flex items-center justify-between">
-              <h2 className="text-[18px] font-bold text-[#101828]">Yeni Admin Əlavə Et</h2>
+              <h2 className="text-[18px] font-bold text-[#101828]">{editingAdminId ? "Admini Yenilə" : "Yeni Admin Əlavə Et"}</h2>
               <button 
                 onClick={() => setModalOpen(false)}
                 className="w-6 h-6 flex items-center justify-center hover:bg-slate-100 rounded-md transition-colors"
@@ -180,10 +261,11 @@ export function AdminsTab() {
                     type="text"
                     required
                     value={form.name}
-                    onChange={e => setForm({...form, name: e.target.value})}
-                    className="w-full h-11 px-4 bg-white border border-[#dddcdc] rounded-xl outline-none focus:border-[#00b4cc] text-[14px]"
+                    onChange={e => {setForm({...form, name: e.target.value}); setFormErrors({...formErrors, name: ""});}}
+                    className={cn("w-full h-11 px-4 bg-white border rounded-xl outline-none text-[14px] transition-all", formErrors.name ? "border-red-500 focus:border-red-500" : "border-[#dddcdc] focus:border-[#00b4cc]")}
                     placeholder="Məs: Kamal"
                   />
+                  {formErrors.name && <span className="text-[12px] text-red-500">{formErrors.name}</span>}
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[14px] font-medium text-[#364153]">Soyad</label>
@@ -191,10 +273,11 @@ export function AdminsTab() {
                     type="text"
                     required
                     value={form.surname}
-                    onChange={e => setForm({...form, surname: e.target.value})}
-                    className="w-full h-11 px-4 bg-white border border-[#dddcdc] rounded-xl outline-none focus:border-[#00b4cc] text-[14px]"
+                    onChange={e => {setForm({...form, surname: e.target.value}); setFormErrors({...formErrors, surname: ""});}}
+                    className={cn("w-full h-11 px-4 bg-white border rounded-xl outline-none text-[14px] transition-all", formErrors.surname ? "border-red-500 focus:border-red-500" : "border-[#dddcdc] focus:border-[#00b4cc]")}
                     placeholder="Məs: Aliyev"
                   />
+                  {formErrors.surname && <span className="text-[12px] text-red-500">{formErrors.surname}</span>}
                 </div>
               </div>
 
@@ -204,10 +287,11 @@ export function AdminsTab() {
                   type="email"
                   required
                   value={form.email}
-                  onChange={e => setForm({...form, email: e.target.value})}
-                  className="w-full h-11 px-4 bg-white border border-[#dddcdc] rounded-xl outline-none focus:border-[#00b4cc] text-[14px]"
+                  onChange={e => {setForm({...form, email: e.target.value}); setFormErrors({...formErrors, email: ""});}}
+                  className={cn("w-full h-11 px-4 bg-white border rounded-xl outline-none text-[14px] transition-all", formErrors.email ? "border-red-500 focus:border-red-500" : "border-[#dddcdc] focus:border-[#00b4cc]")}
                   placeholder="admin@mail.com"
                 />
+                {formErrors.email && <span className="text-[12px] text-red-500">{formErrors.email}</span>}
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -215,12 +299,26 @@ export function AdminsTab() {
                 <input 
                   type="text"
                   value={form.phoneNumber}
-                  onChange={e => setForm({...form, phoneNumber: e.target.value})}
-                  className="w-full h-11 px-4 bg-white border border-[#dddcdc] rounded-xl outline-none focus:border-[#00b4cc] text-[14px]"
+                  onChange={e => {setForm({...form, phoneNumber: e.target.value}); setFormErrors({...formErrors, phoneNumber: ""});}}
+                  className={cn("w-full h-11 px-4 bg-white border rounded-xl outline-none text-[14px] transition-all", formErrors.phoneNumber ? "border-red-500 focus:border-red-500" : "border-[#dddcdc] focus:border-[#00b4cc]")}
                   placeholder="+994 00 000 00 00"
                 />
+                {formErrors.phoneNumber && <span className="text-[12px] text-red-500">{formErrors.phoneNumber}</span>}
               </div>
 
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[14px] font-medium text-[#364153]">Rol</label>
+                <select 
+                  value={form.role || "Admin"}
+                  onChange={e => setForm({...form, role: e.target.value})}
+                  className="w-full h-11 px-4 bg-white border border-[#dddcdc] rounded-xl outline-none focus:border-[#00b4cc] text-[14px]"
+                >
+                  <option value="Super admin">Super admin</option>
+                  <option value="Admin">Admin</option>
+                </select>
+              </div>
+
+              {!editingAdminId && (
               <div className="flex flex-col gap-1.5">
                 <label className="text-[14px] font-medium text-[#364153]">Şifrə</label>
                 <div className="relative">
@@ -228,8 +326,8 @@ export function AdminsTab() {
                     type={showPassword ? "text" : "password"}
                     required
                     value={form.password}
-                    onChange={e => setForm({...form, password: e.target.value})}
-                    className="w-full h-11 px-4 bg-white border border-[#dddcdc] rounded-xl outline-none focus:border-[#00b4cc] text-[14px]"
+                    onChange={e => {setForm({...form, password: e.target.value}); setFormErrors({...formErrors, password: ""});}}
+                    className={cn("w-full h-11 px-4 bg-white border rounded-xl outline-none text-[14px] transition-all", formErrors.password ? "border-red-500 focus:border-red-500" : "border-[#dddcdc] focus:border-[#00b4cc]")}
                     placeholder="••••••••"
                   />
                   <button 
@@ -240,7 +338,9 @@ export function AdminsTab() {
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
+                {formErrors.password && <span className="text-[12px] text-red-500">{formErrors.password}</span>}
               </div>
+              )}
 
               <div className="flex items-center gap-3 mt-2">
                 <button 
@@ -252,10 +352,10 @@ export function AdminsTab() {
                 </button>
                 <button 
                   type="submit"
-                  disabled={isAdding}
+                  disabled={isAdding || isUpdating}
                   className="flex-1 h-12 bg-[#00b4cc] text-white rounded-[10px] font-bold text-[16px] flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50"
                 >
-                  {isAdding ? <Loader2 size={20} className="animate-spin" /> : "Təsdiq et"}
+                  {isAdding || isUpdating ? <Loader2 size={20} className="animate-spin" /> : "Təsdiq et"}
                 </button>
               </div>
             </form>

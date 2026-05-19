@@ -399,6 +399,22 @@ export function useAddGymAdmin() {
   });
 }
 
+// 16.1 Zal adminini yeniləmək üçün
+export function useUpdateGymAdmin() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ gymId, adminId, payload }: { gymId: number, adminId: number, payload: any }) =>
+      apiPut(`/admin/gyms/${gymId}/admins/${adminId}`, payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-admins', variables.gymId] });
+      toast.success('Admin məlumatları uğurla yeniləndi');
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Yenilənmə zamanı xəta baş verdi');
+    }
+  });
+}
+
 // 17. Zal admini silmək üçün
 export function useDeleteGymAdmin() {
   const queryClient = useQueryClient();
