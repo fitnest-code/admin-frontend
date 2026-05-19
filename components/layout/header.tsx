@@ -81,7 +81,7 @@ export function Header() {
       localStorage.setItem('fitnest-language', code)
       useI18nStore.getState().setLocale(code as any)
       setDropdownOpen(false)
-      await queryClient.resetQueries()
+      await queryClient.invalidateQueries()
     } catch (err) {
       console.error("Failed to change language:", err)
     }
