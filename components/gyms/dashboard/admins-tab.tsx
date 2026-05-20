@@ -63,8 +63,11 @@ export function AdminsTab() {
     if (!form.surname.trim()) errors.surname = t.validation.surnameRequired;
     else if (form.surname.length < 2 || form.surname.length > 50) errors.surname = t.validation.surnameLength;
 
-    if (!form.email.trim()) errors.email = t.validation.emailRequired;
-    else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(form.email)) errors.email = t.validation.emailInvalid;
+    if (form.email.trim()) {
+      if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(form.email)) {
+        errors.email = t.validation.emailInvalid;
+      }
+    }
 
     if (!form.phoneNumber.trim()) errors.phoneNumber = t.validation.phoneRequired;
     else if (!/^(\+994|0)?\s?(10|50|51|55|60|70|77|99)(\s?\d){7}$/.test(form.phoneNumber)) errors.phoneNumber = t.validation.phoneInvalid;
@@ -301,7 +304,6 @@ export function AdminsTab() {
                 <label className="text-[14px] font-medium text-[#364153]">{t.common.email}</label>
                 <input 
                   type="email"
-                  required
                   value={form.email}
                   onChange={e => {setForm({...form, email: e.target.value}); setFormErrors({...formErrors, email: ""});}}
                   className={cn("w-full h-11 px-4 bg-white border rounded-xl outline-none text-[14px] transition-all", formErrors.email ? "border-red-500 focus:border-red-500" : "border-[#dddcdc] focus:border-[#00b4cc]")}
