@@ -3,9 +3,11 @@
 import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
-import { ApiError } from '@/lib/api/client'
+import { ApiError, apiPost } from '@/lib/api/client'
 import { useLoginMutation } from '@/modules/auth'
 import { cn } from '@/lib/utils'
+
+type RecoveryStep = 'LOGIN' | 'FORGOT' | 'OTP' | 'RESET'
 
 // ── Inner component — needs useSearchParams, must be inside Suspense ──────────
 function LoginForm() {
@@ -19,9 +21,28 @@ function LoginForm() {
   const loginMutation = useLoginMutation()
   const loading = loginMutation.isPending
 
+  // Recovery Flow States
+  const [step, setStep] = useState<RecoveryStep>('LOGIN')
+  const [otpSessionId, setOtpSessionId] = useState('')
+  const [otpCode, setOtpCode] = useState('')
+  const [resetToken, setResetToken] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showNewPwd, setShowNewPwd] = useState(false)
+  const [showConfirmPwd, setShowConfirmPwd] = useState(false)
+  const [recoveryLoading, setRecoveryLoading] = useState(false)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  const handleBackToLogin = () => {
+    setError(null)
+    setSuccessMessage(null)
+    setStep('LOGIN')
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+    setSuccessMessage(null)
 
     if (!mobile.trim() || !password.trim()) {
       setError('Mobil nömrə və şifrə boş ola bilməz.')
@@ -46,6 +67,365 @@ function LoginForm() {
         setError('Giriş zamanı xəta baş verdi. Yenidən cəhd edin.')
       }
     }
+  }
+
+  async function handleForgotPassword(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    if (!mobile.trim()) {
+      setError('Mobil nömrə boş ola bilməz.')
+      return
+    }
+    if (!/^(?:\+994|0)(?:10|50|51|55|60|70|77|99)\d{7}$/.test(mobile.trim())) {
+      setError('Yanlış mobil nömrə formatı. Nümunə: 0501234567')
+      return
+    }
+
+    setRecoveryLoading(true)
+    try {
+      const res = await apiPost<{ success: { details: { otp_session_id: string } } }>(
+        '/auth/password-recovery/admin/forgot-password',
+        { mobile: mobile.trim() }
+      )
+      const sessionId = res?.success?.details?.otp_session_id
+      if (sessionId) {
+        setOtpSessionId(sessionId)
+        setStep('OTP')
+      } else {
+        setError('Sessiya ID-si tapılmadı.')
+      }
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message || 'Xəta baş verdi.')
+      } else {
+        setError('Sorğu zamanı xəta baş verdi.')
+      }
+    } finally {
+      setRecoveryLoading(false)
+    }
+  }
+
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    if (!otpCode.trim()) {
+      setError('Təsdiq kodu boş ola bilməz.')
+      return
+    }
+    if (!/^\d{4}$/.test(otpCode.trim())) {
+      setError('Təsdiq kodu 4 rəqəmli olmalıdır.')
+      return
+    }
+
+    setRecoveryLoading(true)
+    try {
+      const res = await apiPost<{ reset_token?: string }>(
+        '/auth/otp/verify',
+        {
+          otp_session_id: otpSessionId,
+          otp_code: otpCode.trim(),
+        }
+      )
+      const token = res?.reset_token
+      if (token) {
+        setResetToken(token)
+        setStep('RESET')
+      } else {
+        setError('Sıfırlama tokeni tapılmadı.')
+      }
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message || 'Yanlış təsdiq kodu.')
+      } else {
+        setError('Doğrulama zamanı xəta baş verdi.')
+      }
+    } finally {
+      setRecoveryLoading(false)
+    }
+  }
+
+  async function handleResetPassword(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    if (!newPassword.trim() || !confirmPassword.trim()) {
+      setError('Şifrə alanları boş ola bilməz.')
+      return
+    }
+    if (newPassword.length < 8) {
+      setError('Şifrə ən az 8 simvol olmalıdır.')
+      return
+    }
+    if (/\s/.test(newPassword)) {
+      setError('Şifrədə boşluq simvolu ola bilməz.')
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setError('Şifrələr eyni deyil.')
+      return
+    }
+
+    setRecoveryLoading(true)
+    try {
+      await apiPost(
+        '/auth/password-recovery/admin/reset-password',
+        {
+          reset_token: resetToken,
+          newPassword: newPassword,
+        }
+      )
+      setSuccessMessage('Şifrə uğurla sıfırlandı. Yeni şifrənizlə daxil ola bilərsiniz.')
+      setStep('LOGIN')
+      setPassword('')
+      setOtpCode('')
+      setNewPassword('')
+      setConfirmPassword('')
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message || 'Şifrə sıfırlanarkən xəta baş verdi.')
+      } else {
+        setError('Şifrə sıfırlanarkən xəta baş verdi.')
+      }
+    } finally {
+      setRecoveryLoading(false)
+    }
+  }
+
+  if (step === 'FORGOT') {
+    return (
+      <div className="w-full max-w-md flex flex-col gap-8">
+        <div className="flex items-center gap-2.5 lg:hidden">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#00B4CC]">
+            <svg viewBox="0 0 24 24" className="h-4 w-4 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+              <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
+            </svg>
+          </div>
+          <span className="text-lg font-bold text-foreground">FitNest</span>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <h2 className="text-2xl font-bold text-foreground">Şifrəni unutmusunuz?</h2>
+          <p className="text-sm text-muted-foreground">Şifrəni sıfırlamaq üçün mobil nömrənizi daxil edin</p>
+        </div>
+
+        <form onSubmit={handleForgotPassword} className="flex flex-col gap-4" noValidate>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="recovery-mobile" className="text-sm font-medium text-foreground">Mobil nömrə</label>
+            <input
+              id="recovery-mobile"
+              type="tel"
+              autoComplete="tel"
+              value={mobile}
+              onChange={(e) => setMobile(e.target.value)}
+              placeholder="0501234567"
+              className={cn(
+                'h-11 rounded-xl border bg-background px-4 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground',
+                error ? 'border-red-400 focus:border-red-500' : 'border-border focus:border-[#00B4CC]',
+              )}
+            />
+          </div>
+
+          {error && (
+            <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-600 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
+              {error}
+            </p>
+          )}
+
+          <div className="flex flex-col gap-3">
+            <button
+              type="submit"
+              disabled={recoveryLoading}
+              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#00B4CC] text-sm font-semibold text-white transition-colors hover:bg-[#008799] disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {recoveryLoading ? (
+                <>
+                  <Loader2 size={15} className="animate-spin" />
+                  Göndərilir...
+                </>
+              ) : 'Kod göndər'}
+            </button>
+            <button
+              type="button"
+              onClick={handleBackToLogin}
+              className="text-center text-xs font-semibold text-[#00B4CC] hover:text-[#008799] transition-colors py-1"
+            >
+              Geri daxil olmağa
+            </button>
+          </div>
+        </form>
+      </div>
+    )
+  }
+
+  if (step === 'OTP') {
+    return (
+      <div className="w-full max-w-md flex flex-col gap-8">
+        <div className="flex items-center gap-2.5 lg:hidden">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#00B4CC]">
+            <svg viewBox="0 0 24 24" className="h-4 w-4 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+              <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
+            </svg>
+          </div>
+          <span className="text-lg font-bold text-foreground">FitNest</span>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <h2 className="text-2xl font-bold text-foreground">Təsdiq kodu</h2>
+          <p className="text-sm text-muted-foreground">Mobil nömrənizə göndərilən 4 rəqəmli OTP kodunu daxil edin</p>
+        </div>
+
+        <form onSubmit={handleVerifyOtp} className="flex flex-col gap-4" noValidate>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="otp-code" className="text-sm font-medium text-foreground">Təsdiq kodu</label>
+            <input
+              id="otp-code"
+              type="text"
+              maxLength={4}
+              value={otpCode}
+              onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+              placeholder="1234"
+              className={cn(
+                'h-11 rounded-xl border bg-background px-4 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground tracking-[0.5em] text-center font-bold',
+                error ? 'border-red-400 focus:border-red-500' : 'border-border focus:border-[#00B4CC]',
+              )}
+            />
+          </div>
+
+          {error && (
+            <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-600 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
+              {error}
+            </p>
+          )}
+
+          <div className="flex flex-col gap-3">
+            <button
+              type="submit"
+              disabled={recoveryLoading}
+              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#00B4CC] text-sm font-semibold text-white transition-colors hover:bg-[#008799] disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {recoveryLoading ? (
+                <>
+                  <Loader2 size={15} className="animate-spin" />
+                  Doğrulanır...
+                </>
+              ) : 'Təsdiqlə'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setError(null)
+                setStep('FORGOT')
+              }}
+              className="text-center text-xs font-semibold text-[#00B4CC] hover:text-[#008799] transition-colors py-1"
+            >
+              Geri
+            </button>
+          </div>
+        </form>
+      </div>
+    )
+  }
+
+  if (step === 'RESET') {
+    return (
+      <div className="w-full max-w-md flex flex-col gap-8">
+        <div className="flex items-center gap-2.5 lg:hidden">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#00B4CC]">
+            <svg viewBox="0 0 24 24" className="h-4 w-4 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+              <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
+            </svg>
+          </div>
+          <span className="text-lg font-bold text-foreground">FitNest</span>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <h2 className="text-2xl font-bold text-foreground">Yeni şifrə təyin edin</h2>
+          <p className="text-sm text-muted-foreground">Hesabınız üçün yeni etibarlı şifrə daxil edin</p>
+        </div>
+
+        <form onSubmit={handleResetPassword} className="flex flex-col gap-4" noValidate>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="new-password" className="text-sm font-medium text-foreground">Yeni şifrə</label>
+            <div className="relative">
+              <input
+                id="new-password"
+                type={showNewPwd ? 'text' : 'password'}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="••••••••••••"
+                className={cn(
+                  'h-11 w-full rounded-xl border bg-background pl-4 pr-11 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground',
+                  error ? 'border-red-400 focus:border-red-500' : 'border-border focus:border-[#00B4CC]',
+                )}
+              />
+              <button
+                type="button"
+                onClick={() => setShowNewPwd((p) => !p)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label={showNewPwd ? 'Şifrəni gizlət' : 'Şifrəni göstər'}
+              >
+                {showNewPwd ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="confirm-password" className="text-sm font-medium text-foreground">Şifrənin təkrarı</label>
+            <div className="relative">
+              <input
+                id="confirm-password"
+                type={showConfirmPwd ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••••••"
+                className={cn(
+                  'h-11 w-full rounded-xl border bg-background pl-4 pr-11 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground',
+                  error ? 'border-red-400 focus:border-red-500' : 'border-border focus:border-[#00B4CC]',
+                )}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPwd((p) => !p)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label={showConfirmPwd ? 'Şifrəni gizlət' : 'Şifrəni göstər'}
+              >
+                {showConfirmPwd ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-600 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
+              {error}
+            </p>
+          )}
+
+          <div className="flex flex-col gap-3">
+            <button
+              type="submit"
+              disabled={recoveryLoading}
+              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#00B4CC] text-sm font-semibold text-white transition-colors hover:bg-[#008799] disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {recoveryLoading ? (
+                <>
+                  <Loader2 size={15} className="animate-spin" />
+                  Sıfırlanır...
+                </>
+              ) : 'Şifrəni sıfırla'}
+            </button>
+            <button
+              type="button"
+              onClick={handleBackToLogin}
+              className="text-center text-xs font-semibold text-[#00B4CC] hover:text-[#008799] transition-colors py-1"
+            >
+              Geri daxil olmağa
+            </button>
+          </div>
+        </form>
+      </div>
+    )
   }
 
   return (
@@ -86,7 +466,20 @@ function LoginForm() {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="password" className="text-sm font-medium text-foreground">Şifrə</label>
+          <div className="flex justify-between items-center">
+            <label htmlFor="password" className="text-sm font-medium text-foreground">Şifrə</label>
+            <button
+              type="button"
+              onClick={() => {
+                setError(null)
+                setSuccessMessage(null)
+                setStep('FORGOT')
+              }}
+              className="text-xs font-semibold text-[#00B4CC] hover:text-[#008799] transition-colors"
+            >
+              Şifrəni unutdun?
+            </button>
+          </div>
           <div className="relative">
             <input
               id="password"
@@ -117,6 +510,12 @@ function LoginForm() {
           </p>
         )}
 
+        {successMessage && (
+          <p className="rounded-lg border border-green-200 bg-green-50 px-4 py-2.5 text-sm text-green-600 dark:border-green-800 dark:bg-green-950/30 dark:text-green-400">
+            {successMessage}
+          </p>
+        )}
+
         <button
           type="submit"
           disabled={loading}
@@ -130,10 +529,6 @@ function LoginForm() {
           ) : 'Daxil ol'}
         </button>
       </form>
-
-      <p className="text-center text-xs text-muted-foreground">
-        Giriş problemləri üçün sistem administratoru ilə əlaqə saxlayın.
-      </p>
     </div>
   )
 }
