@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { X, Eye, EyeOff, Loader2, Plus, UserCheck, ShieldCheck, Edit, Trash } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, normalizePhoneNumber } from "@/lib/utils";
 import { useGymStore, LocalAdmin } from "@/lib/store/gym-store";
 import { useValidateGymStep7, useCreateGymComplete } from "@/lib/query/gym-query";
 import { toast } from "sonner";
@@ -61,8 +61,9 @@ export function StepAdmins({ onComplete }: { onComplete?: () => void }) {
       }
     }
 
+    const normalizedPhone = normalizePhoneNumber(form.phone);
     if (!form.phone.trim()) errors.phone = t.validation.phoneRequired;
-    else if (!/^(\+994|0)?\s?(10|50|51|55|60|70|77|99)(\s?\d){7}$/.test(form.phone)) errors.phone = t.validation.phoneInvalid;
+    else if (!/^\+994(10|50|51|55|60|70|77|99)\d{7}$/.test(normalizedPhone)) errors.phone = t.validation.phoneInvalid;
 
     if (editingIndex === null) {
       if (!form.password) errors.password = t.validation.passwordRequired;
@@ -75,11 +76,12 @@ export function StepAdmins({ onComplete }: { onComplete?: () => void }) {
     }
 
     const emailVal = form.email.trim();
+    const phoneVal = normalizedPhone;
 
     if (editingIndex !== null) {
-      updateStep7Admin(editingIndex, { ...form, email: emailVal });
+      updateStep7Admin(editingIndex, { ...form, phone: phoneVal, email: emailVal });
     } else {
-      addStep7Admin({ ...form, email: emailVal });
+      addStep7Admin({ ...form, phone: phoneVal, email: emailVal });
     }
     setForm(EMPTY_FORM);
     setFormErrors({});
