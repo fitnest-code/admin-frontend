@@ -14,7 +14,7 @@ export const useGoals = (lang: string = "AZ") => {
   const { data: goals, isLoading, refetch } = useQuery({
     queryKey: ["goals", lang],
     queryFn: async () => {
-      const res = await apiRequest<{ data: IGoal[] }>("/admin/goals", {
+      const res = await apiRequest<{ data: IGoal[] }>("/goals", {
         headers: {
           "Accept-Language": lang,
         },
