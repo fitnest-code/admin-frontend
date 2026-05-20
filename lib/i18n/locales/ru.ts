@@ -15,6 +15,7 @@ const ru: TranslationKeys = {
     stores: "Магазины",
     reviews: "Отзывы",
     settings: "Настройки",
+    faq: "FAQ",
   },
 
   common: {
@@ -216,6 +217,31 @@ const ru: TranslationKeys = {
     month: "месяц",
     months: "месяцев",
     durationPlaceholder: "1 мес.",
+  },
+
+  faq: {
+    title: "Часто Задаваемые Вопросы (FAQ)",
+    faqTab: "Вопросы (FAQ)",
+    categoriesTab: "Категории",
+    addFaq: "Добавить FAQ",
+    editFaq: "Изменить FAQ",
+    addCategory: "Добавить Категорию",
+    editCategory: "Изменить Категорию",
+    question: "Вопрос",
+    answer: "Ответ",
+    category: "Категория",
+    categoryName: "Название категории",
+    selectCategory: "Выберите категорию",
+    created: "FAQ успешно создан!",
+    updated: "FAQ успешно обновлен!",
+    deleted: "FAQ успешно удален!",
+    categoryCreated: "Категория успешно создана!",
+    categoryUpdated: "Категория успешно обновлена!",
+    categoryDeleted: "Категория успешно удалена!",
+    deleteConfirmTitle: "Удаление FAQ",
+    deleteCategoryConfirmTitle: "Удаление категории",
+    deleteConfirmMsg: "Вы уверены, что хотите удалить этот FAQ?",
+    deleteCategoryConfirmMsg: "Вы уверены, что хотите удалить эту категорию?",
   },
 } as const;
 

@@ -14,6 +14,7 @@ const az = {
     stores: "Mağazalar",
     reviews: "Reytinqlər",
     settings: "Tənzimləmələr",
+    faq: "FAQ",
   },
 
   // Common / Shared
@@ -224,6 +225,31 @@ const az = {
     month: "ay",
     months: "ay",
     durationPlaceholder: "1 ay",
+  },
+
+  faq: {
+    title: "Tez-tez Verilən Suallar (FAQ)",
+    faqTab: "Suallar (FAQ)",
+    categoriesTab: "Kateqoriyalar",
+    addFaq: "FAQ Əlavə Et",
+    editFaq: "FAQ-ni Yenilə",
+    addCategory: "Kateqoriya Əlavə Et",
+    editCategory: "Kateqoriyanı Yenilə",
+    question: "Sual",
+    answer: "Cavab",
+    category: "Kateqoriya",
+    categoryName: "Kateqoriya adı",
+    selectCategory: "Kateqoriya seçin",
+    created: "FAQ uğurla yaradıldı!",
+    updated: "FAQ uğurla yeniləndi!",
+    deleted: "FAQ uğurla silindi!",
+    categoryCreated: "Kateqoriya uğurla yaradıldı!",
+    categoryUpdated: "Kateqoriya uğurla yeniləndi!",
+    categoryDeleted: "Kateqoriya uğurla silindi!",
+    deleteConfirmTitle: "FAQ Silinməsi",
+    deleteCategoryConfirmTitle: "Kateqoriya Silinməsi",
+    deleteConfirmMsg: "Bu FAQ-ni silmək istədiyinizdən əminsiniz?",
+    deleteCategoryConfirmMsg: "Bu kateqoriyanı silmək istədiyinizdən əminsiniz?",
   },
 } as const;
 
