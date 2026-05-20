@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - development
+      - production
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -16,7 +17,6 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/development'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -50,12 +50,16 @@ jobs:
   update-helm-chart:
     needs: build-and-push
     runs-on: ubuntu-latest
+    if: |
+      github.ref_name == 'development' ||
+      github.ref_name == 'production'
+
     steps:
       - name: Checkout chart repository
         uses: actions/checkout@v4
         with:
           repository: fitnest-chart/admin-frontend
-          ref: development
+          ref: ${{ github.ref_name }}
           path: helm-repo
           ssh-key: ${{ secrets.CHART_REPO_SSH_PRIVATE_KEY }}
 
@@ -70,13 +74,21 @@ jobs:
           cd helm-repo
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          FULL_TAG="development-${{ env.IMAGE_TAG }}"
+          git checkout ${{ github.ref_name }} || git checkout -b ${{ github.ref_name }}
+
+          FULL_TAG="${{ github.ref_name }}-${{ env.IMAGE_TAG }}"
+          echo "Updating image tag to: $FULL_TAG"
           yq eval -i ".image.tag = \"$FULL_TAG\"" $HELM_VALUES_FILE
-          
-          git add $HELM_VALUES_FILE
-          git commit -m "chore: update frontend image tag to ${{ env.IMAGE_TAG }}"
-          git push origin development
+
+          if git diff --quiet; then
+            echo "No changes to commit"
+          else
+            git add $HELM_VALUES_FILE
+            git commit -m "chore: update frontend image tag to ${{ env.IMAGE_TAG }} [skip ci]"
+            git pull origin ${{ github.ref_name }} --rebase
+            git push origin ${{ github.ref_name }}
+            echo "Helm chart updated successfully"
+          fi
 
   sync-argocd:
     name: Sync ArgoCD
@@ -113,6 +125,3 @@ jobs:
             -H "Content-Type: application/json" \
             "https://argocd.fitnest.az/api/v1/applications/${APP_NAME}/sync" \
             -d '{}'
-
-
-
