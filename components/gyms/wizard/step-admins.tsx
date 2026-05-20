@@ -90,6 +90,7 @@ export function StepAdmins({ onComplete }: { onComplete?: () => void }) {
   }
 
   async function handleComplete() {
+    if (isCompleting) return;
     if (admins.length === 0) return toast.error(t.admin.atLeastOneAdmin);
 
     try {
@@ -244,7 +245,7 @@ export function StepAdmins({ onComplete }: { onComplete?: () => void }) {
         <button
           onClick={handleComplete}
           disabled={isCompleting || admins.length === 0}
-          className="h-[40px] w-[240px] rounded-lg bg-[#00B4CC] text-white text-[14px] font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-md shadow-cyan-50"
+          className="h-[40px] w-[240px] rounded-lg bg-[#00B4CC] text-white text-[14px] font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-md shadow-cyan-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:opacity-50"
         >
           {isCompleting && <Loader2 className="h-4 w-4 animate-spin" />}
           {t.gyms.createGym}
