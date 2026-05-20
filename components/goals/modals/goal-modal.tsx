@@ -97,140 +97,124 @@ export default function GoalModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => onOpenChange(false)} />
-
-      {/* Modal */}
-      <div className="relative w-full max-w-lg bg-[#1a1b1e] rounded-[24px] border border-white/5 shadow-2xl flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center font-sans p-4 sm:py-10">
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => onOpenChange(false)} />
+      
+      <div className="relative z-10 w-full max-w-[500px] max-h-[90vh] overflow-y-auto rounded-2xl bg-white border border-[#ececed] flex flex-col items-center justify-center p-4 sm:p-6 gap-5 shadow-2xl">
+        
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-white/5 shrink-0">
-          <h2 className="text-xl font-semibold text-white">
+        <div className="w-full flex items-center justify-between gap-5 text-[#101828] border-b border-[#ececed] pb-2.5">
+          <h2 className="text-[16px] sm:text-[18px] font-semibold leading-tight">
             {mode === "create" ? t.goals.addGoal : t.goals.editGoal}
           </h2>
-          <button
-            onClick={() => onOpenChange(false)}
-            className="p-2 text-gray-400 transition-colors rounded-xl hover:text-white hover:bg-white/5"
-          >
-            <X className="w-5 h-5" />
+          <button onClick={() => onOpenChange(false)} className="w-6 h-6 text-[#101828] hover:text-gray-600 transition-colors flex items-center justify-center">
+            <X size={18} />
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 p-6 overflow-y-auto custom-scrollbar">
-          <div className="space-y-6">
-            {/* Image Upload */}
-            <div>
-              <label className="block mb-2 text-sm font-medium text-gray-300">
-                {t.goals.image}
-              </label>
-              <div
-                className="relative flex flex-col items-center justify-center h-48 transition-all border-2 border-dashed rounded-2xl border-white/10 hover:border-blue-500/50 hover:bg-white/[0.02] cursor-pointer overflow-hidden group"
+        <div className="w-full flex flex-col items-start gap-4 sm:gap-5 text-[#000]">
+          
+          {/* Image Upload */}
+          <div className="w-full flex flex-col items-start gap-2">
+            <label className="text-[12px] sm:text-[13px] leading-[20px] font-medium text-black/60">
+              {t.goals.image}
+            </label>
+            <div className="w-full flex flex-col items-start gap-2 text-center text-[13px] text-[#4a5565] font-inter">
+              <div 
+                onClick={() => fileInputRef.current?.click()}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
+                className="w-full h-[140px] relative rounded-2xl border border-dashed border-[#99a1af] bg-[#fafafa] flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-colors hover:bg-gray-50"
               >
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleFile(file);
-                  }}
-                  accept="image/*"
-                  className="hidden"
-                />
-                
                 {imagePreview ? (
-                  <div className="relative w-full h-full">
-                    <Image src={imagePreview} alt="Preview" fill className="object-cover" />
-                    <div className="absolute inset-0 flex items-center justify-center transition-opacity opacity-0 bg-black/50 group-hover:opacity-100">
-                      <span className="text-sm font-medium text-white">Yenilə</span>
-                    </div>
-                  </div>
+                  <img src={imagePreview} alt="preview" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="flex flex-col items-center text-gray-400">
-                    <div className="flex items-center justify-center w-12 h-12 mb-3 rounded-full bg-white/5">
-                      <Upload className="w-6 h-6" />
-                    </div>
-                    <span className="text-sm">Sürükləyin və ya klikləyin</span>
+                  <div className="flex flex-col items-center gap-2">
+                    <Upload className="w-8 h-8 text-gray-400" />
+                    <span className="text-[12px] sm:text-[13px] font-medium leading-[20px] tracking-[-0.15px] text-[#101828]">Şəkil Yüklə</span>
                   </div>
                 )}
               </div>
-            </div>
-
-            {/* Code */}
-            <div>
-              <label className="block mb-2 text-sm font-medium text-gray-300">
-                {t.goals.code}
-              </label>
-              <input
-                type="text"
-                value={code}
-                onChange={(e) => {
-                  setCode(e.target.value.toUpperCase());
-                  setErrors((prev) => ({ ...prev, code: "" }));
-                }}
-                disabled={mode === "edit"}
-                className={`w-full px-4 py-3 text-white transition-colors bg-white/5 border rounded-xl focus:outline-none focus:border-blue-500/50 focus:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed ${
-                  errors.code ? "border-red-500/50" : "border-white/10"
-                }`}
-                placeholder="WEIGHT_LOSS"
-              />
-              {errors.code && <p className="mt-1.5 text-sm text-red-400">{errors.code}</p>}
-            </div>
-
-            {/* Title */}
-            <div>
-              <label className="block mb-2 text-sm font-medium text-gray-300">
-                {t.goals.goalTitle}
-              </label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => {
-                  setTitle(e.target.value);
-                  setErrors((prev) => ({ ...prev, title: "" }));
-                }}
-                className={`w-full px-4 py-3 text-white transition-colors bg-white/5 border rounded-xl focus:outline-none focus:border-blue-500/50 focus:bg-white/10 ${
-                  errors.title ? "border-red-500/50" : "border-white/10"
-                }`}
-              />
-              {errors.title && <p className="mt-1.5 text-sm text-red-400">{errors.title}</p>}
-            </div>
-
-            {/* Subtitle */}
-            <div>
-              <label className="block mb-2 text-sm font-medium text-gray-300">
-                {t.goals.goalSubtitle}
-              </label>
-              <textarea
-                value={subtitle}
-                onChange={(e) => setSubtitle(e.target.value)}
-                className="w-full h-24 px-4 py-3 text-white transition-colors border resize-none bg-white/5 border-white/10 rounded-xl focus:outline-none focus:border-blue-500/50 focus:bg-white/10"
-              />
+              <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
             </div>
           </div>
+
+          {/* Code */}
+          <div className="w-full flex flex-col items-start gap-2">
+            <label className="text-[12px] sm:text-[13px] leading-[20px] font-medium text-black/60">
+              {t.goals.code}
+            </label>
+            <input
+              type="text"
+              value={code}
+              onChange={(e) => {
+                setCode(e.target.value.toUpperCase());
+                setErrors((prev) => ({ ...prev, code: "" }));
+              }}
+              disabled={mode === "edit"}
+              placeholder="Məs: WEIGHT_LOSS"
+              className={`w-full h-[40px] rounded-lg bg-[#fafafa] border px-3 text-[13px] sm:text-[14px] font-medium outline-none focus:border-[#00b4cc] transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                errors.code ? "border-red-500" : "border-[#ececed]"
+              }`}
+            />
+            {errors.code && <p className="text-[11px] text-red-500 mt-[-4px]">{errors.code}</p>}
+          </div>
+
+          {/* Title */}
+          <div className="w-full flex flex-col items-start gap-2">
+            <label className="text-[12px] sm:text-[13px] leading-[20px] font-medium text-black/60">
+              {t.goals.goalTitle}
+            </label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                setErrors((prev) => ({ ...prev, title: "" }));
+              }}
+              placeholder="Başlıq daxil edin"
+              className={`w-full h-[40px] rounded-lg bg-[#fafafa] border px-3 text-[13px] sm:text-[14px] font-medium outline-none focus:border-[#00b4cc] transition-colors ${
+                errors.title ? "border-red-500" : "border-[#ececed]"
+              }`}
+            />
+            {errors.title && <p className="text-[11px] text-red-500 mt-[-4px]">{errors.title}</p>}
+          </div>
+
+          {/* Subtitle */}
+          <div className="w-full flex flex-col items-start gap-2">
+            <label className="text-[12px] sm:text-[13px] leading-[20px] font-medium text-black/60">
+              {t.goals.goalSubtitle}
+            </label>
+            <textarea
+              value={subtitle}
+              onChange={(e) => setSubtitle(e.target.value)}
+              placeholder="Yarımbaşlıq daxil edin"
+              className="w-full h-[80px] rounded-lg bg-[#fafafa] border border-[#ececed] p-3 text-[13px] sm:text-[14px] font-medium outline-none focus:border-[#00b4cc] transition-colors resize-none"
+            />
+          </div>
+
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-5 border-t border-white/5 shrink-0 bg-[#1a1b1e]/50 rounded-b-[24px]">
-          <button
+        <div className="w-full flex items-center justify-end gap-3 mt-2 border-t border-[#ececed] pt-4">
+          <button 
             onClick={() => onOpenChange(false)}
             disabled={isLoading}
-            className="px-5 py-2.5 text-sm font-medium text-gray-300 transition-colors rounded-xl hover:text-white hover:bg-white/5 disabled:opacity-50"
+            className="h-[44px] px-5 rounded-lg border border-[#ececed] bg-white text-[14px] font-medium text-[#344054] hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             {t.common.cancel}
           </button>
-          <button
-            onClick={handleSave}
+          <button 
+            onClick={handleSave} 
             disabled={isLoading}
-            className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white transition-all bg-blue-600 rounded-xl hover:bg-blue-500 active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+            className="h-[44px] px-6 rounded-lg bg-[#00b4cc] flex items-center justify-center gap-2 text-[14px] font-medium text-white shadow-sm hover:opacity-90 transition-all disabled:opacity-50"
           >
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            {isLoading && <Loader2 size={16} className="animate-spin" />}
             {t.common.save}
           </button>
         </div>
+
       </div>
     </div>
   );

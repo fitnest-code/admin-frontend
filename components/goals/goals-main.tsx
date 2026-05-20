@@ -71,102 +71,97 @@ export default function GoalsMain() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header & Actions */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder={t.common.search}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-11 pr-4 py-2.5 bg-[#1a1b1e] border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500/50 transition-colors"
-          />
+    <div className="w-full p-4 font-sans">
+      <div className="w-full rounded-[12px] bg-white border border-[#ececed] flex flex-col items-start px-5 py-4">
+        <div className="w-full border-b border-[#ececed] flex items-center justify-between pb-3 gap-5">
+          <h2 className="text-[16px] font-semibold leading-[24px] text-black">{t.goals.title}</h2>
+          
+          <div className="flex items-center gap-3">
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder={t.common.search}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-sm bg-gray-50 border border-[#ececed] rounded-lg focus:outline-none focus:border-[#00b4cc] transition-colors"
+              />
+            </div>
+            <button
+              onClick={() => {
+                setModalMode("create");
+                setSelectedGoal(null);
+                setIsModalOpen(true);
+              }}
+              className="h-[40px] rounded-lg bg-[#00b4cc] flex items-center justify-center px-4 py-2 gap-2 text-[13px] font-medium text-white hover:opacity-90 transition-all shadow-md shadow-cyan-50 whitespace-nowrap"
+            >
+              <Plus size={16} /> {t.goals.addGoal}
+            </button>
+          </div>
         </div>
-        <button
-          onClick={() => {
-            setModalMode("create");
-            setSelectedGoal(null);
-            setIsModalOpen(true);
-          }}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-white transition-all bg-blue-600 rounded-xl hover:bg-blue-500 active:scale-95"
-        >
-          <Plus className="w-5 h-5" />
-          {t.goals.addGoal}
-        </button>
+
+        {/* Loading State */}
+        {isLoading ? (
+          <div className="flex items-center justify-center w-full h-[400px]">
+            <div className="w-8 h-8 border-4 border-[#00b4cc] rounded-full border-t-transparent animate-spin" />
+          </div>
+        ) : filteredGoals?.length === 0 ? (
+          <div className="flex flex-col items-center justify-center w-full h-[400px] text-[#717182]">
+            <Dumbbell className="w-12 h-12 mb-4 opacity-20" />
+            <p>{t.goals.noGoals}</p>
+          </div>
+        ) : (
+          <div className="w-full flex flex-col items-start gap-6 mt-4">
+            <div className="w-full grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
+              {filteredGoals?.map((goal: IGoal) => (
+                <div key={goal.code} className="h-[170px] flex flex-col items-start gap-2 group">
+                  <div
+                    className="w-full h-[130px] rounded-lg flex items-start justify-end p-2 bg-cover bg-center bg-no-repeat bg-gray-100 border border-[#ececed]"
+                    style={{ backgroundImage: goal.imageUrl ? `url(${goal.imageUrl})` : undefined }}
+                  >
+                    {!goal.imageUrl && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Dumbbell className="w-10 h-10 text-gray-300" />
+                      </div>
+                    )}
+                    <div className="flex items-center gap-[6px] relative z-10">
+                      <button
+                        onClick={() => {
+                          setModalMode("edit");
+                          setSelectedGoal(goal);
+                          setIsModalOpen(true);
+                        }}
+                        className="rounded-[50px] bg-white flex items-center justify-center p-1.5 shadow-sm hover:bg-gray-50 transition-colors"
+                      >
+                        <Edit2 size={14} className="text-gray-700" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setGoalToDelete(goal);
+                          setDeleteModalOpen(true);
+                        }}
+                        className="rounded-[50px] bg-white flex items-center justify-center p-1.5 shadow-sm hover:bg-red-50 transition-colors"
+                      >
+                        <Trash2 size={14} className="text-red-500" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="w-full h-7 rounded-lg bg-[#f9fafb] border border-[#e5e7eb] flex items-center justify-between px-2 py-1">
+                    <span className="text-[12px] text-[#717182] font-medium truncate tracking-[-0.15px]" title={goal.title}>
+                      {goal.title}
+                    </span>
+                    <span className="text-[10px] text-[#00b4cc] font-bold shrink-0 bg-[#00b4cc]/10 px-1.5 py-0.5 rounded">
+                      {goal.code}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Loading State */}
-      {isLoading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="w-8 h-8 border-4 border-blue-500 rounded-full border-t-transparent animate-spin" />
-        </div>
-      ) : filteredGoals?.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-          <Dumbbell className="w-12 h-12 mb-4 opacity-20" />
-          <p>{t.goals.noGoals}</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredGoals?.map((goal: IGoal) => (
-            <div
-              key={goal.code}
-              className="flex flex-col overflow-hidden transition-all border group bg-[#1a1b1e] border-white/5 rounded-2xl hover:border-white/10"
-            >
-              <div className="relative w-full h-40 bg-white/5">
-                {goal.imageUrl ? (
-                  <Image
-                    src={goal.imageUrl}
-                    alt={goal.title}
-                    fill
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="flex items-center justify-center w-full h-full text-gray-500">
-                    <Dumbbell className="w-10 h-10 opacity-20" />
-                  </div>
-                )}
-                {/* Overlay actions */}
-                <div className="absolute inset-0 flex items-center justify-center gap-3 transition-opacity opacity-0 bg-black/60 group-hover:opacity-100">
-                  <button
-                    onClick={() => {
-                      setModalMode("edit");
-                      setSelectedGoal(goal);
-                      setIsModalOpen(true);
-                    }}
-                    className="p-2 text-white transition-colors bg-white/10 rounded-xl hover:bg-blue-500"
-                  >
-                    <Edit2 className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setGoalToDelete(goal);
-                      setDeleteModalOpen(true);
-                    }}
-                    className="p-2 text-white transition-colors bg-white/10 rounded-xl hover:bg-red-500"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-              <div className="p-4">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <h3 className="font-semibold text-white line-clamp-1">{goal.title}</h3>
-                  <span className="px-2 py-1 text-xs font-medium text-blue-400 rounded-md bg-blue-500/10 shrink-0">
-                    {goal.code}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-400 line-clamp-2">
-                  {goal.subtitle || "—"}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Goal Modal */}
       <GoalModal
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
@@ -179,25 +174,27 @@ export default function GoalsMain() {
 
       {/* Delete Modal */}
       {deleteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setDeleteModalOpen(false)} />
-          <div className="relative w-full max-w-sm bg-[#1a1b1e] rounded-[24px] border border-white/5 shadow-2xl p-6 text-center">
-            <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-red-500/10 rounded-full">
-              <Trash2 className="w-8 h-8 text-red-500" />
+        <div className="fixed inset-0 z-[60] flex items-center justify-center font-sans p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDeleteModalOpen(false)} />
+          <div className="relative z-10 w-full max-w-[400px] bg-white rounded-2xl flex flex-col items-center justify-center p-6 gap-5 shadow-2xl">
+            <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mb-1">
+              <Trash2 className="w-7 h-7 text-red-500" />
             </div>
-            <h3 className="mb-2 text-xl font-semibold text-white">{t.common.delete}</h3>
-            <p className="mb-6 text-gray-400">{t.goals.deleteConfirm}</p>
-            <div className="flex gap-3">
+            <div className="text-center">
+              <h2 className="text-[18px] font-semibold text-[#101828] mb-2">{t.common.delete}</h2>
+              <p className="text-[14px] text-[#475467]">{t.goals.deleteConfirm}</p>
+            </div>
+            <div className="w-full flex items-center gap-3 mt-2">
               <button
                 onClick={() => setDeleteModalOpen(false)}
-                className="flex-1 py-3 text-sm font-medium text-white transition-colors bg-white/5 rounded-xl hover:bg-white/10"
+                className="flex-1 h-[44px] rounded-lg border border-[#d0d5dd] bg-white text-[14px] font-medium text-[#344054] hover:bg-gray-50 transition-colors"
               >
                 {t.common.cancel}
               </button>
               <button
                 onClick={handleDelete}
                 disabled={deleteGoal.isPending}
-                className="flex-1 py-3 text-sm font-medium text-white transition-colors bg-red-600 rounded-xl hover:bg-red-500 disabled:opacity-50"
+                className="flex-1 h-[44px] rounded-lg bg-red-600 text-[14px] font-medium text-white hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {deleteGoal.isPending ? t.common.loading : t.common.delete}
               </button>
