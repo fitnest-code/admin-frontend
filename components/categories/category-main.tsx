@@ -7,9 +7,17 @@ import { ConfirmDeleteModal } from "../gyms/modals/confirm-delete-modal";
 import { ErrorToastModal } from "./modals/error-toast-modal";
 import { SuccessAnimationModal } from "../ui/success-animation-modal";
 import { useCategories } from "@/lib/query/add-category";
+import { CustomerPagination as Pagination } from "../customers/list/customer-list-table";
+
+import { useT, useI18nStore } from "@/lib/i18n";
 
 export default function CategoriesPage() {
-  const { categories, isLoading, refetch, createCategory, updateCategory, deleteCategory } = useCategories();
+  const t = useT();
+  const selectedLang = useI18nStore((s) => s.locale);
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
+
+  const { categories, isLoading, refetch, createCategory, updateCategory, deleteCategory } = useCategories(selectedLang, page, pageSize);
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<any | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
@@ -32,22 +40,24 @@ export default function CategoriesPage() {
           id: editTarget.id, 
           name: formData.name, 
           photo: formData.photo,
+          icon: formData.icon,
           lessonTypeIds: formData.lessonTypeIds 
         });
-        setModalConfig({ isOpen: true, message: "Kateqoriya uğurla yeniləndi!", type: "success" });
+        setModalConfig({ isOpen: true, message: t.categories.updated, type: "success" });
       } else {
         await createCategory({ 
           name: formData.name, 
           photo: formData.photo,
+          icon: formData.icon,
           lessonTypeIds: formData.lessonTypeIds 
         });
-        setModalConfig({ isOpen: true, message: "Kateqoriya uğurla yaradıldı!", type: "success" });
+        setModalConfig({ isOpen: true, message: t.categories.created, type: "success" });
       }
       setModalOpen(false);
       setEditTarget(null);
     } catch (err: any) {
       console.error("Save error:", err);
-      const msg = err?.response?.data?.error?.message || err?.message || "Yadda saxlamaq mümkün olmadı";
+      const msg = err?.response?.data?.error?.message || err?.message || t.categories.saveFailed;
       setModalConfig({ isOpen: true, message: msg, type: "error" });
     }
   };
@@ -64,32 +74,24 @@ export default function CategoriesPage() {
     <div className="w-full p-4 font-sans">
 
       <div className="w-full rounded-[12px] bg-white border border-[#ececed] flex flex-col items-start px-5 py-4">
-        <div className="w-full border-b border-[#ececed] flex items-center justify-between pb-1 gap-5">
-          <h2 className="text-[16px] font-semibold leading-[24px] text-black">Zal kateqoriyaları</h2>
-          <div className="flex items-center gap-6 text-center text-[13px] font-medium text-[#717182]">
-            <div className="w-[26px] border-b-2 border-[#00b4cc] flex flex-col items-center justify-center pb-1 text-[#00b4cc] cursor-pointer">Az</div>
-            <div className="w-[26px] flex flex-col items-center justify-center pb-1 cursor-pointer hover:text-gray-600 font-medium">Ru</div>
-            <div className="w-[26px] flex flex-col items-center justify-center pb-1 cursor-pointer hover:text-gray-600 font-medium">En</div>
-          </div>
+        <div className="w-full border-b border-[#ececed] flex items-center justify-between pb-3 gap-5">
+          <h2 className="text-[16px] font-semibold leading-[24px] text-black">{t.categories.existing}</h2>
+          <button
+            onClick={() => {
+              setEditTarget(null);
+              setModalOpen(true);
+            }}
+            className="h-[40px] w-[130px] rounded-lg bg-[#00b4cc] flex items-center justify-center px-3 py-2 gap-2 text-[13px] font-medium text-white hover:opacity-90 transition-all shadow-md shadow-cyan-50"
+          >
+            <Plus size={16} /> {t.categories.addCategory}
+          </button>
         </div>
 
         <div className="w-full flex flex-col items-start gap-6 mt-4">
-          <div className="w-full flex items-center justify-between gap-5">
-            <h3 className="text-[15px] font-semibold leading-tight text-black">Mövcud kateqoriyalar</h3>
-            <button
-              onClick={() => {
-                setEditTarget(null);
-                setModalOpen(true);
-              }}
-              className="h-[40px] w-[130px] rounded-lg bg-[#00b4cc] flex items-center justify-center px-3 py-2 gap-2 text-[13px] font-medium text-white hover:opacity-90 transition-all shadow-md shadow-cyan-50"
-            >
-              <Plus size={16} /> Kateqoriya
-            </button>
-          </div>
 
-          <div className="w-full flex items-start flex-wrap content-start gap-3">
+          <div className="w-full grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
             {categoryItems?.map((cat: any) => (
-              <div key={cat.id} className="w-[140px] h-[170px] flex flex-col items-start gap-2 group">
+              <div key={cat.id} className="h-[170px] flex flex-col items-start gap-2 group">
                 <div 
                   className="w-full h-[130px] rounded-lg flex items-start justify-end p-2 bg-cover bg-center bg-no-repeat bg-gray-100 border border-[#ececed]"
                   style={{ backgroundImage: `url(${cat.photoUrl})` }}
@@ -116,6 +118,15 @@ export default function CategoriesPage() {
               </div>
             ))}
           </div>
+          
+          <div className="w-full border-t border-[#ececed] pt-4 mt-2">
+            <Pagination 
+              total={(categories as any)?.total || categoryItems.length} 
+              page={page} 
+              perPage={pageSize} 
+              onChange={setPage} 
+            />
+          </div>
         </div>
       </div>
 
@@ -126,7 +137,7 @@ export default function CategoriesPage() {
           if (!open) setEditTarget(null);
         }}
         onSave={handleSave}
-        initialData={editTarget ? { name: editTarget.name, image: editTarget.photoUrl, lessonTypes: editTarget.lessonTypes } : undefined}
+        initialData={editTarget ? { name: editTarget.name, image: editTarget.photoUrl, iconUrl: editTarget.iconUrl, lessonTypes: editTarget.lessonTypes } : undefined}
         mode={editTarget ? "edit" : "create"}
       />
 
@@ -139,12 +150,11 @@ export default function CategoriesPage() {
             try {
               setIsDeleting(true);
               await deleteCategory(deleteTarget.id);
-              await refetch();
               setDeleteTarget(null);
-              setModalConfig({ isOpen: true, message: "Kateqoriya uğurla silindi!", type: "success" });
+              setModalConfig({ isOpen: true, message: t.categories.deleted, type: "success" });
             } catch (err: any) {
               console.error("Delete error:", err);
-              const msg = err?.response?.data?.error?.message || err?.error?.message || err?.message || "Kateqoriya istifadə olunur və silinə bilməz";
+              const msg = err?.response?.data?.error?.message || err?.error?.message || err?.message || t.categories.deleteError;
               setDeleteTarget(null);
               setModalConfig({ isOpen: true, message: msg, type: "error" });
             } finally {

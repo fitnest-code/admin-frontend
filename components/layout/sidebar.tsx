@@ -12,12 +12,15 @@ import { useUIStore } from '@/lib/store/ui-store'
 import { useRouter } from 'next/navigation'
 import { ExitConfirmationModal } from '../gyms/modals/exit-confirmation-modal'
 
+import { useT } from '@/lib/i18n'
+
 interface SidebarProps {
   className?: string
   onCollapseChange?: (collapsed: boolean) => void
 }
 
 export function Sidebar({ className }: SidebarProps) {
+  const t = useT()
   const { 
     sidebarCollapsed: collapsed, 
     toggleSidebar,
@@ -132,7 +135,7 @@ export function Sidebar({ className }: SidebarProps) {
                     >
                       <div className="shrink-0 transition-all duration-300 text-black w-[20px] h-[20px] relative">
                       {item.iconPath ? (
-                        <Image src={item.iconPath} fill alt={item.label} className="object-contain" />
+                        <Image src={item.iconPath} fill alt={t.nav[item.labelKey]} className="object-contain" />
                       ) : (
                         <Icon size={20} strokeWidth={2} />
                       )}
@@ -140,7 +143,7 @@ export function Sidebar({ className }: SidebarProps) {
                       
                       {!collapsed && (
                         <span className="text-[14px] leading-[22px] font-medium transition-all duration-300 whitespace-nowrap overflow-hidden">
-                          {item.label}
+                          {t.nav[item.labelKey]}
                         </span>
                       )}
                     </Link>

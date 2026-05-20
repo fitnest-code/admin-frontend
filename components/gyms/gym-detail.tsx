@@ -29,6 +29,9 @@ import { AnalitikaTab } from '@/components/zallar/tabs/analitika-tab'
 import { StepNavigationWarningModal } from './modals/step-navigation-warning-modal'
 import { ExitConfirmationModal } from './modals/exit-confirmation-modal'
 import { useGymStore } from '@/lib/store/gym-store'
+import { useT } from '@/lib/i18n'
+import { useAuthStore } from '@/lib/store/auth-store'
+import { apiGet } from '@/lib/api/client'
 
 const WIZARD_TABS = [
   { key: 'info', label: 'Zal məlumatları' },
@@ -46,9 +49,41 @@ interface GymDetailProps {
 }
 
 export function GymDetail({ gym, isNew = false }: GymDetailProps) {
+  const t = useT()
   const { gymId, currentTab, setCurrentTab, resetGym, setGymId, markStepCompleted, completedSteps } = useGymStore()
   const { mutate: deleteGymMutate } = useDeleteGym()
   const router = useRouter()
+  const user = useAuthStore((state) => state.user)
+  const isGymAdmin = user?.role === 'ROLE_GYM_SUPER_ADMIN' || user?.role === 'ROLE_GYM_ADMIN'
+
+  const [adminGyms, setAdminGyms] = useState<any[]>([])
+  const [isSwitcherOpen, setIsSwitcherOpen] = useState(false)
+
+  useEffect(() => {
+    if (isGymAdmin) {
+      apiGet<any>('/admin/gyms/list').then(res => {
+        const items = res?.data?.items || []
+        setAdminGyms(items)
+      }).catch(console.error)
+    }
+  }, [isGymAdmin])
+
+  const getTabLabel = (key: string) => {
+    switch (key) {
+      case 'analitika': return t.gyms.tabAnalitika;
+      case 'info': return t.gyms.tabInfo;
+      case 'trainers': return t.gyms.tabTrainers;
+      case 'plans': return t.gyms.tabPlans;
+      case 'admins': return t.gyms.tabAdmins;
+      case 'reviews': return t.gyms.tabReviews;
+      case 'reservations': return t.gyms.tabReservations;
+      case 'lessonHours': return t.gyms.tabLessonHours;
+      case 'workingHours': return t.gyms.tabWorkingHours;
+      case 'address': return t.gyms.tabAddress;
+      case 'images': return t.gyms.tabImages;
+      default: return key;
+    }
+  }
 
   useEffect(() => {
     // Only update store gymId from props if it's an existing gym (not 'new')
@@ -93,6 +128,12 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       setActiveTab(currentTab)
     }
   }, [currentTab])
+
+  useEffect(() => {
+    if (isGymAdmin && activeTab !== 'analitika') {
+      setActiveTab('analitika')
+    }
+  }, [isGymAdmin, activeTab])
 
   const handleConfirmExit = () => {
     if (isNew && gymId) {
@@ -157,7 +198,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       case 'plans':
         return <PlansTab gym={gym} />
       case 'reviews':
-        return <ReviewsTab />
+        return <ReviewsTab gymName={gym.name} />
       case 'reservations':
         return <ReservationsTab />
       case 'lessonHours':
@@ -183,7 +224,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
                    className="text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:text-[#00B4CC] transition-colors flex items-center gap-1.5"
                  >
                    <ArrowLeft size={12} strokeWidth={3} />
-                   Geri qayıt
+                   {t.gyms.goBack}
                  </button>
               </div>
            </div>
@@ -232,7 +273,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
                         "text-[15px] font-medium leading-6 transition-colors duration-300",
                         isActive ? "text-black" : isCompleted ? "text-black" : "text-[#C9C9C9]"
                       )}>
-                        {tab.label}
+                        {getTabLabel(tab.key)}
                       </span>
                     </div>
 
@@ -266,41 +307,77 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
   return (
     <div className="flex flex-col gap-8 w-full font-sans">
       {/* Breadcrumbs */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <button
-            onClick={() => router.push('/gyms')}
-            className="text-[11px] font-bold text-slate-400 uppercase tracking-widest hover:text-[#00B4CC] transition-colors flex items-center gap-2"
-          >
-            <ArrowLeft size={14} strokeWidth={3} />
-            Geri qayıt
-          </button>
+      {!isGymAdmin && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <button
+              onClick={() => router.push('/gyms')}
+              className="text-[11px] font-bold text-slate-400 uppercase tracking-widest hover:text-[#00B4CC] transition-colors flex items-center gap-2"
+            >
+              <ArrowLeft size={14} strokeWidth={3} />
+              {t.gyms.goBack}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Header with Status */}
-      <div className="w-full flex items-center justify-between border-b border-[#ececed] pb-3">
+      <div className="w-full flex items-center justify-between border-b border-[#ececed] pb-3 relative">
         <div className="flex flex-col gap-1">
-           <h1 className="text-[20px] font-bold text-[#101828] tracking-tight">{gym.name}</h1>
+          {isGymAdmin && adminGyms.length > 1 ? (
+            <div className="relative">
+              <button 
+                onClick={() => setIsSwitcherOpen(true)} 
+                className="flex items-center gap-2 outline-none"
+              >
+                <h1 className="text-[20px] font-bold text-[#101828] tracking-tight">{gym.name}</h1>
+                <Image src="/left-right-arrow.svg" width={24} height={24} alt="Switch gym" className="shrink-0" />
+              </button>
+
+              {isSwitcherOpen && (
+                <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setIsSwitcherOpen(false)}>
+                  <div className="bg-[#fafafa] w-full sm:w-[400px] rounded-t-2xl sm:rounded-2xl p-4 flex flex-col gap-4 animate-in slide-in-from-bottom-8 duration-300 shadow-2xl" onClick={e => e.stopPropagation()}>
+                    <div className="text-[16px] font-semibold text-black sm:text-center text-right w-full mb-2">Zallar</div>
+                    <div className="flex flex-col gap-2 w-full max-h-[60vh] overflow-y-auto">
+                      {adminGyms.map(g => (
+                        <button 
+                          key={g.id} 
+                          onClick={() => { router.push(`/gyms/${g.id}`); setIsSwitcherOpen(false) }} 
+                          className="w-full bg-white rounded-xl border border-[#ececed] flex items-center justify-between p-5 hover:bg-slate-50 transition-colors shadow-sm cursor-pointer"
+                        >
+                          <div className="text-[16px] font-medium text-black uppercase text-left">{g.name}</div>
+                          <div className="w-[28px] h-[28px] rounded-full border border-[#cecfd2] flex items-center justify-center relative shrink-0">
+                            {g.id === gym.id && <div className="w-3.5 h-3.5 rounded-full bg-[#00B4CC]" />}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <h1 className="text-[20px] font-bold text-[#101828] tracking-tight">{gym.name}</h1>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
           {(gym.status?.toUpperCase() === 'ACTIVE' || !gym.status) && (
             <div className="h-[28px] rounded-full bg-[#166728] flex items-center px-4 gap-2 shadow-sm border border-green-600/20">
               <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-              <span className="text-[11px] font-bold text-white uppercase tracking-wider">Aktiv</span>
+              <span className="text-[11px] font-bold text-white uppercase tracking-wider">{t.gyms.active}</span>
             </div>
           )}
           {gym.status?.toUpperCase() === 'INACTIVE' && (
             <div className="h-[28px] rounded-full bg-[#c9373a] flex items-center px-4 gap-2 shadow-sm border border-red-600/20">
               <span className="h-1.5 w-1.5 rounded-full bg-white" />
-              <span className="text-[11px] font-bold text-white uppercase tracking-wider">Deaktiv</span>
+              <span className="text-[11px] font-bold text-white uppercase tracking-wider">{t.gyms.inactive}</span>
             </div>
           )}
           {gym.status?.toUpperCase() === 'DRAFT' && (
             <div className="h-[28px] rounded-full bg-slate-400 flex items-center px-4 gap-2 shadow-sm">
               <span className="h-1.5 w-1.5 rounded-full bg-white" />
-              <span className="text-[11px] font-bold text-white uppercase tracking-wider">Qaralama</span>
+              <span className="text-[11px] font-bold text-white uppercase tracking-wider">{t.gyms.draft}</span>
             </div>
           )}
         </div>
@@ -309,7 +386,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       {/* STRETCHED TABS */}
       <div className="w-full border-b border-[#ececed]">
         <nav className="-mb-px flex w-full overflow-x-auto no-scrollbar" aria-label="Zal bölmələri">
-          {GYM_TABS.map((tab) => (
+          {GYM_TABS.filter((tab) => !isGymAdmin || tab.key === 'analitika').map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
@@ -321,7 +398,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
               )}
               aria-current={activeTab === tab.key ? 'page' : undefined}
             >
-              {tab.label}
+              {getTabLabel(tab.key)}
             </button>
           ))}
         </nav>

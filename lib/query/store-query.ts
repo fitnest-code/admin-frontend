@@ -1,10 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { IStoreQueryParams, IStoreStep2Payload, IStoreStep3Payload } from "../types/stores";
 import { StoreService } from "../services/StoreService";
+import { useI18nStore } from "../i18n";
+
 // Siyahı üçün mövcud hook-un
 export const useStores = (params: IStoreQueryParams) => {
+  const locale = useI18nStore((s) => s.locale);
   return useQuery({
-    queryKey: ["stores", params],
+    queryKey: ["stores", params, locale],
     queryFn: () => StoreService.getAll(params),
     placeholderData: (previousData) => previousData,
   });

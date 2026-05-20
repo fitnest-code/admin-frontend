@@ -11,10 +11,14 @@ import { ConfirmDeleteModal } from './modals/confirm-delete-modal'
 import { useDeleteGym } from '@/lib/query/gym-query'
 import { SuccessAnimationModal } from '@/components/ui/success-animation-modal'
 import { toast } from 'sonner'
+import { useGymStore } from '@/lib/store/gym-store'
+
+import { useT } from '@/lib/i18n'
 
 const PER_PAGE = 10
 
 export function GymsList() {
+  const t = useT()
   const router = useRouter()
   const deleteGym = useDeleteGym()
   const toggleStatus = useToggleGymStatus()
@@ -66,10 +70,10 @@ export function GymsList() {
       { id: String(id), enabled: !currentEnabled },
       {
         onSuccess: () => {
-          setModalConfig({ isOpen: true, message: "Status uğurla yeniləndi!", type: "success" })
+          setModalConfig({ isOpen: true, message: t.gyms.statusUpdated, type: "success" })
         },
         onError: () => {
-          setModalConfig({ isOpen: true, message: "Statusu yeniləmək mümkün olmadı", type: "error" })
+          setModalConfig({ isOpen: true, message: t.gyms.statusUpdateFailed, type: "error" })
         },
       }
     )
@@ -80,13 +84,13 @@ export function GymsList() {
     deleteGym.mutate(deleteId, {
       onSuccess: () => {
         setDeleteId(null)
-        setModalConfig({ isOpen: true, message: "Zal uğurla silindi!", type: "success" })
+        setModalConfig({ isOpen: true, message: t.gyms.deleted, type: "success" })
       },
       onError: (error: any) => {
-        let msg = error?.message || "Zalı silmək mümkün olmadı"
+        let msg = error?.message || t.gyms.deleteFailed
         if (error?.response?.data?.error?.details?.dependencies?.length) {
           const deps = error.response.data.error.details.dependencies.map((d: any) => d.reason).join(", ")
-          msg = `Zalı silmək mümkün deyil: ${deps}`
+          msg = `${t.gyms.cannotDeletePrefix}${deps}`
         } else if (error?.response?.data?.error?.message) {
           msg = error.response.data.error.message
         }
@@ -95,9 +99,20 @@ export function GymsList() {
     })
   }
 
+  const getSortLabel = (val: string) => {
+    switch (val) {
+      case 'newest': return t.gyms.sortNewest;
+      case 'name_asc': return t.gyms.sortNameAsc;
+      case 'name_desc': return t.gyms.sortNameDesc;
+      case 'deactivated': return t.gyms.sortDeactivated;
+      case 'address_asc': return t.gyms.sortAddressAsc;
+      default: return val;
+    }
+  }
+
   return (
     <div className="flex flex-col gap-5">
-      <h1 className="text-xl font-semibold text-foreground">Zallar</h1>
+      <h1 className="text-xl font-semibold text-foreground">{t.gyms.title}</h1>
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3">
@@ -107,7 +122,7 @@ export function GymsList() {
             type="search"
             value={query}
             onChange={(e) => { setQuery(e.target.value); setCurrentPage(1) }}
-            placeholder="Zal adı, Şəhər, Ünvan axtar..."
+            placeholder={t.gyms.searchToolbarPlaceholder}
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
           />
         </div>
@@ -120,7 +135,7 @@ export function GymsList() {
               sortOpen && 'border-[#00B4CC] text-[#00B4CC]',
             )}
           >
-            Sırala
+            {t.gyms.sort}
             <ChevronDown size={14} className={cn('transition-transform', sortOpen && 'rotate-180')} />
           </button>
           {sortOpen && (
@@ -136,7 +151,7 @@ export function GymsList() {
                       : 'text-foreground hover:bg-secondary',
                   )}
                 >
-                  {opt.label}
+                  {getSortLabel(opt.value)}
                   {opt.value === sortValue && <Check size={13} />}
                 </li>
               ))}
@@ -145,35 +160,41 @@ export function GymsList() {
         </div>
 
         <button
-          onClick={() => router.push('/gyms/new')}
+          onClick={() => {
+            useGymStore.getState().resetGym()
+            router.push('/gyms/new')
+          }}
           className="flex items-center gap-2 rounded-lg bg-[#00B4CC] px-4 py-2 text-sm font-semibold text-white hover:bg-[#008799] transition-colors"
         >
           <Plus size={15} />
-          Yeni zal
+          {t.gyms.newGym}
         </button>
       </div>
 
       {/* Table - removed overflow-hidden to prevent dropdown clipping */}
       <div className="rounded-xl border border-border bg-card">
         <div className="grid grid-cols-[1fr_1fr_1fr_6rem_5rem] items-center gap-4 border-b border-border bg-[#00B4CC14] px-4 py-3 rounded-t-xl">
-          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Zal adı</span>
-          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Ünvan</span>
-          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Məsul şəxs</span>
-          <span className="text-xs font-semibold text-foreground uppercase tracking-wider text-center">Status</span>
-          <span className="text-xs font-semibold text-foreground uppercase tracking-wider text-center">Ətraflı</span>
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">{t.gyms.gymName}</span>
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">{t.gyms.address}</span>
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">{t.gyms.owner}</span>
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider text-center">{t.gyms.status}</span>
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider text-center">{t.gyms.more}</span>
         </div>
 
         {gymsQuery.isLoading ? (
-          <div className="py-16 text-center text-sm text-muted-foreground">Yüklənir...</div>
+          <div className="py-16 text-center text-sm text-muted-foreground">{t.common.loading}</div>
         ) : gyms.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-4 py-20">
-            <p className="text-sm font-semibold text-foreground">Məlumat yoxdur</p>
+            <p className="text-sm font-semibold text-foreground">{t.common.noData}</p>
             <button
-              onClick={() => router.push('/gyms/new')}
+              onClick={() => {
+                useGymStore.getState().resetGym()
+                router.push('/gyms/new')
+              }}
               className="flex items-center gap-2 rounded-lg bg-[#00B4CC] px-4 py-2 text-sm font-semibold text-white hover:bg-[#008799] transition-colors"
             >
               <Plus size={15} />
-              Yeni Zal Əlavə et
+              {t.gyms.addNewGym}
             </button>
           </div>
         ) : (
@@ -222,7 +243,7 @@ export function GymsList() {
 
 
       {gymsQuery.isError && (
-        <p className="text-sm text-red-500">Zal siyahısı yüklənmədi. Yenidən cəhd edin.</p>
+        <p className="text-sm text-red-500">{t.gyms.loadFailed}</p>
       )}
 
       <SuccessAnimationModal
@@ -254,6 +275,7 @@ function GymRow({
   onDelete: () => void
   onToggle: () => void
 }) {
+  const t = useT()
   const isMenuOpen = openMenuId === gym.id
 
   return (
@@ -265,7 +287,7 @@ function GymRow({
     >
       <span className="text-sm font-normal text-black truncate">{gym.name}</span>
       <span className="text-sm text-black truncate">{gym.fullAddress}</span>
-      <span className="text-sm text-black truncate">{gym.ownerName === 'N/A' ? '' : gym.ownerName}</span>
+      <span className="text-sm text-black truncate">{gym.ownerName || ''}</span>
       <div className="flex justify-center">
         <GymStatusToggle active={gym.status === 'ACTIVE'} onToggle={onToggle} />
       </div>
@@ -278,7 +300,7 @@ function GymRow({
             "flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200",
             isMenuOpen ? "bg-secondary text-[#00B4CC]" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
           )}
-          aria-label="Ətraflı seçimlər"
+          aria-label={t.gyms.more}
           aria-haspopup="true"
           aria-expanded={isMenuOpen}
         >
@@ -292,14 +314,14 @@ function GymRow({
               className="flex w-full items-center gap-2 border-b border-[#ECECED] pb-3 text-base font-normal text-black hover:opacity-70 transition-opacity"
             >
               <Eye size={16} className="text-[#333333]" />
-              <span className="leading-none">Detallı bax</span>
+              <span className="leading-none">{t.gyms.details}</span>
             </button>
             <button
               onClick={onDelete}
               className="flex w-full items-center gap-2 text-base font-normal text-[#F10303] hover:opacity-70 transition-opacity"
             >
               <Trash2 size={16} />
-              <span className="leading-none">Sil</span>
+              <span className="leading-none">{t.common.delete}</span>
             </button>
           </div>
         )}

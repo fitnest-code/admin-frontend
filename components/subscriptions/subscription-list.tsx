@@ -11,8 +11,30 @@ import { useSubscriptions } from '@/lib/query/use-subscriptions'
 import { ErrorToastModal } from '../categories/modals/error-toast-modal'
 import { ConfirmDeleteModal } from '../gyms/modals/confirm-delete-modal'
 import { SuccessAnimationModal } from '../ui/success-animation-modal'
+import { useT } from '@/lib/i18n'
 
 const PAGE_SIZE = 6
+
+function formatDuration(duration: string, t: any) {
+  if (!duration) return "";
+  const trimmed = duration.trim();
+  const match = trimmed.match(/^(\d+)\s*ay$/i);
+  if (match) {
+    const num = parseInt(match[1], 10);
+    if (t?.subscriptions?.month) {
+      if (t.subscriptions.month === "month") {
+        return `${num} ${num === 1 ? "month" : "months"}`;
+      }
+      if (t.subscriptions.month === "месяц") {
+        if (num === 1) return `1 месяц`;
+        if (num >= 2 && num <= 4) return `${num} месяца`;
+        return `${num} месяцев`;
+      }
+      return `${num} ${t.subscriptions.month}`;
+    }
+  }
+  return duration;
+}
 
 // ── Pagination ────────────────────────────────────────────────────────────────
 function Pagination({ total, page, perPage, onChange }: {
@@ -99,6 +121,7 @@ function EntryLimitSelect({ label, value, onChange }: { label: string; value: st
 }
 
 function PackageNameDropdown({ value, onChange, existingNames = [] }: { value: string; onChange: (v: string) => void; existingNames?: string[] }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   
@@ -117,14 +140,14 @@ function PackageNameDropdown({ value, onChange, existingNames = [] }: { value: s
 
   return (
     <div className="w-full flex flex-col gap-1.5 text-left font-sans" ref={ref}>
-      <label className="text-sm font-medium text-black">Adı</label>
+      <label className="text-sm font-medium text-black">{t.common.name}</label>
       <div className="relative w-full">
         <button
           type="button"
           onClick={() => setOpen((p) => !p)}
           className="w-full h-[40px] rounded-[10px] bg-[#fafafa] border border-[#ececed] px-3 flex items-center justify-between text-sm text-black outline-none transition-colors hover:border-[#00b4cc]"
         >
-          <span className="font-medium">{value || 'Seçilməyib'}</span>
+          <span className="font-medium">{value || t.subscriptions.notSelected}</span>
           <ChevronDown size={16} className={cn('transition-transform text-gray-500 shrink-0', open && 'rotate-180')} />
         </button>
         
@@ -166,6 +189,7 @@ function PackageFormModal({
   existingNames?: string[]
   onError?: (msg: string) => void
 }) {
+  const t = useT()
   const { addBenefit, deleteBenefit } = useSubscriptions()
   const STATIC_PACKAGES = ['Bronze', 'Silver', 'Gold', 'Platinum']
   const defaultAvailable = STATIC_PACKAGES.find(p => !existingNames.includes(p)) || 'Bronze'
@@ -174,7 +198,7 @@ function PackageFormModal({
     initial?.priceTiers?.length ? initial.priceTiers : [{ duration: '1 ay', price: 50, discountPrice: 45 }],
   )
   const [entryLimit, setEntryLimit] = useState(
-    initial?.entryLimit ? `${initial.entryLimit} giriş` : '12 giriş',
+    initial?.entryLimit ? `${initial.entryLimit} ${t.subscriptions.entryLimit}` : `12 ${t.subscriptions.entryLimit}`,
   )
   const [services, setServices] = useState<string[]>(initial?.services ?? [])
   const [serviceInput, setServiceInput] = useState('')
@@ -233,7 +257,7 @@ function PackageFormModal({
       const discountVal = Number(tier.discountPrice) || 0
       if (discountVal > priceVal) {
         if (onError) {
-          onError("Endirimli qiymət standart qiymətdən yüksək ola bilməz")
+          onError(t.subscriptions.priceValidationError)
         }
         return
       }
@@ -256,12 +280,12 @@ function PackageFormModal({
         {/* Top Title Bar Wrapper (.yeniAbunlikFormuParent) */}
         <div className="w-full flex items-center justify-between">
           <div className="relative font-semibold text-lg text-black">
-            {initial ? 'Paketi redaktə et' : 'Yeni abunəlik formu'}
+            {initial ? t.subscriptions.editPackage : t.subscriptions.newPackageForm}
           </div>
           <button
             onClick={onClose}
             className="h-[28px] w-[28px] rounded-[4px] bg-[#ececed] flex items-center justify-center p-1 transition-colors hover:bg-gray-300"
-            aria-label="Bağla"
+            aria-label={t.subscriptions.close}
           >
             <X size={15} className="text-black" />
           </button>
@@ -285,7 +309,7 @@ function PackageFormModal({
             <div className="w-full flex flex-col gap-2 pt-1">
               <div className="w-full rounded-[10px] bg-[#fafafa] border border-[#ececed] flex items-center justify-between p-2 px-3">
                 <span className="text-base font-medium text-black">
-                  Müddət və qiymətlər
+                  {t.subscriptions.durationAndPrices}
                 </span>
                 <button
                   type="button"
@@ -299,10 +323,10 @@ function PackageFormModal({
               {priceTiers.length > 0 && (
                 <div className="w-full flex flex-col gap-1.5 pt-1">
                   <div className="grid grid-cols-[1.1fr_1fr_1fr_1fr_2rem] gap-1 px-1">
-                    <span className="text-[12px] text-gray-500 font-medium truncate">Müddət</span>
-                    <span className="text-[12px] text-gray-500 font-medium truncate">Qiymət</span>
-                    <span className="text-[12px] text-gray-500 font-medium truncate">Endirimli</span>
-                    <span className="text-[12px] text-gray-500 font-medium truncate">Giriş (Limit)</span>
+                    <span className="text-[12px] text-gray-500 font-medium truncate">{t.subscriptions.duration}</span>
+                    <span className="text-[12px] text-gray-500 font-medium truncate">{t.subscriptions.price}</span>
+                    <span className="text-[12px] text-gray-500 font-medium truncate">{t.subscriptions.discountPrice}</span>
+                    <span className="text-[12px] text-gray-500 font-medium truncate">{t.subscriptions.entryLimitField}</span>
                     <span />
                   </div>
                   {priceTiers.map((tier, i) => (
@@ -310,7 +334,7 @@ function PackageFormModal({
                       <input
                         value={tier.duration}
                         onChange={(e) => updateTier(i, 'duration', e.target.value)}
-                        placeholder="1 ay"
+                        placeholder={t.subscriptions.durationPlaceholder || "1 ay"}
                         className="h-[38px] rounded-[8px] border border-gray-300 bg-white px-2 text-[13px] outline-none focus:border-[#00b4cc] w-full"
                       />
                       <input
@@ -355,13 +379,13 @@ function PackageFormModal({
             {/* Services Wrapper (.frameParent3) */}
             <div className="w-full flex flex-col items-stretch gap-2.5">
               <div className="w-full flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-black">Xidmətlər (1-20)</label>
+                <label className="text-sm font-medium text-black">{t.subscriptions.servicesLimit}</label>
                 <div className="w-full flex items-center gap-2">
                   <input
                     value={serviceInput}
                     onChange={(e) => setServiceInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddService())}
-                    placeholder="Xidmət adı"
+                    placeholder={t.subscriptions.serviceName}
                     className="flex-1 h-[40px] rounded-[10px] bg-[#fafafa] border border-[#ececed] px-3 text-sm outline-none focus:border-[#00b4cc]"
                   />
                   <button
@@ -379,7 +403,7 @@ function PackageFormModal({
               <div className="w-full h-[140px] rounded-[12px] bg-[#fafafa] p-2.5 flex flex-col gap-1.5 overflow-y-auto border border-gray-100">
                 {services.length === 0 ? (
                   <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 italic">
-                    Heç bir xidmət əlavə edilməyib
+                    {t.subscriptions.noServiceAdded}
                   </div>
                 ) : (
                   services.map((srv, idx) => (
@@ -398,7 +422,7 @@ function PackageFormModal({
                 )}
               </div>
               <div className="w-full text-right text-sm text-gray-500 font-normal">
-                {services.length}/20 xidmət
+                {services.length}/20 {t.subscriptions.serviceCount}
               </div>
             </div>
 
@@ -411,13 +435,13 @@ function PackageFormModal({
             onClick={onClose}
             className="h-[40px] rounded-[8px] border border-gray-300 px-5 text-sm font-medium text-black hover:bg-gray-50 transition-colors"
           >
-            Ləğv et
+            {t.subscriptions.cancel}
           </button>
           <button
             onClick={handleSave}
             className="h-[40px] rounded-[8px] bg-[#00b4cc] px-6 text-sm font-semibold text-white hover:bg-[#009bb0] transition-colors shadow-sm"
           >
-            Yadda saxla
+            {t.subscriptions.save}
           </button>
         </div>
       </div>
@@ -437,6 +461,7 @@ function PackageRow({
   onDelete: (id: string) => void
   onToggleStatus: (p: SubPackage) => void
 }) {
+  const t = useT()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -461,22 +486,22 @@ function PackageRow({
             'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold cursor-pointer border-none outline-none transition-opacity hover:opacity-80',
             pkg.status === 'active' ? 'bg-green-600 text-white' : 'bg-[#6B7280] text-white',
           )}
-          title="Statusu dəyişmək üçün klikləyin"
+          title={t.subscriptions.statusChangeTitle}
         >
           <span className="h-1.5 w-1.5 rounded-full bg-white/80 shrink-0" />
-          {pkg.status === 'active' ? 'Aktiv' : 'Deaktiv'}
+          {pkg.status === 'active' ? t.subscriptions.active : t.subscriptions.deactive}
         </button>
       </td>
       <td className="px-4 py-3 text-sm text-black">
-        {pkg.priceTiers.map((t, i) => (
+        {pkg.priceTiers.map((tier, i) => (
           <div key={i} className="flex items-baseline gap-1">
-            <span className="font-normal text-black">{t.discountPrice || t.price}</span>
+            <span className="font-normal text-black">{tier.discountPrice || tier.price}</span>
             <span className="text-black text-xs">AZN</span>
-            <span className="text-black text-xs">/ {t.duration}</span>
+            <span className="text-black text-xs">/ {formatDuration(tier.duration, t)}</span>
           </div>
         ))}
       </td>
-      <td className="px-4 py-3 text-sm text-black">{pkg.entryLimit} giriş</td>
+      <td className="px-4 py-3 text-sm text-black">{pkg.entryLimit} {t.subscriptions.entryLimit}</td>
       <td className="px-4 py-3">
         <div className="flex flex-wrap gap-1">
           {pkg.services.slice(0, 2).map((s) => (
@@ -503,13 +528,13 @@ function PackageRow({
                 onClick={() => { onEdit(pkg); setMenuOpen(false) }}
                 className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors"
               >
-                <Pencil size={13} className="text-[#00B4CC]" /> Dəyiş
+                <Pencil size={13} className="text-[#00B4CC]" /> {t.subscriptions.change}
               </button>
               <button
                 onClick={() => { onDelete(pkg.id); setMenuOpen(false) }}
                 className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
               >
-                <Trash2 size={13} /> Sil
+                <Trash2 size={13} /> {t.subscriptions.delete}
               </button>
             </div>
           )}
@@ -531,6 +556,7 @@ function PackageCard({
   onDelete: (id: string) => void
   onToggleStatus: (p: SubPackage) => void
 }) {
+  const t = useT()
   return (
     <div className="w-full h-full relative rounded-[12px] bg-white border border-[#00b4cc] flex flex-col justify-between p-5 text-center font-sans text-black shadow-sm transition-all hover:shadow-md">
       {/* Growable Content Area */}
@@ -545,7 +571,7 @@ function PackageCard({
                 pkg.status === 'active' ? "bg-[#166728]" : "bg-gray-500"
               )}>
                 <div className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
-                <span className="leading-[18px] font-medium">{pkg.status === 'active' ? 'Aktiv' : 'Deaktiv'}</span>
+                <span className="leading-[18px] font-medium">{pkg.status === 'active' ? t.subscriptions.active : t.subscriptions.deactive}</span>
               </div>
               
               {/* Visual native CSS switch matching the design asset knobs */}
@@ -556,7 +582,7 @@ function PackageCard({
                   "w-[51px] h-[31px] rounded-full p-1 transition-colors duration-200 ease-in-out shrink-0 flex items-center cursor-pointer outline-none border-none",
                   pkg.status === 'active' ? "bg-[#00b4cc]" : "bg-gray-300"
                 )}
-                aria-label="Statusu dəyiş"
+                aria-label={t.subscriptions.statusChangeTitle}
               >
                 <div className={cn(
                   "w-[23px] h-[23px] rounded-full bg-white shadow-md transform transition-transform duration-200 ease-in-out",
@@ -574,7 +600,7 @@ function PackageCard({
               <div key={i} className="w-full flex flex-col gap-2.5">
                 <div className="flex items-center justify-between gap-2 px-1 w-full">
                   <span className="text-[16px] leading-[24px] font-normal text-black text-left shrink-0">
-                    {tier.duration || 'Müddət'}
+                    {formatDuration(tier.duration || t.subscriptions.duration, t)}
                   </span>
                   <div className="flex items-baseline justify-center gap-1 text-center whitespace-nowrap shrink-0">
                     {tier.discountPrice > 0 && tier.discountPrice !== tier.price ? (
@@ -593,7 +619,7 @@ function PackageCard({
                     )}
                   </div>
                   <span className="text-[16px] leading-[24px] font-normal text-black text-right shrink-0">
-                    {tier.entryLimit ?? pkg.entryLimit} giriş
+                    {tier.entryLimit ?? pkg.entryLimit} {t.subscriptions.entryLimit}
                   </span>
                 </div>
                 <div className="w-full h-[1px] bg-gray-100" />
@@ -603,7 +629,7 @@ function PackageCard({
 
           {/* Services List Block */}
           <div className="w-full flex flex-col items-start gap-[11px] pt-1">
-            <span className="text-[12px] font-bold tracking-wider text-black uppercase">XİDMƏTLƏR</span>
+            <span className="text-[12px] font-bold tracking-wider text-black uppercase">{t.subscriptions.servicesHeader}</span>
             <div className="w-full flex flex-wrap items-center gap-2">
               {pkg.services.length > 0 ? (
                 pkg.services.map((s, idx) => (
@@ -613,7 +639,7 @@ function PackageCard({
                   </div>
                 ))
               ) : (
-                <span className="text-xs text-gray-400 italic">Xidmət təyin edilməyib</span>
+                <span className="text-xs text-gray-400 italic">{t.subscriptions.noServiceDefined}</span>
               )}
             </div>
           </div>
@@ -627,7 +653,7 @@ function PackageCard({
           className="flex-1 h-[41px] rounded-[10px] bg-white border border-[#00b4cc] flex items-center justify-center px-4 gap-2 hover:bg-[#00b4cc]/5 transition-colors cursor-pointer"
         >
           <Pencil size={15} className="text-[#00b4cc] shrink-0" />
-          <span className="text-[15px] font-medium text-black leading-[24px]">Dəyiş</span>
+          <span className="text-[15px] font-medium text-black leading-[24px]">{t.subscriptions.change}</span>
         </button>
         
         <button
@@ -635,7 +661,7 @@ function PackageCard({
           className="flex-1 h-[41px] rounded-[10px] bg-white border border-[#f10303] flex items-center justify-center px-4 gap-2 hover:bg-[#f10303]/5 transition-colors cursor-pointer"
         >
           <Trash2 size={15} className="text-[#f10303] shrink-0" />
-          <span className="text-[15px] font-medium text-black leading-[24px]">Sil</span>
+          <span className="text-[15px] font-medium text-black leading-[24px]">{t.subscriptions.delete}</span>
         </button>
       </div>
     </div>
@@ -644,6 +670,7 @@ function PackageCard({
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export function SubscriptionList() {
+  const t = useT()
   const { packages: backendPackages, isLoading, createPackage, updatePackage, deletePackage, updatePackageStatus } = useSubscriptions()
   const [localPackages, setLocalPackages] = useState<SubPackage[]>([])
   const [modalPkg, setModalPkg] = useState<SubPackage | 'new' | null>(null)
@@ -664,14 +691,14 @@ export function SubscriptionList() {
     if (!pkg.id.startsWith('temp') && !pkg.id.startsWith('sub-')) {
       try {
         await updatePackageStatus({ id: pkg.id, isActive: newStatus === 'active' })
-        setModalConfig({ isOpen: true, message: "Status uğurla yeniləndi!", type: "success" })
+        setModalConfig({ isOpen: true, message: t.subscriptions.statusUpdated, type: "success" })
       } catch (err: any) {
         console.warn('Backend status toggle sync error', err)
-        const msg = err?.response?.data?.error?.message || err?.message || "Statusu yeniləmək mümkün olmadı"
+        const msg = err?.response?.data?.error?.message || err?.message || t.subscriptions.statusUpdateFailed
         setModalConfig({ isOpen: true, message: msg, type: "error" })
       }
     } else {
-      setModalConfig({ isOpen: true, message: "Status uğurla yeniləndi!", type: "success" })
+      setModalConfig({ isOpen: true, message: t.subscriptions.statusUpdated, type: "success" })
     }
   }
 
@@ -694,14 +721,14 @@ export function SubscriptionList() {
             services: data.services,
             priceTiers: data.priceTiers,
           })
-          setModalConfig({ isOpen: true, message: "Paket uğurla yeniləndi!", type: "success" })
+          setModalConfig({ isOpen: true, message: t.subscriptions.packageUpdated, type: "success" })
         } catch (err: any) {
           console.warn('Backend subscription update sync error', err)
-          const msg = err?.response?.data?.error?.message || err?.message || "Yadda saxlamaq mümkün olmadı"
+          const msg = err?.response?.data?.error?.message || err?.message || t.subscriptions.saveFailed
           setModalConfig({ isOpen: true, message: msg, type: "error" })
         }
       } else {
-        setModalConfig({ isOpen: true, message: "Paket uğurla yeniləndi!", type: "success" })
+        setModalConfig({ isOpen: true, message: t.subscriptions.packageUpdated, type: "success" })
       }
     } else {
       const tempId = `sub-${Date.now()}`
@@ -716,10 +743,10 @@ export function SubscriptionList() {
           services: data.services,
           priceTiers: data.priceTiers,
         })
-        setModalConfig({ isOpen: true, message: "Paket uğurla yaradıldı!", type: "success" })
+        setModalConfig({ isOpen: true, message: t.subscriptions.packageCreated, type: "success" })
       } catch (err: any) {
         console.warn('Backend subscription creation sync error', err)
-        const msg = err?.response?.data?.error?.message || err?.message || "Paket yaradıla bilmədi"
+        const msg = err?.response?.data?.error?.message || err?.message || t.subscriptions.packageCreateFailed
         setModalConfig({ isOpen: true, message: msg, type: "error" })
       }
     }
@@ -735,15 +762,15 @@ export function SubscriptionList() {
     if (!targetId.startsWith('temp') && !targetId.startsWith('sub-')) {
       try {
         await deletePackage(targetId)
-        setModalConfig({ isOpen: true, message: "Paket uğurla silindi!", type: "success" })
+        setModalConfig({ isOpen: true, message: t.subscriptions.packageDeleted, type: "success" })
       } catch (err: any) {
         console.warn('Backend subscription deletion sync error', err)
         setLocalPackages(originalPackages) // Revert optimistic update
-        const msg = err?.response?.data?.error?.message || err?.message || "Paketi silmək mümkün olmadı"
+        const msg = err?.response?.data?.error?.message || err?.message || t.subscriptions.packageDeleteFailed
         setModalConfig({ isOpen: true, message: msg, type: "error" })
       }
     } else {
-      setModalConfig({ isOpen: true, message: "Paket uğurla silindi!", type: "success" })
+      setModalConfig({ isOpen: true, message: t.subscriptions.packageDeleted, type: "success" })
     }
   }
 
@@ -752,9 +779,9 @@ export function SubscriptionList() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h1 className="text-xl font-bold text-foreground">Abunəlik Paketləri</h1>
+          <h1 className="text-xl font-bold text-foreground">{t.subscriptions.title}</h1>
           {isLoading && (
-            <span className="text-xs text-[#00b4cc] font-medium animate-pulse">Yüklənir...</span>
+            <span className="text-xs text-[#00b4cc] font-medium animate-pulse">{t.subscriptions.loading}</span>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -765,7 +792,7 @@ export function SubscriptionList() {
                 'flex h-9 w-9 items-center justify-center transition-colors',
                 view === 'grid' ? 'bg-[#00B4CC] text-white' : 'text-muted-foreground hover:text-foreground hover:bg-secondary',
               )}
-              aria-label="Grid görünüşü"
+              aria-label={t.subscriptions.gridToggle}
             >
               <LayoutGrid size={15} />
             </button>
@@ -775,7 +802,7 @@ export function SubscriptionList() {
                 'flex h-9 w-9 items-center justify-center transition-colors',
                 view === 'list' ? 'bg-[#00B4CC] text-white' : 'text-muted-foreground hover:text-foreground hover:bg-secondary',
               )}
-              aria-label="Siyahı görünüşü"
+              aria-label={t.subscriptions.listToggle}
             >
               <List size={15} />
             </button>
@@ -785,7 +812,7 @@ export function SubscriptionList() {
               if (currentPackages.length >= 4) {
                 setModalConfig({
                   isOpen: true,
-                  message: "Hal-hazırda bütün paketlər yaradılıb. Zəhmət olmasa mövcud paketləri redaktə edin.",
+                  message: t.subscriptions.allPackagesCreated,
                   type: "error"
                 })
                 return
@@ -794,14 +821,14 @@ export function SubscriptionList() {
             }}
             className="flex items-center gap-1.5 rounded-lg bg-[#00B4CC] px-4 h-[40px] text-sm font-semibold text-white hover:bg-[#008799] transition-colors shadow-2xs"
           >
-            <Plus size={15} /> Paket
+            <Plus size={15} /> {t.subscriptions.addPackage}
           </button>
         </div>
       </div>
 
       {currentPackages.length === 0 ? (
         <div className="flex items-center justify-center py-24 text-sm text-muted-foreground italic">
-          Hələ paket əlavə edilməyib
+          {t.subscriptions.noPackages}
         </div>
       ) : view === 'grid' ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -820,12 +847,12 @@ export function SubscriptionList() {
           <table className="w-full">
             <thead>
               <tr className="bg-[#00B4CC]/10 text-left">
-                <th className="px-4 py-3 text-xs font-semibold text-foreground">Abunəlik Paket adı</th>
-                <th className="px-4 py-3 text-xs font-semibold text-foreground">Status</th>
-                <th className="px-4 py-3 text-xs font-semibold text-foreground">Qiymət / Müddət</th>
-                <th className="px-4 py-3 text-xs font-semibold text-foreground">Limit</th>
-                <th className="px-4 py-3 text-xs font-semibold text-foreground">Xidmətlər</th>
-                <th className="px-4 py-3 text-xs font-semibold text-foreground text-center">Ətraflı</th>
+                <th className="px-4 py-3 text-xs font-semibold text-foreground">{t.subscriptions.packageNameHeader}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-foreground">{t.subscriptions.statusHeader}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-foreground">{t.subscriptions.priceDurationHeader}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-foreground">{t.subscriptions.limitHeader}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-foreground">{t.subscriptions.servicesHeader}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-foreground text-center">{t.subscriptions.actionsHeader}</th>
               </tr>
             </thead>
             <tbody>
@@ -857,7 +884,7 @@ export function SubscriptionList() {
 
       {deletingId && (
         <ConfirmDeleteModal
-          name={currentPackages.find((p) => p.id === deletingId)?.name ?? 'Paket'}
+          name={currentPackages.find((p) => p.id === deletingId)?.name ?? t.subscriptions.packagePlaceholder}
           onConfirm={confirmDelete}
           onCancel={() => setDeletingId(null)}
         />

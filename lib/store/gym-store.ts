@@ -19,6 +19,7 @@ export interface LocalAdmin {
   phone: string;
   email: string;
   password: string;
+  role?: string;
 }
 
 export interface Step1Data {
@@ -75,6 +76,7 @@ interface GymState {
   setStep6Data: (data: Step6Data) => void;
   setStep7Admins: (admins: LocalAdmin[]) => void;
   addStep7Admin: (admin: LocalAdmin) => void;
+  updateStep7Admin: (index: number, admin: LocalAdmin) => void;
   removeStep7Admin: (index: number) => void;
   resetGym: () => void;
   resetStep1Data: () => void;
@@ -133,6 +135,9 @@ export const useGymStore = create<GymState>()(
       setStep7Admins: (admins) => set({ step7Admins: admins }),
       addStep7Admin: (admin) => set((state) => ({ 
         step7Admins: [...state.step7Admins, admin] 
+      })),
+      updateStep7Admin: (index, admin) => set((state) => ({
+        step7Admins: state.step7Admins.map((a, i) => i === index ? admin : a)
       })),
       removeStep7Admin: (index) => set((state) => ({
         step7Admins: state.step7Admins.filter((_, i) => i !== index)

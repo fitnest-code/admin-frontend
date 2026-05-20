@@ -31,20 +31,6 @@ export default function StoreInfoTab({ data, onChange }: Step1Props) {
     <div className="flex flex-col gap-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between border-b border-[#ececed] pb-1">
         <h2 className="text-[18px] font-semibold text-gray-800">Mağaza məlumatları</h2>
-        <div className="flex items-center gap-4 text-[13px] font-medium">
-          {["Az", "Ru", "En"].map((l) => (
-            <button
-              key={l}
-              type="button"
-              className={cn(
-                "px-1 pb-1 transition-all duration-300",
-                l === "Az" ? "border-b border-[#00B4CC] text-black" : "text-black/40"
-              )}
-            >
-              {l}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Store name */}

@@ -8,6 +8,7 @@ import { useGymStore } from "@/lib/store/gym-store";
 import { useGymReviews, useApproveReview, useRejectReview } from "@/lib/query/gym-query";
 import { format } from "date-fns";
 import { az } from "date-fns/locale";
+import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 
 const STATUS_OPTIONS = [
   { key: "", label: "Bütün statuslar", color: "#4b5563" },
@@ -46,7 +47,7 @@ const STATUS_BADGE_MAP: Record<string, { label: string, color: string, bgColor: 
   },
 };
 
-export function ReviewsTab() {
+export function ReviewsTab({ gymName }: { gymName?: string }) {
   const { gymId } = useGymStore();
   const [status, setStatus] = useState<string>("");
   const [sort, setSort] = useState<string>("newest");
@@ -57,6 +58,11 @@ export function ReviewsTab() {
 
   const [isOpenStatus, setIsOpenStatus] = useState(false);
   const [isOpenSort, setIsOpenSort] = useState(false);
+  const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; message: string; type: "success" | "error" }>({
+    isOpen: false,
+    message: "",
+    type: "success",
+  });
 
   // Debounce search input
   useEffect(() => {
@@ -77,9 +83,21 @@ export function ReviewsTab() {
 
   const handleAction = (reviewId: number, type: 'approve' | 'reject') => {
     if (type === 'approve') {
-      approve(reviewId, { onSuccess: () => setSelectedReview(null) });
+      approve(reviewId, { 
+        onSuccess: () => {
+          setSelectedReview(null);
+          setModalConfig({ isOpen: true, message: "Rəy təsdiq edildi", type: "success" });
+        },
+        onError: () => setModalConfig({ isOpen: true, message: "Xəta baş verdi", type: "error" })
+      });
     } else {
-      reject(reviewId, { onSuccess: () => setSelectedReview(null) });
+      reject(reviewId, { 
+        onSuccess: () => {
+          setSelectedReview(null);
+          setModalConfig({ isOpen: true, message: "Rəy rədd edildi", type: "success" });
+        },
+        onError: () => setModalConfig({ isOpen: true, message: "Xəta baş verdi", type: "error" })
+      });
     }
   };
 
@@ -206,7 +224,7 @@ export function ReviewsTab() {
 
                 {/* Gym Name */}
                 <div className="text-[14px] font-medium text-[#535353] truncate pr-4 uppercase">
-                  {review.gym_name || "FIT CLUB"}
+                  {gymName || review.gym_name || "FIT CLUB"}
                 </div>
 
                 {/* Status */}
@@ -281,7 +299,7 @@ export function ReviewsTab() {
                {/* Gym Row */}
                <div className="flex flex-col items-start gap-1.5">
                   <span className="text-[14px] font-medium text-[#364153]">Zal</span>
-                  <span className="text-[16px] leading-[24px] text-black font-medium">{selectedReview.gym_name || "FIT CLUB"}</span>
+                  <span className="text-[16px] leading-[24px] text-black font-medium">{gymName || selectedReview.gym_name || "FIT CLUB"}</span>
                </div>
 
                {/* Comment Row */}
@@ -342,6 +360,12 @@ export function ReviewsTab() {
           </div>
         </div>
       )}
+      <SuccessAnimationModal
+        isOpen={modalConfig.isOpen}
+        onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
+        message={modalConfig.message}
+        type={modalConfig.type}
+      />
     </div>
   );
 }

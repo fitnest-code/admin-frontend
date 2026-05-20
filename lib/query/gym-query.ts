@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiGet, apiPost, apiDelete, apiPut } from "@/lib/api/client" 
+import { useI18nStore } from '@/lib/i18n' 
 import { 
   CategoriesResponse, 
   GymStep1Payload, 
@@ -22,10 +23,11 @@ import { toast } from 'sonner'
 
 // 1. Kateqoriyaları çəkmək üçün
 export function useCategories() {
+  const locale = useI18nStore((s) => s.locale)
   return useQuery({
-    queryKey: ['categories'],
+    queryKey: ['categories', locale],
     queryFn: () => apiGet<CategoriesResponse>('/categories', { 
-      params: { page: 1, size: 10 } 
+      params: { page: 1, size: 100 } 
     }),
     staleTime: 5 * 60 * 1000,
   })
@@ -116,8 +118,9 @@ export function useDeleteGym() {
 
 // 4. Dəstəklənən xidmətləri çəkmək üçün
 export function useSupportedServices(gymId?: number) {
+  const locale = useI18nStore((s) => s.locale)
   return useQuery({
-    queryKey: ['supported-services', gymId],
+    queryKey: ['supported-services', gymId, locale],
     queryFn: () => apiGet<SupportedServiceResponse[]>('/admin/gyms/services', {
       params: gymId ? { gymId } : {}
     }),
@@ -249,8 +252,9 @@ export function useGymAnalytics(
     pageSize?: number
   }
 ) {
+  const locale = useI18nStore((s) => s.locale)
   return useQuery({
-    queryKey: ['gym-analytics', gymId ? Number(gymId) : null, params],
+    queryKey: ['gym-analytics', gymId ? Number(gymId) : null, params, locale],
     queryFn: () => {
       if (!gymId) return Promise.resolve(null)
       return apiGet<GymAnalyticsResponse>(`/admin/gyms/${gymId}/analytics`, { params })
@@ -262,8 +266,9 @@ export function useGymAnalytics(
 
 // 9. Zal məlumatlarını çəkmək üçün (Admin)
 export function useGymDetailsAdmin(gymId: number | string | null | undefined) {
+  const locale = useI18nStore((s) => s.locale)
   return useQuery({
-    queryKey: ['gym-details', gymId ? Number(gymId) : null],
+    queryKey: ['gym-details', gymId ? Number(gymId) : null, locale],
     queryFn: () => {
       if (!gymId) return Promise.resolve(null)
       return apiGet<GymInfoAdminResponse>(`/admin/gyms/${gymId}/details`)
@@ -275,8 +280,9 @@ export function useGymDetailsAdmin(gymId: number | string | null | undefined) {
 
 // 9.1 Zal abunəliklərini çəkmək üçün (Admin)
 export function useGymSubscriptionsAdmin(gymId: number | string | null | undefined) {
+  const locale = useI18nStore((s) => s.locale)
   return useQuery({
-    queryKey: ['gym-subscriptions-admin', gymId ? Number(gymId) : null],
+    queryKey: ['gym-subscriptions-admin', gymId ? Number(gymId) : null, locale],
     queryFn: () => {
       if (!gymId) return Promise.resolve(null)
       return apiGet<GymSubscriptionsAdminResponse>(`/admin/gyms/${gymId}/subscriptions`)
@@ -310,8 +316,9 @@ export function useGymTrainers(gymId: number | string | null | undefined, params
     sort_dir: params?.sort_dir?.toUpperCase() || 'DESC'
   };
 
+  const locale = useI18nStore((s) => s.locale)
   return useQuery({
-    queryKey: ['gym-trainers', gymId ? Number(gymId) : null, normalizedParams],
+    queryKey: ['gym-trainers', gymId ? Number(gymId) : null, normalizedParams, locale],
     queryFn: () => {
       if (!gymId) return Promise.resolve(null)
       return apiGet<PaginatedResponse<ITrainer>>(`/admin/gyms/${gymId}/trainers`, { params: normalizedParams })
@@ -364,8 +371,9 @@ export function useDeleteTrainer() {
 
 // 14. Peşələri (Professions) çəkmək üçün
 export function useProfessions() {
+  const locale = useI18nStore((s) => s.locale)
   return useQuery({
-    queryKey: ['professions'],
+    queryKey: ['professions', locale],
     queryFn: () => apiGet<IProfession[]>('/professions'),
     staleTime: 10 * 60 * 1000,
   });
@@ -391,11 +399,19 @@ export function useAddGymAdmin() {
       apiPost(`/admin/gyms/${gymId}/admins`, payload),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['gym-admins', variables.gymId] });
-      toast.success('Admin uğurla əlavə edildi');
     },
-    onError: (err: any) => {
-      toast.error(err?.message || 'Xəta baş verdi');
-    }
+  });
+}
+
+// 16.1 Zal adminini yeniləmək üçün
+export function useUpdateGymAdmin() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ gymId, adminId, payload }: { gymId: number, adminId: number, payload: any }) =>
+      apiPut(`/admin/gyms/${gymId}/admins/${adminId}`, payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-admins', variables.gymId] });
+    },
   });
 }
 
@@ -407,11 +423,7 @@ export function useDeleteGymAdmin() {
       apiDelete(`/admin/gyms/${gymId}/admins/${adminId}`),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['gym-admins', variables.gymId] });
-      toast.success('Admin silindi');
     },
-    onError: (err: any) => {
-      toast.error(err?.message || 'Silinmə zamanı xəta baş verdi');
-    }
   });
 }
 
@@ -451,11 +463,10 @@ export function useApproveReview() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (reviewId: number | string) =>
-      apiPost(`/admin/gyms/reviews/${reviewId}/approve`, {}),
+      apiPut(`/admin/gyms/reviews/${reviewId}/approve`, {}),
     onSuccess: (_, reviewId) => {
       queryClient.invalidateQueries({ queryKey: ['gym-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['review-detail', reviewId] });
-      toast.success('Rəy təsdiq edildi');
     },
   });
 }
@@ -465,11 +476,10 @@ export function useRejectReview() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (reviewId: number | string) =>
-      apiPost(`/admin/gyms/reviews/${reviewId}/reject`, {}),
+      apiPut(`/admin/gyms/reviews/${reviewId}/reject`, {}),
     onSuccess: (_, reviewId) => {
       queryClient.invalidateQueries({ queryKey: ['gym-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['review-detail', reviewId] });
-      toast.success('Rəy rədd edildi');
     },
   });
 }

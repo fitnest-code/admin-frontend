@@ -25,6 +25,7 @@ import {
   useUpdateAdminStoreMutation,
 } from "@/modules/stores";
 import { useSubscriptionPackages } from "@/lib/query/use-subscription-packages";
+import { useGetAddressByCoords } from "@/lib/query/location-query";
 import styles from "./index.module.css";
 import { cn } from "@/lib/utils";
 
@@ -39,7 +40,6 @@ const defaultContact: IStoreStep2Payload = {
 
 export function AdminStoreEditView({ storeId }: { storeId: number }) {
   const router = useRouter();
-  const [activeLang, setActiveLang] = React.useState<"Az" | "Ru" | "En">("Az");
   const { data, isLoading, isError, error } = useAdminStoreDetailQuery(storeId);
   const { mutateAsync: saveStore, isPending } = useUpdateAdminStoreMutation();
   const { data: allPackages } = useSubscriptionPackages();
@@ -51,6 +51,47 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
   const [discounts, setDiscounts] = useState<{ id: string; packageId: string; discount: string }[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  // Local inputs state for coordinates
+  const [inputLat, setInputLat] = useState("0");
+  const [inputLng, setInputLng] = useState("0");
+  const [isUpdatingFromCoords, setIsUpdatingFromCoords] = useState(false);
+
+  // 1. Reverse Geocoding when coordinates are typed manually
+  const { data: addressData } = useGetAddressByCoords(
+    contact.latitude || 0,
+    contact.longitude || 0,
+    isUpdatingFromCoords
+  );
+
+  // Update inputs if contact latitude/longitude changes from data seed
+  useEffect(() => {
+    if (!isUpdatingFromCoords) {
+      setInputLat((contact.latitude || 0).toString());
+      setInputLng((contact.longitude || 0).toString());
+    }
+  }, [contact.latitude, contact.longitude, isUpdatingFromCoords]);
+
+  // Debounce coordinate changes from manual typing
+  useEffect(() => {
+    if (!isUpdatingFromCoords) return;
+    const lat = parseFloat(inputLat);
+    const lng = parseFloat(inputLng);
+    if (!isNaN(lat) && !isNaN(lng)) {
+      const timeout = setTimeout(() => {
+        setContact(prev => ({ ...prev, latitude: lat, longitude: lng }));
+      }, 800);
+      return () => clearTimeout(timeout);
+    }
+  }, [inputLat, inputLng, isUpdatingFromCoords]);
+
+  // Sync reverse geocoding result to address field
+  useEffect(() => {
+    if (isUpdatingFromCoords && addressData?.addressText) {
+      setAddress(addressData.addressText);
+      setIsUpdatingFromCoords(false); // Reset
+    }
+  }, [addressData, isUpdatingFromCoords]);
 
   useEffect(() => {
     if (!data) return;
@@ -68,6 +109,9 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
       socialUrl: data.socialUrl,
       workHours: { ...data.workHours },
     });
+    setInputLat((data.latitude || 0).toString());
+    setInputLng((data.longitude || 0).toString());
+    setIsUpdatingFromCoords(false);
     setDiscounts(
       data.discounts.length > 0
         ? data.discounts.map((d) => ({
@@ -139,17 +183,6 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
           <section className={styles.section}>
             <div className={styles.sectionHeader}>
               <h2 className={styles.sectionTitle}>Mağaza məlumatları</h2>
-              <div className={styles.langSelector}>
-                {(["Az", "Ru", "En"] as const).map((l) => (
-                  <button
-                    key={l}
-                    onClick={() => setActiveLang(l)}
-                    className={cn(styles.langButton, activeLang === l && styles.langButtonActive)}
-                  >
-                    {l}
-                  </button>
-                ))}
-              </div>
             </div>
 
             <div className={styles.infoGroup}>
@@ -213,8 +246,11 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
                   <input 
                     type="number"
                     className={cn(styles.input, styles.inputWithIcon)} 
-                    value={contact.latitude} 
-                    onChange={(e) => setContact({...contact, latitude: Number(e.target.value)})}
+                    value={inputLat} 
+                    onChange={(e) => {
+                      setInputLat(e.target.value);
+                      setIsUpdatingFromCoords(true);
+                    }}
                   />
                   <Copy size={16} className={styles.inputIcon} />
                 </div>
@@ -225,8 +261,11 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
                   <input 
                     type="number"
                     className={cn(styles.input, styles.inputWithIcon)} 
-                    value={contact.longitude} 
-                    onChange={(e) => setContact({...contact, longitude: Number(e.target.value)})}
+                    value={inputLng} 
+                    onChange={(e) => {
+                      setInputLng(e.target.value);
+                      setIsUpdatingFromCoords(true);
+                    }}
                   />
                   <Copy size={16} className={styles.inputIcon} />
                 </div>
