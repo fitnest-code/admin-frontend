@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { X, Loader2, Eye, EyeOff, Edit, Trash } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, normalizePhoneNumber } from "@/lib/utils";
 import { useGymStore } from "@/lib/store/gym-store";
 import { useGymAdmins, useAddGymAdmin, useDeleteGymAdmin, useUpdateGymAdmin } from "@/lib/query/gym-query";
 
@@ -69,8 +69,9 @@ export function AdminsTab() {
       }
     }
 
+    const normalizedPhone = normalizePhoneNumber(form.phoneNumber);
     if (!form.phoneNumber.trim()) errors.phoneNumber = t.validation.phoneRequired;
-    else if (!/^(\+994|0)?\s?(10|50|51|55|60|70|77|99)(\s?\d){7}$/.test(form.phoneNumber)) errors.phoneNumber = t.validation.phoneInvalid;
+    else if (!/^\+994(10|50|51|55|60|70|77|99)\d{7}$/.test(normalizedPhone)) errors.phoneNumber = t.validation.phoneInvalid;
 
     if (!editingAdminId) {
       if (!form.password) errors.password = t.validation.passwordRequired;
@@ -84,9 +85,11 @@ export function AdminsTab() {
 
     setFormErrors({});
 
+    const submitPayload = { ...form, phoneNumber: normalizedPhone };
+
     if (editingAdminId) {
       updateAdmin(
-        { gymId: Number(gymId), adminId: editingAdminId, payload: { ...form, password: undefined } },
+        { gymId: Number(gymId), adminId: editingAdminId, payload: { ...submitPayload, password: undefined } },
         {
           onSuccess: () => {
             setModalOpen(false);
@@ -102,7 +105,7 @@ export function AdminsTab() {
       );
     } else {
       addAdmin(
-        { gymId: Number(gymId), payload: form },
+        { gymId: Number(gymId), payload: submitPayload },
         {
           onSuccess: () => {
             setModalOpen(false);

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Loader2, ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, normalizePhoneNumber } from "@/lib/utils";
 import { useGymStore } from "@/lib/store/gym-store";
 import { useCategories, useValidateGymStep1 } from "@/lib/query/gym-query";
 import { GymStep1Payload } from "@/lib/types/gym";
@@ -38,7 +38,7 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
     categoryId: categoryId!,
     name,
     description: about,
-    phone,
+    phone: normalizePhoneNumber(phone),
     email: email.trim() === "" ? null : email.trim(),
     lessonTypeIds: Array.from(selectedLessonTypeIds),
   });
