@@ -78,7 +78,7 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
     const suggestedText = s.addressText || s.display_name || "";
     
     // Extract custom typed numbers/house indicators missing from the map result
-    const matchNumber = searchQuery.match(/\b\d+[A-Za-z]?\b/);
+    const matchNumber = searchQuery.match(/\b\d+(?:\/[a-zA-Z0-9]+|-[a-zA-Z0-9]+|[a-zA-Z])?\b/);
     
     if (matchNumber && !suggestedText.includes(matchNumber[0])) {
       // Smartly insert the house number right after the street name
