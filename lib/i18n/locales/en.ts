@@ -15,6 +15,7 @@ const en: TranslationKeys = {
     stores: "Stores",
     reviews: "Reviews",
     settings: "Settings",
+    faq: "FAQ",
   },
 
   common: {
@@ -216,6 +217,31 @@ const en: TranslationKeys = {
     month: "month",
     months: "months",
     durationPlaceholder: "1 month",
+  },
+
+  faq: {
+    title: "Frequently Asked Questions (FAQ)",
+    faqTab: "Questions (FAQ)",
+    categoriesTab: "Categories",
+    addFaq: "Add FAQ",
+    editFaq: "Edit FAQ",
+    addCategory: "Add Category",
+    editCategory: "Edit Category",
+    question: "Question",
+    answer: "Answer",
+    category: "Category",
+    categoryName: "Category Name",
+    selectCategory: "Select Category",
+    created: "FAQ created successfully!",
+    updated: "FAQ updated successfully!",
+    deleted: "FAQ deleted successfully!",
+    categoryCreated: "Category created successfully!",
+    categoryUpdated: "Category updated successfully!",
+    categoryDeleted: "Category deleted successfully!",
+    deleteConfirmTitle: "FAQ Deletion",
+    deleteCategoryConfirmTitle: "Category Deletion",
+    deleteConfirmMsg: "Are you sure you want to delete this FAQ?",
+    deleteCategoryConfirmMsg: "Are you sure you want to delete this category?",
   },
 } as const;
 

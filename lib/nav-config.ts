@@ -13,6 +13,7 @@ import {
   Star,
   type LucideIcon,
   CassetteTape,
+  HelpCircle,
 } from "lucide-react";
 
 export interface NavItem {
@@ -67,6 +68,12 @@ export const NAV_ITEMS: NavItem[] = [
   },
   { key: "stores", labelKey: "stores", icon: Store, href: "/stores", iconPath: "/Sidebar/Sidebar/shop.svg" },
   { key: "reviews", labelKey: "reviews", icon: Star, href: "/reviews", iconPath: "/Sidebar/Sidebar/shop.svg" },
+  {
+    key: "faq",
+    labelKey: "faq",
+    icon: HelpCircle,
+    href: "/faq"
+  },
   {
     key: "tenzimlemeler",
     labelKey: "settings",
