@@ -5,6 +5,7 @@ const en: TranslationKeys = {
     dashboard: "Dashboard",
     subscriptions: "Subscriptions",
     categories: "Categories",
+    goals: "Goals",
     gyms: "Gyms",
     customers: "Customers",
     payments: "Payments",
@@ -113,6 +114,22 @@ const en: TranslationKeys = {
     adminDeleted: "Admin deleted",
     atLeastOneAdmin: "At least one admin must be added",
     duplicateEmail: "An admin with this email already exists",
+  },
+
+  goals: {
+    title: "Goals",
+    addGoal: "Add Goal",
+    editGoal: "Edit Goal",
+    code: "Code (e.g. WEIGHT_LOSS)",
+    goalTitle: "Title",
+    goalSubtitle: "Subtitle",
+    image: "Image",
+    deleteConfirm: "Are you sure you want to delete this goal?",
+    noGoals: "No goals found",
+    added: "Goal added successfully",
+    updated: "Goal updated successfully",
+    deleted: "Goal deleted",
+    codeNoSpaces: "Code must not contain spaces and only [A-Z0-9_-] characters",
   },
 
   validation: {
