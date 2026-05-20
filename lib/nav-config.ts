@@ -14,6 +14,7 @@ import {
   type LucideIcon,
   CassetteTape,
   HelpCircle,
+  Target,
 } from "lucide-react";
 
 export interface NavItem {
@@ -34,12 +35,18 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/subscriptions",
     iconPath: "/Sidebar/Sidebar/abunelik.svg"
   },
-   {
+  {
     key: "categories",
     labelKey: "categories",
     icon: CassetteTape,
     href: "/categories",
     iconPath: "/Sidebar/Sidebar/kateqoriyalar.svg"
+  },
+  {
+    key: "goals",
+    labelKey: "goals",
+    icon: Target,
+    href: "/goals",
   },
   { key: "gyms", labelKey: "gyms", icon: Handshake, href: "/gyms", iconPath: "/Sidebar/Sidebar/zallar.svg" },
   { key: "musteriler", labelKey: "customers", icon: Users, href: "/customers", iconPath: "/Sidebar/Sidebar/musteriler.svg" },

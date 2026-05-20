@@ -4,6 +4,7 @@ const az = {
     dashboard: "Dashboard",
     subscriptions: "Abunəlik",
     categories: "Kateqoriyalar",
+    goals: "Hədəflər",
     gyms: "Zallar",
     customers: "Müştərilər",
     payments: "Ödənişlər",
@@ -116,6 +117,23 @@ const az = {
     adminDeleted: "Admin silindi",
     atLeastOneAdmin: "Ən azı bir admin əlavə edilməlidir",
     duplicateEmail: "Bu e-poçt ünvanı ilə admin artıq əlavə edilib",
+  },
+
+  // Goals
+  goals: {
+    title: "Hədəflər",
+    addGoal: "Yeni Hədəf",
+    editGoal: "Hədəfi Yenilə",
+    code: "Kod (Nümunə: WEIGHT_LOSS)",
+    goalTitle: "Başlıq",
+    goalSubtitle: "Yarımbaşlıq",
+    image: "Şəkil",
+    deleteConfirm: "Bu hədəfi silmək istədiyinizə əminsiniz?",
+    noGoals: "Hədəf tapılmadı",
+    added: "Hədəf uğurla əlavə edildi",
+    updated: "Hədəf uğurla yeniləndi",
+    deleted: "Hədəf silindi",
+    codeNoSpaces: "Kodda boşluq olmamalıdır və yalnız [A-Z0-9_-] simvollarından istifadə edilməlidir",
   },
 
   // Validation
