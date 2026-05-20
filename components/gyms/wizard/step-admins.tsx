@@ -55,15 +55,18 @@ export function StepAdmins({ onComplete }: { onComplete?: () => void }) {
     if (form.email.trim()) {
       if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(form.email)) {
         errors.email = t.validation.emailInvalid;
-      } else {
-        const isDuplicateEmail = admins.some((a, i) => i !== editingIndex && a.email && a.email.toLowerCase() === form.email.trim().toLowerCase());
-        if (isDuplicateEmail) errors.email = t.admin.duplicateEmail;
       }
     }
 
     const normalizedPhone = normalizePhoneNumber(form.phone);
-    if (!form.phone.trim()) errors.phone = t.validation.phoneRequired;
-    else if (!/^\+994(10|50|51|55|60|70|77|99)\d{7}$/.test(normalizedPhone)) errors.phone = t.validation.phoneInvalid;
+    if (!form.phone.trim()) {
+      errors.phone = t.validation.phoneRequired;
+    } else if (!/^\+994(10|50|51|55|60|70|77|99)\d{7}$/.test(normalizedPhone)) {
+      errors.phone = t.validation.phoneInvalid;
+    } else {
+      const isDuplicatePhone = admins.some((a, i) => i !== editingIndex && normalizePhoneNumber(a.phone) === normalizedPhone);
+      if (isDuplicatePhone) errors.phone = (t.admin as any).duplicatePhone || "Bu nömrə ilə admin artıq əlavə edilib";
+    }
 
     if (editingIndex === null) {
       if (!form.password) errors.password = t.validation.passwordRequired;
