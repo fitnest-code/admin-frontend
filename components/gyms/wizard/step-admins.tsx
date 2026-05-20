@@ -52,11 +52,13 @@ export function StepAdmins({ onComplete }: { onComplete?: () => void }) {
     if (!form.lastName.trim()) errors.lastName = t.validation.surnameRequired;
     else if (form.lastName.length < 2 || form.lastName.length > 50) errors.lastName = t.validation.surnameLength;
 
-    if (!form.email.trim()) {
-      errors.email = t.validation.emailRequired;
-    } else {
-      const isDuplicateEmail = admins.some((a, i) => i !== editingIndex && a.email && a.email.toLowerCase() === form.email.trim().toLowerCase());
-      if (isDuplicateEmail) errors.email = t.admin.duplicateEmail;
+    if (form.email.trim()) {
+      if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(form.email)) {
+        errors.email = t.validation.emailInvalid;
+      } else {
+        const isDuplicateEmail = admins.some((a, i) => i !== editingIndex && a.email && a.email.toLowerCase() === form.email.trim().toLowerCase());
+        if (isDuplicateEmail) errors.email = t.admin.duplicateEmail;
+      }
     }
 
     if (!form.phone.trim()) errors.phone = t.validation.phoneRequired;
