@@ -39,12 +39,12 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
     setMounted(true);
   }, []);
 
-  // Backend-dən gələn ünvanı input-a sinxronizasiya et (yalnız ünvan tamamilə boşdursa)
+  // Backend-dən gələn ünvanı input-a sinxronizasiya et
   useEffect(() => {
-    if (addressData?.addressText && !searchQuery && shouldFetchAddress && !step4Data) {
+    if (addressData?.addressText && !searchQuery && shouldFetchAddress) {
       setSearchQuery(addressData.addressText);
     }
-  }, [addressData, searchQuery, shouldFetchAddress, step4Data]);
+  }, [addressData, searchQuery, shouldFetchAddress]);
 
   // Forward Geocoding via dedicated backend proxy
   const debouncedSearch = (query: string) => {

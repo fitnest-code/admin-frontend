@@ -17,6 +17,7 @@ const en: TranslationKeys = {
     reviews: "Reviews",
     settings: "Settings",
     faq: "FAQ",
+    legal: "Legal Documents",
   },
 
   common: {

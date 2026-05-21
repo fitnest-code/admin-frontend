@@ -214,10 +214,12 @@ export default function ContactInfoTab({ data, onChange }: Step2Props) {
             setIsUpdatingFromCoords(true);
             setInputLat(lat.toString());
             setInputLng(lng.toString());
+            setSearchQuery("");
             onChange({
               ...data,
               latitude: lat,
               longitude: lng,
+              address: ""
             });
           }}
         />

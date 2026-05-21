@@ -17,6 +17,7 @@ const ru: TranslationKeys = {
     reviews: "Отзывы",
     settings: "Настройки",
     faq: "FAQ",
+    legal: "Юридические документы",
   },
 
   common: {

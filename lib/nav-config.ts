@@ -15,6 +15,7 @@ import {
   CassetteTape,
   HelpCircle,
   Target,
+  Scale,
 } from "lucide-react";
 
 export interface NavItem {
@@ -80,6 +81,12 @@ export const NAV_ITEMS: NavItem[] = [
     labelKey: "faq",
     icon: HelpCircle,
     href: "/faq"
+  },
+  {
+    key: "legal",
+    labelKey: "legal", // Will need to update i18n
+    icon: Scale, // We need to import Scale from lucide-react
+    href: "/legal",
   },
   {
     key: "tenzimlemeler",

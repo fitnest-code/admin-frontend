@@ -2,10 +2,10 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { X, Loader2, Eye, EyeOff, Edit, Trash } from "lucide-react";
+import { X, Loader2, Eye, EyeOff, Edit, Trash, KeyRound } from "lucide-react";
 import { cn, normalizePhoneNumber } from "@/lib/utils";
 import { useGymStore } from "@/lib/store/gym-store";
-import { useGymAdmins, useAddGymAdmin, useDeleteGymAdmin, useUpdateGymAdmin } from "@/lib/query/gym-query";
+import { useGymAdmins, useAddGymAdmin, useDeleteGymAdmin, useUpdateGymAdmin, useResetGymAdminPassword } from "@/lib/query/gym-query";
 
 import { ConfirmDeleteModal } from "../modals/confirm-delete-modal";
 import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
@@ -19,11 +19,13 @@ export function AdminsTab() {
   const { mutate: addAdmin, isPending: isAdding } = useAddGymAdmin();
   const { mutate: updateAdmin, isPending: isUpdating } = useUpdateGymAdmin();
   const { mutate: deleteAdmin, isPending: isDeletingAdmin } = useDeleteGymAdmin();
+  const { mutate: resetPassword, isPending: isResettingPassword } = useResetGymAdminPassword();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [deleteAdminId, setDeleteAdminId] = useState<number | null>(null);
   const [editingAdminId, setEditingAdminId] = useState<number | null>(null);
+  const [resetPasswordAdminId, setResetPasswordAdminId] = useState<{ id: number; userId: number } | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
   const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; message: string; type: "success" | "error" }>({
     isOpen: false,
@@ -136,6 +138,29 @@ export function AdminsTab() {
     });
   };
 
+  const handleResetPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetPasswordAdminId) return;
+    
+    if (form.password.length < 8) {
+      setFormErrors({ password: t.validation?.passwordMinLength || "Şifrə ən azı 8 simvol olmalıdır" });
+      return;
+    }
+
+    resetPassword({ userId: resetPasswordAdminId.userId, payload: { newPassword: form.password } }, {
+      onSuccess: () => {
+        setResetPasswordAdminId(null);
+        setForm({ ...form, password: "" });
+        setFormErrors({});
+        setModalConfig({ isOpen: true, message: "Şifrə uğurla yeniləndi", type: "success" });
+      },
+      onError: (err: any) => {
+        const msg = err?.response?.data?.message || err?.message || t.error.generic;
+        setModalConfig({ isOpen: true, message: msg, type: "error" });
+      }
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="flex-1 py-20 flex flex-col justify-center items-center text-slate-400 gap-3">
@@ -226,7 +251,16 @@ export function AdminsTab() {
                            setOpenDropdownId(null); 
                          }} className="w-full text-left px-4 py-2 text-[14px] font-medium hover:bg-slate-50 flex items-center gap-2">
                            <Edit size={16} className="text-[#6a7282]" />
-                           {t.common.edit}
+                           Məlumatı yenilə
+                         </button>
+                         <button onClick={() => { 
+                           setResetPasswordAdminId({ id: admin.id, userId: admin.userId }); 
+                           setForm({ ...form, password: "" });
+                           setFormErrors({});
+                           setOpenDropdownId(null); 
+                         }} className="w-full text-left px-4 py-2 text-[14px] font-medium hover:bg-slate-50 flex items-center gap-2">
+                           <KeyRound size={16} className="text-[#6a7282]" />
+                           Şifrəni yenilə
                          </button>
                          <button onClick={() => { setDeleteAdminId(admin.id); setOpenDropdownId(null); }} className="w-full text-left px-4 py-2 text-[14px] font-medium text-red-600 hover:bg-red-50 flex items-center gap-2">
                            <Trash size={16} />
@@ -391,6 +425,64 @@ export function AdminsTab() {
           isLoading={isDeletingAdmin}
         />
       )}
+
+      {/* Reset Password Modal */}
+      {resetPasswordAdminId !== null && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4 font-sans text-black">
+          <div className="w-full max-w-[400px] bg-white rounded-[14px] shadow-2xl flex flex-col animate-in fade-in zoom-in duration-200 overflow-hidden">
+            <div className="px-6 py-5 border-b border-black/10 flex items-center justify-between">
+              <h2 className="text-[18px] font-bold text-[#101828]">Şifrəni yenilə</h2>
+              <button 
+                onClick={() => setResetPasswordAdminId(null)}
+                className="w-6 h-6 flex items-center justify-center hover:bg-slate-100 rounded-md transition-colors"
+              >
+                 <X size={16} className="text-[#101828]" />
+              </button>
+            </div>
+            <form onSubmit={handleResetPassword} className="p-6 flex flex-col gap-6">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[14px] font-medium text-[#364153]">Yeni şifrə</label>
+                <div className="relative">
+                  <input 
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={form.password}
+                    onChange={e => {setForm({...form, password: e.target.value}); setFormErrors({...formErrors, password: ""});}}
+                    className={cn("w-full h-11 px-4 bg-white border rounded-xl outline-none text-[14px] transition-all", formErrors.password ? "border-red-500 focus:border-red-500" : "border-[#dddcdc] focus:border-[#00b4cc]")}
+                    placeholder="Yeni şifrəni daxil edin"
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#00b4cc]"
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                {formErrors.password && <span className="text-[12px] text-red-500">{formErrors.password}</span>}
+              </div>
+
+              <div className="flex items-center gap-3 mt-2">
+                <button 
+                  type="button"
+                  onClick={() => setResetPasswordAdminId(null)}
+                  className="flex-1 h-12 rounded-[10px] border border-[#00b4cc] text-black text-[16px] font-medium hover:bg-slate-50"
+                >
+                  {t.common.close}
+                </button>
+                <button 
+                  type="submit"
+                  disabled={isResettingPassword}
+                  className="flex-1 h-12 bg-[#00b4cc] text-white rounded-[10px] font-bold text-[16px] flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50"
+                >
+                  {isResettingPassword ? <Loader2 size={20} className="animate-spin" /> : "Təsdiqlə"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <SuccessAnimationModal 
         isOpen={modalConfig.isOpen} 
         onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))} 
