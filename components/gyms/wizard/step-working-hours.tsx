@@ -158,7 +158,7 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
         <div className="flex flex-col gap-7 text-base">
           
           {/* Gender Tabs */}
-          <div className="flex items-center justify-between gap-5 overflow-x-auto pb-2 sm:pb-0">
+          <div className="flex w-full items-center justify-between gap-3 sm:gap-5 overflow-x-auto pb-2 sm:pb-0">
             {[
               { id: "generalWorkHours" as GenderTab, label: "Ümumi zal" },
               { id: "workHoursMan" as GenderTab, label: "Yalnız kişilər" },
@@ -171,7 +171,7 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
-                    "min-w-[150px] sm:w-[180px] h-[48px] rounded-[32px] flex items-center justify-center px-4 sm:px-[28px] py-[8px] transition-all font-medium leading-[24px] whitespace-nowrap",
+                    "flex-1 min-w-[120px] h-[48px] rounded-[32px] flex items-center justify-center px-4 sm:px-[28px] py-[8px] transition-all font-medium leading-[24px] whitespace-nowrap",
                     isActive 
                       ? "bg-[#00B4CC] text-white" 
                       : "bg-white border border-[#00B4CC] text-black hover:bg-slate-50"
@@ -184,13 +184,13 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
           </div>
 
           {/* Week Days Indicators (with checkboxes) */}
-          <div className="flex items-center justify-between gap-2 sm:gap-[18.5px] text-[14px] text-center overflow-x-auto pb-2 sm:pb-0">
+          <div className="flex w-full items-center justify-between gap-2 sm:gap-[18.5px] text-[14px] text-center overflow-x-auto pb-2 sm:pb-0">
             {DAY_SHORT_LABELS.map((day) => {
               const hasSlot = activeDays.has(day.key);
               return (
                 <div 
                   key={day.key}
-                  className="min-w-[60px] sm:w-[88px] h-[40px] rounded-[12px] bg-[#F9FAFB] border border-[#E5E7EB] flex flex-col items-center justify-center py-[11px]"
+                  className="flex-1 min-w-[50px] h-[40px] rounded-[12px] bg-[#F9FAFB] border border-[#E5E7EB] flex flex-col items-center justify-center py-[11px]"
                 >
                   <div className="flex items-center gap-1 sm:gap-[9px]">
                     <div className="w-4 h-4 sm:w-6 sm:h-6 flex items-center justify-center">
@@ -295,14 +295,14 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
       <div className="bg-white rounded-[14px] pt-[25px] pb-[1px] flex flex-col gap-4 font-sans text-[14px]">
         <h3 className="text-[18px] font-semibold tracking-[-0.44px] leading-[28px]">İstirahət günü</h3>
         
-        <div className="flex items-center justify-between gap-2 sm:gap-3 relative overflow-x-auto pb-2 sm:pb-0 pointer-events-none">
+        <div className="flex w-full items-center justify-between gap-2 sm:gap-3 relative overflow-x-auto pb-2 sm:pb-0 pointer-events-none">
           {DAY_SHORT_LABELS.map((day) => {
             const isRest = computedRestDays.has(day.key);
             return (
               <div
                 key={day.key}
                 className={cn(
-                  "min-w-[60px] sm:w-[84px] h-[48px] rounded-[10px] border-[2px] flex items-center justify-center px-2 py-3 transition-colors",
+                  "flex-1 min-w-[50px] h-[48px] rounded-[10px] border-[2px] flex items-center justify-center px-2 py-3 transition-colors",
                   isRest 
                     ? "border-[#F10303] text-[#F10303] bg-[#F9FAFB]" 
                     : "bg-[#F9FAFB] border-[#E5E7EB] text-[#364153]"
