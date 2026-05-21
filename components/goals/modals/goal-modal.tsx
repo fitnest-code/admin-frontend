@@ -71,12 +71,6 @@ export default function GoalModal({
   const handleSave = () => {
     const newErrors: { [key: string]: string } = {};
 
-    if (!code.trim()) {
-      newErrors.code = t.validation.required;
-    } else if (!/^[A-Z0-9_-]+$/.test(code.trim())) {
-      newErrors.code = t.goals.codeNoSpaces;
-    }
-
     if (!title.trim()) {
       newErrors.title = t.validation.required;
     }
@@ -86,8 +80,20 @@ export default function GoalModal({
       return;
     }
 
+    let finalCode = code;
+    if (mode === "create") {
+      finalCode = title.trim().toUpperCase()
+          .replace(/Ə/g, 'E').replace(/Ö/g, 'O').replace(/Ü/g, 'U')
+          .replace(/Ş/g, 'S').replace(/Ç/g, 'C').replace(/Ğ/g, 'G')
+          .replace(/İ/g, 'I').replace(/I/g, 'I')
+          .replace(/[^A-Z0-9]/g, '_')
+          .replace(/_+/g, '_')
+          .replace(/^_|_$/g, '');
+      if (!finalCode) finalCode = "GOAL_" + Date.now();
+    }
+
     onSave({
-      code: code.trim(),
+      code: finalCode,
       title: title.trim(),
       subtitle: subtitle.trim(),
       image: selectedFile,
@@ -140,26 +146,7 @@ export default function GoalModal({
             </div>
           </div>
 
-          {/* Code */}
-          <div className="w-full flex flex-col items-start gap-2">
-            <label className="text-[12px] sm:text-[13px] leading-[20px] font-medium text-black/60">
-              {t.goals.code}
-            </label>
-            <input
-              type="text"
-              value={code}
-              onChange={(e) => {
-                setCode(e.target.value.toUpperCase());
-                setErrors((prev) => ({ ...prev, code: "" }));
-              }}
-              disabled={mode === "edit"}
-              placeholder="Məs: WEIGHT_LOSS"
-              className={`w-full h-[40px] rounded-lg bg-[#fafafa] border px-3 text-[13px] sm:text-[14px] font-medium outline-none focus:border-[#00b4cc] transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                errors.code ? "border-red-500" : "border-[#ececed]"
-              }`}
-            />
-            {errors.code && <p className="text-[11px] text-red-500 mt-[-4px]">{errors.code}</p>}
-          </div>
+
 
           {/* Title */}
           <div className="w-full flex flex-col items-start gap-2">
