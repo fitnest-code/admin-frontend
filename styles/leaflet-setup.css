@@ -5,6 +5,7 @@
 .leaflet-container.location-picker-map {
   cursor: crosshair !important;
   border-radius: 12px;
+  z-index: 0 !important;
 }
 
 .leaflet-container.location-picker-map .leaflet-grab {
