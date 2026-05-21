@@ -20,6 +20,37 @@ interface LocationPickerMapProps {
   disabled?: boolean;
 }
 
+// Component that handles map clicks
+function MapClickHandler({ disabled, onLocationSelect, setShowHint }: any) {
+  useMapEvents({
+    click(e: L.LeafletMouseEvent) {
+      if (disabled) return;
+      onLocationSelect?.(e.latlng.lat, e.latlng.lng);
+      setShowHint(false);
+    },
+  });
+  return null;
+}
+
+// Component that flies to new coordinates when props change
+function FlyToUpdater({ lat, lng }: { lat: number; lng: number }) {
+  const map = useMap();
+  const prevCoords = useRef({ lat, lng });
+
+  useEffect(() => {
+    if (
+      lat !== undefined &&
+      lng !== undefined &&
+      (prevCoords.current.lat !== lat || prevCoords.current.lng !== lng)
+    ) {
+      map.flyTo([lat, lng], map.getZoom(), { duration: 0.8 });
+      prevCoords.current = { lat, lng };
+    }
+  }, [lat, lng, map]);
+
+  return null;
+}
+
 export default function LocationPickerMapInner({
   lat,
   lng,
@@ -36,37 +67,6 @@ export default function LocationPickerMapInner({
       return () => clearTimeout(timeout);
     }
   }, [disabled]);
-
-  // Component that handles map clicks
-  function MapClickHandler() {
-    useMapEvents({
-      click(e: L.LeafletMouseEvent) {
-        if (disabled) return;
-        onLocationSelect?.(e.latlng.lat, e.latlng.lng);
-        setShowHint(false);
-      },
-    });
-    return null;
-  }
-
-  // Component that flies to new coordinates when props change
-  function FlyToUpdater({ lat, lng }: { lat: number; lng: number }) {
-    const map = useMap();
-    const prevCoords = useRef({ lat, lng });
-
-    useEffect(() => {
-      if (
-        lat &&
-        lng &&
-        (prevCoords.current.lat !== lat || prevCoords.current.lng !== lng)
-      ) {
-        map.flyTo([lat, lng], map.getZoom(), { duration: 0.8 });
-        prevCoords.current = { lat, lng };
-      }
-    }, [lat, lng, map]);
-
-    return null;
-  }
 
   const displayLat = lat || 40.4093;
   const displayLng = lng || 49.8671;
@@ -97,8 +97,8 @@ export default function LocationPickerMapInner({
             },
           }}
         />
-        <MapClickHandler />
-        <FlyToUpdater lat={displayLat} lng={displayLng} />
+        <MapClickHandler disabled={disabled} onLocationSelect={onLocationSelect} setShowHint={setShowHint} />
+        <FlyToUpdater lat={Number(displayLat)} lng={Number(displayLng)} />
       </MapContainer>
 
       {/* Click hint */}
