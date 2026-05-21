@@ -20,6 +20,8 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
 
   const [selectedLessonTypeIds, setSelectedLessonTypeIds] = useState<Set<number>>(new Set(step1Data?.lessonTypeIds || []));
 
+  const [errors, setErrors] = useState<{ categoryId?: string, name?: string, phone?: string }>({});
+
   const { data: categoriesData, isLoading: categoriesLoading } = useCategories();
   const validateStep1 = useValidateGymStep1();
 
@@ -44,8 +46,14 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
   });
 
   const validateLocal = () => {
-    if (!categoryId || !name || !phone) {
-      toast.error("Zəhmət olmasa ulduzlu məlumatları doldurun");
+    const newErrors: typeof errors = {};
+    if (!categoryId) newErrors.categoryId = "Kateqoriya seçilməlidir";
+    if (!name) newErrors.name = "Zal adı daxil edilməlidir";
+    if (!phone) newErrors.phone = "Telefon nömrəsi daxil edilməlidir";
+    
+    setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length > 0) {
       return false;
     }
     return true;
@@ -77,8 +85,11 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
         <div className="flex flex-col gap-4">
           {/* Category Select */}
           <div className="flex flex-col gap-2">
-            <label className="text-[14px] leading-[20px] text-black/60 font-medium">Kateqoriya</label>
-            <div className="relative h-[44px] w-full bg-[#fafafa] border border-[#ececed] rounded-lg flex items-center px-4">
+            <label className="text-[14px] leading-[20px] text-black/60 font-medium">Kateqoriya <span className="text-red-500">*</span></label>
+            <div className={cn(
+              "relative h-[44px] w-full bg-[#fafafa] border rounded-lg flex items-center px-4 transition-colors",
+              errors.categoryId ? "border-red-500" : "border-[#ececed]"
+            )}>
               <select 
                 className="w-full h-full bg-transparent outline-none appearance-none text-[15px] cursor-pointer font-medium"
                 value={categoryId || ""}
@@ -96,6 +107,7 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
                  <ChevronDown size={18} className="text-black/60" />
               </div>
             </div>
+            {errors.categoryId && <span className="text-red-500 text-xs font-medium">{errors.categoryId}</span>}
           </div>
 
           {/* Lesson Types Grid (Növlər) */}
@@ -125,14 +137,21 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
 
           {/* Gym Name */}
           <div className="flex flex-col gap-2">
-             <label className="text-[14px] leading-[20px] text-black/60 font-medium">Zal adı</label>
+             <label className="text-[14px] leading-[20px] text-black/60 font-medium">Zal adı <span className="text-red-500">*</span></label>
              <input 
                type="text"
                value={name}
-               onChange={(e) => setName(e.target.value)}
+               onChange={(e) => {
+                 setName(e.target.value);
+                 if (errors.name) setErrors(p => ({ ...p, name: undefined }));
+               }}
                placeholder="Zal adı"
-               className="h-[44px] w-full bg-[#fafafa] border border-[#ececed] rounded-lg px-4 text-[15px] outline-none placeholder:text-black/40 font-medium"
+               className={cn(
+                 "h-[44px] w-full bg-[#fafafa] border rounded-lg px-4 text-[15px] outline-none placeholder:text-black/40 font-medium transition-colors",
+                 errors.name ? "border-red-500" : "border-[#ececed]"
+               )}
              />
+             {errors.name && <span className="text-red-500 text-xs font-medium">{errors.name}</span>}
           </div>
 
           {/* About */}
@@ -156,14 +175,21 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
         
         <div className="flex flex-col gap-4">
            <div className="flex flex-col gap-2">
-              <label className="text-[14px] leading-[20px] text-black/60 font-medium">Telefon nömrəsi</label>
+              <label className="text-[14px] leading-[20px] text-black/60 font-medium">Telefon nömrəsi <span className="text-red-500">*</span></label>
               <input 
                 type="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => {
+                  setPhone(e.target.value);
+                  if (errors.phone) setErrors(p => ({ ...p, phone: undefined }));
+                }}
                 placeholder="+994 00 000 00 00"
-                className="h-[44px] w-full bg-[#fafafa] border border-[#ececed] rounded-lg px-4 text-[15px] font-semibold outline-none placeholder:text-black/40"
+                className={cn(
+                  "h-[44px] w-full bg-[#fafafa] border rounded-lg px-4 text-[15px] font-semibold outline-none placeholder:text-black/40 transition-colors",
+                  errors.phone ? "border-red-500" : "border-[#ececed]"
+                )}
               />
+              {errors.phone && <span className="text-red-500 text-xs font-medium">{errors.phone}</span>}
            </div>
            
            <div className="flex flex-col gap-2">
@@ -191,6 +217,7 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
             setPhone("");
             setEmail("");
             setSelectedLessonTypeIds(new Set());
+            setErrors({});
           }}
           className="h-[40px] px-8 rounded-lg border border-[#ececed] text-[#101828] text-[14px] font-medium hover:bg-slate-50 transition-colors"
         >
