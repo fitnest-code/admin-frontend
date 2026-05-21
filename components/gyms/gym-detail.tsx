@@ -32,6 +32,13 @@ import { useGymStore } from '@/lib/store/gym-store'
 import { useT } from '@/lib/i18n'
 import { useAuthStore } from '@/lib/store/auth-store'
 import { apiGet } from '@/lib/api/client'
+import styles from './gym-detail.module.css'
+
+const getImageUrl = (urlOrFsId: string | undefined | null) => {
+  if (!urlOrFsId) return "";
+  if (urlOrFsId.startsWith("http") || urlOrFsId.startsWith("/")) return urlOrFsId;
+  return `/api/v1/media/stream/${urlOrFsId}`;
+};
 
 const WIZARD_TABS = [
   { key: 'info', label: 'Zal məlumatları' },
@@ -58,6 +65,40 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
 
   const [adminGyms, setAdminGyms] = useState<any[]>([])
   const [isSwitcherOpen, setIsSwitcherOpen] = useState(false)
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false)
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (isQrModalOpen && gym?.id) {
+      apiGet<{ qrCodeUrl: string }>(`/admin/gyms/${gym.id}/qr`)
+        .then((res) => {
+          setQrCodeUrl(res.qrCodeUrl)
+        })
+        .catch((err) => {
+          console.error("Failed to load QR code", err)
+        })
+    }
+  }, [isQrModalOpen, gym?.id])
+
+  const handleExportQr = async () => {
+    if (!qrCodeUrl) return;
+    try {
+      const fullUrl = getImageUrl(qrCodeUrl);
+      const response = await fetch(fullUrl);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `${gym.name.replace(/\s+/g, '_')}_qr.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Failed to export QR code:", error);
+    }
+  }
 
   useEffect(() => {
     if (isGymAdmin) {
@@ -325,39 +366,58 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       <div className="w-full flex items-center justify-between border-b border-[#ececed] pb-3 relative">
         <div className="flex flex-col gap-1">
           {isGymAdmin && adminGyms.length > 1 ? (
-            <div className="relative">
-              <button 
-                onClick={() => setIsSwitcherOpen(true)} 
-                className="flex items-center gap-2 outline-none"
-              >
-                <h1 className="text-[20px] font-bold text-[#101828] tracking-tight">{gym.name}</h1>
-                <Image src="/left-right-arrow.svg" width={24} height={24} alt="Switch gym" className="shrink-0" />
-              </button>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <button 
+                  onClick={() => setIsSwitcherOpen(true)} 
+                  className="flex items-center gap-2 outline-none"
+                >
+                  <h1 className="text-[20px] font-bold text-[#101828] tracking-tight">{gym.name}</h1>
+                  <Image src="/left-right-arrow.svg" width={24} height={24} alt="Switch gym" className="shrink-0" />
+                </button>
 
-              {isSwitcherOpen && (
-                <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setIsSwitcherOpen(false)}>
-                  <div className="bg-[#fafafa] w-full sm:w-[400px] rounded-t-2xl sm:rounded-2xl p-4 flex flex-col gap-4 animate-in slide-in-from-bottom-8 duration-300 shadow-2xl" onClick={e => e.stopPropagation()}>
-                    <div className="text-[16px] font-semibold text-black sm:text-center text-right w-full mb-2">Zallar</div>
-                    <div className="flex flex-col gap-2 w-full max-h-[60vh] overflow-y-auto">
-                      {adminGyms.map(g => (
-                        <button 
-                          key={g.id} 
-                          onClick={() => { router.push(`/gyms/${g.id}`); setIsSwitcherOpen(false) }} 
-                          className="w-full bg-white rounded-xl border border-[#ececed] flex items-center justify-between p-5 hover:bg-slate-50 transition-colors shadow-sm cursor-pointer"
-                        >
-                          <div className="text-[16px] font-medium text-black uppercase text-left">{g.name}</div>
-                          <div className="w-[28px] h-[28px] rounded-full border border-[#cecfd2] flex items-center justify-center relative shrink-0">
-                            {g.id === gym.id && <div className="w-3.5 h-3.5 rounded-full bg-[#00B4CC]" />}
-                          </div>
-                        </button>
-                      ))}
+                {isSwitcherOpen && (
+                  <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setIsSwitcherOpen(false)}>
+                    <div className="bg-[#fafafa] w-full sm:w-[400px] rounded-t-2xl sm:rounded-2xl p-4 flex flex-col gap-4 animate-in slide-in-from-bottom-8 duration-300 shadow-2xl" onClick={e => e.stopPropagation()}>
+                      <div className="text-[16px] font-semibold text-black sm:text-center text-right w-full mb-2">Zallar</div>
+                      <div className="flex flex-col gap-2 w-full max-h-[60vh] overflow-y-auto">
+                        {adminGyms.map(g => (
+                          <button 
+                            key={g.id} 
+                            onClick={() => { router.push(`/gyms/${g.id}`); setIsSwitcherOpen(false) }} 
+                            className="w-full bg-white rounded-xl border border-[#ececed] flex items-center justify-between p-5 hover:bg-slate-50 transition-colors shadow-sm cursor-pointer"
+                          >
+                            <div className="text-[16px] font-medium text-black uppercase text-left">{g.name}</div>
+                            <div className="w-[28px] h-[28px] rounded-full border border-[#cecfd2] flex items-center justify-center relative shrink-0">
+                              {g.id === gym.id && <div className="w-3.5 h-3.5 rounded-full bg-[#00B4CC]" />}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
+                )}
+              </div>
+              
+              <button onClick={() => setIsQrModalOpen(true)} className={styles.qrcodeParent}>
+                <div className={styles.qrcode}>
+                  <div className={styles.qrcode2}>
+                    <Image src="/QrCode.svg" className={styles.vectorIcon} width={13.8} height={13.8} sizes="100vw" alt="QR" />
+                  </div>
                 </div>
-              )}
+              </button>
             </div>
           ) : (
-            <h1 className="text-[20px] font-bold text-[#101828] tracking-tight">{gym.name}</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-[20px] font-bold text-[#101828] tracking-tight">{gym.name}</h1>
+              <button onClick={() => setIsQrModalOpen(true)} className={styles.qrcodeParent}>
+                <div className={styles.qrcode}>
+                  <div className={styles.qrcode2}>
+                    <Image src="/QrCode.svg" className={styles.vectorIcon} width={13.8} height={13.8} sizes="100vw" alt="QR" />
+                  </div>
+                </div>
+              </button>
+            </div>
           )}
         </div>
 
@@ -406,6 +466,47 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
 
       {/* TAB CONTENT (BOX) */}
       <div className="w-full min-h-[500px]">{renderTab()}</div>
+
+      {/* QR Code Modal Overlay */}
+      {isQrModalOpen && (
+        <div className={styles.modalOverlay} onClick={() => setIsQrModalOpen(false)}>
+          <div className={styles.frameParent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.frameGroup}>
+              <div className={styles.frame}>
+                <div className={styles.frame2}>
+                  <div className={styles.heading1}>
+                    <div className={styles.qrKod}>QR Kod</div>
+                  </div>
+                  <div className={styles.pencilsimple} onClick={() => setIsQrModalOpen(false)}>
+                    <div className={styles.x}>
+                      <Image src="/Sidebar/X.svg" className={styles.vectorIcon} width={15} height={15} sizes="100vw" alt="Close" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className={styles.fitclub}>{gym.name}</div>
+            </div>
+            <div className={styles.geminiGeneratedImageFsxjjjfParent}>
+              <Image 
+                src={getImageUrl(qrCodeUrl)} 
+                className={styles.geminiGeneratedImageFsxjjjfIcon} 
+                width={230} 
+                height={234} 
+                sizes="100vw" 
+                alt="QR Code" 
+              />
+              <button className={styles.button} onClick={handleExportQr}>
+                <div className={styles.exportQr}>Export QR</div>
+                <div className={styles.pencilsimple}>
+                  <div className={styles.x}>
+                    <Image src="/DownloadSimple.svg" className={styles.vectorIcon2} width={17.6} height={17.6} sizes="100vw" alt="Download" />
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

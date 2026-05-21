@@ -177,7 +177,7 @@ export function useCreateGymStep7() {
   });
 }
 
-// 7.1 Complete Gym Creation (Sequential All Steps)
+// 7.1 Complete Gym Creation (Single Request - All Steps)
 export function useCreateGymComplete() {
   const queryClient = useQueryClient();
 
@@ -191,48 +191,61 @@ export function useCreateGymComplete() {
       step6: GymCreateStep6Request;
       step7: GymCreateStep7Request;
     }) => {
-      // Step 1
-      const step1Res = await apiPost<GymStep1Response>('/admin/gyms/step1', data.step1);
-      const gymId = step1Res.gymId;
+      const formData = new FormData();
 
-      // Step 2 (Trainers)
-      const fd2 = new FormData();
-      data.step2.forEach((t: any) => {
-        fd2.append("names", t.name);
-        fd2.append("surnames", t.surname);
-        fd2.append("professionIds", String(t.professionId));
-        fd2.append("emails", t.email);
-        fd2.append("phones", t.phone);
-        fd2.append("lessonTypesPerTrainer", t.lessonTypeIds?.join(",") || "");
-        if (t.photo) fd2.append("photos", t.photo);
-      });
-      await apiPost(`/admin/gyms/${gymId}/step2`, fd2);
-
-      // Step 3 (Working Hours)
-      await apiPost(`/admin/gyms/${gymId}/step3`, data.step3);
-
-      // Step 4 (Address)
-      await apiPost(`/admin/gyms/${gymId}/step4`, {
+      // Build combined JSON payload
+      const jsonPayload = {
+        // Step 1
+        categoryId: data.step1.categoryId,
+        name: data.step1.name,
+        phone: data.step1.phone,
+        description: data.step1.description,
+        email: data.step1.email,
+        lessonTypeIds: data.step1.lessonTypeIds,
+        // Step 2 - trainer metadata only (photos are separate)
+        trainers: data.step2.map((t: any) => ({
+          name: t.name,
+          surname: t.surname,
+          professionId: t.professionId,
+          email: t.email,
+          phone: t.phone,
+          lessonTypeIds: t.lessonTypeIds?.join(",") || ""
+        })),
+        // Step 3
+        generalWorkHours: data.step3.generalWorkHours,
+        workHoursWoman: data.step3.workHoursWoman,
+        workHoursMan: data.step3.workHoursMan,
+        restDays: data.step3.restDays,
+        // Step 4
         latitude: data.step4.lat,
-        longitude: data.step4.lng
+        longitude: data.step4.lng,
+        // Step 5 - room names only (files are separate)
+        roomNames: data.step5.rooms.map((r: any) => r.name),
+        // Step 6
+        subscriptions: data.step6.subscriptions,
+        // Step 7
+        admins: data.step7.admins
+      };
+
+      formData.append("data", new Blob([JSON.stringify(jsonPayload)], { type: "application/json" }));
+
+      // Append cover photo
+      if (data.step5.cover) {
+        formData.append("coverPhoto", data.step5.cover);
+      }
+
+      // Append trainer photos (in order matching trainers array)
+      data.step2.forEach((t: any) => {
+        if (t.photo) formData.append("trainerPhotos", t.photo);
       });
 
-      // Step 5 (Images)
-      const fd5 = new FormData();
-      if (data.step5.cover) fd5.append("coverPhoto", data.step5.cover);
+      // Append room photos (in order matching roomNames array)
       data.step5.rooms.forEach((r: any) => {
-        fd5.append("roomPhotos", r.file);
-        fd5.append("roomNames", r.name);
+        formData.append("roomPhotos", r.file);
       });
-      await apiPost(`/admin/gyms/${gymId}/step5`, fd5);
 
-      // Step 6 (Plans)
-      await apiPost(`/admin/gyms/${gymId}/step6`, data.step6);
-
-      // Step 7 (Admins)
-      await apiPost(`/admin/gyms/${gymId}/step7`, data.step7);
-
-      return gymId;
+      const res = await apiPost<GymStep1Response>('/admin/gyms/create-complete', formData);
+      return res.gymId;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gyms'] });

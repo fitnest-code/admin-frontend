@@ -1,0 +1,213 @@
+.qrcodeParent {
+  	width: 32px;
+  	height: 32px;
+  	position: relative;
+  	border-radius: 8px;
+  	background-color: #e7f8f2;
+  	display: flex;
+  	align-items: center;
+  	justify-content: center;
+  	padding: 10px;
+  	box-sizing: border-box;
+    cursor: pointer;
+    border: none;
+    outline: none;
+    transition: opacity 0.2s ease;
+}
+
+.qrcodeParent:hover {
+    opacity: 0.8;
+}
+
+.qrcode {
+  	height: 20px;
+  	width: 20px;
+  	position: relative;
+  	flex-shrink: 0;
+}
+
+.qrcode2 {
+  	position: absolute;
+  	height: 100%;
+  	width: 100%;
+  	top: 0%;
+  	right: 0%;
+  	bottom: 0%;
+  	left: 0%;
+}
+
+.vectorIcon {
+  	position: absolute;
+  	height: 69%;
+  	width: 100%;
+  	top: 15.63%;
+  	right: 15.37%;
+  	bottom: 15.37%;
+  	left: 15.63%;
+  	max-width: 100%;
+  	overflow: hidden;
+  	max-height: 100%;
+}
+
+/* Modal View styles */
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.frameParent {
+  	width: 320px;
+  	position: relative;
+  	border-radius: 12px;
+  	background-color: #fff;
+  	display: flex;
+  	flex-direction: column;
+  	align-items: center;
+  	justify-content: center;
+  	padding: 24px;
+  	box-sizing: border-box;
+  	gap: 32px;
+  	text-align: left;
+  	font-size: 24px;
+  	color: #101828;
+  	font-family: 'SF Pro', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+}
+
+.frameGroup {
+  	align-self: stretch;
+  	display: flex;
+  	flex-direction: column;
+  	align-items: flex-start;
+  	gap: 8px;
+}
+
+.frame {
+  	align-self: stretch;
+  	display: flex;
+  	flex-direction: column;
+  	align-items: flex-start;
+}
+
+.frame2 {
+  	align-self: stretch;
+  	display: flex;
+  	align-items: center;
+  	gap: 24px;
+}
+
+.heading1 {
+  	height: 32px;
+  	flex: 1;
+  	position: relative;
+}
+
+.qrKod {
+  	position: absolute;
+  	top: 0px;
+  	left: 0px;
+  	line-height: 28px;
+  	font-weight: 600;
+}
+
+.pencilsimple {
+  	height: 24px;
+  	width: 24px;
+  	position: relative;
+}
+
+.x {
+  	position: absolute;
+  	height: 100%;
+  	width: 100%;
+  	top: 0%;
+  	right: 0%;
+  	bottom: 0%;
+  	left: 0%;
+    cursor: pointer;
+}
+
+.vectorIcon {
+  	position: absolute;
+  	height: 62.5%;
+  	width: 100%;
+  	top: 18.75%;
+  	right: 18.75%;
+  	bottom: 18.75%;
+  	left: 18.75%;
+  	max-width: 100%;
+  	overflow: hidden;
+  	max-height: 100%;
+}
+
+.fitclub {
+  	align-self: stretch;
+  	position: relative;
+  	font-size: 16px;
+  	line-height: 24px;
+  	color: #000;
+}
+
+.geminiGeneratedImageFsxjjjfParent {
+  	width: 269px;
+  	display: flex;
+  	flex-direction: column;
+  	align-items: center;
+  	gap: 24px;
+  	font-size: 14px;
+  	color: #00b4cc;
+}
+
+.geminiGeneratedImageFsxjjjfIcon {
+  	width: 230px;
+  	height: 234px;
+  	position: relative;
+  	object-fit: cover;
+    border-radius: 8px;
+    background-color: #fafafa;
+}
+
+.button {
+  	border-radius: 12px;
+  	background-color: #fff;
+  	border: 1px solid #00b4cc;
+  	display: flex;
+  	align-items: center;
+  	justify-content: flex-end;
+  	padding: 6px 12px 6px 24px;
+  	gap: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.button:hover {
+    background-color: #f0fbfc;
+}
+
+.exportQr {
+  	position: relative;
+  	line-height: 18px;
+    font-weight: 600;
+}
+
+.vectorIcon2 {
+  	position: absolute;
+  	height: 73.33%;
+  	width: 100%;
+  	top: 13.28%;
+  	right: 13.39%;
+  	bottom: 13.39%;
+  	left: 13.28%;
+  	max-width: 100%;
+  	overflow: hidden;
+  	max-height: 100%;
+}
