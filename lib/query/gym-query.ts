@@ -427,6 +427,14 @@ export function useDeleteGymAdmin() {
   });
 }
 
+// 17.1 Zal admini şifrəsini birbaşa yeniləmək üçün
+export function useResetGymAdminPassword() {
+  return useMutation({
+    mutationFn: ({ userId, payload }: { userId: number, payload: { newPassword: string } }) =>
+      apiPost(`/admin/users/${userId}/password/reset`, payload),
+  });
+}
+
 // 18. Zal rəylərini çəkmək üçün
 export function useGymReviews(gymId: number | string | null | undefined, params?: { status?: string, search?: string, page?: number, pageSize?: number, sort?: string }) {
   return useQuery({

@@ -503,7 +503,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
               height="320px"
               disabled={!isEditing}
               onLocationSelect={(lat, lng) => {
-                setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }));
+                setFormData(prev => ({ ...prev, latitude: lat, longitude: lng, address: "", city: "" }));
                 setIsUpdatingFromCoords(true);
               }}
             />

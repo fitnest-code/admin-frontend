@@ -211,6 +211,7 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
               setCoords({ lat, lng });
               setInputLat(lat.toString());
               setInputLng(lng.toString());
+              setSearchQuery("");
             }}
           />
         </div>

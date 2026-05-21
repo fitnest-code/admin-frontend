@@ -27,4 +27,11 @@ export const queryKeys = {
     list: (params?: Record<string, unknown>) => ['subscriptions', 'list', params ?? {}] as const,
     byId: (id: string) => ['subscriptions', id] as const,
   },
+  legal: {
+    documents: ['legal', 'documents'] as const,
+    consents: ['legal', 'consents'] as const,
+  },
+  support: {
+    contactDetails: ['support', 'contactDetails'] as const,
+  },
 } as const

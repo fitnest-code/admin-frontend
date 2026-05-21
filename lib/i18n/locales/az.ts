@@ -16,6 +16,7 @@ const az = {
     reviews: "Reytinqlər",
     settings: "Tənzimləmələr",
     faq: "FAQ",
+    legal: "Hüquqi Sənədlər",
   },
 
   // Common / Shared

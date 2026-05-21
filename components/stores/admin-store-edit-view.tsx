@@ -225,6 +225,7 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
                 onLocationSelect={(lat, lng) => {
                   setContact(prev => ({ ...prev, latitude: lat, longitude: lng }));
                   setIsUpdatingFromCoords(true);
+                  setAddress("");
                 }}
               />
             </div>
