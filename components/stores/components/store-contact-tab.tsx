@@ -5,6 +5,7 @@ import { IStoreStep2Payload } from "@/lib/types/stores";
 import * as Label from "@radix-ui/react-label";
 import { Copy, Loader2, Check } from "lucide-react";
 import { useGetAddressByCoords } from "@/lib/query/location-query";
+import LocationPickerMap from "@/components/ui/location-picker-map";
 
 interface Step2Props {
   data: IStoreStep2Payload;
@@ -159,7 +160,6 @@ export default function ContactInfoTab({ data, onChange }: Step2Props) {
 
   const displayLat = data.latitude || 40.4093;
   const displayLng = data.longitude || 49.8671;
-  const mapSrc = `https://maps.google.com/maps?q=${displayLat},${displayLng}&z=15&output=embed`;
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in duration-500">
@@ -251,16 +251,21 @@ export default function ContactInfoTab({ data, onChange }: Step2Props) {
       </div>
 
       {/* Xəritə Sahəsi */}
-      <div className="rounded-2xl overflow-hidden border border-[#ECECED] h-[350px] bg-gray-50">
-        <iframe
-          key={`${data.latitude}-${data.longitude}`}
-          src={mapSrc}
-          width="100%"
-          height="100%"
-          style={{ border: 0 }}
-          allowFullScreen
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
+      <div className="rounded-2xl overflow-hidden border border-[#ECECED] bg-gray-50">
+        <LocationPickerMap
+          lat={displayLat}
+          lng={displayLng}
+          height="350px"
+          onLocationSelect={(lat, lng) => {
+            setIsUpdatingFromCoords(true);
+            setInputLat(lat.toString());
+            setInputLng(lng.toString());
+            onChange({
+              ...data,
+              latitude: lat,
+              longitude: lng,
+            });
+          }}
         />
       </div>
 

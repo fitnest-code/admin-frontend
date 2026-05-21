@@ -5,6 +5,7 @@ import { Upload, Trash2, ChevronDown, Pencil, Loader2, Copy } from "lucide-react
 import { cn } from "@/lib/utils";
 import { useGymDetailsAdmin, useUpdateGymDetails, useCategories } from "@/lib/query/gym-query";
 import { useGetAddressByCoords } from "@/lib/query/location-query";
+import LocationPickerMap from "@/components/ui/location-picker-map";
 import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 
 interface InfoTabProps {
@@ -571,22 +572,20 @@ export function InfoTab({ gymId }: InfoTabProps) {
             </div>
           </div>
 
-          {/* Map Placeholder */}
-          <div className="self-stretch h-[240px] sm:h-[320px] rounded-xl overflow-hidden relative border border-[#ececed] bg-slate-100 flex items-center justify-center text-muted-foreground w-full mt-4">
-            {formData.latitude && formData.longitude ? (
-              <iframe 
-                src={`https://www.google.com/maps?q=${formData.latitude},${formData.longitude}&z=15&output=embed`} 
-                width="100%" 
-                height="100%" 
-                style={{ border: 0 }} 
-                allowFullScreen 
-                loading="lazy" 
-                referrerPolicy="no-referrer-when-downgrade"
-                className="grayscale-[0.2]"
-              />
-            ) : (
-              <span>Koordinatlar təyin edilməyib</span>
-            )}
+          {/* Map */}
+          <div className="self-stretch rounded-xl overflow-hidden border border-[#ececed] w-full mt-4">
+            <LocationPickerMap
+              lat={formData.latitude}
+              lng={formData.longitude}
+              height="320px"
+              disabled={!isEditing}
+              onLocationSelect={(lat, lng) => {
+                setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }));
+                setInputLat(lat.toString());
+                setInputLng(lng.toString());
+                setIsUpdatingFromCoords(true);
+              }}
+            />
           </div>
         </div>
       </div>

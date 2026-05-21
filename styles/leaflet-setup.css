@@ -1,0 +1,55 @@
+/* Leaflet default CSS */
+@import "leaflet/dist/leaflet.css";
+
+/* Custom overrides for interactive location picker */
+.leaflet-container.location-picker-map {
+  cursor: crosshair !important;
+  border-radius: 12px;
+}
+
+.leaflet-container.location-picker-map .leaflet-grab {
+  cursor: crosshair !important;
+}
+
+.leaflet-container.location-picker-map .leaflet-dragging .leaflet-grab {
+  cursor: grabbing !important;
+}
+
+.leaflet-container.location-picker-map.disabled {
+  cursor: default !important;
+  pointer-events: none;
+}
+
+.leaflet-container.location-picker-map.disabled .leaflet-grab {
+  cursor: default !important;
+}
+
+/* Map hint tooltip */
+.map-click-hint {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  color: white;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  pointer-events: none;
+  white-space: nowrap;
+  transition: opacity 0.3s ease;
+  animation: hintFadeIn 0.5s ease forwards;
+}
+
+@keyframes hintFadeIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* Fix Leaflet marker icon paths in Next.js */
+.leaflet-default-icon-path {
+  background-image: url("leaflet/dist/images/marker-icon.png");
+}

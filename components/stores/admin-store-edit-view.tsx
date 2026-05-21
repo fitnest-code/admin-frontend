@@ -26,6 +26,7 @@ import {
 } from "@/modules/stores";
 import { useSubscriptionPackages } from "@/lib/query/use-subscription-packages";
 import { useGetAddressByCoords } from "@/lib/query/location-query";
+import LocationPickerMap from "@/components/ui/location-picker-map";
 import styles from "./index.module.css";
 import { cn } from "@/lib/utils";
 
@@ -272,15 +273,18 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
               </div>
             </div>
 
-            {/* Map moved here */}
-            <div className="w-full h-[240px] rounded-xl overflow-hidden border border-[#ececed] mt-4">
-              <iframe 
-                width="100%" 
-                height="100%" 
-                style={{ border: 0 }} 
-                src={`https://www.google.com/maps?q=${contact.latitude},${contact.longitude}&z=15&output=embed`} 
-                allowFullScreen 
-                loading="lazy"
+            {/* Map */}
+            <div className="w-full rounded-xl overflow-hidden border border-[#ececed] mt-4">
+              <LocationPickerMap
+                lat={contact.latitude}
+                lng={contact.longitude}
+                height="240px"
+                onLocationSelect={(lat, lng) => {
+                  setContact(prev => ({ ...prev, latitude: lat, longitude: lng }));
+                  setInputLat(lat.toString());
+                  setInputLng(lng.toString());
+                  setIsUpdatingFromCoords(true);
+                }}
               />
             </div>
 
