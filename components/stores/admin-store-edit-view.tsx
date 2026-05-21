@@ -53,9 +53,6 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  // Local inputs state for coordinates
-  const [inputLat, setInputLat] = useState("0");
-  const [inputLng, setInputLng] = useState("0");
   const [isUpdatingFromCoords, setIsUpdatingFromCoords] = useState(false);
 
   // 1. Reverse Geocoding when coordinates are typed manually
@@ -65,26 +62,6 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
     isUpdatingFromCoords
   );
 
-  // Update inputs if contact latitude/longitude changes from data seed
-  useEffect(() => {
-    if (!isUpdatingFromCoords) {
-      setInputLat((contact.latitude || 0).toString());
-      setInputLng((contact.longitude || 0).toString());
-    }
-  }, [contact.latitude, contact.longitude, isUpdatingFromCoords]);
-
-  // Debounce coordinate changes from manual typing
-  useEffect(() => {
-    if (!isUpdatingFromCoords) return;
-    const lat = parseFloat(inputLat);
-    const lng = parseFloat(inputLng);
-    if (!isNaN(lat) && !isNaN(lng)) {
-      const timeout = setTimeout(() => {
-        setContact(prev => ({ ...prev, latitude: lat, longitude: lng }));
-      }, 800);
-      return () => clearTimeout(timeout);
-    }
-  }, [inputLat, inputLng, isUpdatingFromCoords]);
 
   // Sync reverse geocoding result to address field
   useEffect(() => {
@@ -110,8 +87,6 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
       socialUrl: data.socialUrl,
       workHours: { ...data.workHours },
     });
-    setInputLat((data.latitude || 0).toString());
-    setInputLng((data.longitude || 0).toString());
     setIsUpdatingFromCoords(false);
     setDiscounts(
       data.discounts.length > 0
@@ -240,38 +215,6 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
               />
             </div>
 
-            <div className={styles.grid2}>
-              <div className={styles.infoGroup}>
-                <label className={styles.label}>En (Latitude)</label>
-                <div className="relative">
-                  <input 
-                    type="number"
-                    className={cn(styles.input, styles.inputWithIcon)} 
-                    value={inputLat} 
-                    onChange={(e) => {
-                      setInputLat(e.target.value);
-                      setIsUpdatingFromCoords(true);
-                    }}
-                  />
-                  <Copy size={16} className={styles.inputIcon} />
-                </div>
-              </div>
-              <div className={styles.infoGroup}>
-                <label className={styles.label}>Uzunluq (Longitude)</label>
-                <div className="relative">
-                  <input 
-                    type="number"
-                    className={cn(styles.input, styles.inputWithIcon)} 
-                    value={inputLng} 
-                    onChange={(e) => {
-                      setInputLng(e.target.value);
-                      setIsUpdatingFromCoords(true);
-                    }}
-                  />
-                  <Copy size={16} className={styles.inputIcon} />
-                </div>
-              </div>
-            </div>
 
             {/* Map */}
             <div className="w-full rounded-xl overflow-hidden border border-[#ececed] mt-4">
@@ -281,8 +224,6 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
                 height="240px"
                 onLocationSelect={(lat, lng) => {
                   setContact(prev => ({ ...prev, latitude: lat, longitude: lng }));
-                  setInputLat(lat.toString());
-                  setInputLng(lng.toString());
                   setIsUpdatingFromCoords(true);
                 }}
               />

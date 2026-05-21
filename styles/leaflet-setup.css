@@ -8,6 +8,11 @@
   z-index: 0 !important;
 }
 
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 9 !important;
+}
+
 .leaflet-container.location-picker-map .leaflet-grab {
   cursor: crosshair !important;
 }
