@@ -10,8 +10,6 @@ interface AddClassTimeModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit?: (data: ClassTimeData) => void;
-  restDays?: Set<string>;
-  onRestDaysChange?: (days: Set<string>) => void;
   /** If provided, pre-fill the form for editing */
   editData?: ClassTimeData | null;
 }
@@ -43,8 +41,6 @@ export function AddClassTimeModal({
   open,
   onOpenChange,
   onSubmit,
-  restDays = new Set(),
-  onRestDaysChange,
   editData,
 }: AddClassTimeModalProps) {
   const [selectedDays, setSelectedDays] = useState<Set<string>>(new Set());
@@ -72,30 +68,12 @@ export function AddClassTimeModal({
   }, [open, editData]);
 
   const toggleDay = (key: string) => {
-    if (restDays.has(key)) return; // Can't select rest days
     setSelectedDays(prev => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
       else next.add(key);
       return next;
     });
-  };
-
-  const toggleRestDay = (key: string) => {
-    if (!onRestDaysChange) return;
-    const next = new Set(restDays);
-    if (next.has(key)) {
-      next.delete(key);
-    } else {
-      next.add(key);
-      // Remove from selected work days
-      setSelectedDays(prev => {
-        const n = new Set(prev);
-        n.delete(key);
-        return n;
-      });
-    }
-    onRestDaysChange(next);
   };
 
   const handleSubmit = () => {
@@ -158,18 +136,14 @@ export function AddClassTimeModal({
             <div className="flex items-center gap-2 sm:gap-[9px]">
               {DAY_BUTTONS.map((day) => {
                 const isSelected = selectedDays.has(day.key);
-                const isRest = restDays.has(day.key);
                 return (
                   <button
                     key={day.key}
                     type="button"
                     onClick={() => toggleDay(day.key)}
-                    disabled={isRest}
                     className={cn(
                       "flex-1 h-9 rounded-lg text-[13px] font-medium border transition-all duration-200 flex items-center justify-center gap-1.5",
-                      isRest
-                        ? "bg-slate-50 text-slate-300 border-slate-200 cursor-not-allowed"
-                        : "bg-[#F9FAFB] text-[#101828] border-[#E5E7EB] hover:border-[#00B4CC80]"
+                      "bg-[#F9FAFB] text-[#101828] border-[#E5E7EB] hover:border-[#00B4CC80]"
                     )}
                   >
                     {/* Always-visible checkbox */}
@@ -265,35 +239,6 @@ export function AddClassTimeModal({
             </div>
           </div>
 
-          {/* Rest Days Section */}
-          {onRestDaysChange && (
-            <div className="flex flex-col gap-3">
-              <h3 className="text-[14px] font-semibold text-black/60">İstirahət günü</h3>
-              <div className="flex items-center gap-2">
-                {DAY_BUTTONS.map((day) => {
-                  const isRest = restDays.has(day.key);
-                  return (
-                    <button
-                      key={day.key}
-                      type="button"
-                      onClick={() => toggleRestDay(day.key)}
-                      className={cn(
-                        "flex-1 h-[40px] rounded-lg text-[13px] font-medium border transition-all duration-200",
-                        isRest
-                          ? "border-[#F10303] text-[#F10303] bg-white"
-                          : "border-[#E5E7EB] text-[#364153] bg-[#F9FAFB] hover:border-slate-300"
-                      )}
-                    >
-                      {day.label}
-                    </button>
-                  );
-                })}
-              </div>
-              <p className="text-sm text-[#6A7282] leading-5 tracking-[-0.15px]">
-                İstirahət günündə dərs saatları əlavə edilə bilməz
-              </p>
-            </div>
-          )}
 
           {/* Submit Button */}
           <button
