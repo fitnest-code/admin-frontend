@@ -454,7 +454,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
 
               {/* Suggestions Dropdown for City */}
               {isEditing && suggestions.length > 0 && activeSearchField === "city" && (
-                <div className="absolute top-[90px] left-0 right-0 z-50 bg-white border border-[#ECECED] rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2">
+                <div className="absolute top-[90px] left-0 right-0 z-[1000] bg-white border border-[#ECECED] rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2">
                   {suggestions.map((s, i) => {
                     const text = s.addressText || s.display_name || "";
                     const shortText = text.split(',')[0] || text;
@@ -498,7 +498,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
 
               {/* Suggestions Dropdown for Address */}
               {isEditing && suggestions.length > 0 && activeSearchField === "address" && (
-                <div className="absolute top-[90px] left-0 right-0 z-50 bg-white border border-[#ECECED] rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2">
+                <div className="absolute top-[90px] left-0 right-0 z-[1000] bg-white border border-[#ECECED] rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2">
                   {suggestions.map((s, i) => {
                     const text = s.addressText || s.display_name || "";
                     const shortText = text.split(',')[0] || text;
