@@ -113,7 +113,7 @@ export function AddClassTimeModal({
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200" />
       
       {/* Modal */}
-      <div className="relative w-full max-w-[500px] bg-white rounded-2xl border border-[#ECECED] shadow-2xl animate-in fade-in zoom-in-95 duration-300 overflow-hidden">
+      <div className="relative w-full max-w-[500px] bg-white rounded-2xl border border-[#ECECED] shadow-2xl animate-in fade-in zoom-in-95 duration-300">
         <div className="p-6 flex flex-col gap-5">
           
           {/* Header */}
