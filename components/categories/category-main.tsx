@@ -3,13 +3,23 @@
 import { useState } from "react";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import CategoryModal, { CategoryFormData } from "./modals/category-add-modal";
+import { ConfirmDeleteModal } from "../gyms/modals/confirm-delete-modal";
+import { ErrorToastModal } from "./modals/error-toast-modal";
+import { SuccessAnimationModal } from "../ui/success-animation-modal";
 import { useCategories } from "@/lib/query/add-category";
 
 export default function CategoriesPage() {
-  const { categories, isLoading, createCategory, updateCategory, deleteCategory } = useCategories();
+  const { categories, isLoading, refetch, createCategory, updateCategory, deleteCategory } = useCategories();
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<any | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; message: string; type: "success" | "error" }>({
+    isOpen: false,
+    message: "",
+    type: "success",
+  });
 
   const categoryItems = Array.isArray(categories) 
     ? categories 
@@ -21,18 +31,24 @@ export default function CategoriesPage() {
         await updateCategory({ 
           id: editTarget.id, 
           name: formData.name, 
-          photo: formData.photo 
+          photo: formData.photo,
+          lessonTypeIds: formData.lessonTypeIds 
         });
+        setModalConfig({ isOpen: true, message: "Kateqoriya uğurla yeniləndi!", type: "success" });
       } else {
         await createCategory({ 
           name: formData.name, 
-          photo: formData.photo 
+          photo: formData.photo,
+          lessonTypeIds: formData.lessonTypeIds 
         });
+        setModalConfig({ isOpen: true, message: "Kateqoriya uğurla yaradıldı!", type: "success" });
       }
       setModalOpen(false);
       setEditTarget(null);
-    } catch (error) {
-      console.error("Save error:", error);
+    } catch (err: any) {
+      console.error("Save error:", err);
+      const msg = err?.response?.data?.error?.message || err?.message || "Yadda saxlamaq mümkün olmadı";
+      setModalConfig({ isOpen: true, message: msg, type: "error" });
     }
   };
 
@@ -45,62 +61,58 @@ export default function CategoriesPage() {
   }
 
   return (
-    <div className="p-8 max-w-[1200px] mx-auto">
+    <div className="w-full p-8 font-sans">
       <h1 className="text-2xl font-bold text-[#111827] mb-8">Kateqoriyalar</h1>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
-          <h2 className="text-lg font-semibold text-[#111827]">Zal kateqoriyaları</h2>
-          <div className="flex gap-4 text-sm font-medium text-gray-400">
-            <span className="text-[#00B5D1] border-b-2 border-[#00B5D1] pb-1 cursor-pointer">Az</span>
-            <span className="hover:text-gray-600 cursor-pointer">Ru</span>
-            <span className="hover:text-gray-600 cursor-pointer">En</span>
+      <div className="w-full rounded-[12px] bg-white border border-[#ececed] flex flex-col items-start px-7 py-5">
+        <div className="w-full border-b border-[#ececed] flex items-center justify-between pb-1 gap-5">
+          <h2 className="text-[20px] font-semibold leading-[30px] text-black">Zal kateqoriyaları</h2>
+          <div className="flex items-center gap-[34px] text-center text-[16px] font-medium text-[#717182]">
+            <div className="w-[26px] border-b-2 border-[#00b4cc] flex flex-col items-center justify-center pb-1 text-[#00b4cc] cursor-pointer">Az</div>
+            <div className="w-[26px] flex flex-col items-center justify-center pb-1 cursor-pointer hover:text-gray-600">Ru</div>
+            <div className="w-[26px] flex flex-col items-center justify-center pb-1 cursor-pointer hover:text-gray-600">En</div>
           </div>
         </div>
 
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="text-md font-semibold text-[#111827]">Mövcud kateqoriyalar</h3>
+        <div className="w-full flex flex-col items-start gap-8 mt-6">
+          <div className="w-full flex items-center justify-between gap-5">
+            <h3 className="w-[313px] text-[20px] font-semibold leading-[30px] text-black">Mövcud kateqoriyalar</h3>
             <button
               onClick={() => {
                 setEditTarget(null);
                 setModalOpen(true);
               }}
-              className="flex items-center gap-2 bg-[#00B5D1] hover:bg-[#00a4bd] transition-colors text-white px-5 py-2.5 rounded-lg text-[14px] font-medium"
+              className="h-12 w-[193px] rounded-[10px] bg-[#00b4cc] flex items-center justify-center px-4 py-2 gap-2 text-[16px] font-medium text-white hover:opacity-90 transition-opacity"
             >
-              <Plus size={18} /> Yeni kateqoriya
+              <Plus size={24} /> Yeni kateqoriya
             </button>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+          <div className="w-full flex items-start flex-wrap content-start gap-4">
             {categoryItems?.map((cat: any) => (
-              <div key={cat.id} className="flex flex-col gap-3">
-                <div className="relative rounded-lg overflow-hidden bg-gray-100 aspect-square border border-gray-100">
-                  <img 
-                    src={cat.photoUrl} 
-                    alt={cat.name} 
-                    className="w-full h-full object-cover" 
-                  />
-                  
-                  {/* Statik Düymələr (Həmişə görünən) */}
-                  <div className="absolute top-2 right-2 flex gap-1.5">
+              <div key={cat.id} className="w-[180px] h-[224px] flex flex-col items-start gap-3">
+                <div 
+                  className="w-full h-[180px] rounded-[16px] flex items-start justify-end p-3 bg-cover bg-center bg-no-repeat bg-gray-100"
+                  style={{ backgroundImage: `url(${cat.photoUrl})` }}
+                >
+                  <div className="flex items-center gap-[9px]">
                     <button 
-                       onClick={() => { setEditTarget(cat); setModalOpen(true); }} 
-                       className="p-1.5 bg-white/90 backdrop-blur-sm rounded-md shadow-sm hover:bg-white transition-colors"
+                      onClick={() => { setEditTarget(cat); setModalOpen(true); }}
+                      className="rounded-[50px] bg-white flex items-center justify-center p-1.5 shadow-sm hover:bg-gray-50 transition-colors"
                     >
-                      <Pencil size={14} className="text-gray-700" />
+                      <Pencil size={16} className="text-gray-700" />
                     </button>
                     <button 
-                       onClick={() => setDeleteTarget(cat)} 
-                       className="p-1.5 bg-white/90 backdrop-blur-sm rounded-md shadow-sm hover:bg-red-50 transition-colors"
+                      onClick={() => setDeleteTarget(cat)}
+                      className="rounded-[50px] bg-white flex items-center justify-center p-1.5 shadow-sm hover:bg-red-50 transition-colors"
                     >
-                      <Trash2 size={14} className="text-red-500" />
+                      <Trash2 size={16} className="text-red-500" />
                     </button>
                   </div>
                 </div>
                 
-                <div className="px-3 py-2 bg-[#F9FAFB] border border-gray-100 rounded-md">
-                  <p className="text-gray-500 text-[13px] truncate">{cat.name}</p>
+                <div className="w-full h-8 rounded-lg bg-[#f9fafb] border border-[#e5e7eb] flex items-center px-3 py-1">
+                  <span className="text-[14px] text-[#717182] font-medium truncate tracking-[-0.15px]">{cat.name}</span>
                 </div>
               </div>
             ))}
@@ -115,33 +127,40 @@ export default function CategoriesPage() {
           if (!open) setEditTarget(null);
         }}
         onSave={handleSave}
-        initialData={editTarget ? { name: editTarget.name, image: editTarget.photoUrl } : undefined}
+        initialData={editTarget ? { name: editTarget.name, image: editTarget.photoUrl, lessonTypes: editTarget.lessonTypes } : undefined}
         mode={editTarget ? "edit" : "create"}
       />
 
       {deleteTarget && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDeleteTarget(null)} />
-          <div className="relative bg-white p-6 rounded-xl w-full max-w-[340px] shadow-2xl text-center">
-            <h3 className="text-lg font-bold mb-2 text-gray-900">Silmək istəyirsiniz?</h3>
-            <p className="text-sm text-gray-500 mb-6 font-normal italic">
-              "{deleteTarget.name}" kateqoriyası silinəcək.
-            </p>
-            <div className="flex gap-3">
-              <button onClick={() => setDeleteTarget(null)} className="flex-1 h-10 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50">Ləğv et</button>
-              <button 
-                onClick={async () => { 
-                  await deleteCategory(deleteTarget.id); 
-                  setDeleteTarget(null); 
-                }} 
-                className="flex-1 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors"
-              >
-                Sil
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDeleteModal
+          name={deleteTarget.name}
+          isLoading={isDeleting}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={async () => {
+            try {
+              setIsDeleting(true);
+              await deleteCategory(deleteTarget.id);
+              await refetch();
+              setDeleteTarget(null);
+              setModalConfig({ isOpen: true, message: "Kateqoriya uğurla silindi!", type: "success" });
+            } catch (err: any) {
+              console.error("Delete error:", err);
+              const msg = err?.response?.data?.error?.message || err?.error?.message || err?.message || "Kateqoriya istifadə olunur və silinə bilməz";
+              setDeleteTarget(null);
+              setModalConfig({ isOpen: true, message: msg, type: "error" });
+            } finally {
+              setIsDeleting(false);
+            }
+          }}
+        />
       )}
+
+      <SuccessAnimationModal 
+        isOpen={modalConfig.isOpen} 
+        onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))} 
+        message={modalConfig.message}
+        type={modalConfig.type}
+      />
     </div>
   );
 }

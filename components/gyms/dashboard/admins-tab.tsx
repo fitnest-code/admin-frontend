@@ -1,151 +1,276 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2, X, Eye, EyeOff, Loader2 } from "lucide-react";
+import Image from "next/image";
+import { X, Loader2, UserPlus, User, Key, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useGymStore, LocalAdmin } from "@/lib/store/gym-store";
-import { useCreateGymStep7 } from "@/lib/query/gym-query";
+import { useGymStore } from "@/lib/store/gym-store";
+import { useGymAdmins, useAddGymAdmin, useDeleteGymAdmin } from "@/lib/query/gym-query";
 import { toast } from "sonner";
-
-const ROLE_STYLES = {
-  "Super admin": "bg-[#00B4CC] text-white",
-};
-
-const EMPTY_FORM: LocalAdmin = { firstName: "", lastName: "", phone: "", email: "", password: "" };
+import { ConfirmDeleteModal } from "../modals/confirm-delete-modal";
+import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 
 export function AdminsTab() {
-  const { gymId, step7Admins: admins, addStep7Admin, removeStep7Admin } = useGymStore();
+  const { gymId } = useGymStore();
+  const { data: admins, isLoading } = useGymAdmins(gymId);
+  const { mutate: addAdmin, isPending: isAdding } = useAddGymAdmin();
+  const { mutate: deleteAdmin, isPending: isDeletingAdmin } = useDeleteGymAdmin();
+
   const [modalOpen, setModalOpen] = useState(false);
-  const [form, setForm] = useState<LocalAdmin>(EMPTY_FORM);
-  const [showPwd, setShowPwd] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [deleteAdminId, setDeleteAdminId] = useState<number | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [form, setForm] = useState({
+    name: "",
+    surname: "",
+    phoneNumber: "",
+    email: "",
+    password: "",
+  });
 
-  const { mutate: createStep7, isPending: isCompleting } = useCreateGymStep7();
-
-  function handleAddAdmin() {
-    if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim() || !form.password.trim()) {
-      return toast.error("Zəhmət olmasa bütün xanaları doldurun");
-    }
-    addStep7Admin({ ...form });
-    setForm(EMPTY_FORM);
-    setModalOpen(false);
-  }
-
-  function handleSave() {
-    if (!gymId) return toast.error("Zal ID tapılmadı");
+  const handleAdd = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!gymId) return;
     
-    const payload = {
-      admins: admins.map((a) => ({
-        name: a.firstName,
-        surname: a.lastName,
-        phoneNumber: a.phone,
-        email: a.email,
-        password: a.password,
-      })),
-    };
+    if (!form.name || !form.surname || !form.email || !form.password) {
+      return toast.error("Zəhmət olmasa bütün vacib xanaları doldurun");
+    }
 
-    createStep7(
-      { id: Number(gymId), payload },
+    addAdmin(
+      { gymId: Number(gymId), payload: form },
       {
         onSuccess: () => {
-          toast.success("Admin məlumatları uğurla yeniləndi");
+          setModalOpen(false);
+          setForm({ name: "", surname: "", phoneNumber: "", email: "", password: "" });
+          setShowSuccessModal(true);
         },
         onError: (err: any) => {
-          toast.error(err?.message || "Xəta baş verdi");
-        },
+          toast.error(err?.response?.data?.message || "Xəta baş verdi");
+        }
       }
+    );
+  };
+
+  const handleDelete = () => {
+    if (!gymId || !deleteAdminId) return;
+    deleteAdmin({ gymId: Number(gymId), adminId: deleteAdminId }, {
+      onSuccess: () => {
+        setDeleteAdminId(null);
+        setShowSuccessModal(true);
+      }
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 py-20 flex flex-col justify-center items-center text-slate-400 gap-3">
+        <Loader2 className="animate-spin" size={32} />
+        <span className="font-medium font-sans">Adminlər yüklənir...</span>
+      </div>
     );
   }
 
-  function update(field: keyof LocalAdmin, val: string) {
-    setForm((f) => ({ ...f, [field]: val }));
-  }
-
   return (
-    <div className="flex flex-col gap-5 py-4">
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-        <h3 className="mb-6 text-sm font-bold text-foreground">Zalı idarə edən admin</h3>
-
-        <div className="overflow-hidden rounded-xl border border-border shadow-sm">
-          <div className="grid grid-cols-[140px_100px_1.5fr_1.2fr_1.5fr_40px] gap-3 border-b border-border bg-[#00B4CC14] px-4 py-3">
-            <span className="text-[11px] font-bold text-foreground uppercase tracking-wider">Rol</span>
-            <span className="text-[11px] font-bold text-foreground uppercase tracking-wider">ID</span>
-            <span className="text-[11px] font-bold text-foreground uppercase tracking-wider">Ad / Soyad</span>
-            <span className="text-[11px] font-bold text-foreground uppercase tracking-wider">Telefon</span>
-            <span className="text-[11px] font-bold text-foreground uppercase tracking-wider">E-poçt</span>
-            <span />
-          </div>
-
-          {admins.length === 0 ? (
-            <div className="flex items-center justify-center py-16 text-sm text-muted-foreground bg-secondary/10">
-              Admin əlavə edilməyib
-            </div>
-          ) : (
-            admins.map((admin, index) => (
-              <div key={index} className="grid grid-cols-[140px_100px_1.5fr_1.2fr_1.5fr_40px] items-center gap-3 border-b border-border px-4 py-3.5 last:border-0 hover:bg-secondary/20 transition-colors">
-                <div>
-                  <span className={cn("inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase tracking-tight", ROLE_STYLES["Super admin"])}>
-                    <span className="h-1.5 w-1.5 rounded-full bg-white" />
-                    Super admin
-                  </span>
-                </div>
-                <span className="text-sm text-muted-foreground font-mono">#00127</span>
-                <span className="text-sm font-medium text-foreground">{admin.firstName} {admin.lastName}</span>
-                <span className="text-sm text-muted-foreground">{admin.phone || "+994 00 000 00 00"}</span>
-                <span className="text-sm text-muted-foreground">{admin.email}</span>
-                <button onClick={() => removeStep7Admin(index)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-red-50 hover:text-red-500 transition-all">
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            ))
-          )}
+    <div className="flex flex-col gap-6 py-2 font-sans text-black">
+      {/* Main Container */}
+      <div className="w-full bg-white rounded-[12px] border border-[#ececed] flex flex-col items-start p-5 gap-7">
+        
+        {/* Title Section */}
+        <div className="w-full border-b border-[#ececed] flex items-center justify-between pb-1">
+          <h2 className="text-[20px] font-semibold leading-[30px] text-black">Zalı idarə edən admin</h2>
         </div>
 
-        <div className="mt-6 flex justify-end">
-          <button onClick={() => setModalOpen(true)} className="flex items-center gap-2 rounded-xl bg-[#00B4CC] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#008799] transition-all shadow-lg shadow-[#00B4CC20]">
-            Admin əlavə et
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-base font-bold leading-none">+</span>
+        {/* Table Section */}
+        <div className="w-full flex flex-col items-start">
+          {/* Table Header */}
+          <div className="w-full grid grid-cols-[1.5fr_1fr_2fr_2fr_2fr_40px] items-center bg-[#00b4cc]/15 border border-[#cecfd2] rounded-t-[12px] px-[20px] py-5 gap-4">
+            <div className="text-[16px] leading-[24px] font-normal text-black">Rol</div>
+            <div className="text-[16px] leading-[24px] font-normal text-black">ID</div>
+            <div className="text-[16px] leading-[24px] font-normal text-black">Ad / Soyad</div>
+            <div className="text-[16px] leading-[24px] font-normal text-black">Telefon</div>
+            <div className="text-[16px] leading-[24px] font-normal text-black">E-poçt</div>
+            <div className="w-10"></div>
+          </div>
+
+          {/* Table Body */}
+          <div className="w-full flex flex-col">
+            {admins?.length === 0 ? (
+              <div className="w-full bg-white border-x border-b border-[#ececed] p-10 text-center text-slate-400">
+                Admin tapılmadı
+              </div>
+            ) : (
+              admins?.map((admin: any) => (
+                <div key={admin.id} className="w-full grid grid-cols-[1.5fr_1fr_2fr_2fr_2fr_40px] items-center bg-white border-x border-b border-[#ececed] px-[20px] py-5 gap-4 hover:bg-slate-50 transition-colors">
+                  {/* Role Badge */}
+                  <div>
+                    <div className="inline-flex w-[142px] items-center justify-center bg-[#00b4cc] border border-[#ececed] rounded-[4px] px-2 py-1 gap-2 text-white">
+                      <div className="w-5 h-5 relative shrink-0">
+                        <Image 
+                          src={admin.role === "Super admin" ? "/superAdmin.svg" : "/admin.svg"} 
+                          fill 
+                          alt="Role" 
+                          className={cn("object-contain", admin.role === "Super admin" ? "p-[2px]" : "p-[1px]")}
+                        />
+                      </div>
+                      <span className="text-[16px] font-medium leading-[24px] truncate">{admin.role}</span>
+                    </div>
+                  </div>
+
+                  {/* ID */}
+                  <div className="text-[16px] leading-[24px]">{String(admin.id).padStart(6, '0')}</div>
+
+                  {/* Name */}
+                  <div className="text-[16px] leading-[24px] truncate">{admin.name} {admin.surname}</div>
+
+                  {/* Phone */}
+                  <div className="text-[16px] leading-[24px] truncate">{admin.phone || "+994 00 000 00 00"}</div>
+
+                  {/* Email */}
+                  <div className="text-[16px] leading-[24px] truncate">{admin.email}</div>
+
+                  {/* Delete Action */}
+                  <div className="flex justify-center">
+                    <button 
+                      onClick={() => setDeleteAdminId(admin.id)}
+                      className="w-5 h-5 flex items-center justify-center hover:opacity-70 transition-opacity"
+                    >
+                      <Image src="/trash.png" width={20} height={20} alt="Delete" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Footer Action */}
+        <div className="w-full flex justify-end mt-1">
+          <button 
+            onClick={() => setModalOpen(true)}
+            className="w-[193px] h-12 bg-[#00b4cc] rounded-[12px] flex items-center justify-end px-3 gap-3 text-[#fafafa] hover:opacity-90 transition-opacity"
+          >
+            <span className="text-[16px] leading-[24px]">Admin əlavə et</span>
+            <div className="w-6 h-6 flex items-center justify-center">
+              <Image src="/trainer-add.svg" width={24} height={24} alt="Add" />
+            </div>
           </button>
         </div>
       </div>
 
-      <div className="flex justify-end mt-4">
-        <button onClick={handleSave} disabled={isCompleting} className="px-10 py-3.5 rounded-xl bg-muted text-muted-foreground font-bold transition-all hover:bg-secondary/50 flex items-center gap-2">
-          {isCompleting ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
-          Yadda saxla
-        </button>
-      </div>
-
+      {/* Add Admin Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setModalOpen(false)}>
-          <div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-2xl flex flex-col gap-4" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-foreground">Admin əlavə et</h2>
-              <button onClick={() => setModalOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors"><X size={16} /></button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4 font-sans text-black">
+          <div className="w-full max-w-[500px] bg-white rounded-[14px] shadow-2xl flex flex-col animate-in fade-in zoom-in duration-200 overflow-hidden">
+            {/* Modal Header */}
+            <div className="px-6 py-6 border-b border-black/10 flex items-center justify-between">
+              <h2 className="text-[18px] font-bold text-[#101828]">Yeni Admin Əlavə Et</h2>
+              <button 
+                onClick={() => setModalOpen(false)}
+                className="w-6 h-6 flex items-center justify-center hover:bg-slate-100 rounded-md transition-colors"
+              >
+                 <X size={16} className="text-[#101828]" />
+              </button>
             </div>
-            <ModalField label="Ad" value={form.firstName} onChange={(v) => update("firstName", v)} placeholder="Adminin adı" />
-            <ModalField label="Soyad" value={form.lastName} onChange={(v) => update("lastName", v)} placeholder="Adminin soyadı" />
-            <ModalField label="Telefon" value={form.phone} onChange={(v) => update("phone", v)} placeholder="0501234567" />
-            <ModalField label="Email" value={form.email} onChange={(v) => update("email", v)} placeholder="Adminin emaili" />
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Şifrə</label>
-              <div className="relative">
-                <input type={showPwd ? "text" : "password"} value={form.password} onChange={(e) => update("password", e.target.value)} placeholder="············" className="w-full rounded-lg border border-border bg-background px-3 py-2.5 pr-10 text-sm outline-none focus:border-[#00B4CC] transition-colors" />
-                <button type="button" onClick={() => setShowPwd((p) => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">{showPwd ? <EyeOff size={15} /> : <Eye size={15} />}</button>
+
+            <form onSubmit={handleAdd} className="p-6 flex flex-col gap-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[14px] font-medium text-[#364153]">Ad</label>
+                  <input 
+                    type="text"
+                    required
+                    value={form.name}
+                    onChange={e => setForm({...form, name: e.target.value})}
+                    className="w-full h-11 px-4 bg-white border border-[#dddcdc] rounded-xl outline-none focus:border-[#00b4cc] text-[14px]"
+                    placeholder="Məs: Kamal"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[14px] font-medium text-[#364153]">Soyad</label>
+                  <input 
+                    type="text"
+                    required
+                    value={form.surname}
+                    onChange={e => setForm({...form, surname: e.target.value})}
+                    className="w-full h-11 px-4 bg-white border border-[#dddcdc] rounded-xl outline-none focus:border-[#00b4cc] text-[14px]"
+                    placeholder="Məs: Aliyev"
+                  />
+                </div>
               </div>
-            </div>
-            <button onClick={handleAddAdmin} className="mt-1 w-full rounded-lg bg-[#00B4CC] py-2.5 text-sm font-semibold text-white hover:bg-[#008799] transition-colors">Yadda saxla</button>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[14px] font-medium text-[#364153]">E-poçt</label>
+                <input 
+                  type="email"
+                  required
+                  value={form.email}
+                  onChange={e => setForm({...form, email: e.target.value})}
+                  className="w-full h-11 px-4 bg-white border border-[#dddcdc] rounded-xl outline-none focus:border-[#00b4cc] text-[14px]"
+                  placeholder="admin@mail.com"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[14px] font-medium text-[#364153]">Telefon nömrəsi</label>
+                <input 
+                  type="text"
+                  value={form.phoneNumber}
+                  onChange={e => setForm({...form, phoneNumber: e.target.value})}
+                  className="w-full h-11 px-4 bg-white border border-[#dddcdc] rounded-xl outline-none focus:border-[#00b4cc] text-[14px]"
+                  placeholder="+994 00 000 00 00"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[14px] font-medium text-[#364153]">Şifrə</label>
+                <div className="relative">
+                  <input 
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={form.password}
+                    onChange={e => setForm({...form, password: e.target.value})}
+                    className="w-full h-11 px-4 bg-white border border-[#dddcdc] rounded-xl outline-none focus:border-[#00b4cc] text-[14px]"
+                    placeholder="••••••••"
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#00b4cc]"
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 mt-2">
+                <button 
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  className="flex-1 h-12 rounded-[10px] border border-[#00b4cc] text-black text-[16px] font-medium hover:bg-slate-50"
+                >
+                  Bağla
+                </button>
+                <button 
+                  type="submit"
+                  disabled={isAdding}
+                  className="flex-1 h-12 bg-[#00b4cc] text-white rounded-[10px] font-bold text-[16px] flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50"
+                >
+                  {isAdding ? <Loader2 size={20} className="animate-spin" /> : "Təsdiq et"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function ModalField({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-medium text-muted-foreground">{label}</label>
-      <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-[#00B4CC] transition-colors" />
+      {deleteAdminId !== null && (
+        <ConfirmDeleteModal
+          name={admins?.find((a: any) => a.id === deleteAdminId)?.name || "Admin"}
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteAdminId(null)}
+          isLoading={isDeletingAdmin}
+        />
+      )}
+      <SuccessAnimationModal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)} />
     </div>
   );
 }

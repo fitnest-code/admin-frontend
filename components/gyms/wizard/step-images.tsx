@@ -5,14 +5,14 @@ import * as Tabs from "@radix-ui/react-tabs";
 import { Loader2, Upload, X, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useGymStore } from "@/lib/store/gym-store";
-import { useAddGymImages } from "@/lib/query/gym-images";
+import { useValidateGymStep5 } from "@/lib/query/gym-query";
 
 type Lang = "Az" | "Ru" | "En";
 
 const labels: Record<Lang, any> = {
-  Az: { title: "Zal məlumatları", cover: "Cover Şəkil", others: "Digər şəkillər", uploadCover: "Upload cover", upload: "Upload", next: "Növbəti", namePlaceholder: "Ad (məs: SPA)" },
-  Ru: { title: "Данные зала", cover: "Обложка", others: "Другие фото", uploadCover: "Загрузить обложку", upload: "Загрузить", next: "Далее", namePlaceholder: "Название (напр: SPA)" },
-  En: { title: "Gym Details", cover: "Cover Photo", others: "Other Photos", uploadCover: "Upload cover", upload: "Upload", next: "Next", namePlaceholder: "Name (e.g. SPA)" },
+  Az: { title: "Zal məlumatları", cover: "Cover Şəkil", others: "Digər şəkillər", uploadCover: "Upload cover", upload: "Upload", save: "Yadda saxla", next: "Növbəti", namePlaceholder: "Ad (məs: SPA)" },
+  Ru: { title: "Данные зала", cover: "Обложка", others: "Другие фото", uploadCover: "Загрузить обложку", upload: "Загрузить", save: "Сохранить", next: "Далее", namePlaceholder: "Название (напр: SPA)" },
+  En: { title: "Gym Details", cover: "Cover Photo", others: "Other Photos", uploadCover: "Upload cover", upload: "Upload", save: "Save", next: "Next", namePlaceholder: "Name (e.g. SPA)" },
 };
 
 interface RoomPhotoState {
@@ -23,42 +23,100 @@ interface RoomPhotoState {
 }
 
 export function StepImages({ onNext }: { onNext?: () => void }) {
+  const { step5Photos, setStep5Photos } = useGymStore();
   const [mounted, setMounted] = useState(false);
   const [lang, setLang] = useState<Lang>("Az");
 
-  const [coverPhoto, setCoverPhoto] = useState<File | null>(null);
-  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [coverPhoto, setCoverPhoto] = useState<File | null>(step5Photos?.cover || null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(step5Photos?.cover ? URL.createObjectURL(step5Photos.cover) : null);
 
-  const [roomPhotos, setRoomPhotos] = useState<RoomPhotoState[]>(
-    Array.from({ length: 9 }).map((_, i) => ({ id: `rp-${i}`, photo: null, name: "", previewUrl: null }))
-  );
+  const initialRoomPhotos = step5Photos 
+    ? Array.from({ length: 9 }).map((_, i) => {
+        const p = step5Photos.rooms[i];
+        return p ? { id: `rp-${i}`, photo: p.file, name: p.name, previewUrl: URL.createObjectURL(p.file) } : { id: `rp-${i}`, photo: null, name: "", previewUrl: null };
+      })
+    : Array.from({ length: 9 }).map((_, i) => ({ id: `rp-${i}`, photo: null, name: "", previewUrl: null }));
+
+  const [roomPhotos, setRoomPhotos] = useState<RoomPhotoState[]>(initialRoomPhotos);
 
   const coverInputRef = useRef<HTMLInputElement>(null);
   const roomInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const { gymId } = useGymStore();
-  const { mutateAsync, isPending } = useAddGymImages();
+  const validateStep5 = useValidateGymStep5();
 
   useEffect(() => { setMounted(true); }, []);
 
   const t = labels[lang];
 
-  const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Client-side image compression helper utilizing standard HTML5 Canvas
+  const compressImage = (file: File, maxWidth = 1024, maxHeight = 768, quality = 0.7): Promise<File> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width *= ratio;
+          height *= ratio;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(file);
+          return;
+        }
+        
+        // If converting PNG with transparent background to JPEG, fill with white background first
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Always encode as image/jpeg to ensure quality reduction is applied lossily
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              // Replace extension with .jpg if needed
+              const newName = file.name.replace(/\.[^/.]+$/, ".jpg");
+              const compressedFile = new File([blob], newName, {
+                type: "image/jpeg",
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            } else {
+              resolve(file);
+            }
+          },
+          "image/jpeg",
+          quality
+        );
+      };
+      img.onerror = () => resolve(file);
+    });
+  };
+
+  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 50 * 1024 * 1024) return toast.error("Şəkil ölçüsü max 50MB ola bilər");
-      setCoverPhoto(file);
-      setCoverPreview(URL.createObjectURL(file));
+      // Aggressively compress cover images to guarantee sub-1MB multi-file payload submission
+      const compressed = await compressImage(file, 1200, 800, 0.72);
+      setCoverPhoto(compressed);
+      setCoverPreview(URL.createObjectURL(compressed));
     }
   };
 
-  const handleRoomPhotoChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleRoomPhotoChange = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 50 * 1024 * 1024) return toast.error("Şəkil ölçüsü max 50MB ola bilər");
+      // Optimize room images to compact resolution ensuring fast uploads and compliance with remote gateway buffers
+      const compressed = await compressImage(file, 800, 600, 0.65);
       setRoomPhotos(prev => {
         const newPhotos = [...prev];
-        newPhotos[index] = { ...newPhotos[index], photo: file, previewUrl: URL.createObjectURL(file) };
+        newPhotos[index] = { ...newPhotos[index], photo: compressed, previewUrl: URL.createObjectURL(compressed) };
         return newPhotos;
       });
     }
@@ -84,7 +142,6 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
   const activePhotosCount = roomPhotos.filter(p => p.photo).length;
 
   const handleNext = async () => {
-    if (!gymId) return toast.error("Zal ID tapılmadı");
     if (!coverPhoto) return toast.error("Zəhmət olmasa Cover Şəkil yükləyin");
 
     const validRoomPhotos = roomPhotos.filter(p => p.photo !== null);
@@ -96,23 +153,32 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
     }
 
     try {
-      await mutateAsync({
-        gymId: Number(gymId),
-        coverPhoto,
-        roomPhotos: validRoomPhotos.map(p => ({ photo: p.photo!, name: p.name.trim() }))
+      const formData = new FormData();
+      formData.append("coverPhoto", coverPhoto);
+      validRoomPhotos.forEach(p => {
+        formData.append("roomPhotos", p.photo!);
+        formData.append("roomNames", p.name.trim());
       });
-      toast.success("Şəkillər uğurla yadda saxlanıldı");
+
+      await validateStep5.mutateAsync(formData);
+      
+      setStep5Photos({
+        cover: coverPhoto,
+        rooms: validRoomPhotos.map(p => ({ name: p.name.trim(), file: p.photo! }))
+      });
+
       onNext?.();
     } catch (err: any) {
-      toast.error(err.message || "Xəta baş verdi");
+      toast.error(err?.response?.data?.message || err.message || "Xəta baş verdi");
     }
   };
+
+  const isPending = validateStep5.isPending;
 
   if (!mounted) return null;
 
   return (
-    <div className="w-full flex justify-center py-6">
-      <div className="bg-white rounded-2xl border border-[#ECECED] w-full max-w-[783px] p-7 flex flex-col gap-6 shadow-sm">
+    <div className="w-full bg-white rounded-[32px] border border-[#ECECED] p-10 flex flex-col gap-8 shadow-sm">
 
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -219,19 +285,18 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
           </div>
         </div>
 
-        {/* Action Button */}
-        <div className="flex gap-4 mt-6">
+        {/* Footer Buttons */}
+        <div className="flex justify-end items-center gap-6 pt-6 border-t border-slate-100">
           <button
             type="button"
             disabled={isPending}
             onClick={handleNext}
-            className="flex-1 py-4 rounded-xl bg-[#00B4D8] text-white text-sm font-bold hover:bg-[#0096B4] flex items-center justify-center transition shadow-lg shadow-cyan-100 disabled:opacity-70"
+            className="w-[280px] h-[52px] rounded-xl bg-[#00B4CC] text-white font-bold text-base hover:bg-[#009DB3] transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-[#00B4CC20]"
           >
-            {isPending ? <Loader2 className="animate-spin" size={20} /> : t.next}
+            {isPending ? <Loader2 className="animate-spin" size={24} /> : t.next}
           </button>
         </div>
 
-      </div>
     </div>
   );
 }

@@ -8,6 +8,8 @@ import { useGymStore } from "@/lib/store/gym-store";
 import { useSupportedServices, useCreateGymStep6, useCreateSupportedService, useDeleteSupportedService, useUpdateGymSubscriptions, useGymSubscriptionsAdmin } from "@/lib/query/gym-query";
 import { toast } from "sonner";
 import { ServiceSelectorModal } from "../modals/service-selector-modal";
+import { ConfirmDeleteModal } from "../modals/confirm-delete-modal";
+import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 
 type Package = "Bronze" | "Silver" | "Gold" | "Platinum";
 
@@ -28,6 +30,7 @@ const DEFAULT_SERVICES = [
 ];
 
 export function PlansTab({ gym }: { gym?: any }) {
+  const { gymId } = useGymStore();
   const { data: adminSubs, isLoading: subsLoading } = useGymSubscriptionsAdmin(gymId);
   const { data: allServices } = useSupportedServices(gymId ? Number(gymId) : undefined);
   const createServiceMutation = useCreateSupportedService();
@@ -66,6 +69,9 @@ export function PlansTab({ gym }: { gym?: any }) {
   const [prices, setPrices] = useState<Record<Package, string>>(initialData.prices);
   const [packageServices, setPackageServices] = useState<Record<Package, string[]>>(initialData.services);
   const [hasSynced, setHasSynced] = useState(false);
+  const [pendingService, setPendingService] = useState<string | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [deleteServiceId, setDeleteServiceId] = useState<number | null>(null);
 
   // Sync state when gym data arrives
   useEffect(() => {
@@ -109,19 +115,22 @@ export function PlansTab({ gym }: { gym?: any }) {
       });
 
       setPendingService(null);
-      toast.success("Xidmət yaradıldı");
+      setShowSuccessModal(true);
     } catch (err: any) {
       toast.error(err?.message || "Xidmət yaradıla bilmədi");
     }
   };
 
-  const handleDeleteFromGym = async (id: number, e: React.MouseEvent) => {
-    e.stopPropagation(); // Kartın kliklənməsini dayandır (toggle baş verməsin)
-    if (!confirm("Bu xidməti bütünlüklə silmək istədiyinizə əminsiniz?")) return;
+
+
+  const handleDeleteFromGym = async (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!deleteServiceId) return;
 
     try {
-      await deleteServiceMutation.mutateAsync(id);
-      toast.success("Xidmət idman zalından silindi");
+      await deleteServiceMutation.mutateAsync(deleteServiceId);
+      setDeleteServiceId(null);
+      setShowSuccessModal(true);
     } catch (err: any) {
       toast.error(err?.message || "Xidmət silinərkən xəta baş verdi");
     }
@@ -187,7 +196,7 @@ export function PlansTab({ gym }: { gym?: any }) {
       payload: { subscriptions }
     }, {
       onSuccess: () => {
-        toast.success("Abunəlik məlumatları uğurla yeniləndi");
+        setShowSuccessModal(true);
       },
       onError: (err: any) => {
         toast.error(err?.response?.data?.message || err?.message || "Xəta baş verdi");
@@ -267,9 +276,9 @@ export function PlansTab({ gym }: { gym?: any }) {
           <div className="h-[60px] w-full max-w-[320px] bg-[#fafafa] border border-[#ececed] rounded-[12px] flex items-center px-5">
             <input
               type="number"
-              value={prices[activePackage]}
+              value={prices[activePackage] || ""}
               onChange={(e) => setPrices(prev => ({ ...prev, [activePackage]: e.target.value }))}
-              className="bg-transparent w-full h-full outline-none text-[18px] font-semibold"
+              className="bg-transparent w-full h-full outline-none text-[18px] font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               placeholder="0.00"
             />
             <span className="text-black/40 font-bold ml-2">AZN</span>
@@ -279,24 +288,46 @@ export function PlansTab({ gym }: { gym?: any }) {
 
       {/* 3. Services Section */}
       <div className="bg-white rounded-[12px] border border-[#ececed] p-7 flex flex-col gap-8 shadow-sm">
-        <div className="flex items-center justify-between border-b border-[#ececed] pb-2">
+        <div className="border-b border-[#ececed] pb-1">
           <h2 className="text-[20px] font-semibold leading-[30px]">
             {activePackage} paketə daxil olan xidmətlər
           </h2>
-          <button
-            onClick={() => setPendingService("")}
-            className="h-[48px] w-[193px] bg-[#00B4CC] rounded-[12px] flex items-center justify-end px-4 gap-3 text-white text-[16px] transition-all hover:opacity-90 shadow-sm"
-          >
-            <span className="leading-tight">Xidmət əlavə et</span>
-            <div className="w-6 h-6 flex items-center justify-center">
-              <Plus size={24} />
-            </div>
-          </button>
         </div>
 
+        {/* Add Service Section (Frame Group) */}
+        <div className="flex flex-col gap-7 p-7 rounded-[12px] bg-white border border-[#ececed]">
+          <div className="border-b border-[#ececed] pb-1">
+            <h3 className="text-[20px] font-semibold leading-[30px]">Xidmət əlavə et</h3>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <label className="text-[16px] leading-[24px]">Xidmət adı</label>
+            <div className="h-[60px] bg-[#fafafa] border border-[#ececed] rounded-[12px] flex items-center px-3">
+              <input
+                type="text"
+                value={pendingService || ""}
+                onChange={(e) => setPendingService(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleConfirmService()}
+                placeholder="Məs: Pilates"
+                className="bg-transparent w-full h-full outline-none text-[18px] leading-[28px]"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              onClick={handleConfirmService}
+              disabled={createServiceMutation.isPending}
+              className="h-[48px] w-[193px] bg-[#00B4CC] rounded-[12px] flex items-center justify-center text-[#fafafa] text-[16px] transition-all hover:opacity-90 shadow-sm"
+            >
+              {createServiceMutation.isPending ? <Loader2 className="animate-spin" size={20} /> : "Əlavə et"}
+            </button>
+          </div>
+        </div>
+
+        {/* Services List (Frame Container) */}
         <div className="flex flex-col gap-5">
-          <div className="flex flex-wrap gap-5 min-h-[120px]">
-            {/* All Services with Select/Delete Logic */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
             {allServices?.map((svc) => {
               // Check state first, then fall back to gym benefits data
               const stateSelected = packageServices[activePackage]?.includes(svc.name);
@@ -307,51 +338,36 @@ export function PlansTab({ gym }: { gym?: any }) {
                 (b: any) => b.description?.trim().toLowerCase() === svc.name?.trim().toLowerCase()
               );
               const isSelected = stateSelected || gymSelected;
+
               return (
                 <div
                   key={svc.id}
                   onClick={() => toggleServiceSelection(svc.name)}
                   className={cn(
-                    "w-fit h-[72px] rounded-lg px-4 py-5 flex items-center justify-between gap-4 cursor-pointer transition-all border",
+                    "h-[64px] rounded-lg px-3 flex items-center justify-between gap-5 cursor-pointer transition-all border",
                     isSelected
                       ? "bg-[#00b4cc0a] border-[#00b4cc]"
                       : "bg-[#fafafa] border-[#ececed]"
                   )}
                 >
-                  <div className="flex items-center">
-                    <span className="text-[16px] font-medium text-black whitespace-nowrap leading-[24px]">
+                  <div className="flex items-center overflow-hidden">
+                    <span className="text-[16px] font-medium text-black truncate leading-[24px]">
                       {svc.name}
                     </span>
                   </div>
 
                   <button
-                    onClick={(e) => handleDeleteFromGym(svc.id, e)}
-                    className="w-6 h-6 flex-shrink-0 flex items-center justify-center hover:scale-110 transition-transform"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeleteServiceId(svc.id);
+                    }}
+                    className="w-6 h-6 flex-shrink-0 flex items-center justify-center hover:scale-110 transition-transform opacity-60 hover:opacity-100"
                   >
                     <Image src="/icons/trash.svg" width={24} height={24} alt="Delete" />
                   </button>
                 </div>
               );
             })}
-
-            {/* Inline Add Input */}
-            {pendingService !== null && (
-              <div className="w-fit h-[72px] border-2 border-dashed border-[#00B4CC] rounded-lg px-4 flex items-center justify-between gap-4 animate-in slide-in-from-left duration-300">
-                <input
-                  autoFocus
-                  value={pendingService}
-                  onChange={(e) => setPendingService(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleConfirmService()}
-                  placeholder="..."
-                  className="bg-transparent border-none outline-none text-[14px] font-medium min-w-[100px]"
-                />
-                <div className="flex items-center flex-shrink-0">
-                  <button onClick={handleConfirmService} className="text-green-500">
-                    <Check size={18} strokeWidth={3} />
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -368,6 +384,20 @@ export function PlansTab({ gym }: { gym?: any }) {
         </button>
       </div>
 
+      {deleteServiceId !== null && (
+        <ConfirmDeleteModal
+          name={allServices?.find(s => s.id === deleteServiceId)?.name || "Xidmət"}
+          onConfirm={() => handleDeleteFromGym()}
+          onCancel={() => setDeleteServiceId(null)}
+          isLoading={deleteServiceMutation.isPending}
+        />
+      )}
+
+      <SuccessAnimationModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        message="Abunəlik məlumatları uğurla yeniləndi!"
+      />
     </div>
   );
 }

@@ -10,7 +10,7 @@ import {
 } from '@/modules/customers'
 import { PAGE_SIZE } from './list/customer-list-constants'
 import { CustomerFilters, CustomerStats } from './list/customer-list-controls'
-import { CustomerBulkActions, PushModal, SmsModal } from './list/customer-message-modals'
+import { CustomerBulkActions, EmailModal, PushModal, SmsModal } from './list/customer-message-modals'
 import { CustomerPagination, CustomerTable } from './list/customer-list-table'
 import { sortCustomers, type CustomerSortValue } from './list/customer-list-utils'
 
@@ -21,11 +21,12 @@ export function CustomersList() {
   const [sortBy, setSortBy] = useState<CustomerSortValue | null>(null)
   const [pkg, setPkg] = useState<number | null>(null)
   const [duration, setDuration] = useState<number | null>(null)
-  const [subStatus, setSubStatus] = useState<Exclude<CustomerSubscriptionType, 'all'> | null>(null)
+  const [subStatus, setSubStatus] = useState<Exclude<CustomerSubscriptionType, 'ALL'> | null>(null)
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [page, setPage] = useState(1)
   const [pushOpen, setPushOpen] = useState(false)
   const [smsOpen, setSmsOpen] = useState(false)
+  const [emailOpen, setEmailOpen] = useState(false)
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -42,6 +43,7 @@ export function CustomersList() {
     packageId: pkg ?? undefined,
     packageDuration: duration ?? undefined,
     subscriptionStatus: subStatus ?? undefined,
+    sort: sortBy ?? undefined,
   })
   const packageNamesQuery = useSubscriptionPackageNamesQuery()
   const statisticsQuery = useUserStatisticsQuery()
@@ -86,7 +88,17 @@ export function CustomersList() {
     <div className="flex flex-col gap-5">
       <h1 className="text-xl font-bold text-foreground">Müştərilər</h1>
 
-      <CustomerStats total={stats.total} last7={stats.last7} expired={stats.expired} active={stats.active} />
+      <CustomerStats
+        total={stats.total}
+        last7={stats.last7}
+        expired={stats.expired}
+        active={stats.active}
+        selectedStatus={subStatus}
+        onStatusClick={(status) => {
+          setSubStatus(status)
+          setPage(1)
+        }}
+      />
 
       <CustomerFilters
         search={search}
@@ -114,7 +126,12 @@ export function CustomersList() {
         onSortChange={setSortBy}
       />
 
-      <CustomerBulkActions selectedCount={selected.size} onOpenPush={() => setPushOpen(true)} onOpenSms={() => setSmsOpen(true)} />
+      <CustomerBulkActions 
+        selectedCount={selected.size} 
+        onOpenPush={() => setPushOpen(true)} 
+        onOpenSms={() => setSmsOpen(true)} 
+        onOpenEmail={() => setEmailOpen(true)}
+      />
 
       <CustomerTable
         customers={sorted}
@@ -137,8 +154,9 @@ export function CustomersList() {
 
       <CustomerPagination total={total} page={page} perPage={PAGE_SIZE} onChange={setPage} />
 
-      {pushOpen && <PushModal onClose={() => setPushOpen(false)} />}
-      {smsOpen && <SmsModal onClose={() => setSmsOpen(false)} />}
+      {pushOpen && <PushModal selectedUsers={Array.from(selected).map(id => sorted.find(c => c.id === id)).filter(Boolean) as any[]} onClose={() => setPushOpen(false)} />}
+      {smsOpen && <SmsModal selectedUsers={Array.from(selected).map(id => sorted.find(c => c.id === id)).filter(Boolean) as any[]} onClose={() => setSmsOpen(false)} />}
+      {emailOpen && <EmailModal selectedUsers={Array.from(selected).map(id => sorted.find(c => c.id === id)).filter(Boolean) as any[]} onClose={() => setEmailOpen(false)} />}
     </div>
   )
 }

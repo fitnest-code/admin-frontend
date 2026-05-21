@@ -5,8 +5,12 @@ import { Plus, Pencil, Trash2, X, ChevronDown, Check, LayoutGrid, List, MoreVert
 import { cn } from '@/lib/utils'
 import {
   type SubPackage, type PriceTier, type SubStatus,
-  MOCK_SUB_PACKAGES, ENTRY_LIMIT_OPTIONS,
+  ENTRY_LIMIT_OPTIONS,
 } from '@/lib/subscription-data'
+import { useSubscriptions } from '@/lib/query/use-subscriptions'
+import { ErrorToastModal } from '../categories/modals/error-toast-modal'
+import { ConfirmDeleteModal } from '../gyms/modals/confirm-delete-modal'
+import { SuccessAnimationModal } from '../ui/success-animation-modal'
 
 const PAGE_SIZE = 6
 
@@ -94,19 +98,80 @@ function EntryLimitSelect({ label, value, onChange }: { label: string; value: st
   )
 }
 
+function PackageNameDropdown({ value, onChange, existingNames = [] }: { value: string; onChange: (v: string) => void; existingNames?: string[] }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const STATIC_PACKAGES = ['Bronze', 'Silver', 'Gold', 'Platinum']
+  const availablePackages = STATIC_PACKAGES.filter(pkgName => pkgName === value || !existingNames.includes(pkgName))
+
+  return (
+    <div className="w-full flex flex-col gap-1.5 text-left font-sans" ref={ref}>
+      <label className="text-[16px] leading-[24px] font-medium text-black">Adı</label>
+      <div className="relative w-full">
+        <button
+          type="button"
+          onClick={() => setOpen((p) => !p)}
+          className="w-full h-[60px] rounded-[12px] bg-[#fafafa] border border-[#ececed] px-4 flex items-center justify-between text-[18px] text-black outline-none transition-colors hover:border-[#00b4cc]"
+        >
+          <span className="leading-[28px] font-medium">{value || 'Seçilməyib'}</span>
+          <ChevronDown size={20} className={cn('transition-transform text-gray-500 shrink-0', open && 'rotate-180')} />
+        </button>
+        
+        {open && (
+          <ul className="absolute left-0 top-full z-50 mt-1 w-full overflow-hidden rounded-[12px] border border-[#ececed] bg-white shadow-xl max-h-52 divide-y divide-gray-100">
+            {availablePackages.map((pkgName) => (
+              <li key={pkgName}>
+                <button
+                  type="button"
+                  onClick={() => { onChange(pkgName); setOpen(false) }}
+                  className={cn(
+                    "w-full flex items-center justify-between px-4 py-3 text-[16px] font-medium transition-colors hover:bg-gray-50 text-left",
+                    value === pkgName ? "text-[#00b4cc] bg-[#00b4cc]/5 font-bold" : "text-black"
+                  )}
+                >
+                  <span>{pkgName}</span>
+                  {value === pkgName && <Check size={16} className="text-[#00b4cc]" />}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── Package Form Modal ────────────────────────────────────────────────────────
 function PackageFormModal({
   initial,
   onSave,
   onClose,
+  existingNames = [],
+  onError,
 }: {
   initial?: SubPackage
   onSave: (pkg: Omit<SubPackage, 'id'>) => void
   onClose: () => void
+  existingNames?: string[]
+  onError?: (msg: string) => void
 }) {
-  const [name, setName] = useState(initial?.name ?? '')
+  const { addBenefit, deleteBenefit } = useSubscriptions()
+  const STATIC_PACKAGES = ['Bronze', 'Silver', 'Gold', 'Platinum']
+  const defaultAvailable = STATIC_PACKAGES.find(p => !existingNames.includes(p)) || 'Bronze'
+  const [name, setName] = useState(initial?.name || defaultAvailable)
   const [priceTiers, setPriceTiers] = useState<PriceTier[]>(
-    initial?.priceTiers?.length ? initial.priceTiers : [{ duration: '', price: 0, discountPrice: 0 }],
+    initial?.priceTiers?.length ? initial.priceTiers : [{ duration: '1 ay', price: 50, discountPrice: 45 }],
   )
   const [entryLimit, setEntryLimit] = useState(
     initial?.entryLimit ? `${initial.entryLimit} giriş` : '12 giriş',
@@ -116,7 +181,7 @@ function PackageFormModal({
   const [status, setStatus] = useState<SubStatus>(initial?.status ?? 'active')
 
   function addTier() {
-    setPriceTiers((prev) => [...prev, { duration: '', price: 0, discountPrice: 0 }])
+    setPriceTiers((prev) => [...prev, { duration: `${prev.length + 1} ay`, price: 0, discountPrice: 0 }])
   }
 
   function removeTier(i: number) {
@@ -127,216 +192,230 @@ function PackageFormModal({
     setPriceTiers((prev) => prev.map((t, idx) => idx === i ? { ...t, [key]: value } : t))
   }
 
-  function addService() {
+  async function handleAddService() {
     const s = serviceInput.trim()
     if (!s || services.length >= 20) return
+    
+    // Prevent duplicates in the UI state
+    if (services.some(svc => svc.toLowerCase() === s.toLowerCase())) {
+      setServiceInput('')
+      return
+    }
+    
     setServices((prev) => [...prev, s])
     setServiceInput('')
+    
+    if (initial?.id && !initial.id.startsWith('temp') && !initial.id.startsWith('sub-')) {
+      try {
+        await addBenefit({ packageId: initial.id, description: s })
+      } catch (err) {
+        console.warn('Live service integration sync error', err)
+      }
+    }
   }
 
-  function removeService(i: number) {
+  async function handleRemoveService(i: number) {
+    const targetService = services[i]
     setServices((prev) => prev.filter((_, idx) => idx !== i))
+    
+    if (initial?.id && !initial.id.startsWith('temp') && !initial.id.startsWith('sub-')) {
+      try {
+        await deleteBenefit({ packageId: initial.id, description: targetService })
+      } catch (err) {
+        console.warn('Live service deletion sync error', err)
+      }
+    }
   }
 
   function handleSave() {
-    const entryLimitNum = parseInt(entryLimit) || 0
+    for (const tier of priceTiers) {
+      const priceVal = Number(tier.price) || 0
+      const discountVal = Number(tier.discountPrice) || 0
+      if (discountVal > priceVal) {
+        if (onError) {
+          onError("Endirimli qiymət standart qiymətdən yüksək ola bilməz")
+        }
+        return
+      }
+    }
+
+    const entryLimitNum = parseInt(entryLimit) || 12
     onSave({ name, priceTiers, entryLimit: entryLimitNum, services, status })
   }
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 pt-16"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 pt-16 font-sans"
       onClick={onClose}
     >
+      {/* Root Layout matching Frame2237 (.frameParent) */}
       <div
-        className="w-full max-w-5xl min-h-150 rounded-2xl border border-border bg-card shadow-2xl"
+        className="w-full max-w-[1095px] relative rounded-[20px] bg-white border border-[#00b4cc] flex flex-col items-stretch p-8 gap-8 text-left text-[20px] text-black shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
-          <h2 className="text-base font-semibold text-foreground">
+        {/* Top Title Bar Wrapper (.yeniAbunlikFormuParent) */}
+        <div className="w-full flex items-center justify-between">
+          <div className="relative leading-[30px] font-semibold text-[20px]">
             {initial ? 'Paketi redaktə et' : 'Yeni abunəlik formu'}
-          </h2>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
-            <X size={16} />
+          </div>
+          <button
+            onClick={onClose}
+            className="h-[28px] w-[28px] rounded-[4px] bg-[#ececed] flex items-center justify-center p-1 transition-colors hover:bg-gray-300"
+            aria-label="Bağla"
+          >
+            <X size={15} className="text-black" />
           </button>
         </div>
 
-        {/* Body */}
-        <div className="grid grid-cols-1 gap-5 p-6 md:grid-cols-2">
-          {/* Left column */}
-          <div className="flex flex-col gap-4">
-            {/* Adı */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground">Adı</label>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Paket adı"
-                className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-[#00B4CC] transition-colors"
-              />
+        {/* Dividing Line (.frameChild) */}
+        <div className="w-full h-[1px] border-t border-[#cecfd2]" />
+
+        {/* Content Body Grid (.frameGroup) */}
+        <div className="w-full flex flex-col md:flex-row items-stretch justify-between gap-6 text-[16px]">
+          
+          {/* Left Column (.frameContainer) */}
+          <div className="w-full md:w-[503px] flex flex-col items-start gap-4 shrink-0">
+            
+            {/* Package Selector Dropdown Container */}
+            <div className="w-full">
+              <PackageNameDropdown value={name} onChange={setName} existingNames={existingNames} />
             </div>
 
-            {/* Müddət və qiymətlər */}
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs text-muted-foreground">Müddət və qiymətlər</label>
+            {/* Pricing / Tiers Wrapper */}
+            <div className="w-full flex flex-col gap-3 pt-2">
+              <div className="w-full rounded-[12px] bg-[#fafafa] border border-[#ececed] flex items-center justify-between p-2 px-3">
+                <span className="text-[18px] leading-[28px] font-medium text-black">
+                  Müddət və qiymətlər
+                </span>
                 <button
                   type="button"
                   onClick={addTier}
-                  className="flex h-6 w-6 items-center justify-center rounded-md border border-[#00B4CC] text-[#00B4CC] hover:bg-[#00B4CC] hover:text-white transition-colors"
+                  className="h-[40px] w-[40px] rounded-[8px] bg-white border border-[#ececed] flex items-center justify-center transition-colors hover:bg-gray-100 shadow-2xs"
                 >
-                  <Plus size={13} />
+                  <Plus size={18} className="text-[#00b4cc]" />
                 </button>
               </div>
 
               {priceTiers.length > 0 && (
-                <div className="flex flex-col gap-1">
-                  <div className="grid grid-cols-[1fr_1fr_1fr_1.5rem] gap-2">
-                    <span className="text-xs text-muted-foreground">Müddət (Ay)</span>
-                    <span className="text-xs text-muted-foreground">Qiymət (Azn)</span>
-                    <span className="text-xs text-muted-foreground">Qiymət (Endirimli)</span>
+                <div className="w-full flex flex-col gap-1.5 pt-1">
+                  <div className="grid grid-cols-[1.1fr_1fr_1fr_1fr_2rem] gap-1 px-1">
+                    <span className="text-[12px] text-gray-500 font-medium truncate">Müddət</span>
+                    <span className="text-[12px] text-gray-500 font-medium truncate">Qiymət</span>
+                    <span className="text-[12px] text-gray-500 font-medium truncate">Endirimli</span>
+                    <span className="text-[12px] text-gray-500 font-medium truncate">Giriş (Limit)</span>
                     <span />
                   </div>
                   {priceTiers.map((tier, i) => (
-                    <div key={i} className="grid grid-cols-[1fr_1fr_1fr_1.5rem] gap-2 items-center">
+                    <div key={i} className="grid grid-cols-[1.1fr_1fr_1fr_1fr_2rem] gap-1 items-center">
                       <input
                         value={tier.duration}
                         onChange={(e) => updateTier(i, 'duration', e.target.value)}
                         placeholder="1 ay"
-                        className="rounded-lg max-w-33.5 border border-border bg-background px-3 py-2 text-sm outline-none focus:border-[#00B4CC] transition-colors"
+                        className="h-[38px] rounded-[8px] border border-gray-300 bg-white px-2 text-[13px] outline-none focus:border-[#00b4cc] w-full"
                       />
                       <input
                         type="number"
                         value={tier.price || ''}
                         onChange={(e) => updateTier(i, 'price', Number(e.target.value))}
                         placeholder="0"
-                        className="rounded-lg max-w-33.5  border border-border bg-background px-3 py-2 text-sm outline-none focus:border-[#00B4CC] transition-colors"
+                        className="h-[38px] rounded-[8px] border border-gray-300 bg-white px-2 text-[13px] outline-none focus:border-[#00b4cc] w-full"
                       />
                       <input
                         type="number"
                         value={tier.discountPrice || ''}
                         onChange={(e) => updateTier(i, 'discountPrice', Number(e.target.value))}
                         placeholder="0"
-                        className="rounded-lg max-w-33.5  border border-border bg-background px-3 py-2 text-sm outline-none focus:border-[#00B4CC] transition-colors"
+                        className="h-[38px] rounded-[8px] border border-gray-300 bg-white px-2 text-[13px] outline-none focus:border-[#00b4cc] w-full"
+                      />
+                      <input
+                        type="number"
+                        value={tier.entryLimit ?? 12}
+                        onChange={(e) => updateTier(i, 'entryLimit', Number(e.target.value))}
+                        placeholder="12"
+                        className="h-[38px] rounded-[8px] border border-gray-300 bg-white px-2 text-[13px] outline-none focus:border-[#00b4cc] w-full"
                       />
                       <button
                         type="button"
                         onClick={() => removeTier(i)}
                         disabled={priceTiers.length === 1}
-                        className={cn(
-                          'flex h-6 w-6 items-center justify-center rounded-md transition-colors disabled:opacity-30',
-                          i === priceTiers.length - 1
-                            ? 'bg-red-500 text-white hover:bg-red-600'
-                            : 'text-muted-foreground hover:text-foreground',
-                        )}
+                        className="h-[32px] w-[32px] rounded-[6px] flex items-center justify-center transition-colors hover:bg-red-50 text-gray-400 hover:text-red-500 disabled:opacity-20 mx-auto"
                       >
-                        <X size={12} />
+                        <X size={15} />
                       </button>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-
-            {/* Giriş sayı */}
-            <EntryLimitSelect label="Giriş sayı (Limit)" value={entryLimit} onChange={setEntryLimit} />
           </div>
 
-          {/* Right column */}
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <label className="text-xs text-muted-foreground">Xidmətlər (1-20)</label>
-              <div className="flex gap-2">
-                <input
-                  value={serviceInput}
-                  onChange={(e) => setServiceInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addService())}
-                  placeholder="Xidmət adı"
-                  className="flex-1 rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-[#00B4CC] transition-colors"
-                />
-                <button
-                  type="button"
-                  onClick={addService}
-                  disabled={!serviceInput.trim() || services.length >= 20}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#00B4CC] text-[#00B4CC] hover:bg-[#00B4CC] hover:text-white disabled:opacity-40 transition-colors"
-                >
-                  <Plus size={16} />
-                </button>
+          {/* Right Column (.frameParent2) */}
+          <div className="w-full md:w-[503px] flex flex-col items-stretch justify-between gap-6 shrink-0 h-full">
+            
+            {/* Services Wrapper (.frameParent3) */}
+            <div className="w-full flex flex-col items-stretch gap-3">
+              <div className="w-full flex flex-col gap-1.5">
+                <label className="text-[16px] leading-[24px] font-medium text-black">Xidmətlər (1-20)</label>
+                <div className="w-full flex items-center gap-2">
+                  <input
+                    value={serviceInput}
+                    onChange={(e) => setServiceInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddService())}
+                    placeholder="Xidmət adı"
+                    className="flex-1 h-[50px] rounded-[12px] bg-[#fafafa] border border-[#ececed] px-3 text-[16px] outline-none focus:border-[#00b4cc]"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddService}
+                    disabled={!serviceInput.trim() || services.length >= 20}
+                    className="h-[50px] w-[50px] rounded-[8px] bg-[#fafafa] border border-[#ececed] flex items-center justify-center transition-colors hover:bg-gray-200 disabled:opacity-40 shrink-0"
+                  >
+                    <Plus size={18} className="text-[#00b4cc]" />
+                  </button>
+                </div>
               </div>
 
-              <div className="min-h-25 rounded-lg border border-border bg-background">
+              {/* Added Services Box (.frameParent6) */}
+              <div className="w-full h-[238px] rounded-[16px] bg-[#fafafa] p-3 flex flex-col gap-2.5 overflow-y-auto border border-gray-100">
                 {services.length === 0 ? (
-                  <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
+                  <div className="w-full h-full flex items-center justify-center text-[15px] text-gray-400 italic">
                     Heç bir xidmət əlavə edilməyib
                   </div>
                 ) : (
-                  <div className="flex flex-col divide-y divide-border">
-                    {services.map((s, i) => (
-                      <div key={i} className="flex items-center justify-between px-4 py-2.5">
-                        <span className="text-sm text-foreground">{s}</span>
-                        <button
-                          onClick={() => removeService(i)}
-                          className={cn(
-                            'flex h-6 w-6 items-center justify-center rounded-md transition-colors',
-                            i === services.length - 1
-                              ? 'bg-red-500 text-white hover:bg-red-600'
-                              : 'text-muted-foreground hover:text-foreground',
-                          )}
-                        >
-                          <X size={12} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+                  services.map((srv, idx) => (
+                    <div key={idx} className="w-full min-h-[50px] rounded-[12px] bg-white border border-[#ececed] px-3 flex items-center justify-between shadow-2xs shrink-0">
+                      <span className="text-[16px] font-medium text-black">{srv}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveService(idx)}
+                        className="h-[28px] w-[28px] rounded-[4px] bg-[#e7272c] flex items-center justify-center transition-colors hover:bg-red-700"
+                        aria-label="Sil"
+                      >
+                        <X size={14} className="text-white" />
+                      </button>
+                    </div>
+                  ))
                 )}
               </div>
-              <div className="text-right text-xs text-muted-foreground">{services.length}/20 xidmət</div>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground">Status</label>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setStatus('active')}
-                  className={cn(
-                    'flex-1 rounded-lg py-2.5 text-sm font-semibold transition-colors',
-                    status === 'active'
-                      ? 'bg-[#00B4CC] text-white'
-                      : 'border border-border text-foreground hover:bg-secondary',
-                  )}
-                >
-                  Aktiv et
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStatus('inactive')}
-                  className={cn(
-                    'flex-1 rounded-lg py-2.5 text-sm font-semibold transition-colors',
-                    status === 'inactive'
-                      ? 'bg-foreground text-background'
-                      : 'border border-border text-foreground hover:bg-secondary',
-                  )}
-                >
-                  Deaktiv et
-                </button>
+              <div className="w-full text-right text-[16px] text-gray-500 font-medium">
+                {services.length}/20 xidmət
               </div>
             </div>
+
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex justify-end gap-3 border-t border-border px-6 py-4">
+        {/* Action Controls Toolbar / Footer */}
+        <div className="w-full flex justify-end gap-3 border-t border-border pt-4">
           <button
             onClick={onClose}
-            className="rounded-lg border border-border px-6 py-2.5 text-sm font-medium text-foreground hover:bg-secondary transition-colors"
+            className="h-[46px] rounded-[10px] border border-gray-300 px-6 text-[16px] font-medium text-black hover:bg-gray-50 transition-colors"
           >
             Ləğv et
           </button>
           <button
             onClick={handleSave}
-            className="rounded-lg bg-[#00B4CC] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#008799] transition-colors"
+            className="h-[46px] rounded-[10px] bg-[#00b4cc] px-8 text-[16px] font-semibold text-white hover:bg-[#009bb0] transition-colors shadow-sm"
           >
             Yadda saxla
           </button>
@@ -351,10 +430,12 @@ function PackageRow({
   pkg,
   onEdit,
   onDelete,
+  onToggleStatus,
 }: {
   pkg: SubPackage
   onEdit: (p: SubPackage) => void
   onDelete: (id: string) => void
+  onToggleStatus: (p: SubPackage) => void
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -373,13 +454,18 @@ function PackageRow({
     <tr className="border-b border-border hover:bg-secondary/40 transition-colors">
       <td className="px-4 py-3 text-sm font-semibold text-foreground">{pkg.name}</td>
       <td className="px-4 py-3">
-        <span className={cn(
-          'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold',
-          pkg.status === 'active' ? 'bg-green-600 text-white' : 'bg-[#6B7280] text-white',
-        )}>
+        <button
+          type="button"
+          onClick={() => onToggleStatus(pkg)}
+          className={cn(
+            'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold cursor-pointer border-none outline-none transition-opacity hover:opacity-80',
+            pkg.status === 'active' ? 'bg-green-600 text-white' : 'bg-[#6B7280] text-white',
+          )}
+          title="Statusu dəyişmək üçün klikləyin"
+        >
           <span className="h-1.5 w-1.5 rounded-full bg-white/80 shrink-0" />
           {pkg.status === 'active' ? 'Aktiv' : 'Deaktiv'}
-        </span>
+        </button>
       </td>
       <td className="px-4 py-3 text-sm text-foreground">
         {pkg.priceTiers.map((t, i) => (
@@ -438,96 +524,119 @@ function PackageCard({
   pkg,
   onEdit,
   onDelete,
+  onToggleStatus,
 }: {
   pkg: SubPackage
   onEdit: (p: SubPackage) => void
   onDelete: (id: string) => void
+  onToggleStatus: (p: SubPackage) => void
 }) {
-  const firstTier = pkg.priceTiers[0]
   return (
-    <div className="flex flex-col rounded-xl border border-border bg-card p-4 gap-3">
-      <div className="flex items-center justify-between">
-        <span className="text-base font-bold text-foreground">{pkg.name}</span>
-        <span className={cn(
-          'rounded-full px-2.5 py-0.5 text-xs font-semibold flex items-center gap-1',
-          pkg.status === 'active' ? 'bg-green-600 text-white' : 'bg-[#6B7280] text-white',
-        )}>
-          <span className="h-1.5 w-1.5 rounded-full bg-white/80 shrink-0" />
-          {pkg.status === 'active' ? 'Aktiv' : 'Deaktiv'}
-        </span>
-      </div>
-
-      <div className="flex flex-col gap-1">
-        {pkg.priceTiers.map((tier, i) => (
-          <div key={i} className="flex items-baseline justify-between gap-2">
-            <span className="text-xs text-muted-foreground shrink-0">{tier.duration}</span>
-            <div className="flex items-baseline gap-1.5">
-              {tier.discountPrice > 0 && tier.discountPrice !== tier.price && (
-                <span className="text-xs text-muted-foreground line-through">{tier.price}</span>
-              )}
-              <span className="text-lg font-bold text-foreground">{tier.discountPrice || tier.price}</span>
-              <span className="text-xs text-muted-foreground">AZN</span>
+    <div className="w-full h-full relative rounded-[12px] bg-white border border-[#00b4cc] flex flex-col justify-between p-5 text-center font-sans text-black shadow-sm transition-all hover:shadow-md">
+      {/* Growable Content Area */}
+      <div className="w-full flex flex-col gap-[34px] flex-1 mb-4">
+        {/* Header Wrapper */}
+        <div className="w-full flex flex-col items-end">
+          <div className="w-full flex items-center justify-between gap-5">
+            <b className="text-[18px] font-bold text-black leading-[28px]">{pkg.name}</b>
+            <div className="flex items-center gap-2">
+              <div className={cn(
+                "h-[26px] rounded-[20px] flex items-center justify-center px-3 py-1 gap-1 text-[12px] font-medium text-white transition-colors",
+                pkg.status === 'active' ? "bg-[#166728]" : "bg-gray-500"
+              )}>
+                <div className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
+                <span className="leading-[18px] font-medium">{pkg.status === 'active' ? 'Aktiv' : 'Deaktiv'}</span>
+              </div>
+              
+              {/* Visual native CSS switch matching the design asset knobs */}
+              <button
+                type="button"
+                onClick={() => onToggleStatus(pkg)}
+                className={cn(
+                  "w-[51px] h-[31px] rounded-full p-1 transition-colors duration-200 ease-in-out shrink-0 flex items-center cursor-pointer outline-none border-none",
+                  pkg.status === 'active' ? "bg-[#00b4cc]" : "bg-gray-300"
+                )}
+                aria-label="Statusu dəyiş"
+              >
+                <div className={cn(
+                  "w-[23px] h-[23px] rounded-full bg-white shadow-md transform transition-transform duration-200 ease-in-out",
+                  pkg.status === 'active' ? "translate-x-[20px]" : "translate-x-0"
+                )} />
+              </button>
             </div>
           </div>
-        ))}
-      </div>
-
-      <div className="flex flex-col gap-1 text-sm border-t border-border pt-2">
-        <div className="flex items-center justify-between">
-          <span className="text-muted-foreground">Limit:</span>
-          <span className="font-medium text-foreground">{pkg.entryLimit} giriş</span>
         </div>
-        {firstTier && (
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Başlanğıc müddət:</span>
-            <span className="font-medium text-foreground">{firstTier.duration}</span>
-          </div>
-        )}
-      </div>
 
-      {pkg.services.length > 0 && (
-        <div className="flex flex-col gap-1.5">
-          <span className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">Xidmətlər</span>
-          <div className="flex flex-wrap gap-1.5">
-            {pkg.services.map((s) => (
-              <span key={s} className="rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground">
-                {s}
-              </span>
+        {/* Middle Section / Pricing & Entry Limit */}
+        <div className="w-full flex flex-col items-start gap-[22px] text-left text-[#4a5565]">
+          <div className="w-full flex flex-col items-stretch gap-2.5">
+            {pkg.priceTiers.map((tier, i) => (
+              <div key={i} className="w-full flex flex-col gap-2.5">
+                <div className="flex items-center justify-between gap-2 px-1 w-full">
+                  <span className="text-[16px] leading-[24px] font-medium text-[#4a5565] text-left shrink-0">
+                    {tier.duration || 'Müddət'}
+                  </span>
+                  <div className="flex items-baseline justify-center gap-1 text-center whitespace-nowrap shrink-0">
+                    {tier.discountPrice > 0 && tier.discountPrice !== tier.price ? (
+                      <div className="flex items-baseline gap-1 whitespace-nowrap">
+                        <span className="text-[16px] leading-[24px] font-medium text-red-500 line-through whitespace-nowrap">
+                          {tier.price} AZN
+                        </span>
+                        <span className="text-[16px] leading-[24px] font-bold text-[#101828] whitespace-nowrap">
+                          / {tier.discountPrice} AZN
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-[16px] leading-[24px] font-bold text-[#101828] whitespace-nowrap">
+                        {tier.price} AZN
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[16px] leading-[24px] font-semibold text-[#101828] text-right shrink-0">
+                    {tier.entryLimit ?? pkg.entryLimit} giriş
+                  </span>
+                </div>
+                <div className="w-full h-[1px] bg-gray-100" />
+              </div>
             ))}
           </div>
-        </div>
-      )}
 
-      <div className="flex gap-2 pt-1">
+          {/* Services List Block */}
+          <div className="w-full flex flex-col items-start gap-[11px] pt-1">
+            <span className="text-[12px] font-bold tracking-wider text-[#4a5565] uppercase">XİDMƏTLƏR</span>
+            <div className="w-full flex flex-wrap items-center gap-2">
+              {pkg.services.length > 0 ? (
+                pkg.services.map((s, idx) => (
+                  <div key={`${s}-${idx}`} className="rounded-[20px] bg-white border border-[#ececed] flex items-center justify-center px-3 py-1 gap-1.5 text-[14px] text-black font-medium shadow-2xs">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#00b4cc] shrink-0" />
+                    <span className="leading-[20px] font-medium">{s}</span>
+                  </div>
+                ))
+              ) : (
+                <span className="text-xs text-gray-400 italic">Xidmət təyin edilməyib</span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Buttons Block pinned to bottom */}
+      <div className="w-full flex items-center gap-3 pt-2 mt-auto border-t border-gray-50/80">
         <button
           onClick={() => onEdit(pkg)}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#00B4CC] py-2 text-sm font-medium text-[#00B4CC] hover:bg-[#00B4CC0D] transition-colors"
+          className="flex-1 h-[41px] rounded-[10px] bg-white border border-[#00b4cc] flex items-center justify-center px-4 gap-2 hover:bg-[#00b4cc]/5 transition-colors cursor-pointer"
         >
-          <Pencil size={14} /> Dəyiş
+          <Pencil size={15} className="text-[#00b4cc] shrink-0" />
+          <span className="text-[15px] font-medium text-black leading-[24px]">Dəyiş</span>
         </button>
+        
         <button
           onClick={() => onDelete(pkg.id)}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-red-200 py-2 text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+          className="flex-1 h-[41px] rounded-[10px] bg-white border border-[#f10303] flex items-center justify-center px-4 gap-2 hover:bg-[#f10303]/5 transition-colors cursor-pointer"
         >
-          <Trash2 size={14} /> Sil
+          <Trash2 size={15} className="text-[#f10303] shrink-0" />
+          <span className="text-[15px] font-medium text-black leading-[24px]">Sil</span>
         </button>
-      </div>
-    </div>
-  )
-}
-
-// ── Delete confirm modal ───────────────────────────────────────────────────────
-function DeleteModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onCancel}>
-      <div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-2xl flex flex-col gap-5" onClick={(e) => e.stopPropagation()}>
-        <p className="text-center text-sm font-medium text-foreground">
-          Bu paketi silmək istədiyinizə əminsiniz?
-        </p>
-        <div className="flex gap-3">
-          <button onClick={onCancel} className="flex-1 rounded-lg border border-border py-2.5 text-sm font-medium hover:bg-secondary transition-colors">Ləğv et</button>
-          <button onClick={onConfirm} className="flex-1 rounded-lg bg-red-500 py-2.5 text-sm font-semibold text-white hover:bg-red-600 transition-colors">Sil</button>
-        </div>
       </div>
     </div>
   )
@@ -535,34 +644,119 @@ function DeleteModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel:
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export function SubscriptionList() {
-  const [packages, setPackages] = useState<SubPackage[]>(MOCK_SUB_PACKAGES)
+  const { packages: backendPackages, isLoading, createPackage, updatePackage, deletePackage, updatePackageStatus } = useSubscriptions()
+  const [localPackages, setLocalPackages] = useState<SubPackage[]>([])
   const [modalPkg, setModalPkg] = useState<SubPackage | 'new' | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [view, setView] = useState<'grid' | 'list'>('grid')
+  
+  const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; message: string; type: "success" | "error" }>({
+    isOpen: false,
+    message: "",
+    type: "success",
+  })
 
-  const paginated = packages.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-
-  function handleSave(data: Omit<SubPackage, 'id'>) {
-    if (modalPkg && modalPkg !== 'new') {
-      setPackages((prev) => prev.map((p) => p.id === (modalPkg as SubPackage).id ? { ...(modalPkg as SubPackage), ...data } : p))
+  async function handleToggleStatus(pkg: SubPackage) {
+    const newStatus = pkg.status === 'active' ? 'inactive' : 'active'
+    setLocalPackages((prev) => prev.map((p) => p.id === pkg.id ? { ...p, status: newStatus } : p))
+    
+    if (!pkg.id.startsWith('temp') && !pkg.id.startsWith('sub-')) {
+      try {
+        await updatePackageStatus({ id: pkg.id, isActive: newStatus === 'active' })
+        setModalConfig({ isOpen: true, message: "Status uğurla yeniləndi!", type: "success" })
+      } catch (err: any) {
+        console.warn('Backend status toggle sync error', err)
+        const msg = err?.response?.data?.error?.message || err?.message || "Statusu yeniləmək mümkün olmadı"
+        setModalConfig({ isOpen: true, message: msg, type: "error" })
+      }
     } else {
-      setPackages((prev) => [...prev, { id: `sub-${Date.now()}`, ...data }])
+      setModalConfig({ isOpen: true, message: "Status uğurla yeniləndi!", type: "success" })
     }
-    setModalPkg(null)
   }
 
-  function confirmDelete() {
+  const currentPackages = backendPackages || []
+  const paginated = currentPackages.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+  async function handleSave(data: Omit<SubPackage, 'id'>) {
+    if (modalPkg && modalPkg !== 'new') {
+      const targetId = (modalPkg as SubPackage).id
+      setLocalPackages((prev) => prev.map((p) => p.id === targetId ? { ...(modalPkg as SubPackage), ...data } : p))
+      setModalPkg(null)
+      
+      if (!targetId.startsWith('temp') && !targetId.startsWith('sub-')) {
+        try {
+          await updatePackage({
+            id: targetId,
+            name: data.name,
+            status: data.status,
+            entryLimit: data.entryLimit,
+            services: data.services,
+            priceTiers: data.priceTiers,
+          })
+          setModalConfig({ isOpen: true, message: "Paket uğurla yeniləndi!", type: "success" })
+        } catch (err: any) {
+          console.warn('Backend subscription update sync error', err)
+          const msg = err?.response?.data?.error?.message || err?.message || "Yadda saxlamaq mümkün olmadı"
+          setModalConfig({ isOpen: true, message: msg, type: "error" })
+        }
+      } else {
+        setModalConfig({ isOpen: true, message: "Paket uğurla yeniləndi!", type: "success" })
+      }
+    } else {
+      const tempId = `sub-${Date.now()}`
+      setLocalPackages((prev) => [...prev, { id: tempId, ...data }])
+      setModalPkg(null)
+      
+      try {
+        await createPackage({
+          name: data.name,
+          status: data.status,
+          entryLimit: data.entryLimit,
+          services: data.services,
+          priceTiers: data.priceTiers,
+        })
+        setModalConfig({ isOpen: true, message: "Paket uğurla yaradıldı!", type: "success" })
+      } catch (err: any) {
+        console.warn('Backend subscription creation sync error', err)
+        const msg = err?.response?.data?.error?.message || err?.message || "Paket yaradıla bilmədi"
+        setModalConfig({ isOpen: true, message: msg, type: "error" })
+      }
+    }
+  }
+
+  async function confirmDelete() {
     if (!deletingId) return
-    setPackages((prev) => prev.filter((p) => p.id !== deletingId))
+    const targetId = deletingId
+    const originalPackages = [...localPackages]
+    setLocalPackages((prev) => prev.filter((p) => p.id !== targetId))
     setDeletingId(null)
+
+    if (!targetId.startsWith('temp') && !targetId.startsWith('sub-')) {
+      try {
+        await deletePackage(targetId)
+        setModalConfig({ isOpen: true, message: "Paket uğurla silindi!", type: "success" })
+      } catch (err: any) {
+        console.warn('Backend subscription deletion sync error', err)
+        setLocalPackages(originalPackages) // Revert optimistic update
+        const msg = err?.response?.data?.error?.message || err?.message || "Paketi silmək mümkün olmadı"
+        setModalConfig({ isOpen: true, message: msg, type: "error" })
+      }
+    } else {
+      setModalConfig({ isOpen: true, message: "Paket uğurla silindi!", type: "success" })
+    }
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-5 font-sans">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-foreground">Abunəlik Paketləri</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-bold text-foreground">Abunəlik Paketləri</h1>
+          {isLoading && (
+            <span className="text-xs text-[#00b4cc] font-medium animate-pulse">Yüklənir...</span>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center rounded-lg border border-border bg-card overflow-hidden">
             <button
@@ -587,16 +781,26 @@ export function SubscriptionList() {
             </button>
           </div>
           <button
-            onClick={() => setModalPkg('new')}
-            className="flex items-center gap-1.5 rounded-lg bg-[#00B4CC] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#008799] transition-colors"
+            onClick={() => {
+              if (currentPackages.length >= 4) {
+                setModalConfig({
+                  isOpen: true,
+                  message: "Hal-hazırda bütün paketlər yaradılıb. Zəhmət olmasa mövcud paketləri redaktə edin.",
+                  type: "error"
+                })
+                return
+              }
+              setModalPkg('new')
+            }}
+            className="flex items-center gap-1.5 rounded-lg bg-[#00B4CC] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#008799] transition-colors shadow-2xs"
           >
             <Plus size={15} /> Yeni Paket
           </button>
         </div>
       </div>
 
-      {packages.length === 0 ? (
-        <div className="flex items-center justify-center py-24 text-sm text-muted-foreground">
+      {currentPackages.length === 0 ? (
+        <div className="flex items-center justify-center py-24 text-sm text-muted-foreground italic">
           Hələ paket əlavə edilməyib
         </div>
       ) : view === 'grid' ? (
@@ -607,6 +811,7 @@ export function SubscriptionList() {
               pkg={pkg}
               onEdit={(p) => setModalPkg(p)}
               onDelete={(id) => setDeletingId(id)}
+              onToggleStatus={handleToggleStatus}
             />
           ))}
         </div>
@@ -630,6 +835,7 @@ export function SubscriptionList() {
                   pkg={pkg}
                   onEdit={(p) => setModalPkg(p)}
                   onDelete={(id) => setDeletingId(id)}
+                  onToggleStatus={handleToggleStatus}
                 />
               ))}
             </tbody>
@@ -637,19 +843,32 @@ export function SubscriptionList() {
         </div>
       )}
 
-      <Pagination total={packages.length} page={page} perPage={PAGE_SIZE} onChange={setPage} />
+      <Pagination total={currentPackages.length} page={page} perPage={PAGE_SIZE} onChange={setPage} />
 
       {modalPkg !== null && (
         <PackageFormModal
           initial={modalPkg !== 'new' ? modalPkg as SubPackage : undefined}
+          existingNames={currentPackages.map(p => p.name)}
           onSave={handleSave}
           onClose={() => setModalPkg(null)}
+          onError={(msg) => setModalConfig({ isOpen: true, message: msg, type: "error" })}
         />
       )}
 
       {deletingId && (
-        <DeleteModal onConfirm={confirmDelete} onCancel={() => setDeletingId(null)} />
+        <ConfirmDeleteModal
+          name={currentPackages.find((p) => p.id === deletingId)?.name ?? 'Paket'}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeletingId(null)}
+        />
       )}
+
+      <SuccessAnimationModal 
+        isOpen={modalConfig.isOpen} 
+        onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))} 
+        message={modalConfig.message}
+        type={modalConfig.type}
+      />
     </div>
   )
 }

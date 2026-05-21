@@ -4,70 +4,79 @@ import { useState } from "react";
 import { Trash2, X, Eye, EyeOff, Loader2, Plus, UserCheck, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGymStore, LocalAdmin } from "@/lib/store/gym-store";
-import { useCreateGymStep7 } from "@/lib/query/gym-query";
+import { useValidateGymStep7, useCreateGymComplete } from "@/lib/query/gym-query";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { SuccessModal } from "../modals/success-modal";
+import { SuccessAnimationModal } from "../../ui/success-animation-modal";
 import Image from "next/image";
 
 const EMPTY_FORM: LocalAdmin = { firstName: "", lastName: "", phone: "", email: "", password: "" };
 
-export function StepAdmins() {
+export function StepAdmins({ onComplete }: { onComplete?: () => void }) {
   const router = useRouter();
-  const { gymId, step7Admins: admins, addStep7Admin, removeStep7Admin, resetGym } = useGymStore();
+  const { 
+    step1Data, step2Trainers, step3Data, step4Data, step5Photos, step6Data, 
+    step7Admins: admins, addStep7Admin, removeStep7Admin, resetGym 
+  } = useGymStore();
+  
   const [modalOpen, setModalOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [form, setForm] = useState<LocalAdmin>(EMPTY_FORM);
   const [showPwd, setShowPwd] = useState(false);
 
-  const { mutate: createStep7, isPending: isCompleting } = useCreateGymStep7();
+  const validateStep7 = useValidateGymStep7();
+  const createComplete = useCreateGymComplete();
 
   function handleAddAdmin() {
     if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim()) {
       return toast.error("Zəhmət olmasa bütün xanaları doldurun");
     }
 
-    // Uniqueness validation
     const isDuplicateEmail = admins.some(a => a.email.toLowerCase() === form.email.toLowerCase());
-    const isDuplicatePhone = admins.some(a => a.phone === form.phone && form.phone !== "");
-
-    if (isDuplicateEmail) {
-      return toast.error("Bu e-poçt ünvanı ilə admin artıq əlavə edilib");
-    }
-    if (isDuplicatePhone) {
-      return toast.error("Bu telefon nömrəsi ilə admin artıq əlavə edilib");
-    }
+    if (isDuplicateEmail) return toast.error("Bu e-poçt ünvanı ilə admin artıq əlavə edilib");
 
     addStep7Admin({ ...form });
     setForm(EMPTY_FORM);
     setModalOpen(false);
   }
 
-  function handleComplete() {
-    if (!gymId) return toast.error("Zal ID tapılmadı");
+  async function handleComplete() {
     if (admins.length === 0) return toast.error("Ən azı bir admin əlavə edilməlidir");
 
-    const payload = {
-      admins: admins.map((a) => ({
-        name: a.firstName,
-        surname: a.lastName,
-        phoneNumber: a.phone,
-        email: a.email,
-        password: a.password,
-      })),
-    };
+    try {
+      const step7Payload = {
+        admins: admins.map((a) => ({
+          name: a.firstName,
+          surname: a.lastName,
+          phoneNumber: a.phone,
+          email: a.email,
+          password: a.password,
+        })),
+      };
 
-    createStep7(
-      { id: Number(gymId), payload },
-      {
-        onSuccess: () => {
-          setShowSuccess(true);
-          resetGym();
-        },
-        onError: (err: any) => toast.error(err?.message || "Xəta baş verdi"),
-      }
-    );
+      // 1. Validate Step 7
+      await validateStep7.mutateAsync(step7Payload);
+
+      // 2. Final Sequential Creation
+      await createComplete.mutateAsync({
+        step1: step1Data!,
+        step2: step2Trainers,
+        step3: step3Data!,
+        step4: step4Data!,
+        step5: step5Photos!,
+        step6: step6Data!,
+        step7: step7Payload
+      });
+
+      setShowSuccess(true);
+      resetGym();
+      onComplete?.();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err?.message || "Yaradılma zamanı xəta baş verdi");
+    }
   }
+
+  const isCompleting = validateStep7.isPending || createComplete.isPending;
 
   function handleSuccessClose() {
     setShowSuccess(false);
@@ -164,13 +173,10 @@ export function StepAdmins() {
         </button>
       </div>
 
-      {showSuccess && (
-        <SuccessModal 
-          onClose={handleSuccessClose} 
-          title="Təbriklər!" 
-          message="İdman zalı uğurla yaradıldı və aktivləşdirildi. İndi zalı idarə etməyə başlaya bilərsiniz." 
-        />
-      )}
+      <SuccessAnimationModal 
+        isOpen={showSuccess} 
+        onClose={handleSuccessClose} 
+      />
 
       {/* Add Admin Modal */}
       {modalOpen && (

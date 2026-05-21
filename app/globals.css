@@ -130,3 +130,44 @@
     line-height: normal;
   }
 }
+
+/* Gradient border utility */
+.gradient-border {
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  position: relative;
+}
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(270deg, #624DE3 -1.3%, #87CBF1 100.76%);
+  z-index: -1;
+}
+
+/* Bu klassı tətbiq etdiyimiz hər yerdə scrollbar dəyişəcək */
+.force-custom-scroll {
+    scrollbar-width: thin !important; /* Firefox üçün */
+    scrollbar-color: #C1C1C1 transparent !important; /* Firefox üçün */
+}
+
+/* Chrome, Edge və Safari üçün mütləq olanlar */
+.force-custom-scroll::-webkit-scrollbar {
+    width: 6px !important;
+    display: block !important;
+}
+
+.force-custom-scroll::-webkit-scrollbar-track {
+    background: transparent !important;
+}
+
+.force-custom-scroll::-webkit-scrollbar-thumb {
+    background-color: #C1C1C1 !important; /* Şəkildəki boz rəng */
+    border-radius: 20px !important;
+    border: 1px solid transparent !important;
+}
+
+.force-custom-scroll::-webkit-scrollbar-thumb:hover {
+    background-color: #A1A1A1 !important;
+}

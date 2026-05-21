@@ -49,7 +49,7 @@ export async function getGyms(params?: GetGymsParams) {
 }
 
 export async function getGymById(id: string): Promise<Gym> {
-  const response = await apiGet<GymInfoAdminResponse>(`/api/v1/admin/gyms/${id}/info`)
+  const response = await apiGet<GymInfoAdminResponse>(`/api/v1/admin/gyms/${id}/details`)
 
   return {
     id: String(response.id),

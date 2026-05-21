@@ -9,28 +9,20 @@ import { useGymStore } from "@/lib/store/gym-store";
 import { useGymTrainers, useDeleteTrainer } from "@/lib/query/gym-query";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { ConfirmDeleteModal } from "../modals/confirm-delete-modal";
+import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 
-export function TrainersTab({ gym }: { gym?: any }) {
+export function TrainersTab() {
   const [showAdd, setShowAdd] = useState(false);
   const [showDetails, setShowDetails] = useState<any>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [deleteTrainerId, setDeleteTrainerId] = useState<string | number | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const pageSize = 10;
   const menuRef = useRef<HTMLDivElement>(null);
 
   const { gymId } = useGymStore();
-
-  const initialTrainers = useMemo(() => {
-    if (gym?.trainers) {
-      return {
-        items: gym.trainers,
-        totalItems: gym.trainers.length,
-        totalPages: 1,
-        currentPage: 1
-      };
-    }
-    return undefined;
-  }, [gym]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -44,21 +36,27 @@ export function TrainersTab({ gym }: { gym?: any }) {
 
   const { data: apiData, isLoading: apiLoading } = useGymTrainers(
     gymId || '',
-    { page: currentPage, pageSize: pageSize, sort_dir: "DESC" },
-    initialTrainers
+    { page: currentPage, pageSize: pageSize, sort_dir: "DESC" }
   );
 
-  const { mutate: deleteTrainerMutate } = useDeleteTrainer();
+  const { mutate: deleteTrainerMutate, isPending: isDeletingTrainer } = useDeleteTrainer();
 
-  const handleDelete = (trainerId: string | number) => {
-    if (!gymId) return;
-    if (!window.confirm("Bu məşqçini silmək istədiyinizə əminsiniz?")) return;
-    deleteTrainerMutate({ gymId: Number(gymId), trainerId });
+  const handleDelete = () => {
+    if (!gymId || !deleteTrainerId) return;
+    deleteTrainerMutate({ gymId: Number(gymId), trainerId: deleteTrainerId }, {
+      onSuccess: () => {
+        setDeleteTrainerId(null);
+        setShowSuccessModal(true);
+      },
+      onError: (err: any) => {
+        toast.error(err?.message || "Xəta baş verdi");
+      }
+    });
     setOpenMenuId(null);
   };
 
   const trainers = apiData?.items ?? [];
-  const totalPages = apiData?.totalPages ?? 1;
+  const totalPages = apiData ? Math.ceil(apiData.total / pageSize) : 1;
 
   return (
     <div className="flex flex-col gap-6 py-4 w-full font-sans">
@@ -203,7 +201,10 @@ export function TrainersTab({ gym }: { gym?: any }) {
                               </button>
                               <div className="h-px bg-slate-100 mx-2" />
                               <button
-                                onClick={() => handleDelete(t.trainer_id || t.id)}
+                                onClick={() => {
+                                  setDeleteTrainerId(t.trainer_id || t.id);
+                                  setOpenMenuId(null);
+                                }}
                                 className="w-full h-11 flex items-center px-4 text-red-600 hover:bg-red-50 transition-colors gap-3 font-medium whitespace-nowrap"
                               >
                                 <Image src="/trash.png" width={18} height={18} alt="Delete" />
@@ -311,6 +312,15 @@ export function TrainersTab({ gym }: { gym?: any }) {
 
       {showAdd && <AddTrainerModal onClose={() => setShowAdd(false)} isDashboard={true} />}
       {showDetails && <TrainerDetailsModal trainer={showDetails} onClose={() => setShowDetails(null)} />}
+      {deleteTrainerId !== null && (
+        <ConfirmDeleteModal
+          name={trainers.find((t: any) => (t.trainer_id || t.id) === deleteTrainerId)?.name || "Məşqçi"}
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteTrainerId(null)}
+          isLoading={isDeletingTrainer}
+        />
+      )}
+      <SuccessAnimationModal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)} />
     </div>
   );
 }

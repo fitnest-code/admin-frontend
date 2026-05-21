@@ -1,13 +1,22 @@
-import { AdminLayout } from '@/components/layout/admin-layout'
-import { StoreDetail }  from '@/components/stores/store-detail'
-import { MOCK_STORES }  from '@/lib/stores-data'
+import { AdminLayout } from "@/components/layout/admin-layout";
+import { AdminStoreDetailView } from "@/components/stores/admin-store-detail-view";
+import { notFound } from "next/navigation";
 
-export default async function StoreDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const store = MOCK_STORES.find((s) => s.id === id)
+type PageProps = {
+  params: Promise<{ id: string }>;
+};
+
+export default async function StoreDetailPage({ params }: PageProps) {
+  const { id } = await params;
+  const numericId = Number(id);
+
+  if (!Number.isFinite(numericId) || numericId <= 0 || !/^\d+$/.test(id.trim())) {
+    notFound();
+  }
+
   return (
     <AdminLayout>
-      <StoreDetail store={store} isNew={id === 'new'} />
+      <AdminStoreDetailView storeId={numericId} />
     </AdminLayout>
-  )
+  );
 }

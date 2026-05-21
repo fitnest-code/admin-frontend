@@ -11,13 +11,18 @@ function buildTargetPath(pathParts: string[]) {
   return `/api/v1/${clean}`
 }
 
-function pickForwardHeaders(request: NextRequest) {
+function pickForwardHeaders(
+  request: NextRequest,
+  options?: { omitContentType?: boolean },
+) {
   const headers = new Headers()
   headers.set('Accept', request.headers.get('accept') ?? 'application/json')
 
-  const contentType = request.headers.get('content-type')
-  if (contentType) {
-    headers.set('Content-Type', contentType)
+  if (!options?.omitContentType) {
+    const contentType = request.headers.get('content-type')
+    if (contentType) {
+      headers.set('Content-Type', contentType)
+    }
   }
 
   const authorization =
@@ -45,14 +50,43 @@ async function forward(request: NextRequest, context: RouteContext) {
     targetUrl.search = request.nextUrl.search
 
     const method = request.method.toUpperCase()
+    const rawContentType = request.headers.get('content-type') ?? ''
+    const isMultipart = rawContentType.toLowerCase().includes('multipart/form-data')
+
+    let body: BodyInit | undefined
+    let useStreamDuplex = false
+
+    if (method === 'GET' || method === 'HEAD') {
+      body = undefined
+    } else if (isMultipart) {
+      // Stream ilə birbaşa request.body ötürmək multipart boundary-ni poza bilər;
+      // FormData yenidən yığılır, fetch öz boundary Content-Type yazar.
+      const incoming = await request.formData()
+      const outgoing = new FormData()
+      for (const [key, value] of incoming.entries()) {
+        if (value instanceof File) {
+          outgoing.append(key, value, value.name || 'upload.bin')
+        } else {
+          outgoing.append(key, value as string)
+        }
+      }
+      body = outgoing
+    } else {
+      body = request.body ?? undefined
+      useStreamDuplex = body != null
+    }
+
+    const forwardHeaders = pickForwardHeaders(request, {
+      omitContentType: isMultipart,
+    })
+
     const backendResponse = await fetch(targetUrl.toString(), {
       method,
-      headers: pickForwardHeaders(request),
-      body: method === 'GET' || method === 'HEAD' ? undefined : request.body,
+      headers: forwardHeaders,
+      body,
       cache: 'no-store',
-      // @ts-ignore
-      duplex: 'half',
-    })
+      ...(useStreamDuplex ? { duplex: 'half' } : {}),
+    } as RequestInit & { duplex?: string })
 
     const status = backendResponse.status
     if (status === 204) {

@@ -26,3 +26,16 @@ export const useAddGymLocation = () => {
       })
   });
 };
+
+// 3. Forward Geocoding (Mətn axtarışı)
+export const useForwardGeocode = (query: string) => {
+  return useQuery({
+    queryKey: ["forward-geocoding", query],
+    queryFn: () => 
+      apiGet<IReverseGeocodingResponse[]>("/admin/gyms/geocoding/forward", {
+        params: { query }
+      }),
+    enabled: !!query && query.length >= 3,
+    staleTime: 1000 * 60 * 5,
+  });
+};

@@ -32,7 +32,7 @@ export function Header() {
           {initials}
         </div>
         <div className="text-[16px] leading-[24px] text-black font-normal">
-          {user?.role === 'SUPER_ADMIN' ? 'Owner' : 'Admin'}
+          {user?.name || (user?.role === 'SUPER_ADMIN' ? 'Owner' : 'Admin')}
         </div>
       </div>
 

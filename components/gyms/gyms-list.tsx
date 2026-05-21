@@ -9,6 +9,7 @@ import { useAdminGymsQuery, useToggleGymStatus, type AdminGymListItem, type Admi
 import { GymStatusToggle } from './gym-status-toggle'
 import { ConfirmDeleteModal } from './modals/confirm-delete-modal'
 import { useDeleteGym } from '@/lib/query/gym-query'
+import { SuccessAnimationModal } from '@/components/ui/success-animation-modal'
 import { toast } from 'sonner'
 
 const PER_PAGE = 10
@@ -24,6 +25,7 @@ export function GymsList() {
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [openMenuId, setOpenMenuId] = useState<number | null>(null)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -53,8 +55,24 @@ export function GymsList() {
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE))
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
 
+  const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; message: string; type: "success" | "error" }>({
+    isOpen: false,
+    message: "",
+    type: "success",
+  })
+
   function handleToggle(id: number, currentEnabled: boolean) {
-    toggleStatus.mutate({ id: String(id), enabled: !currentEnabled })
+    toggleStatus.mutate(
+      { id: String(id), enabled: !currentEnabled },
+      {
+        onSuccess: () => {
+          setModalConfig({ isOpen: true, message: "Status uğurla yeniləndi!", type: "success" })
+        },
+        onError: () => {
+          setModalConfig({ isOpen: true, message: "Statusu yeniləmək mümkün olmadı", type: "error" })
+        },
+      }
+    )
   }
 
   function handleDelete() {
@@ -62,11 +80,18 @@ export function GymsList() {
     deleteGym.mutate(deleteId, {
       onSuccess: () => {
         setDeleteId(null)
-        toast.success("Zal uğurla silindi")
+        setModalConfig({ isOpen: true, message: "Zal uğurla silindi!", type: "success" })
       },
       onError: (error: any) => {
-        toast.error(error?.message || "Zalı silmək mümkün olmadı")
-      }
+        let msg = error?.message || "Zalı silmək mümkün olmadı"
+        if (error?.response?.data?.error?.details?.dependencies?.length) {
+          const deps = error.response.data.error.details.dependencies.map((d: any) => d.reason).join(", ")
+          msg = `Zalı silmək mümkün deyil: ${deps}`
+        } else if (error?.response?.data?.error?.message) {
+          msg = error.response.data.error.message
+        }
+        setModalConfig({ isOpen: true, message: msg, type: "error" })
+      },
     })
   }
 
@@ -191,6 +216,7 @@ export function GymsList() {
           name={gyms.find((g) => g.id === deleteId)?.name ?? ''}
           onConfirm={handleDelete}
           onCancel={() => setDeleteId(null)}
+          isLoading={deleteGym.isPending}
         />
       )}
 
@@ -198,6 +224,13 @@ export function GymsList() {
       {gymsQuery.isError && (
         <p className="text-sm text-red-500">Zal siyahısı yüklənmədi. Yenidən cəhd edin.</p>
       )}
+
+      <SuccessAnimationModal
+        isOpen={modalConfig.isOpen}
+        onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
+        message={modalConfig.message}
+        type={modalConfig.type}
+      />
     </div>
   )
 }

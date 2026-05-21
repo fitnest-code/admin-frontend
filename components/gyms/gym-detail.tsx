@@ -19,8 +19,11 @@ import { TrainersTab } from './dashboard/trainers-tab'
 import { AdminsTab } from './dashboard/admins-tab'
 import { PlansTab } from './dashboard/plans-tab'
 import { ReviewsTab } from './dashboard/reviews-tab'
-import { ReservationsTab } from './dashboard/reservations-tab'
+import ReservationsTab from './dashboard/reservations-tab'
 import { CustomersTab } from './dashboard/customers-tab'
+import LessonHoursTab from './dashboard/lesson-hours-tab'
+
+import { useDeleteGym } from '@/lib/query/gym-query'
 
 import { AnalitikaTab } from '@/components/zallar/tabs/analitika-tab'
 import { StepNavigationWarningModal } from './modals/step-navigation-warning-modal'
@@ -43,12 +46,14 @@ interface GymDetailProps {
 }
 
 export function GymDetail({ gym, isNew = false }: GymDetailProps) {
+  const { gymId, currentTab, setCurrentTab, resetGym, setGymId, markStepCompleted, completedSteps } = useGymStore()
+  const { mutate: deleteGymMutate } = useDeleteGym()
   const router = useRouter()
-  const { gymId, currentTab, setCurrentTab, resetGym, setGymId } = useGymStore()
 
   useEffect(() => {
-    if (gym?.id && gymId !== gym.id) {
-      setGymId(gym.id)
+    // Only update store gymId from props if it's an existing gym (not 'new')
+    if (gym?.id && gym.id !== 'new' && gymId !== Number(gym.id)) {
+      setGymId(Number(gym.id))
     }
   }, [gym?.id, gymId, setGymId])
 
@@ -58,6 +63,15 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
   useEffect(() => {
     gymIdRef.current = gymId
   }, [gymId])
+
+  useEffect(() => {
+    return () => {
+      // Cleanup: delete draft gym if user leaves the page/unmounts
+      if (isNew && gymIdRef.current && !isCompletedRef.current) {
+        deleteGymMutate(gymIdRef.current)
+      }
+    }
+  }, [isNew, deleteGymMutate])
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -81,11 +95,18 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
   }, [currentTab])
 
   const handleConfirmExit = () => {
+    if (isNew && gymId) {
+      deleteGymMutate(gymId)
+    }
     resetGym()
     router.push('/gyms')
   }
+  const WIZARD_STEP_KEYS = WIZARD_TABS.map(t => t.key)
+
   const goToNext = () => {
     const currentIndex = WIZARD_TABS.findIndex(t => t.key === activeTab)
+    // Mark current step as completed
+    markStepCompleted(activeTab)
     if (currentIndex < WIZARD_TABS.length - 1) {
       const nextTab = WIZARD_TABS[currentIndex + 1].key
       setActiveTab(nextTab)
@@ -93,6 +114,17 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       window.scrollTo(0, 0)
     }
   }
+
+  const goToPrevious = () => {
+    const currentIndex = WIZARD_TABS.findIndex(t => t.key === activeTab)
+    if (currentIndex > 0) {
+      const prevTab = WIZARD_TABS[currentIndex - 1].key
+      setActiveTab(prevTab)
+      setCurrentTab(prevTab)
+      window.scrollTo(0, 0)
+    }
+  }
+
   const renderTab = () => {
     if (isNew) {
       switch (activeTab) {
@@ -109,7 +141,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
         case 'plans':
           return <StepPlans onNext={goToNext} />
         case 'admins':
-          return <StepAdmins onNext={goToNext} />
+          return <StepAdmins onComplete={() => { isCompletedRef.current = true; router.push('/gyms') }} />
         default:
           return <StepInfo onNext={goToNext} />
       }
@@ -119,15 +151,17 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       case 'analitika':
         return <AnalitikaTab gymId={gym.id} />
       case 'info':
-        return <InfoTab gymId={gym.id} gym={gym} />
+        return <InfoTab gymId={gym.id} />
       case 'trainers':
-        return <TrainersTab gym={gym} />
+        return <TrainersTab />
       case 'plans':
         return <PlansTab gym={gym} />
       case 'reviews':
         return <ReviewsTab />
       case 'reservations':
         return <ReservationsTab />
+      case 'lessonHours':
+        return <LessonHoursTab />
       case 'customers':
         return <CustomersTab />
       case 'admins':
@@ -145,7 +179,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
            <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
                  <button
-                   onClick={() => setShowExitConfirm(true)}
+                   onClick={() => activeTab === 'info' ? setShowExitConfirm(true) : goToPrevious()}
                    className="text-[11px] font-bold text-slate-400 uppercase tracking-widest hover:text-[#00B4CC] transition-colors flex items-center gap-2"
                  >
                    <ArrowLeft size={14} strokeWidth={3} />
@@ -168,15 +202,20 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
             <div className="flex flex-col items-start px-2">
               {WIZARD_TABS.map((tab, index) => {
                 const isActive = activeTab === tab.key
-                const isCompleted = WIZARD_TABS.findIndex(t => t.key === activeTab) > index
+                const isCompleted = completedSteps.includes(tab.key)
+                const isAccessible = index === 0 || completedSteps.includes(WIZARD_TABS[index - 1].key)
 
                 return (
                   <div 
                     key={tab.key} 
-                    className="w-full cursor-pointer group"
+                    className={cn(
+                      "w-full group",
+                      isAccessible && !isActive ? "cursor-pointer" : "cursor-default"
+                    )}
                     onClick={() => {
-                      if (isCompleted) {
-                        setShowWarning(true)
+                      if (isAccessible && !isActive) {
+                        setActiveTab(tab.key)
+                        setCurrentTab(tab.key)
                       }
                     }}
                   >
@@ -186,13 +225,13 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
                         "w-11 h-11 rounded-full flex items-center justify-center text-[18px] font-semibold transition-all duration-300 shrink-0",
                         isActive 
                           ? "bg-[#00B4CC] text-white shadow-md scale-105" 
-                          : isCompleted ? "bg-[#00B4CC] text-white group-hover:bg-[#009DB3]" : "bg-[#F3F4F6] text-[#9CA3AF]"
+                          : isCompleted ? "bg-[#00B4CC] text-white" : "bg-[#F3F4F6] text-[#9CA3AF]"
                       )}>
-                        {isCompleted ? <Check size={20} strokeWidth={3} /> : index + 1}
+                        {isCompleted && !isActive ? <Check size={20} strokeWidth={3} /> : index + 1}
                       </div>
                       <span className={cn(
                         "text-[18px] font-medium leading-[28px] transition-colors duration-300",
-                        isActive ? "text-black" : "text-[#C9C9C9]"
+                        isActive ? "text-black" : isCompleted ? "text-black" : "text-[#C9C9C9]"
                       )}>
                         {tab.label}
                       </span>
@@ -201,7 +240,10 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
                     {/* Connector Line */}
                     {index < WIZARD_TABS.length - 1 && (
                       <div className="w-11 flex justify-center py-2">
-                        <div className="w-[4px] h-[24px] bg-[#E8E8E8] rounded-full" />
+                        <div className={cn(
+                          "w-[4px] h-[24px] rounded-full",
+                          isCompleted ? "bg-[#00B4CC]" : "bg-[#E8E8E8]"
+                        )} />
                       </div>
                     )}
                   </div>

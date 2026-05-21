@@ -1,6 +1,7 @@
 'use client'
 
-import { Eye } from 'lucide-react'
+import Image from 'next/image'
+import { Check, Eye } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CustomerListItem } from '@/modules/customers'
 import {
@@ -114,9 +115,9 @@ export function CustomerTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
-      <div className="grid grid-cols-[2rem_4rem_1fr_1fr_1fr_5rem_6rem_2.5rem] items-center gap-3 border-b border-border bg-[#00B4CC14] px-4 py-3">
-        <input type="checkbox" checked={allOnPage} onChange={onToggleAll} className="h-4 w-4 accent-[#00B4CC]" />
+    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+      <div className="grid grid-cols-[2rem_4rem_1fr_1fr_1fr_5rem_6rem_2.5rem] items-center gap-3 border-b border-[#cecfd2]/60 dark:border-border bg-[#00B4CC]/[0.15] dark:bg-[#00B4CC]/10 px-4 py-4 rounded-t-xl">
+        <input type="checkbox" checked={allOnPage} onChange={onToggleAll} className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded" />
         <span className="text-xs font-semibold text-foreground">ID</span>
         <span className="text-xs font-semibold text-foreground">Ad / Soyad</span>
         <span className="text-xs font-semibold text-foreground">Telefon</span>
@@ -129,48 +130,57 @@ export function CustomerTable({
         const customerStatus = normalizeCustomerStatus(customer.userStatus)
         const subscriptionStatus = normalizeSubscriptionStatus(customer.subscriptionStatus)
 
+        let badgeBg = 'bg-[#166728]'
+        let badgeText = 'Aktiv'
+        if (subscriptionStatus === 'expired') {
+          badgeBg = 'bg-[#c9373a]'
+          badgeText = 'Bitib'
+        } else if (subscriptionStatus === 'last7days' || customerStatus === 'inactive') {
+          badgeBg = 'bg-[#94979c]'
+          badgeText = 'Deaktiv'
+        } else if (customerStatus === 'blocked') {
+          badgeBg = 'bg-[#c9373a]'
+          badgeText = 'Blok'
+        }
+
         return (
           <div
             key={customer.id}
-            className="grid grid-cols-[2rem_4rem_1fr_1fr_1fr_5rem_6rem_2.5rem] items-center gap-3 border-b border-border px-4 py-3 last:border-0 hover:bg-secondary/30 transition-colors"
+            className={cn(
+              'grid grid-cols-[2rem_4rem_1fr_1fr_1fr_5rem_6rem_2.5rem] items-center gap-3 border-b border-border px-4 py-4 last:border-0 hover:bg-secondary/40 transition-all duration-200',
+              subscriptionStatus === 'changed' ? 'bg-[#f0fdff] dark:bg-[#00b4cc]/[0.02]' : 'bg-card',
+            )}
           >
             <input
               type="checkbox"
               checked={selected.has(customer.id)}
               onChange={() => onToggleOne(customer.id)}
               onClick={(event) => event.stopPropagation()}
-              className="h-4 w-4 accent-[#00B4CC]"
+              className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded"
             />
-            <span className="text-xs text-muted-foreground font-mono truncate">{customer.id}</span>
+            <span className="text-sm font-medium text-foreground truncate">{customer.id}</span>
             <span className="text-sm font-medium text-foreground truncate">
               {customer.fullName ?? '-'}
             </span>
-            <span className="text-sm text-muted-foreground truncate">{customer.phoneNumber ?? '-'}</span>
-            <span className="text-sm text-muted-foreground truncate">{customer.email ?? '-'}</span>
-            <span
-              className={cn(
-                'inline-flex w-fit items-center rounded-full px-2.5 py-0.5 text-xs font-semibold',
-                CUSTOMER_STATUS_STYLES[customerStatus],
-              )}
-            >
-              {getCustomerStatusLabel(customerStatus)}
-            </span>
-            <div className="flex items-center gap-1">
-              <div
-                className={cn(
-                  'h-1.5 w-1.5 rounded-full shrink-0',
-                  subscriptionStatus === 'active'
-                    ? 'bg-[#00B4CC]'
-                    : subscriptionStatus === 'expired'
-                      ? 'bg-red-500'
-                      : subscriptionStatus === 'changed'
-                        ? 'bg-orange-400'
-                        : subscriptionStatus === 'last7days'
-                          ? 'bg-[#00B4CC]'
-                          : 'bg-muted',
-                )}
-              />
-              <span className={cn('text-xs truncate', SUBSCRIPTION_STATUS_TEXT_STYLES[subscriptionStatus])}>
+            <span className="text-sm font-medium text-foreground truncate">{customer.phoneNumber ?? '-'}</span>
+            <span className="text-sm font-medium text-foreground truncate">{customer.email ?? '-'}</span>
+            <div className={cn('inline-flex h-6 w-fit items-center justify-center gap-1.5 rounded-full px-3 text-xs font-medium text-white shadow-xs', badgeBg)}>
+              <div className="h-1.5 w-1.5 rounded-full bg-white shrink-0" />
+              <span>{badgeText}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              {subscriptionStatus === 'expired' ? (
+                <Image src="/bitmis-status.svg" width={16} height={16} alt="" className="shrink-0" />
+              ) : subscriptionStatus === 'last7days' ? (
+                <Image src="/abunelikde-7-gun.svg" width={16} height={16} alt="" className="shrink-0" />
+              ) : subscriptionStatus === 'frozen' ? (
+                <Image src="/dondurulmus-status.svg" width={16} height={16} alt="" className="shrink-0" />
+              ) : subscriptionStatus === 'active' || subscriptionStatus === 'changed' ? (
+                <div className="flex h-4 w-4 items-center justify-center rounded-full bg-[#00b4cc]/10 text-[#00B4CC]">
+                  <Check size={10} strokeWidth={2.5} />
+                </div>
+              ) : null}
+              <span className="text-xs font-medium text-foreground truncate">
                 {getSubscriptionStatusLabel(subscriptionStatus)}
               </span>
             </div>
@@ -179,7 +189,7 @@ export function CustomerTable({
               className="text-muted-foreground hover:text-[#00B4CC] transition-colors"
               aria-label="Ətraflı bax"
             >
-              <Eye size={16} />
+              <Eye size={18} />
             </button>
           </div>
         )

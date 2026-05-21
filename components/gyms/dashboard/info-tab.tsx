@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Upload, Trash2, ChevronDown, Pencil, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGymDetailsAdmin, useUpdateGymDetails, useCategories } from "@/lib/query/gym-query";
+import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 
 interface InfoTabProps {
   gymId?: number | string
@@ -18,6 +19,7 @@ const getImageUrl = (urlOrFsId: string | undefined | null) => {
 export function InfoTab({ gymId }: InfoTabProps) {
   const [activeLang, setActiveLang] = useState<"Az" | "Ru" | "En">("Az");
   const [isEditing, setIsEditing] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   
   const { data: gymInfo, isLoading } = useGymDetailsAdmin(gymId);
   const { mutate: updateGymInfo, isPending } = useUpdateGymDetails();
@@ -127,6 +129,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
     }, {
       onSuccess: () => {
         setIsEditing(false);
+        setShowSuccessModal(true);
       }
     });
   };
@@ -573,6 +576,11 @@ export function InfoTab({ gymId }: InfoTabProps) {
         </div>
       )}
 
+      <SuccessAnimationModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        message="Zal məlumatları uğurla yeniləndi!"
+      />
     </div>
   );
 }

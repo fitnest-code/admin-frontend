@@ -5,7 +5,8 @@ import * as Tabs from "@radix-ui/react-tabs";
 import { Copy, Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useGymStore } from "@/lib/store/gym-store";
-import { useAddGymLocation, useGetAddressByCoords } from "@/lib/query/location-query";
+import { useValidateGymStep4 } from "@/lib/query/gym-query";
+import { useGetAddressByCoords } from "@/lib/query/location-query";
 
 
 type Lang = "Az" | "Ru" | "En";
@@ -17,16 +18,19 @@ const labels: Record<Lang, any> = {
 };
 
 export function StepAddress({ onNext }: { onNext?: () => void }) {
+  const { step4Data, setStep4Data } = useGymStore();
   const [mounted, setMounted] = useState(false);
   const [lang, setLang] = useState<Lang>("Az");
-  const { gymId } = useGymStore();
 
   // Koordinatlar (Başlanğıcda boş olmalıdır)
-  const [coords, setCoords] = useState<{ lat: number | "", lng: number | "" }>({ lat: "", lng: "" });
+  const [coords, setCoords] = useState<{ lat: number | "", lng: number | "" }>({ 
+    lat: step4Data?.lat ?? "", 
+    lng: step4Data?.lng ?? "" 
+  });
   const [copied, setCopied] = useState<"lat" | "lng" | null>(null);
 
   // Axtarış üçün state-lər
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(step4Data?.address || "");
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -39,21 +43,21 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
     shouldFetchAddress
   );
 
-  // 2. Step 4 Mutation
-  const { mutateAsync: submitStep4, isPending } = useAddGymLocation();
+  // 2. Step 4 Validation
+  const validateStep4 = useValidateGymStep4();
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Backend-dən gələn ünvanı input-a sinxronizasiya et
+  // Backend-dən gələn ünvanı input-a sinxronizasiya et (yalnız ünvan tamamilə boşdursa)
   useEffect(() => {
-    if (addressData?.addressText && !isSearching && shouldFetchAddress) {
+    if (addressData?.addressText && !searchQuery && shouldFetchAddress && !step4Data) {
       setSearchQuery(addressData.addressText);
     }
-  }, [addressData, isSearching, shouldFetchAddress]);
+  }, [addressData, searchQuery, shouldFetchAddress, step4Data]);
 
-  // Forward Geocoding (Axtarış)
+  // Forward Geocoding via dedicated backend proxy
   const debouncedSearch = (query: string) => {
     if (searchTimeout) clearTimeout(searchTimeout);
     if (!query || query.length < 3) {
@@ -64,11 +68,12 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
     const timeout = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1&countrycodes=az`);
+        // Query the administrative backend forward geocoding proxy
+        const res = await fetch(`/api/v1/admin/gyms/geocoding/forward?query=${encodeURIComponent(query)}`);
         const data = await res.json();
-        setSuggestions(data);
+        setSuggestions(Array.isArray(data) ? data : []);
       } catch (error) {
-        console.error("Geocoding error:", error);
+        console.error("Geocoding proxy error:", error);
       } finally {
         setIsSearching(false);
       }
@@ -77,10 +82,24 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
   };
 
   const handleSelectSuggestion = (s: any) => {
-    const lat = parseFloat(s.lat);
-    const lng = parseFloat(s.lon);
+    const lat = typeof s.latitude === "number" ? s.latitude : parseFloat(s.lat || 0);
+    const lng = typeof s.longitude === "number" ? s.longitude : parseFloat(s.lon || 0);
     setCoords({ lat, lng });
-    setSearchQuery(s.display_name);
+
+    const suggestedText = s.addressText || s.display_name || "";
+    
+    // Extract custom typed numbers/house indicators missing from the map result
+    const matchNumber = searchQuery.match(/\b\d+[A-Za-z]?\b/);
+    
+    if (matchNumber && !suggestedText.includes(matchNumber[0])) {
+      // Smartly insert the house number right after the street name
+      const parts = suggestedText.split(',');
+      parts[0] = `${parts[0].trim()} ${matchNumber[0]}`;
+      setSearchQuery(parts.join(', '));
+    } else {
+      setSearchQuery(suggestedText);
+    }
+    
     setSuggestions([]);
   };
 
@@ -92,41 +111,33 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
     navigator.clipboard.writeText(val.toString());
     setCopied(which);
     setTimeout(() => setCopied(null), 1500);
-    toast.success("Kopyalandı");
-  };
-
-  // Əsas Saxlama Məntiqi
-  const performSave = async () => {
-    if (!gymId) {
-      toast.error("Zal ID tapılmadı (Store-u yoxlayın)");
-      return false;
-    }
-
-    if (coords.lat === "" || coords.lng === "") {
-      toast.error("Zəhmət olmasa xəritədən mütləq bir nöqtə seçin və ya koordinatları daxil edin");
-      return false;
-    }
-
-    try {
-      await submitStep4({
-        gymId: Number(gymId),
-        latitude: Number(coords.lat),
-        longitude: Number(coords.lng)
-      });
-      return true;
-    } catch (error: any) {
-      toast.error(error.message || "Xəta baş verdi");
-      return false;
-    }
   };
 
   const handleNext = async () => {
-    const success = await performSave();
-    if (success) {
-      toast.success("Məkan qeydə alındı, növbəti mərhələyə keçilir");
+    if (coords.lat === "" || coords.lng === "") {
+      toast.error("Zəhmət olmasa xəritədən mütləq bir nöqtə seçin və ya koordinatları daxil edin");
+      return;
+    }
+
+    try {
+      const payload = {
+        latitude: Number(coords.lat),
+        longitude: Number(coords.lng)
+      };
+      await validateStep4.mutateAsync(payload);
+      setStep4Data({
+        cityId: 1,
+        address: searchQuery,
+        lat: Number(coords.lat),
+        lng: Number(coords.lng)
+      });
       onNext?.();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || error.message || "Xəta baş verdi");
     }
   };
+
+  const isPending = validateStep4.isPending;
 
   if (!mounted) return null;
 
@@ -136,8 +147,7 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
   const mapSrc = `https://maps.google.com/maps?q=${displayLat},${displayLng}&z=15&output=embed`;
 
   return (
-    <div className="w-full flex justify-center py-6">
-      <div className="bg-white rounded-2xl border border-[#ECECED] w-full max-w-[783px] p-7 flex flex-col gap-6 shadow-sm">
+    <div className="w-full bg-white rounded-[32px] border border-[#ECECED] p-10 flex flex-col gap-8 shadow-sm">
 
         {/* Dil Seçimi və Başlıq */}
         <div className="flex items-center justify-between">
@@ -180,17 +190,21 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
           {/* Suggestions Dropdown */}
           {suggestions.length > 0 && (
             <div className="absolute top-[100%] left-0 right-0 z-50 mt-1 bg-white border border-[#ECECED] rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2">
-              {suggestions.map((s, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => handleSelectSuggestion(s)}
-                  className="w-full text-left px-4 py-3 text-sm font-medium hover:bg-slate-50 border-b border-slate-50 last:border-0 transition-colors flex flex-col gap-0.5"
-                >
-                  <span className="text-slate-800">{s.display_name.split(',')[0]}</span>
-                  <span className="text-xs text-slate-400 truncate">{s.display_name}</span>
-                </button>
-              ))}
+              {suggestions.map((s, i) => {
+                const text = s.addressText || s.display_name || "";
+                const shortText = text.split(',')[0] || text;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => handleSelectSuggestion(s)}
+                    className="w-full text-left px-4 py-3 text-sm font-medium hover:bg-slate-50 border-b border-slate-50 last:border-0 transition-colors flex flex-col gap-0.5"
+                  >
+                    <span className="text-slate-800">{shortText}</span>
+                    <span className="text-xs text-slate-400 truncate">{text}</span>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -230,7 +244,7 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
         </div>
 
         {/* Xəritə Sahəsi */}
-        <div className="rounded-xl overflow-hidden border border-[#ECECED] h-[350px] bg-gray-50">
+        <div className="rounded-2xl overflow-hidden border border-[#ECECED] h-[450px] bg-gray-50">
           <iframe
             key={`${coords.lat}-${coords.lng}`}
             src={mapSrc}
@@ -243,18 +257,24 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
           />
         </div>
 
-        <div className="flex gap-4 pt-2">
+        {/* Footer Buttons */}
+        <div className="flex justify-end items-center gap-6 pt-6 border-t border-slate-100">
+          <button
+            type="button"
+            className="w-[280px] h-[52px] rounded-xl border-2 border-[#00B4CC] bg-white text-[#00B4CC] font-bold text-base hover:bg-[#00B4CC08] transition-all"
+          >
+            {t.save}
+          </button>
           <button
             type="button"
             disabled={isPending}
             onClick={handleNext}
-            className="flex-1 py-4 rounded-xl bg-[#00B4D8] text-white text-sm font-bold hover:bg-[#0096B4] flex items-center justify-center transition shadow-lg shadow-cyan-100 disabled:opacity-70"
+            className="w-[280px] h-[52px] rounded-xl bg-[#00B4CC] text-white font-bold text-base hover:bg-[#009DB3] transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-[#00B4CC20]"
           >
-            {isPending ? <Loader2 className="animate-spin" size={20} /> : t.next}
+            {isPending ? <Loader2 className="animate-spin" size={24} /> : t.next}
           </button>
         </div>
 
-      </div>
     </div>
   );
 }

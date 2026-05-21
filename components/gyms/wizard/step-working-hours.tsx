@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Trash2, Pencil, Plus, Loader2, Clock, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useGymStore } from "@/lib/store/gym-store";
-import { useAddGymWorkHours } from "@/lib/query/gym-work-hours";
+import { useValidateGymStep3 } from "@/lib/query/gym-query";
 import { AddClassTimeModal, ClassTimeData } from "../modals/add-hours-modal";
 import { IGymWorkHoursPayload, IWorkHour, IRestDay } from "@/lib/types/working-hours";
 import { cn } from "@/lib/utils";
@@ -36,6 +36,7 @@ const DAY_FULL_LABELS: Record<string, string> = {
 };
 
 export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
+  const { gymId, step3Data, setStep3Data } = useGymStore();
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<GenderTab>("generalWorkHours");
   const [modalOpen, setModalOpen] = useState(false);
@@ -43,32 +44,65 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
 
   const [enabledTabs, setEnabledTabs] = useState<Set<GenderTab>>(new Set(["generalWorkHours"]));
 
-  const [slots, setSlots] = useState<Record<GenderTab, SavedSlot[]>>({
+  // Map backend data back to frontend structure if exists
+  const initialSlots = step3Data ? {
+    generalWorkHours: step3Data.generalWorkHours.map((s: any) => ({ ...s, day: s.period.toLowerCase(), startTime: s.from, endTime: s.to, id: Math.random().toString() })),
+    workHoursMan: step3Data.workHoursMan.map((s: any) => ({ ...s, day: s.period.toLowerCase(), startTime: s.from, endTime: s.to, id: Math.random().toString() })),
+    workHoursWoman: step3Data.workHoursWoman.map((s: any) => ({ ...s, day: s.period.toLowerCase(), startTime: s.from, endTime: s.to, id: Math.random().toString() })),
+  } : {
     generalWorkHours: [],
     workHoursMan: [],
     workHoursWoman: [],
-  });
+  };
 
-  const [restDays, setRestDays] = useState<Set<string>>(new Set(["sunday"]));
+  const initialRestDays = step3Data ? new Set(step3Data.restDays.map((d: any) => d.period.toLowerCase())) : new Set(["sunday"]);
 
-  const gymId = useGymStore((state) => state.gymId);
-  const { mutateAsync: submitMutateAsync, isPending: isSubmitting } = useAddGymWorkHours();
+  const [slots, setSlots] = useState<Record<GenderTab, SavedSlot[]>>(initialSlots);
+  const [restDays, setRestDays] = useState<Set<string>>(initialRestDays);
+
+  const validateStep3 = useValidateGymStep3();
 
   useEffect(() => { setMounted(true); }, []);
 
   const handleNext = async () => {
-    if (!gymId) return toast.error("Zal ID tapılmadı");
+    // 1. Check if at least one slot exists for each enabled regime
+    const enabledTabsArray = Array.from(enabledTabs);
+    for (const tab of enabledTabsArray) {
+      if (slots[tab].length === 0) {
+        const labels: Record<GenderTab, string> = {
+          generalWorkHours: "Ümumi zal",
+          workHoursMan: "Kişi zalı",
+          workHoursWoman: "Qadın zalı"
+        };
+        return toast.error(`${labels[tab]} rejimi üçün heç bir iş saatı əlavə edilməyib`);
+      }
+    }
+
+    // 2. Check for slots on rest days (double check)
+    for (const tab of enabledTabsArray) {
+      const hasSlotsOnRestDay = slots[tab].some(s => restDays.has(s.day));
+      if (hasSlotsOnRestDay) {
+        return toast.error("İstirahət günlərinə iş saatı təyin edilə bilməz. Zəhmət olmasa yoxlayın.");
+      }
+    }
+
     try {
-      await submitMutateAsync(buildPayload());
-      toast.success("Məlumatlar uğurla yadda saxlanıldı");
+      const payload = buildPayload();
+      await validateStep3.mutateAsync(payload);
+      setStep3Data(payload);
       onNext?.();
     } catch (error: any) {
-      toast.error(error?.message || "Server xətası baş verdi (Növbəti)");
+      toast.error(error?.response?.data?.message || error?.message || "İş saatları məlumatları yanlışdır");
     }
   };
 
+  const isSubmitting = validateStep3.isPending;
+
+  const ALL_DAY_KEYS = DAY_SHORT_LABELS.map(d => d.key);
+
   const buildPayload = (): IGymWorkHoursPayload => {
     const mapToWorkHour = (key: GenderTab): IWorkHour[] => {
+      // If regime is not enabled, return empty (all days are rest days for this type)
       if (!enabledTabs.has(key)) return [];
       return slots[key].map(s => ({
         period: BACKEND_DAY_MAP[s.day] || s.day,
@@ -77,12 +111,38 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
       }));
     };
 
+    // Compute rest days: explicit rest days + all days for disabled regimes
+    // For enabled regimes: days without any work hours are implicitly rest days
+    const computeRestDays = (): IRestDay[] => {
+      // Start with explicitly selected rest days
+      const allRestDays = new Set(restDays);
+
+      // For each enabled regime, days without slots are also rest days
+      const enabledTabsArray = Array.from(enabledTabs);
+      if (enabledTabsArray.length > 0) {
+        // Find days that have NO slots in ANY enabled regime
+        for (const dayKey of ALL_DAY_KEYS) {
+          const hasSlotInAnyEnabled = enabledTabsArray.some(tab => 
+            slots[tab].some(s => s.day === dayKey)
+          );
+          if (!hasSlotInAnyEnabled) {
+            allRestDays.add(dayKey);
+          }
+        }
+      } else {
+        // No regime enabled at all — all days are rest days
+        ALL_DAY_KEYS.forEach(d => allRestDays.add(d));
+      }
+
+      return Array.from(allRestDays).map(d => ({ period: BACKEND_DAY_MAP[d] || d }));
+    };
+
     return {
-      gymId: Number(gymId),
+      gymId: gymId ? Number(gymId) : 0,
       generalWorkHours: mapToWorkHour("generalWorkHours"),
       workHoursMan: mapToWorkHour("workHoursMan"),
       workHoursWoman: mapToWorkHour("workHoursWoman"),
-      restDays: Array.from(restDays).map(d => ({ period: BACKEND_DAY_MAP[d] || d })),
+      restDays: computeRestDays(),
     };
   };
 
@@ -114,48 +174,52 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
             const isEnabled = enabledTabs.has(tab.id);
             const isActive = activeTab === tab.id;
             return (
-              <button
+              <div
                 key={tab.id}
-                type="button"
                 onClick={() => {
-                  const newSet = new Set(enabledTabs);
-                  if (isEnabled) {
-                    // Unchecking — toggle off (but keep at least awareness)
-                    newSet.delete(tab.id);
-                    setEnabledTabs(newSet);
-                    // If this was the active view, switch to another enabled tab
-                    if (isActive) {
-                      const remaining = Array.from(newSet);
-                      if (remaining.length > 0) setActiveTab(remaining[0]);
-                    }
-                  } else {
-                    // Checking — toggle on and switch view to it
-                    newSet.add(tab.id);
-                    setEnabledTabs(newSet);
-                    setActiveTab(tab.id);
-                  }
+                  // Clicking the box body just switches the view, regardless of whether it's enabled
+                  setActiveTab(tab.id);
                 }}
                 className={cn(
-                  "flex-1 h-[52px] rounded-[32px] text-sm font-bold transition-all duration-300 border flex items-center justify-center gap-2",
-                  isEnabled
-                    ? isActive
-                      ? "bg-[#00B4CC] text-white border-[#00B4CC] shadow-md"
-                      : "bg-[#00B4CC15] text-[#00B4CC] border-[#00B4CC] hover:bg-[#00B4CC25]"
-                    : "bg-white text-[#6B7280] border-[#E5E7EB] hover:border-[#00B4CC80] hover:text-[#00B4CC]"
+                  "flex-1 h-[52px] rounded-[32px] text-sm font-bold transition-all duration-300 border flex items-center justify-center gap-2 select-none",
+                  isActive 
+                    ? isEnabled
+                      ? "bg-[#00B4CC] text-white border-[#00B4CC] shadow-md cursor-default"
+                      : "bg-[#F3F4F6] text-[#101828] border-[#D1D5DB] shadow-sm cursor-default" // active but not enabled
+                    : isEnabled
+                      ? "bg-[#00B4CC15] text-[#00B4CC] border-[#00B4CC] hover:bg-[#00B4CC25] cursor-pointer"
+                      : "bg-white text-[#6B7280] border-[#E5E7EB] hover:bg-slate-50 cursor-pointer"
                 )}
               >
-                <span className={cn(
-                  "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all",
-                  isEnabled
-                    ? isActive
-                      ? "border-white/50 bg-white/25"
-                      : "border-[#00B4D8] bg-[#00B4D8]"
-                    : "border-slate-200 bg-white"
-                )}>
+                {/* Checkbox — toggles enable/disable */}
+                <span
+                  role="checkbox"
+                  aria-checked={isEnabled}
+                  onClick={(e) => {
+                    e.stopPropagation(); // Don't trigger the outer div click
+                    const newSet = new Set(enabledTabs);
+                    if (isEnabled) {
+                      newSet.delete(tab.id);
+                      setEnabledTabs(newSet);
+                      // Don't auto-switch the tab away if they disable it, let them stay on the current view
+                    } else {
+                      newSet.add(tab.id);
+                      setEnabledTabs(newSet);
+                      // Don't auto-switch tab when enabling
+                    }
+                  }}
+                  className={cn(
+                    "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all cursor-pointer hover:scale-110",
+                    isEnabled
+                      ? isActive
+                        ? "border-white/50 bg-white/25"
+                        : "border-[#00B4D8] bg-[#00B4D8]"
+                      : "border-slate-300 bg-white hover:border-[#00B4CC80]"
+                  )}>
                   {isEnabled && <Check className="text-white w-3.5 h-3.5 stroke-[4]" />}
                 </span>
                 {tab.label}
-              </button>
+              </div>
             );
           })}
         </div>
@@ -266,7 +330,17 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
                 type="button"
                 onClick={() => {
                   const newRest = new Set(restDays);
-                  newRest.has(day.key) ? newRest.delete(day.key) : newRest.add(day.key);
+                  if (newRest.has(day.key)) {
+                    newRest.delete(day.key);
+                  } else {
+                    newRest.add(day.key);
+                    // Clear slots for this day across all tabs
+                    setSlots(prev => ({
+                      generalWorkHours: prev.generalWorkHours.filter(s => s.day !== day.key),
+                      workHoursMan: prev.workHoursMan.filter(s => s.day !== day.key),
+                      workHoursWoman: prev.workHoursWoman.filter(s => s.day !== day.key),
+                    }));
+                  }
                   setRestDays(newRest);
                 }}
                 className={cn(
@@ -288,7 +362,6 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
       <div className="flex justify-end items-center gap-6 pt-10 border-t border-slate-100">
         <button
           type="button"
-          onClick={() => toast.success("Məlumatlar müvəqqəti yadda saxlanıldı")}
           className="w-[280px] h-[52px] rounded-xl border-2 border-[#00B4CC] bg-white text-[#00B4CC] font-bold text-base hover:bg-[#00B4CC08] transition-all"
         >
           Yadda saxla
@@ -306,7 +379,22 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
       <AddClassTimeModal
         open={modalOpen}
         onOpenChange={setModalOpen}
+        restDays={restDays}
+        onRestDaysChange={(newRestDays) => {
+          // Clear slots for newly added rest days across all tabs
+          setSlots(prev => ({
+            generalWorkHours: prev.generalWorkHours.filter(s => !newRestDays.has(s.day)),
+            workHoursMan: prev.workHoursMan.filter(s => !newRestDays.has(s.day)),
+            workHoursWoman: prev.workHoursWoman.filter(s => !newRestDays.has(s.day)),
+          }));
+          setRestDays(newRestDays);
+        }}
+        editData={editingId ? slots[activeTab].find(s => s.id === editingId) || null : null}
         onSubmit={(data) => {
+          if (restDays.has(data.day)) {
+            return toast.error("İstirahət gününə iş saatı əlavə edilə bilməz");
+          }
+
           const timeToMin = (t: string) => {
             const [h, m] = t.split(':').map(Number);
             return h * 60 + m;
@@ -336,7 +424,7 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
           } else {
             setSlots(prev => ({...prev, [activeTab]: [...prev[activeTab], { id: Math.random().toString(), ...data }]}));
           }
-          setModalOpen(false);
+          // Don't close modal here — modal closes itself after iterating all days
         }}
       />
     </div>

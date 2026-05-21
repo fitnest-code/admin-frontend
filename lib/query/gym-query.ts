@@ -52,6 +52,56 @@ export function useCreateGymStep1() {
   })
 }
 
+// 2.1 Validation Hooks
+export function useValidateGymStep1() {
+  return useMutation({
+    mutationFn: (payload: GymStep1Payload) =>
+      apiPost('/admin/gyms/validate/step1', payload),
+  });
+}
+
+export function useValidateGymStep2() {
+  return useMutation({
+    mutationFn: (formData: FormData) =>
+      apiPost('/admin/gyms/validate/step2', formData),
+  });
+}
+
+export function useValidateGymStep3() {
+  return useMutation({
+    mutationFn: (payload: any) =>
+      apiPost('/admin/gyms/validate/step3', payload),
+  });
+}
+
+export function useValidateGymStep4() {
+  return useMutation({
+    mutationFn: (payload: any) =>
+      apiPost('/admin/gyms/validate/step4', payload),
+  });
+}
+
+export function useValidateGymStep5() {
+  return useMutation({
+    mutationFn: (formData: FormData) =>
+      apiPost('/admin/gyms/validate/step5', formData),
+  });
+}
+
+export function useValidateGymStep6() {
+  return useMutation({
+    mutationFn: (payload: GymCreateStep6Request) =>
+      apiPost('/admin/gyms/validate/step6', payload),
+  });
+}
+
+export function useValidateGymStep7() {
+  return useMutation({
+    mutationFn: (payload: GymCreateStep7Request) =>
+      apiPost('/admin/gyms/validate/step7', payload),
+  });
+}
+
 // 3. Zalı silmək üçün
 export function useDeleteGym() {
   const queryClient = useQueryClient();
@@ -80,7 +130,7 @@ export function useCreateSupportedService() {
 
   return useMutation({
     mutationFn: (payload: SupportedServiceRequest) =>
-      apiPost('/admin/gyms/services', payload),
+      apiPost<SupportedServiceResponse>('/admin/gyms/services', payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['supported-services'] });
     }
@@ -121,6 +171,69 @@ export function useCreateGymStep7() {
   return useMutation({
     mutationFn: ({ id, payload }: { id: number, payload: GymCreateStep7Request }) =>
       apiPost(`/admin/gyms/${id}/step7`, payload),
+  });
+}
+
+// 7.1 Complete Gym Creation (Sequential All Steps)
+export function useCreateGymComplete() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: {
+      step1: GymStep1Payload;
+      step2: any; // LocalTrainer[]
+      step3: any; // Step3Data
+      step4: any; // Step4Data
+      step5: any; // Step5Photos
+      step6: GymCreateStep6Request;
+      step7: GymCreateStep7Request;
+    }) => {
+      // Step 1
+      const step1Res = await apiPost<GymStep1Response>('/admin/gyms/step1', data.step1);
+      const gymId = step1Res.gymId;
+
+      // Step 2 (Trainers)
+      const fd2 = new FormData();
+      data.step2.forEach((t: any) => {
+        fd2.append("names", t.name);
+        fd2.append("surnames", t.surname);
+        fd2.append("professionIds", String(t.professionId));
+        fd2.append("emails", t.email);
+        fd2.append("phones", t.phone);
+        fd2.append("lessonTypesPerTrainer", t.lessonTypeIds?.join(",") || "");
+        if (t.photo) fd2.append("photos", t.photo);
+      });
+      await apiPost(`/admin/gyms/${gymId}/step2`, fd2);
+
+      // Step 3 (Working Hours)
+      await apiPost(`/admin/gyms/${gymId}/step3`, data.step3);
+
+      // Step 4 (Address)
+      await apiPost(`/admin/gyms/${gymId}/step4`, {
+        latitude: data.step4.lat,
+        longitude: data.step4.lng
+      });
+
+      // Step 5 (Images)
+      const fd5 = new FormData();
+      if (data.step5.cover) fd5.append("coverPhoto", data.step5.cover);
+      data.step5.rooms.forEach((r: any) => {
+        fd5.append("roomPhotos", r.file);
+        fd5.append("roomNames", r.name);
+      });
+      await apiPost(`/admin/gyms/${gymId}/step5`, fd5);
+
+      // Step 6 (Plans)
+      await apiPost(`/admin/gyms/${gymId}/step6`, data.step6);
+
+      // Step 7 (Admins)
+      await apiPost(`/admin/gyms/${gymId}/step7`, data.step7);
+
+      return gymId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gyms'] });
+    }
   });
 }
 
@@ -256,4 +369,226 @@ export function useProfessions() {
     queryFn: () => apiGet<IProfession[]>('/professions'),
     staleTime: 10 * 60 * 1000,
   });
+}
+
+// 15. Zal adminlərini çəkmək üçün
+export function useGymAdmins(gymId: number | string | null | undefined) {
+  return useQuery({
+    queryKey: ['gym-admins', gymId ? Number(gymId) : null],
+    queryFn: () => {
+      if (!gymId) return Promise.resolve([])
+      return apiGet<any[]>(`/admin/gyms/${gymId}/admins`)
+    },
+    enabled: !!gymId,
+  })
+}
+
+// 16. Zal admini əlavə etmək üçün
+export function useAddGymAdmin() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ gymId, payload }: { gymId: number, payload: any }) =>
+      apiPost(`/admin/gyms/${gymId}/admins`, payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-admins', variables.gymId] });
+      toast.success('Admin uğurla əlavə edildi');
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Xəta baş verdi');
+    }
+  });
+}
+
+// 17. Zal admini silmək üçün
+export function useDeleteGymAdmin() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ gymId, adminId }: { gymId: number, adminId: number }) =>
+      apiDelete(`/admin/gyms/${gymId}/admins/${adminId}`),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-admins', variables.gymId] });
+      toast.success('Admin silindi');
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Silinmə zamanı xəta baş verdi');
+    }
+  });
+}
+
+// 18. Zal rəylərini çəkmək üçün
+export function useGymReviews(gymId: number | string | null | undefined, params?: { status?: string, search?: string, page?: number, pageSize?: number, sort?: string }) {
+  return useQuery({
+    queryKey: ['gym-reviews', gymId, params],
+    queryFn: () => {
+      if (!gymId) return Promise.resolve(null)
+      const searchParams = new URLSearchParams()
+      if (params?.status) searchParams.append('status', params.status)
+      if (params?.search) searchParams.append('search', params.search)
+      if (params?.page) searchParams.append('page', params.page.toString())
+      if (params?.pageSize) searchParams.append('pageSize', params.pageSize.toString())
+      if (params?.sort) searchParams.append('sort', params.sort)
+      
+      return apiGet<any>(`/admin/gyms/${gymId}/reviews?${searchParams.toString()}`)
+    },
+    enabled: !!gymId,
+  })
+}
+
+// 19. Rəy detallarını çəkmək üçün
+export function useReviewDetail(reviewId: number | string | null) {
+  return useQuery({
+    queryKey: ['review-detail', reviewId],
+    queryFn: () => {
+      if (!reviewId) return Promise.resolve(null)
+      return apiGet<any>(`/admin/gyms/reviews/${reviewId}`)
+    },
+    enabled: !!reviewId,
+  })
+}
+
+// 20. Rəyi təsdiqləmək üçün
+export function useApproveReview() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (reviewId: number | string) =>
+      apiPost(`/admin/gyms/reviews/${reviewId}/approve`, {}),
+    onSuccess: (_, reviewId) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-reviews'] });
+      queryClient.invalidateQueries({ queryKey: ['review-detail', reviewId] });
+      toast.success('Rəy təsdiq edildi');
+    },
+  });
+}
+
+// 21. Rəyi rədd etmək üçün
+export function useRejectReview() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (reviewId: number | string) =>
+      apiPost(`/admin/gyms/reviews/${reviewId}/reject`, {}),
+    onSuccess: (_, reviewId) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-reviews'] });
+      queryClient.invalidateQueries({ queryKey: ['review-detail', reviewId] });
+      toast.success('Rəy rədd edildi');
+    },
+  });
+}
+
+// 22. Rezervasiyaları çəkmək üçün
+export function useGymReservations(gymId: number | string | null | undefined, params?: { status?: string, page?: number, pageSize?: number }) {
+  return useQuery({
+    queryKey: ['gym-reservations', gymId, params],
+    queryFn: () => {
+      if (!gymId) return Promise.resolve(null)
+      const searchParams = new URLSearchParams()
+      if (params?.status) searchParams.append('status', params.status)
+      if (params?.page) searchParams.append('page', params.page.toString())
+      if (params?.pageSize) searchParams.append('pageSize', params.pageSize.toString())
+      
+      return apiGet<any>(`/admin/gyms/${gymId}/reservations?${searchParams.toString()}`)
+    },
+    enabled: !!gymId,
+  })
+}
+
+// 23. Rezervasiya detallarını çəkmək üçün
+export function useReservationDetail(reservationId: number | string | null) {
+  return useQuery({
+    queryKey: ['reservation-detail', reservationId],
+    queryFn: () => {
+      if (!reservationId) return Promise.resolve(null)
+      return apiGet<any>(`/admin/gyms/reservations/${reservationId}`)
+    },
+    enabled: !!reservationId,
+  })
+}
+
+// 24. Rezervasiya statusunu yeniləmək üçün
+export function useUpdateReservationStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ reservationId, status, reason }: { reservationId: number | string, status: string, reason?: string }) => {
+      const searchParams = new URLSearchParams()
+      searchParams.append('status', status)
+      if (reason) searchParams.append('reason', reason)
+      // Note: Backend might expect PATCH, but apiPost/apiPut/apiPatch are available.
+      // My backend uses @PatchMapping. I should use apiPatch if available or apiPost if it's configured to handle it.
+      // Let's check api client.
+      return apiPost(`/admin/gyms/reservations/${reservationId}/status?${searchParams.toString()}`, {})
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-reservations'] });
+      queryClient.invalidateQueries({ queryKey: ['reservation-detail', variables.reservationId] });
+      queryClient.invalidateQueries({ queryKey: ['gym-reservation-stats', variables.reservationId] }); // Fixed key
+      toast.success('Status yeniləndi');
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Xəta baş verdi');
+    }
+  });
+}
+
+// 25. Rezervasiya statistikasını çəkmək üçün
+export function useGymReservationStats(gymId: number | string | null | undefined) {
+  return useQuery({
+    queryKey: ['gym-reservation-stats', gymId],
+    queryFn: () => {
+      if (!gymId) return Promise.resolve(null)
+      return apiGet<any>(`/admin/gyms/${gymId}/reservations/stats`)
+    },
+    enabled: !!gymId,
+  })
+}
+
+// 26. Dərs saatlarını çəkmək üçün
+export function useGymLessonHours(gymId: number | string | null | undefined) {
+  return useQuery({
+    queryKey: ['gym-lesson-hours', gymId],
+    queryFn: () => {
+      if (!gymId) return Promise.resolve([])
+      return apiGet<any[]>(`/admin/gyms/${gymId}/lesson-hours`)
+    },
+    enabled: !!gymId,
+  })
+}
+
+// 27. Yeni dərs saatı əlavə etmək üçün
+export function useAddLessonHour() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ gymId, payload }: { gymId: number, payload: any }) =>
+      apiPost(`/admin/gyms/${gymId}/lesson-hours`, payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-lesson-hours', variables.gymId] });
+      toast.success('Dərs saatı əlavə edildi');
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Xəta baş verdi');
+    }
+  });
+}
+
+// 28. Dərs saatını silmək üçün
+export function useDeleteLessonHour() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ gymId, lessonHourId }: { gymId: number, lessonHourId: number | string }) =>
+      apiDelete(`/admin/gyms/lesson-hours/${lessonHourId}`),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-lesson-hours', variables.gymId] });
+      toast.success('Dərs saatı silindi');
+    }
+  });
+}
+
+// 29. Zalın dərs növlərini çəkmək üçün
+export function useGymLessonTypes(gymId: number | string | null | undefined) {
+  return useQuery({
+    queryKey: ['gym-lesson-types', gymId],
+    queryFn: () => {
+      if (!gymId) return Promise.resolve([])
+      return apiGet<any[]>(`/admin/reservations/gyms/${gymId}/lesson-types`)
+    },
+    enabled: !!gymId,
+  })
 }

@@ -7,7 +7,9 @@ import { toast } from "sonner"
 import { useQueryClient } from "@tanstack/react-query"
 import { useProfessionsQuery } from "@/lib/query/add-trainer-query"
 import { useUpdateTrainer } from "@/lib/query/trainers"
+import { useCategories, useGymDetailsAdmin } from "@/lib/query/gym-query"
 import { InputField } from "../components/InputField"
+import { useGymStore } from "@/lib/store/gym-store"
 
 interface TrainerDetailsModalProps {
   trainer: any
@@ -15,10 +17,12 @@ interface TrainerDetailsModalProps {
 }
 
 export function TrainerDetailsModal({ trainer, onClose }: TrainerDetailsModalProps) {
+  const { gymId } = useGymStore()
+  
   const [data, setData] = useState({
     name: trainer.name || '',
     surname: trainer.surname || '',
-    professionId: trainer.profession?.id?.toString() || '',
+    professionId: trainer.profession?.id?.toString() || String(trainer.professionId || ''),
     phone: trainer.phone || '',
     email: trainer.email || '',
   })
@@ -26,10 +30,30 @@ export function TrainerDetailsModal({ trainer, onClose }: TrainerDetailsModalPro
   const fileRef = useRef<HTMLInputElement>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(trainer.picture || null)
+  const [selectedLessonTypeIds, setSelectedLessonTypeIds] = useState<Set<number>>(
+    new Set(trainer.lessonTypeIds || [])
+  )
 
   const queryClient = useQueryClient()
   const { data: professions } = useProfessionsQuery()
-  const { mutate: updateTrainer, isPending } = useUpdateTrainer(trainer.gym_id || trainer.gymId || 1) // Using 1 as fallback or get from store
+  const { mutate: updateTrainer, isPending } = useUpdateTrainer(gymId || 1) // Using 1 as fallback or get from store
+  const { data: categoriesData } = useCategories()
+  const { data: gymDetails } = useGymDetailsAdmin(gymId)
+
+  const activeCategoryId = gymDetails?.categoryId
+  const selectedCategory = categoriesData?.items?.find((c: any) => c.id === activeCategoryId)
+
+  const toggleLessonType = (ltId: number) => {
+    setSelectedLessonTypeIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(ltId)) {
+        next.delete(ltId)
+      } else {
+        next.add(ltId)
+      }
+      return next
+    })
+  }
 
   useEffect(() => {
     return () => {
@@ -71,12 +95,12 @@ export function TrainerDetailsModal({ trainer, onClose }: TrainerDetailsModalPro
           professionId: Number(data.professionId),
           phone: data.phone,
           email: data.email,
-          ...(selectedFile && { photo: selectedFile })
+          ...(selectedFile && { photo: selectedFile }),
+          lessonTypeIds: Array.from(selectedLessonTypeIds),
         }
       },
       {
         onSuccess: () => {
-          toast.success("Məşqçi məlumatları yeniləndi")
           queryClient.invalidateQueries({ queryKey: ["gym-trainers"] })
           onClose()
         },
@@ -188,6 +212,31 @@ export function TrainerDetailsModal({ trainer, onClose }: TrainerDetailsModalPro
               />
             </div>
           </div>
+
+          {/* Lesson Types Grid (Növlər) */}
+          {selectedCategory?.lessonTypes && selectedCategory.lessonTypes.length > 0 && (
+            <div className="flex flex-col items-start gap-3 w-full animate-in fade-in duration-300">
+              <label className="text-[16px] leading-[24px] font-semibold text-black">Dərs növləri</label>
+              <div className="w-full flex flex-wrap items-center justify-start gap-3">
+                {selectedCategory.lessonTypes.map((lt: any) => {
+                  const isSelected = selectedLessonTypeIds.has(lt.id);
+                  return (
+                    <div
+                      key={lt.id}
+                      onClick={() => toggleLessonType(lt.id)}
+                      className={`w-fit h-[48px] rounded-[8px] inline-flex items-center justify-start px-4 cursor-pointer select-none transition-all duration-200 ${
+                        isSelected 
+                          ? "bg-[#00b4cc]/[0.04] border border-[#00b4cc] text-[#00b4cc] font-medium shadow-sm" 
+                          : "bg-[#fafafa] border border-[#ececed] text-[#101828] hover:border-gray-300"
+                      }`}
+                    >
+                      <span className="text-[16px] leading-[24px]">{lt.name}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="w-full flex justify-center mt-2">
             <button 

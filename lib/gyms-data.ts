@@ -245,4 +245,5 @@ export const GYM_TABS = [
   { key: 'admins',      label: 'Zal Admini' },
   { key: 'reviews',     label: 'Reytinq' },
   { key: 'reservations',label: 'Rezervlər' },
+  { key: 'lessonHours', label: 'Dərs saatları' },
 ];

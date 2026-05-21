@@ -46,7 +46,7 @@ export const NAV_ITEMS: NavItem[] = [
     key: "odenisler",
     label: "Ödənişlər",
     icon: CreditCard,
-    href: "/odenisler",
+    href: "/payments",
     iconPath: "/Sidebar/Sidebar/odenisler.svg"
   },
   {
