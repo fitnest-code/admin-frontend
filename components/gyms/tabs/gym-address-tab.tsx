@@ -185,7 +185,7 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
 
           {/* Suggestions Dropdown */}
           {suggestions.length > 0 && (
-            <div className="absolute top-[100%] left-0 right-0 z-50 mt-1 bg-white border border-[#ECECED] rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2">
+            <div className="absolute top-[100%] left-0 right-0 z-[1000] mt-1 bg-white border border-[#ECECED] rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2">
               {suggestions.map((s, i) => {
                 const text = s.addressText || s.display_name || "";
                 const shortText = text.split(',')[0] || text;
