@@ -47,7 +47,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
   const [isUpdatingFromCoords, setIsUpdatingFromCoords] = useState(false);
 
   // 1. Koordinat dəyişdikcə ünvanı gətirən query
-  const { data: revAddressData } = useGetAddressByCoords(
+  const { data: revAddressData, isFetching: isAddressFetching } = useGetAddressByCoords(
     formData.latitude,
     formData.longitude,
     isEditing && isUpdatingFromCoords
@@ -140,15 +140,20 @@ export function InfoTab({ gymId }: InfoTabProps) {
 
   // Sync reverse geocoding result to address field
   useEffect(() => {
-    if (isEditing && isUpdatingFromCoords && revAddressData?.addressText) {
-      setFormData(prev => ({
-        ...prev,
-        address: revAddressData.addressText || "",
-        city: revAddressData.city || prev.city || ""
-      }));
-      setIsUpdatingFromCoords(false);
+    if (isEditing && isUpdatingFromCoords && !isAddressFetching && (revAddressData?.addressText || revAddressData?.city)) {
+      const latDiff = Math.abs((revAddressData.latitude || 0) - formData.latitude);
+      const lngDiff = Math.abs((revAddressData.longitude || 0) - formData.longitude);
+      if (latDiff < 0.0001 && lngDiff < 0.0001) {
+        const fullAddr = [revAddressData.addressText, revAddressData.city].filter(Boolean).join(", ");
+        setFormData(prev => ({
+          ...prev,
+          address: fullAddr,
+          city: revAddressData.city || prev.city || ""
+        }));
+        setIsUpdatingFromCoords(false);
+      }
     }
-  }, [revAddressData, isEditing, isUpdatingFromCoords]);
+  }, [revAddressData, isAddressFetching, isEditing, isUpdatingFromCoords, formData.latitude, formData.longitude]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;

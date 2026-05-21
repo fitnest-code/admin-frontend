@@ -56,7 +56,7 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
   const [isUpdatingFromCoords, setIsUpdatingFromCoords] = useState(false);
 
   // 1. Reverse Geocoding when coordinates are typed manually
-  const { data: addressData } = useGetAddressByCoords(
+  const { data: addressData, isFetching: isAddressFetching } = useGetAddressByCoords(
     contact.latitude || 0,
     contact.longitude || 0,
     isUpdatingFromCoords
@@ -65,11 +65,15 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
 
   // Sync reverse geocoding result to address field
   useEffect(() => {
-    if (isUpdatingFromCoords && addressData?.addressText) {
-      setAddress(addressData.addressText);
-      setIsUpdatingFromCoords(false); // Reset
+    if (isUpdatingFromCoords && !isAddressFetching && (addressData?.addressText || addressData?.city)) {
+      const latDiff = Math.abs((addressData.latitude || 0) - (contact.latitude || 0));
+      const lngDiff = Math.abs((addressData.longitude || 0) - (contact.longitude || 0));
+      if (latDiff < 0.0001 && lngDiff < 0.0001) {
+        setAddress([addressData.addressText, addressData.city].filter(Boolean).join(", "));
+        setIsUpdatingFromCoords(false); // Reset
+      }
     }
-  }, [addressData, isUpdatingFromCoords]);
+  }, [addressData, isAddressFetching, isUpdatingFromCoords, contact.latitude, contact.longitude]);
 
   useEffect(() => {
     if (!data) return;

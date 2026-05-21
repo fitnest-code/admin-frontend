@@ -129,7 +129,7 @@ export function Sidebar({ className }: SidebarProps) {
                           : 'text-black hover:bg-slate-50',
                         collapsed 
                           ? 'w-[44px] h-[40px] justify-center px-0' 
-                          : 'w-[160px] h-[40px] px-4 gap-3',
+                          : 'w-full h-[40px] px-4 gap-3',
                       )}
                       aria-current={isActive ? 'page' : undefined}
                     >

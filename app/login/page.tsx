@@ -85,7 +85,8 @@ function LoginForm() {
     try {
       const res = await apiPost<{ success: { details: { otp_session_id: string } } }>(
         '/auth/password-recovery/admin/forgot-password',
-        { mobile: mobile.trim() }
+        { mobile: mobile.trim() },
+        { auth: false }
       )
       const sessionId = res?.success?.details?.otp_session_id
       if (sessionId) {
@@ -124,7 +125,8 @@ function LoginForm() {
         {
           otp_session_id: otpSessionId,
           otp_code: otpCode.trim(),
-        }
+        },
+        { auth: false }
       )
       const token = res?.reset_token
       if (token) {
@@ -171,7 +173,8 @@ function LoginForm() {
         {
           reset_token: resetToken,
           newPassword: newPassword,
-        }
+        },
+        { auth: false }
       )
       setSuccessMessage('Şifrə uğurla sıfırlandı. Yeni şifrənizlə daxil ola bilərsiniz.')
       setStep('LOGIN')

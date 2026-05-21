@@ -19,10 +19,16 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const isGymAdmin = user?.role === 'ROLE_GYM_SUPER_ADMIN' || user?.role === 'ROLE_GYM_ADMIN'
   const router = useRouter()
   const pathname = usePathname()
-  const [isResolving, setIsResolving] = useState(isGymAdmin)
+  const [mounted, setMounted] = useState(false)
+  const [isResolving, setIsResolving] = useState(false)
 
   useEffect(() => {
-    if (isGymAdmin) {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (mounted && isGymAdmin) {
+      setIsResolving(true)
       apiGet<any>('/admin/gyms/list')
         .then(res => {
           const items = res?.data?.items || []
@@ -42,7 +48,15 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           setIsResolving(false)
         })
     }
-  }, [isGymAdmin, pathname, router])
+  }, [mounted, isGymAdmin, pathname, router])
+
+  if (!mounted || (isGymAdmin && isResolving)) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#00B4CC] border-t-transparent" />
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

@@ -237,83 +237,85 @@ function DocumentFormModal({ isOpen, onClose, document, onSuccess }: {
         onClose();
       }
     }}>
-      <DialogContent>
+      <DialogContent className="w-full max-w-[calc(100%-2rem)] sm:max-w-[600px] rounded-2xl p-6">
         <DialogHeader>
-          <DialogTitle>{document ? "Sənədi yenilə" : "Yeni sənəd"}</DialogTitle>
+          <DialogTitle className="text-xl font-bold text-[#1F2937]">
+            {document ? "Sənədi yenilə" : "Yeni sənəd"}
+          </DialogTitle>
         </DialogHeader>
-      <div className="flex flex-col gap-5 py-2">
-        {!document && (
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-slate-700">Tip</label>
-            <select
-              name="type"
-              value={formData.type}
+        <div className="flex flex-col gap-4 py-2">
+          {!document && (
+            <div className="flex flex-col gap-2 w-full text-left">
+              <label className="text-sm font-semibold text-[#1F2937]">Tip</label>
+              <select
+                name="type"
+                value={formData.type}
+                onChange={handleChange}
+                className="w-full bg-[#F9FAFB] border border-[#ECECED] rounded-xl px-4 py-3 text-sm font-medium text-[#1F2937] outline-none focus:border-[#00B4CC] focus:bg-white transition-all h-[48px]"
+              >
+                <option value="TERMS">İstifadə Şərtləri</option>
+                <option value="PRIVACY">Məxfilik Siyasəti</option>
+                <option value="REFUND">Geri Qaytarma Siyasəti</option>
+                <option value="OTHER">Digər</option>
+              </select>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2 w-full text-left">
+            <label className="text-sm font-semibold text-[#1F2937]">Başlıq</label>
+            <input
+              type="text"
+              name="title"
+              value={formData.title}
               onChange={handleChange}
-              className="h-11 rounded-lg border border-[#ececed] px-3 outline-none focus:border-[#00B4CC]"
-            >
-              <option value="TERMS">İstifadə Şərtləri</option>
-              <option value="PRIVACY">Məxfilik Siyasəti</option>
-              <option value="REFUND">Geri Qaytarma Siyasəti</option>
-              <option value="OTHER">Digər</option>
-            </select>
+              placeholder="Məs: İstifadə Şərtləri v2"
+              className="w-full bg-[#F9FAFB] border border-[#ECECED] rounded-xl px-4 py-3 text-sm font-medium text-[#1F2937] outline-none focus:border-[#00B4CC] focus:bg-white transition-all h-[48px]"
+            />
           </div>
-        )}
 
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-semibold text-slate-700">Başlıq</label>
-          <input
-            type="text"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            placeholder="Məs: İstifadə Şərtləri v2"
-            className="h-11 rounded-lg border border-[#ececed] px-3 outline-none focus:border-[#00B4CC]"
-          />
-        </div>
+          <div className="flex flex-col gap-2 w-full text-left">
+            <label className="text-sm font-semibold text-[#1F2937]">Versiya</label>
+            <input
+              type="text"
+              name="version"
+              value={formData.version}
+              onChange={handleChange}
+              placeholder="Məs: 1.0"
+              className="w-full bg-[#F9FAFB] border border-[#ECECED] rounded-xl px-4 py-3 text-sm font-medium text-[#1F2937] outline-none focus:border-[#00B4CC] focus:bg-white transition-all h-[48px]"
+            />
+          </div>
 
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-semibold text-slate-700">Versiya</label>
-          <input
-            type="text"
-            name="version"
-            value={formData.version}
-            onChange={handleChange}
-            placeholder="Məs: 1.0"
-            className="h-11 rounded-lg border border-[#ececed] px-3 outline-none focus:border-[#00B4CC]"
-          />
-        </div>
+          <div className="flex flex-col gap-2 w-full text-left">
+            <label className="text-sm font-semibold text-[#1F2937]">Məzmun (HTML/Text)</label>
+            <textarea
+              name="content"
+              value={formData.content}
+              onChange={handleChange}
+              placeholder="Sənədin məzmununu bura daxil edin..."
+              className="w-full bg-[#F9FAFB] border border-[#ECECED] rounded-xl px-4 py-3 text-sm font-medium text-[#1F2937] outline-none focus:border-[#00B4CC] focus:bg-white transition-all h-[240px] resize-none"
+            />
+          </div>
 
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-semibold text-slate-700">Məzmun (HTML/Text)</label>
-          <textarea
-            name="content"
-            value={formData.content}
-            onChange={handleChange}
-            placeholder="Sənədin məzmununu bura daxil edin..."
-            className="h-40 rounded-lg border border-[#ececed] p-3 outline-none focus:border-[#00B4CC] resize-y"
-          />
+          <div className="flex items-center justify-center gap-4 w-full mt-4">
+            <button
+              onClick={() => {
+                setFormData({ type: "", title: "", content: "", version: "" });
+                onClose();
+              }}
+              className="flex-1 h-12 rounded-xl border border-[#ECECED] bg-white text-[#4A5568] font-semibold text-sm hover:bg-slate-50 transition-all flex items-center justify-center cursor-pointer"
+            >
+              Ləğv et
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isPending}
+              className="flex-1 h-12 rounded-xl bg-[#00B4CC] hover:bg-[#009DB3] text-white font-semibold text-sm transition-all flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isPending && <Loader2 size={16} className="animate-spin mr-2" />}
+              Yadda saxla
+            </button>
+          </div>
         </div>
-
-        <div className="flex items-center justify-end gap-3 mt-4">
-          <button
-            onClick={() => {
-              setFormData({ type: "", title: "", content: "", version: "" });
-              onClose();
-            }}
-            className="h-10 px-6 rounded-lg font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
-          >
-            Ləğv et
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={isPending}
-            className="h-10 px-6 rounded-lg font-semibold text-white bg-[#00B4CC] hover:bg-[#009DB3] transition-colors flex items-center gap-2"
-          >
-            {isPending && <Loader2 size={16} className="animate-spin" />}
-            Yadda saxla
-          </button>
-        </div>
-      </div>
       </DialogContent>
     </Dialog>
   );
