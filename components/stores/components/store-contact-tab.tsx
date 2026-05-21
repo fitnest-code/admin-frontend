@@ -41,7 +41,7 @@ export default function ContactInfoTab({ data, onChange }: Step2Props) {
   const [isUpdatingFromCoords, setIsUpdatingFromCoords] = useState(false);
 
   // 1. Reverse Geocoding when coordinates are typed manually
-  const { data: addressData } = useGetAddressByCoords(
+  const { data: addressData, isFetching: isAddressFetching } = useGetAddressByCoords(
     data.latitude || 0,
     data.longitude || 0,
     isUpdatingFromCoords
@@ -70,15 +70,20 @@ export default function ContactInfoTab({ data, onChange }: Step2Props) {
 
   // Sync reverse geocoding result to address field
   useEffect(() => {
-    if (isUpdatingFromCoords && addressData?.addressText) {
-      setSearchQuery(addressData.addressText);
-      onChange({
-        ...data,
-        address: addressData.addressText
-      });
-      setIsUpdatingFromCoords(false); // Reset
+    if (isUpdatingFromCoords && !isAddressFetching && (addressData?.addressText || addressData?.city)) {
+      const latDiff = Math.abs((addressData.latitude || 0) - (data.latitude || 0));
+      const lngDiff = Math.abs((addressData.longitude || 0) - (data.longitude || 0));
+      if (latDiff < 0.0001 && lngDiff < 0.0001) {
+        const fullAddr = [addressData.addressText, addressData.city].filter(Boolean).join(", ");
+        setSearchQuery(fullAddr);
+        onChange({
+          ...data,
+          address: fullAddr
+        });
+        setIsUpdatingFromCoords(false); // Reset
+      }
     }
-  }, [addressData, isUpdatingFromCoords]);
+  }, [addressData, isAddressFetching, isUpdatingFromCoords, data.latitude, data.longitude]);
 
   // Ümumi string dəyərlər üçün (phone, email, socialUrl, address)
   const handleChange = (key: keyof IStoreStep2Payload, value: any) => {

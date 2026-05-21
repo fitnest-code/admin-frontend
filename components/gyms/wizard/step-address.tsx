@@ -13,10 +13,12 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
   const [mounted, setMounted] = useState(false);
 
   // Koordinatlar (Başlanğıcda boş olmalıdır)
-  const [coords, setCoords] = useState<{ lat: number | "", lng: number | "" }>({ 
+  const [coords, setCoords] = useState<{ lat: number | ""; lng: number | "" }>({ 
     lat: step4Data?.lat ?? "", 
     lng: step4Data?.lng ?? "" 
   });
+
+  const [isUpdatingFromCoords, setIsUpdatingFromCoords] = useState(false);
 
   // Axtarış üçün state-lər
   const [searchQuery, setSearchQuery] = useState(step4Data?.address || "");
@@ -25,7 +27,7 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
 
   // 1. Koordinat dəyişdikcə ünvanı gətirən query (Yalnız koordinatlar olduqda)
-  const shouldFetchAddress = mounted && typeof coords.lat === "number" && typeof coords.lng === "number";
+  const shouldFetchAddress = mounted && typeof coords.lat === "number" && typeof coords.lng === "number" && isUpdatingFromCoords;
   const { data: addressData, isFetching: isAddressFetching } = useGetAddressByCoords(
     typeof coords.lat === "number" ? coords.lat : 0,
     typeof coords.lng === "number" ? coords.lng : 0,
@@ -41,10 +43,17 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
 
   // Backend-dən gələn ünvanı input-a sinxronizasiya et
   useEffect(() => {
-    if (addressData?.addressText && !searchQuery && shouldFetchAddress) {
-      setSearchQuery(addressData.addressText);
+    if (isUpdatingFromCoords && !isAddressFetching && (addressData?.addressText || addressData?.city)) {
+      const expectedLat = typeof coords.lat === "number" ? coords.lat : 0;
+      const expectedLng = typeof coords.lng === "number" ? coords.lng : 0;
+      const latDiff = Math.abs((addressData.latitude || 0) - expectedLat);
+      const lngDiff = Math.abs((addressData.longitude || 0) - expectedLng);
+      if (latDiff < 0.0001 && lngDiff < 0.0001) {
+        setSearchQuery([addressData.addressText, addressData.city].filter(Boolean).join(", "));
+        setIsUpdatingFromCoords(false); // Reset
+      }
     }
-  }, [addressData, searchQuery, shouldFetchAddress]);
+  }, [addressData, isAddressFetching, isUpdatingFromCoords, coords.lat, coords.lng]);
 
   // Forward Geocoding via dedicated backend proxy
   const debouncedSearch = (query: string) => {
@@ -184,6 +193,7 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
             lng={displayLng}
             height="450px"
             onLocationSelect={(lat, lng) => {
+              setIsUpdatingFromCoords(true);
               setCoords({ lat, lng });
               setSearchQuery("");
             }}
@@ -200,6 +210,7 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
               setCoords({ lat: "", lng: "" });
               setSearchQuery("");
               setSuggestions([]);
+              setIsUpdatingFromCoords(false);
             }}
             className="h-[44px] px-8 rounded-lg border border-[#ececed] text-[#101828] text-[14px] font-medium hover:bg-slate-50 transition-colors"
           >

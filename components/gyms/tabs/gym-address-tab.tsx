@@ -62,11 +62,15 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
 
   // Backend-dən gələn ünvanı input-a sinxronizasiya et
   useEffect(() => {
-    if (addressData?.addressText && !isSearching && isUpdatingFromCoords) {
-      setSearchQuery(addressData.addressText);
-      setIsUpdatingFromCoords(false); // Reset
+    if (isUpdatingFromCoords && !isAddressFetching && (addressData?.addressText || addressData?.city)) {
+      const latDiff = Math.abs((addressData.latitude || 0) - coords.lat);
+      const lngDiff = Math.abs((addressData.longitude || 0) - coords.lng);
+      if (latDiff < 0.0001 && lngDiff < 0.0001) {
+        setSearchQuery([addressData.addressText, addressData.city].filter(Boolean).join(", "));
+        setIsUpdatingFromCoords(false); // Reset
+      }
     }
-  }, [addressData, isSearching, isUpdatingFromCoords]);
+  }, [addressData, isAddressFetching, isUpdatingFromCoords, coords.lat, coords.lng]);
 
   // Forward Geocoding (Axtarış)
   const debouncedSearch = (query: string) => {
