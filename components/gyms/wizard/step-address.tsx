@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useGymStore } from "@/lib/store/gym-store";
 import { useValidateGymStep4 } from "@/lib/query/gym-query";
 import { useGetAddressByCoords } from "@/lib/query/location-query";
+import LocationPickerMap from "@/components/ui/location-picker-map";
 
 export function StepAddress({ onNext }: { onNext?: () => void }) {
   const { step4Data, setStep4Data } = useGymStore();
@@ -131,7 +132,7 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
   // Xəritə linki: Əgər boşdursa Bakı mərkəzini göstərsin, amma datanı boş saxlasın
   const displayLat = coords.lat === "" ? 40.4093 : coords.lat;
   const displayLng = coords.lng === "" ? 49.8671 : coords.lng;
-  const mapSrc = `https://maps.google.com/maps?q=${displayLat},${displayLng}&z=15&output=embed`;
+
 
   return (
     <div className="w-full bg-white rounded-[24px] border border-[#ECECED] p-6 flex flex-col gap-6 shadow-sm">
@@ -216,16 +217,15 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
         </div>
 
         {/* Xəritə Sahəsi */}
-        <div className="rounded-2xl overflow-hidden border border-[#ECECED] h-[450px] bg-gray-50">
-          <iframe
-            key={`${coords.lat}-${coords.lng}`}
-            src={mapSrc}
-            width="100%"
-            height="100%"
-            style={{ border: 0 }}
-            allowFullScreen
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
+        <div className="rounded-2xl overflow-hidden border border-[#ECECED] bg-gray-50">
+          <LocationPickerMap
+            lat={displayLat}
+            lng={displayLng}
+            height="450px"
+            onLocationSelect={(lat, lng) => {
+              setCoords({ lat, lng });
+              setSearchQuery("");
+            }}
           />
         </div>
 

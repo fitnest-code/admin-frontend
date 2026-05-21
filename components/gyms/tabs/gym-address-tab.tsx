@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Copy, Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useGymStore } from "@/lib/store/gym-store";
+import LocationPickerMap from "@/components/ui/location-picker-map";
 import { useAddGymLocation, useGetAddressByCoords } from "@/lib/query/location-query";
 
 export default function AddressTab({ onNext }: { onNext?: () => void }) {
@@ -155,8 +156,7 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
 
   if (!mounted) return null;
 
-  // Google Maps Embed (Pulsuz və stabil variant)
-  const mapSrc = `https://maps.google.com/maps?q=${coords.lat},${coords.lng}&z=15&output=embed`;
+
 
   return (
     <div className="w-full flex justify-center py-6">
@@ -246,16 +246,17 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
         </div>
 
         {/* Xəritə Sahəsi */}
-        <div className="rounded-xl overflow-hidden border border-[#ECECED] h-[350px] bg-gray-50">
-          <iframe
-            key={`${coords.lat}-${coords.lng}`}
-            src={mapSrc}
-            width="100%"
-            height="100%"
-            style={{ border: 0 }}
-            allowFullScreen
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
+        <div className="rounded-xl overflow-hidden border border-[#ECECED] bg-gray-50">
+          <LocationPickerMap
+            lat={coords.lat}
+            lng={coords.lng}
+            height="350px"
+            onLocationSelect={(lat, lng) => {
+              setIsUpdatingFromCoords(true);
+              setCoords({ lat, lng });
+              setInputLat(lat.toString());
+              setInputLng(lng.toString());
+            }}
           />
         </div>
 
