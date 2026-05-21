@@ -27,7 +27,7 @@ function Field({ label, htmlFor, children }: { label: string; htmlFor: string; c
 }
 
 export default function ContactInfoTab({ data, onChange }: Step2Props) {
-  const [copied, setCopied] = useState<"lat" | "lng" | null>(null);
+
 
   // Axtarış üçün state-lər
   const [searchQuery, setSearchQuery] = useState(data.address || "");
@@ -150,13 +150,7 @@ export default function ContactInfoTab({ data, onChange }: Step2Props) {
     setSuggestions([]);
   };
 
-  // Kopyalama funksiyası
-  const copyToClipboard = (val: number, which: "lat" | "lng") => {
-    if (!val) return;
-    navigator.clipboard.writeText(val.toString());
-    setCopied(which);
-    setTimeout(() => setCopied(null), 1500);
-  };
+
 
   const displayLat = data.latitude || 40.4093;
   const displayLng = data.longitude || 49.8671;
@@ -208,47 +202,7 @@ export default function ContactInfoTab({ data, onChange }: Step2Props) {
         )}
       </div>
 
-      {/* Koordinat Girişləri */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[13px] font-semibold text-black/60">En (Latitude)</label>
-          <div className="flex items-center bg-[#fafafa] border border-[#ECECED] rounded-lg px-4 h-[44px] gap-2 focus-within:ring-1 focus-within:ring-[#00B4CC]">
-            <input
-              type="number"
-              step="any"
-              value={inputLat}
-              onChange={(e) => {
-                setInputLat(e.target.value);
-                setIsUpdatingFromCoords(true);
-              }}
-              className="flex-1 bg-transparent text-sm font-semibold text-[#1F2937] outline-none"
-              placeholder="40.4093"
-            />
-            <button onClick={() => copyToClipboard(data.latitude, "lat")} type="button">
-              {copied === "lat" ? <Check size={18} className="text-[#00B4CC]" /> : <Copy size={18} className="text-[#D1D5DB]" />}
-            </button>
-          </div>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[13px] font-semibold text-black/60">Uzunluq (Longitude)</label>
-          <div className="flex items-center bg-[#fafafa] border border-[#ECECED] rounded-lg px-4 h-[44px] gap-2 focus-within:ring-1 focus-within:ring-[#00B4CC]">
-            <input
-              type="number"
-              step="any"
-              value={inputLng}
-              onChange={(e) => {
-                setInputLng(e.target.value);
-                setIsUpdatingFromCoords(true);
-              }}
-              className="flex-1 bg-transparent text-sm font-semibold text-[#1F2937] outline-none"
-              placeholder="49.8671"
-            />
-            <button onClick={() => copyToClipboard(data.longitude, "lng")} type="button">
-              {copied === "lng" ? <Check size={18} className="text-[#00B4CC]" /> : <Copy size={18} className="text-[#D1D5DB]" />}
-            </button>
-          </div>
-        </div>
-      </div>
+
 
       {/* Xəritə Sahəsi */}
       <div className="rounded-2xl overflow-hidden border border-[#ECECED] bg-gray-50">

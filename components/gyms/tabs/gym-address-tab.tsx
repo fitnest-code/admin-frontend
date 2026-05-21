@@ -13,7 +13,6 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
   
   // Koordinatlar
   const [coords, setCoords] = useState({ lat: 40.4093, lng: 49.8671 });
-  const [copied, setCopied] = useState<"lat" | "lng" | null>(null);
 
   // Local inputs state for smooth typing
   const [inputLat, setInputLat] = useState("40.4093");
@@ -117,13 +116,7 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
     setSuggestions([]);
   };
 
-  // Kopyalama funksiyası
-  const copyToClipboard = (val: number, which: "lat" | "lng") => {
-    navigator.clipboard.writeText(val.toString());
-    setCopied(which);
-    setTimeout(() => setCopied(null), 1500);
-    toast.success("Kopyalandı");
-  };
+
 
   // Əsas Saxlama Məntiqi (500 xətası olmaması üçün Number-ə çevrilir)
   const performSave = async () => {
@@ -205,45 +198,7 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
           )}
         </div>
 
-        {/* Koordinat Girişləri */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-[#6B7280]">En</label>
-            <div className="flex items-center bg-[#F9FAFB] border border-[#ECECED] rounded-xl px-4 py-4 gap-2 focus-within:ring-1 focus-within:ring-[#00B4D8]">
-              <input
-                type="number"
-                step="any"
-                value={inputLat}
-                onChange={(e) => {
-                  setInputLat(e.target.value);
-                  setIsUpdatingFromCoords(true);
-                }}
-                className="flex-1 bg-transparent text-sm font-semibold text-[#1F2937] outline-none"
-              />
-              <button onClick={() => copyToClipboard(coords.lat, "lat")} type="button">
-                {copied === "lat" ? <Check size={18} className="text-[#00B4D8]" /> : <Copy size={18} className="text-[#D1D5DB]" />}
-              </button>
-            </div>
-          </div>
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-[#6B7280]">Uzunluq</label>
-            <div className="flex items-center bg-[#F9FAFB] border border-[#ECECED] rounded-xl px-4 py-4 gap-2 focus-within:ring-1 focus-within:ring-[#00B4D8]">
-              <input
-                type="number"
-                step="any"
-                value={inputLng}
-                onChange={(e) => {
-                  setInputLng(e.target.value);
-                  setIsUpdatingFromCoords(true);
-                }}
-                className="flex-1 bg-transparent text-sm font-semibold text-[#1F2937] outline-none"
-              />
-              <button onClick={() => copyToClipboard(coords.lng, "lng")} type="button">
-                {copied === "lng" ? <Check size={18} className="text-[#00B4D8]" /> : <Copy size={18} className="text-[#D1D5DB]" />}
-              </button>
-            </div>
-          </div>
-        </div>
+
 
         {/* Xəritə Sahəsi */}
         <div className="rounded-xl overflow-hidden border border-[#ECECED] bg-gray-50">

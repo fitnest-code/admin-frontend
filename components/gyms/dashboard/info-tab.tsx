@@ -44,8 +44,6 @@ export function InfoTab({ gymId }: InfoTabProps) {
   const [activeSearchField, setActiveSearchField] = useState<"city" | "address" | null>(null);
 
   // Local inputs state for coordinates
-  const [inputLat, setInputLat] = useState("0");
-  const [inputLng, setInputLng] = useState("0");
   const [isUpdatingFromCoords, setIsUpdatingFromCoords] = useState(false);
 
   // 1. Koordinat dəyişdikcə ünvanı gətirən query
@@ -104,8 +102,6 @@ export function InfoTab({ gymId }: InfoTabProps) {
       address: finalAddress,
       city: city || ""
     }));
-    setInputLat(lat.toString());
-    setInputLng(lng.toString());
     setSuggestions([]);
   };
 
@@ -136,32 +132,11 @@ export function InfoTab({ gymId }: InfoTabProps) {
         latitude: gymInfo.latitude || 0,
         longitude: gymInfo.longitude || 0,
       });
-      setInputLat((gymInfo.latitude || 0).toString());
-      setInputLng((gymInfo.longitude || 0).toString());
       setIsUpdatingFromCoords(false);
     }
   }, [gymInfo]);
 
-  // Sync manual coordinates to formData
-  useEffect(() => {
-    if (!isEditing || !isUpdatingFromCoords) return;
-    const lat = parseFloat(inputLat);
-    const lng = parseFloat(inputLng);
-    if (!isNaN(lat) && !isNaN(lng)) {
-      const timeout = setTimeout(() => {
-        setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }));
-      }, 800);
-      return () => clearTimeout(timeout);
-    }
-  }, [inputLat, inputLng, isEditing, isUpdatingFromCoords]);
 
-  // Sync inputs when formData.latitude/longitude changes (e.g. on suggestion select)
-  useEffect(() => {
-    if (!isUpdatingFromCoords) {
-      setInputLat(formData.latitude.toString());
-      setInputLng(formData.longitude.toString());
-    }
-  }, [formData.latitude, formData.longitude, isUpdatingFromCoords]);
 
   // Sync reverse geocoding result to address field
   useEffect(() => {
@@ -519,58 +494,6 @@ export function InfoTab({ gymId }: InfoTabProps) {
             </div>
           </div>
 
-          {/* Koordinatlar */}
-          <div className="self-stretch flex flex-col items-start gap-4 mt-2">
-            <div className="self-stretch border-b border-[#ececed] flex items-center justify-between pb-1">
-              <div className="relative leading-[24px] font-semibold text-base">Koordinatlar</div>
-            </div>
-            
-            <div className="self-stretch flex flex-col sm:flex-row items-center gap-[18px]">
-              <div className="flex-1 w-full flex flex-col items-start gap-2">
-                <div className="self-stretch relative leading-[20px] text-sm">En</div>
-                <div className={cn(
-                  "self-stretch h-[44px] rounded-lg border flex items-center justify-between p-[0px_12px] text-sm transition-colors",
-                  isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
-                )}>
-                  <input 
-                    type="number" 
-                    name="latitude"
-                    value={inputLat}
-                    onChange={(e) => {
-                      setInputLat(e.target.value);
-                      setIsUpdatingFromCoords(true);
-                    }}
-                    readOnly={!isEditing}
-                    step="any"
-                    className="bg-transparent text-foreground outline-none w-full h-full font-semibold"
-                  />
-                  {!isEditing && <ChevronDown size={14} className="text-foreground opacity-50 pointer-events-none" />}
-                </div>
-              </div>
-
-              <div className="flex-1 w-full flex flex-col items-start gap-2">
-                <div className="self-stretch relative leading-[20px] text-sm">Uzunluq</div>
-                <div className={cn(
-                  "self-stretch h-[44px] rounded-lg border flex items-center justify-between p-[0px_12px] text-sm transition-colors",
-                  isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
-                )}>
-                  <input 
-                    type="number" 
-                    name="longitude"
-                    value={inputLng}
-                    onChange={(e) => {
-                      setInputLng(e.target.value);
-                      setIsUpdatingFromCoords(true);
-                    }}
-                    readOnly={!isEditing}
-                    step="any"
-                    className="bg-transparent text-foreground outline-none w-full h-full font-semibold"
-                  />
-                  {!isEditing && <ChevronDown size={14} className="text-foreground opacity-50 pointer-events-none" />}
-                </div>
-              </div>
-            </div>
-          </div>
 
           {/* Map */}
           <div className="self-stretch rounded-xl overflow-hidden border border-[#ececed] w-full mt-4">
@@ -581,8 +504,6 @@ export function InfoTab({ gymId }: InfoTabProps) {
               disabled={!isEditing}
               onLocationSelect={(lat, lng) => {
                 setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }));
-                setInputLat(lat.toString());
-                setInputLng(lng.toString());
                 setIsUpdatingFromCoords(true);
               }}
             />

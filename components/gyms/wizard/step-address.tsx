@@ -17,7 +17,6 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
     lat: step4Data?.lat ?? "", 
     lng: step4Data?.lng ?? "" 
   });
-  const [copied, setCopied] = useState<"lat" | "lng" | null>(null);
 
   // Axtarış üçün state-lər
   const [searchQuery, setSearchQuery] = useState(step4Data?.address || "");
@@ -93,13 +92,7 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
     setSuggestions([]);
   };
 
-  // Kopyalama funksiyası
-  const copyToClipboard = (val: number | "", which: "lat" | "lng") => {
-    if (val === "") return;
-    navigator.clipboard.writeText(val.toString());
-    setCopied(which);
-    setTimeout(() => setCopied(null), 1500);
-  };
+
 
   const handleNext = async () => {
     if (coords.lat === "" || coords.lng === "") {
@@ -182,39 +175,7 @@ export function StepAddress({ onNext }: { onNext?: () => void }) {
           )}
         </div>
 
-        {/* Koordinat Girişləri */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-[#6B7280]">En</label>
-            <div className="flex items-center bg-[#F9FAFB] border border-[#ECECED] rounded-lg px-4 py-2.5 gap-2 focus-within:ring-1 focus-within:ring-[#00B4D8]">
-              <input
-                type="number"
-                step="any"
-                value={coords.lat}
-                onChange={(e) => setCoords(p => ({ ...p, lat: parseFloat(e.target.value) || 0 }))}
-                className="flex-1 bg-transparent text-sm font-semibold text-[#1F2937] outline-none"
-              />
-              <button onClick={() => copyToClipboard(coords.lat, "lat")} type="button">
-                {copied === "lat" ? <Check size={16} className="text-[#00B4D8]" /> : <Copy size={16} className="text-[#D1D5DB]" />}
-              </button>
-            </div>
-          </div>
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-[#6B7280]">Uzunluq</label>
-            <div className="flex items-center bg-[#F9FAFB] border border-[#ECECED] rounded-lg px-4 py-2.5 gap-2 focus-within:ring-1 focus-within:ring-[#00B4D8]">
-              <input
-                type="number"
-                step="any"
-                value={coords.lng}
-                onChange={(e) => setCoords(p => ({ ...p, lng: parseFloat(e.target.value) || 0 }))}
-                className="flex-1 bg-transparent text-sm font-semibold text-[#1F2937] outline-none"
-              />
-              <button onClick={() => copyToClipboard(coords.lng, "lng")} type="button">
-                {copied === "lng" ? <Check size={16} className="text-[#00B4D8]" /> : <Copy size={16} className="text-[#D1D5DB]" />}
-              </button>
-            </div>
-          </div>
-        </div>
+
 
         {/* Xəritə Sahəsi */}
         <div className="rounded-2xl overflow-hidden border border-[#ECECED] bg-gray-50">
