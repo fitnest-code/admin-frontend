@@ -399,23 +399,15 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
                 )}
               </div>
               
-              <button onClick={() => setIsQrModalOpen(true)} className={styles.qrcodeParent}>
-                <div className={styles.qrcode}>
-                  <div className={styles.qrcode2}>
-                    <Image src="/QrCode.svg" className={styles.vectorIcon} width={13.8} height={13.8} sizes="100vw" alt="QR" />
-                  </div>
-                </div>
+              <button onClick={() => setIsQrModalOpen(true)} className={styles.qrcodeParent} title="QR Kod">
+                <Image src="/QrCode.svg" className={styles.qrcodeIcon} width={32} height={32} alt="QR" />
               </button>
             </div>
           ) : (
             <div className="flex items-center gap-3">
               <h1 className="text-[20px] font-bold text-[#101828] tracking-tight">{gym.name}</h1>
-              <button onClick={() => setIsQrModalOpen(true)} className={styles.qrcodeParent}>
-                <div className={styles.qrcode}>
-                  <div className={styles.qrcode2}>
-                    <Image src="/QrCode.svg" className={styles.vectorIcon} width={13.8} height={13.8} sizes="100vw" alt="QR" />
-                  </div>
-                </div>
+              <button onClick={() => setIsQrModalOpen(true)} className={styles.qrcodeParent} title="QR Kod">
+                <Image src="/QrCode.svg" className={styles.qrcodeIcon} width={32} height={32} alt="QR" />
               </button>
             </div>
           )}
