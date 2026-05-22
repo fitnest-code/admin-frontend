@@ -49,7 +49,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       setIsResolving(true)
       apiGet<any>('/admin/gyms/list')
         .then(res => {
-          const items = res?.data?.items || []
+          const items = res?.items || []
           setGyms(items)
           if (items.length > 0) {
             const currentGymMatch = pathname.match(/^\/gyms\/(\d+)/)
