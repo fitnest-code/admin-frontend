@@ -20,6 +20,8 @@ export interface LegalDocumentCreatePayload {
   title: string;
   content: string;
   version: string;
+  is_active: boolean;
+  language: string;
 }
 
 export interface LegalDocumentUpdatePayload {
@@ -55,11 +57,13 @@ const normalizeLegalDocument = (doc: LegalDocumentApiResponse): LegalDocument =>
 
 // --- Hooks ---
 
-export function useLegalDocuments() {
+export function useLegalDocuments(language?: string) {
   return useQuery({
-    queryKey: queryKeys.legal.documents,
+    queryKey: [...queryKeys.legal.documents, language ?? ""],
     queryFn: async () => {
-      const res = await apiGet<LegalDocumentApiResponse[]>("/api/v1/admin/legal/documents");
+      const res = await apiGet<LegalDocumentApiResponse[]>("/api/v1/admin/legal/documents", {
+        params: language ? { language } : undefined,
+      });
       return res.map(normalizeLegalDocument);
     },
   });
