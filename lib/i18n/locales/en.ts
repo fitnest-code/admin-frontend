@@ -18,6 +18,7 @@ const en: TranslationKeys = {
     settings: "Settings",
     faq: "FAQ",
     legal: "Legal Documents",
+    contactDetails: "Contact Details",
   },
 
   common: {
@@ -260,6 +261,19 @@ const en: TranslationKeys = {
     deleteCategoryConfirmTitle: "Category Deletion",
     deleteConfirmMsg: "Are you sure you want to delete this FAQ?",
     deleteCategoryConfirmMsg: "Are you sure you want to delete this category?",
+  },
+  contactDetails: {
+    title: "Contact Details",
+    email: "Email",
+    phone: "Phone Number",
+    emailPlaceholder: "E.g.: info@fitnest.az",
+    phonePlaceholder: "E.g.: +994 50 123 45 67",
+    save: "Save",
+    successMsg: "Contact details successfully saved!",
+    validationFillAll: "Please fill in all fields",
+    validationEmail: "Please enter a valid email address",
+    validationPhone: "Please enter a valid phone number (+994 xx xxx xx xx)",
+    copied: "Copied to clipboard!",
   },
 } as const;
 

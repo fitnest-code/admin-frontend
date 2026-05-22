@@ -16,6 +16,7 @@ import {
   HelpCircle,
   Target,
   Scale,
+  PhoneCall,
 } from "lucide-react";
 
 export interface NavItem {
@@ -86,6 +87,12 @@ export const NAV_ITEMS: NavItem[] = [
     labelKey: "legal", // Will need to update i18n
     icon: Scale, // We need to import Scale from lucide-react
     href: "/legal",
+  },
+  {
+    key: "contact-details",
+    labelKey: "contactDetails",
+    icon: PhoneCall,
+    href: "/contact-details",
   },
   {
     key: "tenzimlemeler",

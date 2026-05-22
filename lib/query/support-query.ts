@@ -20,7 +20,7 @@ export function useContactDetails() {
   return useQuery({
     queryKey: queryKeys.support.contactDetails,
     queryFn: async () => {
-      return apiGet<ContactDetails>("/api/v1/admin/support/contact-details");
+      return apiGet<ContactDetails>("/api/v1/support/contactDetails");
     },
     retry: false, // Don't retry if 404
   });

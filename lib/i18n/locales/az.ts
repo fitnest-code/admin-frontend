@@ -17,6 +17,7 @@ const az = {
     settings: "Tənzimləmələr",
     faq: "FAQ",
     legal: "Hüquqi Sənədlər",
+    contactDetails: "Əlaqə məlumatları",
   },
 
   // Common / Shared
@@ -269,6 +270,19 @@ const az = {
     deleteCategoryConfirmTitle: "Kateqoriya Silinməsi",
     deleteConfirmMsg: "Bu FAQ-ni silmək istədiyinizdən əminsiniz?",
     deleteCategoryConfirmMsg: "Bu kateqoriyanı silmək istədiyinizdən əminsiniz?",
+  },
+  contactDetails: {
+    title: "Əlaqə məlumatları",
+    email: "E-Poçt",
+    phone: "Telefon nömrəsi",
+    emailPlaceholder: "Məs: info@fitnest.az",
+    phonePlaceholder: "Məs: +994 50 123 45 67",
+    save: "Yadda saxla",
+    successMsg: "Əlaqə məlumatları uğurla yadda saxlanıldı!",
+    validationFillAll: "Bütün xanaları doldurun",
+    validationEmail: "Düzgün e-poçt ünvanı daxil edin",
+    validationPhone: "Düzgün telefon nömrəsi daxil edin (+994 xx xxx xx xx)",
+    copied: "Nömrə kopyalandı!",
   },
 } as const;
 
