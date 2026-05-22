@@ -61,7 +61,8 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
   const { mutate: deleteGymMutate } = useDeleteGym()
   const router = useRouter()
   const user = useAuthStore((state) => state.user)
-  const isGymAdmin = user?.role === 'ROLE_GYM_SUPER_ADMIN' || user?.role === 'ROLE_GYM_ADMIN'
+  const roleUpper = user?.role?.toUpperCase()
+  const isGymAdmin = roleUpper === 'ROLE_GYM_SUPER_ADMIN' || roleUpper === 'ROLE_GYM_ADMIN'
 
   const [adminGyms, setAdminGyms] = useState<any[]>([])
   const [isSwitcherOpen, setIsSwitcherOpen] = useState(false)
@@ -365,55 +366,49 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       {/* Header with Status */}
       <div className="w-full flex items-center justify-between border-b border-[#ececed] pb-3 relative">
         <div className="flex flex-col gap-1">
-          {isGymAdmin && adminGyms.length > 1 ? (
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <button 
-                  onClick={() => setIsSwitcherOpen(true)} 
-                  className="flex items-center gap-2 outline-none"
-                >
-                  <h1 className="text-[20px] font-bold text-[#101828] tracking-tight">{gym.name}</h1>
-                  <Image src="/left-right-arrow.svg" width={24} height={24} alt="Switch gym" className="shrink-0" />
-                </button>
-
-                {isSwitcherOpen && (
-                  <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setIsSwitcherOpen(false)}>
-                    <div className="bg-[#fafafa] w-full sm:w-[400px] rounded-t-2xl sm:rounded-2xl p-4 flex flex-col gap-4 animate-in slide-in-from-bottom-8 duration-300 shadow-2xl" onClick={e => e.stopPropagation()}>
-                      <div className="text-[16px] font-semibold text-black sm:text-center text-right w-full mb-2">Zallar</div>
-                      <div className="flex flex-col gap-2 w-full max-h-[60vh] overflow-y-auto">
-                        {adminGyms.map(g => (
-                          <button 
-                            key={g.id} 
-                            onClick={() => { router.push(`/gyms/${g.id}`); setIsSwitcherOpen(false) }} 
-                            className="w-full bg-white rounded-xl border border-[#ececed] flex items-center justify-between p-5 hover:bg-slate-50 transition-colors shadow-sm cursor-pointer"
-                          >
-                            <div className="text-[16px] font-medium text-black uppercase text-left">{g.name}</div>
-                            <div className="w-[28px] h-[28px] rounded-full border border-[#cecfd2] flex items-center justify-center relative shrink-0">
-                              {g.id === gym.id && <div className="w-3.5 h-3.5 rounded-full bg-[#00B4CC]" />}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              <button onClick={() => setIsQrModalOpen(true)} className={styles.qrcodeParent} title="QR Kod">
-                <Image src="/QrCode.svg" className={styles.qrcodeIcon} width={32} height={32} alt="QR" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <h1 className="text-[20px] font-bold text-[#101828] tracking-tight">{gym.name}</h1>
-              <button onClick={() => setIsQrModalOpen(true)} className={styles.qrcodeParent} title="QR Kod">
-                <Image src="/QrCode.svg" className={styles.qrcodeIcon} width={32} height={32} alt="QR" />
-              </button>
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            <h1 className="text-[20px] font-bold text-[#101828] tracking-tight">{gym.name}</h1>
+            <button onClick={() => setIsQrModalOpen(true)} className={styles.qrcodeParent} title="QR Kod">
+              <Image src="/QrCode.svg" className={styles.qrcodeIcon} width={32} height={32} alt="QR" />
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
+          {isGymAdmin && adminGyms.length > 1 && (
+            <div className="relative">
+              <button 
+                onClick={() => setIsSwitcherOpen(true)} 
+                className="flex items-center justify-center p-1.5 hover:bg-slate-100 rounded-lg transition-colors outline-none cursor-pointer"
+                title="Zalı dəyiş"
+              >
+                <Image src="/left-right-arrow.svg" width={24} height={24} alt="Switch gym" className="shrink-0" />
+              </button>
+
+              {isSwitcherOpen && (
+                <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setIsSwitcherOpen(false)}>
+                  <div className="bg-[#fafafa] w-full sm:w-[400px] rounded-t-2xl sm:rounded-2xl p-4 flex flex-col gap-4 animate-in slide-in-from-bottom-8 duration-300 shadow-2xl" onClick={e => e.stopPropagation()}>
+                    <div className="text-[16px] font-semibold text-black sm:text-center text-right w-full mb-2">Zallar</div>
+                    <div className="flex flex-col gap-2 w-full max-h-[60vh] overflow-y-auto">
+                      {adminGyms.map(g => (
+                        <button 
+                          key={g.id} 
+                          onClick={() => { router.push(`/gyms/${g.id}`); setIsSwitcherOpen(false) }} 
+                          className="w-full bg-white rounded-xl border border-[#ececed] flex items-center justify-between p-5 hover:bg-slate-50 transition-colors shadow-sm cursor-pointer"
+                        >
+                          <div className="text-[16px] font-medium text-black uppercase text-left">{g.name}</div>
+                          <div className="w-[28px] h-[28px] rounded-full border border-[#cecfd2] flex items-center justify-center relative shrink-0">
+                            {g.id === gym.id && <div className="w-3.5 h-3.5 rounded-full bg-[#00B4CC]" />}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {(gym.status?.toUpperCase() === 'ACTIVE' || !gym.status) && (
             <div className="h-[28px] rounded-full bg-[#166728] flex items-center px-4 gap-2 shadow-sm border border-green-600/20">
               <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
@@ -436,25 +431,27 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       </div>
 
       {/* STRETCHED TABS */}
-      <div className="w-full border-b border-[#ececed]">
-        <nav className="-mb-px flex w-full overflow-x-auto no-scrollbar" aria-label="Zal bölmələri">
-          {GYM_TABS.filter((tab) => !isGymAdmin || tab.key === 'analitika').map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={cn(
-                'flex-1 min-w-[130px] border-b-[3px] pb-3 text-[13px] font-bold transition-all duration-200 whitespace-nowrap tracking-wide text-center',
-                activeTab === tab.key
-                  ? 'border-[#00B4CC] text-[#101828]'
-                  : 'border-transparent text-slate-400 hover:text-slate-600 hover:border-slate-200',
-              )}
-              aria-current={activeTab === tab.key ? 'page' : undefined}
-            >
-              {getTabLabel(tab.key)}
-            </button>
-          ))}
-        </nav>
-      </div>
+      {!isGymAdmin && (
+        <div className="w-full border-b border-[#ececed]">
+          <nav className="-mb-px flex w-full overflow-x-auto no-scrollbar" aria-label="Zal bölmələri">
+            {GYM_TABS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={cn(
+                  'flex-1 min-w-[130px] border-b-[3px] pb-3 text-[13px] font-bold transition-all duration-200 whitespace-nowrap tracking-wide text-center',
+                  activeTab === tab.key
+                    ? 'border-[#00B4CC] text-[#101828]'
+                    : 'border-transparent text-slate-400 hover:text-slate-600 hover:border-slate-200',
+                )}
+                aria-current={activeTab === tab.key ? 'page' : undefined}
+              >
+                {getTabLabel(tab.key)}
+              </button>
+            ))}
+          </nav>
+        </div>
+      )}
 
       {/* TAB CONTENT (BOX) */}
       <div className="w-full min-h-[500px]">{renderTab()}</div>
