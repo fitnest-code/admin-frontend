@@ -16,11 +16,13 @@ interface AdminLayoutProps {
 export function AdminLayout({ children }: AdminLayoutProps) {
   const { sidebarCollapsed } = useUIStore()
   const user = useAuthStore((state) => state.user)
-  const isGymAdmin = user?.role === 'ROLE_GYM_SUPER_ADMIN' || user?.role === 'ROLE_GYM_ADMIN'
+  const roleUpper = user?.role?.toUpperCase()
+  const isGymAdmin = roleUpper === 'ROLE_GYM_SUPER_ADMIN' || roleUpper === 'ROLE_GYM_ADMIN'
   const router = useRouter()
   const pathname = usePathname()
   const [mounted, setMounted] = useState(false)
   const [isResolving, setIsResolving] = useState(false)
+  const [gyms, setGyms] = useState<any[] | null>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -28,17 +30,36 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   useEffect(() => {
     if (mounted && isGymAdmin) {
+      if (gyms) {
+        const currentGymMatch = pathname.match(/^\/gyms\/(\d+)/)
+        const currentGymId = currentGymMatch ? Number(currentGymMatch[1]) : null
+        const hasAccess = gyms.some((g: any) => g.id === currentGymId)
+        
+        if (!hasAccess) {
+          const defaultGymId = gyms[0]?.id
+          if (defaultGymId) {
+            router.replace(`/gyms/${defaultGymId}`)
+          }
+        } else {
+          setIsResolving(false)
+        }
+        return
+      }
+
       setIsResolving(true)
       apiGet<any>('/admin/gyms/list')
         .then(res => {
           const items = res?.data?.items || []
+          setGyms(items)
           if (items.length > 0) {
-            const gymId = items[0].id
-            const expectedPath = `/gyms/${gymId}`
-            if (pathname !== expectedPath) {
-              router.replace(expectedPath)
+            const currentGymMatch = pathname.match(/^\/gyms\/(\d+)/)
+            const currentGymId = currentGymMatch ? Number(currentGymMatch[1]) : null
+            const hasAccess = items.some((g: any) => g.id === currentGymId)
+            
+            if (!hasAccess) {
+              router.replace(`/gyms/${items[0].id}`)
             } else {
-              setIsResolving(false)
+               setIsResolving(false)
             }
           } else {
             setIsResolving(false)
@@ -48,7 +69,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           setIsResolving(false)
         })
     }
-  }, [mounted, isGymAdmin, pathname, router])
+  }, [mounted, isGymAdmin, pathname, router, gyms])
 
   if (!mounted || (isGymAdmin && isResolving)) {
     return (
