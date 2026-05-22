@@ -142,7 +142,7 @@ export default function GoalModal({
                   </div>
                 )}
               </div>
-              <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
+              <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.svg" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
             </div>
           </div>
 
