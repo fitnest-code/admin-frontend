@@ -6,12 +6,12 @@ import { queryKeys } from "./query-keys";
 
 export interface ContactDetails {
   email: string;
-  mobileNumber: string;
+  mobile_number: string;
 }
 
 export interface ContactDetailsUpdateRequest {
   email: string;
-  mobileNumber: string;
+  mobile_number: string;
 }
 
 // --- Hooks ---

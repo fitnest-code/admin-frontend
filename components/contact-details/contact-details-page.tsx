@@ -27,7 +27,7 @@ export function ContactDetailsPage() {
     if (contactDetails) {
       setFormData({
         email: contactDetails.email || "",
-        mobileNumber: contactDetails.mobileNumber || "",
+        mobileNumber: contactDetails.mobile_number || "",
       });
     }
   }, [contactDetails]);
@@ -107,7 +107,7 @@ export function ContactDetailsPage() {
 
     const payload = {
       email,
-      mobileNumber: phone,
+      mobile_number: phone,
     };
 
     if (contactDetails) {
