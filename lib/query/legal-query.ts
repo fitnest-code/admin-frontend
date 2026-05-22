@@ -20,6 +20,7 @@ export interface LegalDocumentCreatePayload {
   title: string;
   content: string;
   version: string;
+  is_active: boolean;
 }
 
 export interface LegalDocumentUpdatePayload {

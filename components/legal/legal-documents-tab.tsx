@@ -115,7 +115,7 @@ export function LegalDocumentsTab() {
             <tr className="border-b border-[#ececed] text-left text-[13px] font-semibold text-[#6a7282]">
               <th className="pb-3 pr-4">ID</th>
               <th className="pb-3 px-4">Tip</th>
-              <th className="pb-3 px-4">Başlıq</th>
+              <th className="pb-3 px-4">Yaradılma tarixi</th>
               <th className="pb-3 px-4">Versiya</th>
               <th className="pb-3 px-4">Status</th>
               <th className="pb-3 pl-4 text-right">Əməliyyatlar</th>
@@ -133,7 +133,7 @@ export function LegalDocumentsTab() {
                 <tr key={doc.id} className="border-b border-[#ececed] last:border-0 hover:bg-slate-50/50">
                   <td className="py-4 pr-4 text-[#101828] font-medium">#{doc.id}</td>
                   <td className="py-4 px-4 text-[#4a5565]">{doc.type}</td>
-                  <td className="py-4 px-4 text-[#101828] font-medium">{doc.title}</td>
+                  <td className="py-4 px-4 text-[#101828] font-medium">{doc.createdAt || "---"}</td>
                   <td className="py-4 px-4 text-[#4a5565]">{doc.version}</td>
                   <td className="py-4 px-4">
                     <span className={cn(
@@ -268,7 +268,7 @@ function DocumentFormModal({ isOpen, onClose, document, onSuccess }: {
       );
     } else {
       createDoc(
-        { type: formData.type, title: formData.title, content: formData.content, version: formData.version },
+        { type: formData.type, title: formData.title, content: formData.content, version: formData.version, is_active: false },
         {
           onSuccess,
           onError: (err: any) => toast.error(err.message || "Xəta baş verdi"),
@@ -302,8 +302,6 @@ function DocumentFormModal({ isOpen, onClose, document, onSuccess }: {
               >
                 <option value="TERMS">İstifadə Şərtləri</option>
                 <option value="PRIVACY">Məxfilik Siyasəti</option>
-                <option value="REFUND">Geri Qaytarma Siyasəti</option>
-                <option value="OTHER">Digər</option>
               </select>
             </div>
           )}
