@@ -32,7 +32,20 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
   const [errorMessage, setErrorMessage] = useState("");
   const [isCreatingService, setIsCreatingService] = useState(false);
   const [hasSynced, setHasSynced] = useState(false);
+  const [customServicesList, setCustomServicesList] = useState<string[]>([]);
   const { data: allServices } = useSupportedServices(gymId ? Number(gymId) : undefined);
+
+  const servicesToRender = useMemo(() => {
+    const apiServices = allServices || [];
+    const localServices = customServicesList.map((name, idx) => ({
+      id: -(idx + 1), // unique negative ID
+      name,
+      gymId: undefined
+    }));
+    const apiServiceNames = new Set(apiServices.map(s => s.name.toLowerCase()));
+    const filteredLocal = localServices.filter(ls => !apiServiceNames.has(ls.name.toLowerCase()));
+    return [...apiServices, ...filteredLocal];
+  }, [allServices, customServicesList]);
 
   // Robust State Synchronization
   useEffect(() => {
@@ -45,18 +58,26 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
       const prcs: Record<string, string> = {};
       const svcs: Record<string, string[]> = {};
       PACKAGES.forEach(p => { svcs[p] = []; });
+      
+      const localCustoms = new Set<string>();
 
       step6Data.subscriptions.forEach(s => {
         const found = allPackageNames.find(p => p.id === s.packageId);
         if (found) {
           pkgs.add(found.name);
           prcs[found.name] = s.dailyPrice.toString();
+          const names: string[] = [];
           if (s.supportedServicesId && allServices) {
-            const names = s.supportedServicesId
+            const resolvedNames = s.supportedServicesId
               .map((id: number) => allServices.find(as => as.id === id)?.name)
               .filter((name: string | undefined): name is string => !!name);
-            svcs[found.name] = names;
+            names.push(...resolvedNames);
           }
+          if (s.customServices) {
+            names.push(...s.customServices);
+            s.customServices.forEach(cs => localCustoms.add(cs));
+          }
+          svcs[found.name] = names;
         }
       });
 
@@ -64,6 +85,9 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
       setActivePackage(pkgs.size > 0 ? Array.from(pkgs)[0] : allPackageNames[0].name);
       setPrices(prcs);
       setPackageServices(svcs);
+      if (localCustoms.size > 0) {
+        setCustomServicesList(Array.from(localCustoms));
+      }
       setHasSynced(true);
     } else {
       setSelectedPackages(new Set([allPackageNames[0].name]));
@@ -95,28 +119,54 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
       return;
     }
 
-    try {
-      const res = await createServiceMutation.mutateAsync({
-        name: pendingService.trim(),
-        gymId: gymId ? Number(gymId) : undefined
-      });
+    const trimmedName = pendingService.trim();
+
+    if (!gymId) {
+      // Local addition
+      const alreadyExists = servicesToRender.some(s => s.name.toLowerCase() === trimmedName.toLowerCase());
+      if (alreadyExists) {
+        setErrorMessage("Bu xidmət artıq mövcuddur");
+        setShowErrorModal(true);
+        return;
+      }
       
-      const createdName = res?.name || pendingService!.trim();
+      setCustomServicesList(prev => [...prev, trimmedName]);
       if (activePackage) {
         setPackageServices(prev => {
           const current = prev[activePackage] || [];
-          if (!current.includes(createdName)) {
-            return { ...prev, [activePackage]: [...current, createdName] };
+          if (!current.includes(trimmedName)) {
+            return { ...prev, [activePackage]: [...current, trimmedName] };
           }
           return prev;
         });
       }
-
       setPendingService(null);
       setIsCreatingService(false);
-    } catch (err: any) {
-      setErrorMessage(err?.message || "Xidmət yaradıla bilmədi");
-      setShowErrorModal(true);
+    } else {
+      // API call since gymId exists
+      try {
+        const res = await createServiceMutation.mutateAsync({
+          name: trimmedName,
+          gymId: Number(gymId)
+        });
+        
+        const createdName = res?.name || trimmedName;
+        if (activePackage) {
+          setPackageServices(prev => {
+            const current = prev[activePackage] || [];
+            if (!current.includes(createdName)) {
+              return { ...prev, [activePackage]: [...current, createdName] };
+            }
+            return prev;
+          });
+        }
+
+        setPendingService(null);
+        setIsCreatingService(false);
+      } catch (err: any) {
+        setErrorMessage(err?.message || "Xidmət yaradıla bilmədi");
+        setShowErrorModal(true);
+      }
     }
   };
 
@@ -134,13 +184,26 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
   };
 
   const deleteServiceMutation = useDeleteSupportedService();
-  const handleDeleteService = async (id: number, e: React.MouseEvent) => {
+  const handleDeleteService = async (id: number, svcName: string, e: React.MouseEvent) => {
     e.stopPropagation(); // prevent triggering service selection toggle
-    try {
-      await deleteServiceMutation.mutateAsync(id);
-    } catch (err: any) {
-      setErrorMessage("Xidməti silmək mümkün olmadı");
-      setShowErrorModal(true);
+    if (id < 0) {
+      // Local deletion
+      setCustomServicesList(prev => prev.filter(name => name !== svcName));
+      setPackageServices(prev => {
+        const updated: Record<string, string[]> = {};
+        Object.keys(prev).forEach(pkg => {
+          updated[pkg] = prev[pkg].filter(name => name !== svcName);
+        });
+        return updated;
+      });
+    } else {
+      // API call since it's a persisted service
+      try {
+        await deleteServiceMutation.mutateAsync(id);
+      } catch (err: any) {
+        setErrorMessage("Xidməti silmək mümkün olmadı");
+        setShowErrorModal(true);
+      }
     }
   };
 
@@ -150,15 +213,23 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
     const subscriptions = Array.from(selectedPackages).map(pkgName => {
       const pkgInfo = allPackageNames.find(p => p.name === pkgName);
       const serviceNames = packageServices[pkgName] || [];
-      const serviceIds = serviceNames.map(name => {
+      const serviceIds: number[] = [];
+      const customServices: string[] = [];
+
+      serviceNames.forEach(name => {
         const found = allServices?.find(s => s.name === name);
-        return found ? found.id : null;
-      }).filter((id): id is number => id !== null);
+        if (found && found.id > 0) {
+          serviceIds.push(found.id);
+        } else {
+          customServices.push(name);
+        }
+      });
 
       return {
         packageId: pkgInfo?.id || 0,
         dailyPrice: Number(prices[pkgName]) || 0,
-        supportedServicesId: serviceIds
+        supportedServicesId: serviceIds,
+        customServices: customServices
       };
     });
 
@@ -331,7 +402,7 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
         {/* Services List */}
         <div className="flex flex-col gap-5">
           <div className="flex flex-wrap gap-4">
-            {allServices?.map((svc) => {
+            {servicesToRender.map((svc) => {
               const isSelected = packageServices[activePackage]?.includes(svc.name);
 
               return (
@@ -351,7 +422,7 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
 
                   <button
                     type="button"
-                    onClick={(e) => handleDeleteService(svc.id, e)}
+                    onClick={(e) => handleDeleteService(svc.id, svc.name, e)}
                     disabled={deleteServiceMutation.isPending}
                     className="w-6 h-6 flex items-center justify-center transition-opacity hover:opacity-80 flex-shrink-0 ml-1"
                     title="Xidməti sil"
