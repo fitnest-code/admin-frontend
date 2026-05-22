@@ -104,7 +104,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
   useEffect(() => {
     if (isGymAdmin) {
       apiGet<any>('/admin/gyms/list').then(res => {
-        const items = res?.data?.items || []
+        const items = res?.items || []
         setAdminGyms(items)
       }).catch(console.error)
     }
