@@ -17,7 +17,6 @@ export interface LegalDocument {
 
 export interface LegalDocumentCreatePayload {
   type: string;
-  title: string;
   content: string;
   version: string;
   is_active: boolean;
@@ -25,7 +24,6 @@ export interface LegalDocumentCreatePayload {
 }
 
 export interface LegalDocumentUpdatePayload {
-  title?: string;
   content?: string;
   version?: string;
 }
