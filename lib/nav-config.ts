@@ -75,7 +75,6 @@ export const NAV_ITEMS: NavItem[] = [
     iconPath: "/Sidebar/Sidebar/omnichanel.svg"
   },
   { key: "stores", labelKey: "stores", icon: Store, href: "/stores", iconPath: "/Sidebar/Sidebar/shop.svg" },
-  { key: "reviews", labelKey: "reviews", icon: Star, href: "/reviews", iconPath: "/Sidebar/Sidebar/shop.svg" },
   {
     key: "faq",
     labelKey: "faq",

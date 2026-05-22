@@ -7,6 +7,7 @@ import { Plus, Edit2, Trash2, Search, Dumbbell } from "lucide-react";
 import { useGoals, IGoal } from "@/lib/query/goal-query";
 import GoalModal, { GoalFormData } from "./modals/goal-modal";
 import { SuccessAnimationModal } from "../ui/success-animation-modal";
+import { ConfirmDeleteModal } from "../gyms/modals/confirm-delete-modal";
 import az from "@/lib/i18n/locales/az";
 
 export default function GoalsMain() {
@@ -17,7 +18,6 @@ export default function GoalsMain() {
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
   const [selectedGoal, setSelectedGoal] = useState<IGoal | null>(null);
 
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [goalToDelete, setGoalToDelete] = useState<IGoal | null>(null);
 
   const [toastModal, setToastModal] = useState<{ open: boolean; message: string; type: "success" | "error" }>({
@@ -64,7 +64,7 @@ export default function GoalsMain() {
     try {
       await deleteGoal.mutateAsync(goalToDelete.code);
       setToastModal({ open: true, message: t.goals.deleted, type: "success" });
-      setDeleteModalOpen(false);
+      setGoalToDelete(null);
     } catch (error: any) {
       setToastModal({ open: true, message: error?.message || t.error.generic, type: "error" });
     }
@@ -138,7 +138,6 @@ export default function GoalsMain() {
                       <button
                         onClick={() => {
                           setGoalToDelete(goal);
-                          setDeleteModalOpen(true);
                         }}
                         className="rounded-[50px] bg-white flex items-center justify-center p-1.5 shadow-sm hover:bg-red-50 transition-colors"
                       >
@@ -172,35 +171,13 @@ export default function GoalsMain() {
         isLoading={createGoal.isPending || updateGoal.isPending}
       />
 
-      {/* Delete Modal */}
-      {deleteModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center font-sans p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDeleteModalOpen(false)} />
-          <div className="relative z-10 w-full max-w-[400px] bg-white rounded-2xl flex flex-col items-center justify-center p-6 gap-5 shadow-2xl">
-            <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mb-1">
-              <Trash2 className="w-7 h-7 text-red-500" />
-            </div>
-            <div className="text-center">
-              <h2 className="text-[18px] font-semibold text-[#101828] mb-2">{t.common.delete}</h2>
-              <p className="text-[14px] text-[#475467]">{t.goals.deleteConfirm}</p>
-            </div>
-            <div className="w-full flex items-center gap-3 mt-2">
-              <button
-                onClick={() => setDeleteModalOpen(false)}
-                className="flex-1 h-[44px] rounded-lg border border-[#d0d5dd] bg-white text-[14px] font-medium text-[#344054] hover:bg-gray-50 transition-colors"
-              >
-                {t.common.cancel}
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleteGoal.isPending}
-                className="flex-1 h-[44px] rounded-lg bg-red-600 text-[14px] font-medium text-white hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {deleteGoal.isPending ? t.common.loading : t.common.delete}
-              </button>
-            </div>
-          </div>
-        </div>
+      {goalToDelete && (
+        <ConfirmDeleteModal
+          name={goalToDelete.title}
+          onConfirm={handleDelete}
+          onCancel={() => setGoalToDelete(null)}
+          isLoading={deleteGoal.isPending}
+        />
       )}
 
       <SuccessAnimationModal
