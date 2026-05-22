@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Loader2, Play, Square, Eye } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Play, Square } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
@@ -14,6 +14,7 @@ import {
   type LegalDocument,
 } from "@/lib/query/legal-query";
 import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
+import { ConfirmDeleteModal } from "@/components/gyms/modals/confirm-delete-modal";
 import {
   Dialog,
   DialogContent,
@@ -30,27 +31,57 @@ export function LegalDocumentsTab() {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingDoc, setEditingDoc] = useState<LegalDocument | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<LegalDocument | null>(null);
+  const [statusModal, setStatusModal] = useState<{ isOpen: boolean; message: string; type: "success" | "error" }>({
+    isOpen: false,
+    message: "",
+    type: "success",
+  });
 
-  const handleDelete = (id: number) => {
-    if (confirm("Bu sənədi silmək istədiyinizə əminsiniz?")) {
-      deleteDoc(id, {
-        onSuccess: () => {
-          toast.success("Sənəd uğurla silindi");
-          refetch();
-        },
-        onError: (err: any) => toast.error(err.message || "Xəta baş verdi"),
-      });
-    }
+  const handleDelete = (doc: LegalDocument) => {
+    setDeleteTarget(doc);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    deleteDoc(deleteTarget.id, {
+      onSuccess: () => {
+        setStatusModal({
+          isOpen: true,
+          message: "Sənəd uğurla silindi",
+          type: "success",
+        });
+        setDeleteTarget(null);
+        refetch();
+      },
+      onError: (err: any) => {
+        setStatusModal({
+          isOpen: true,
+          message: err.message || "Xəta baş verdi",
+          type: "error",
+        });
+      },
+    });
   };
 
   const handleToggleStatus = (doc: LegalDocument) => {
     const action = doc.isActive ? deactivateDoc : activateDoc;
     action(doc.id, {
       onSuccess: () => {
-        toast.success(`Sənəd ${doc.isActive ? "deaktiv" : "aktiv"} edildi`);
+        setStatusModal({
+          isOpen: true,
+          message: `Sənəd ${doc.isActive ? "deaktiv" : "aktiv"} edildi`,
+          type: "success",
+        });
         refetch();
       },
-      onError: (err: any) => toast.error(err.message || "Xəta baş verdi"),
+      onError: (err: any) => {
+        setStatusModal({
+          isOpen: true,
+          message: err.message || "Xəta baş verdi",
+          type: "error",
+        });
+      },
     });
   };
 
@@ -133,7 +164,7 @@ export function LegalDocumentsTab() {
                         <Pencil size={16} />
                       </button>
                       <button
-                        onClick={() => handleDelete(doc.id)}
+                        onClick={() => handleDelete(doc)}
                         className="p-1.5 text-red-500 hover:text-red-600 transition-colors"
                         title="Sil"
                         disabled={isDeleting}
@@ -160,10 +191,26 @@ export function LegalDocumentsTab() {
         }}
       />
 
+      {deleteTarget && (
+        <ConfirmDeleteModal
+          name={deleteTarget.title}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+          isLoading={isDeleting}
+        />
+      )}
+
       <SuccessAnimationModal
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
         message="Əməliyyat uğurla tamamlandı!"
+      />
+
+      <SuccessAnimationModal
+        isOpen={statusModal.isOpen}
+        onClose={() => setStatusModal((prev) => ({ ...prev, isOpen: false }))}
+        message={statusModal.message}
+        type={statusModal.type}
       />
     </div>
   );

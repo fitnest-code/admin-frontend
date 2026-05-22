@@ -28,13 +28,39 @@ export interface LegalDocumentUpdatePayload {
   version?: string;
 }
 
+type LegalDocumentApiResponse = {
+  id: number;
+  type: string;
+  title?: string;
+  content: string;
+  version: string;
+  is_active?: boolean;
+  created_date?: string;
+  last_modified_date?: string;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+const normalizeLegalDocument = (doc: LegalDocumentApiResponse): LegalDocument => ({
+  id: doc.id,
+  type: doc.type,
+  title: doc.title ?? doc.type,
+  content: doc.content,
+  version: doc.version,
+  isActive: doc.isActive ?? doc.is_active ?? false,
+  createdAt: doc.createdAt ?? doc.created_date ?? "",
+  updatedAt: doc.updatedAt ?? doc.last_modified_date ?? "",
+});
+
 // --- Hooks ---
 
 export function useLegalDocuments() {
   return useQuery({
     queryKey: queryKeys.legal.documents,
     queryFn: async () => {
-      return apiGet<LegalDocument[]>("/api/v1/admin/legal/documents");
+      const res = await apiGet<LegalDocumentApiResponse[]>("/api/v1/admin/legal/documents");
+      return res.map(normalizeLegalDocument);
     },
   });
 }
