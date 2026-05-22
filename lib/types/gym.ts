@@ -112,6 +112,7 @@ export interface GymCreateStep6SubscriptionRequest {
   packageId: number
   dailyPrice: number
   supportedServicesId: number[]
+  customServices?: string[]
 }
 
 export interface GymCreateStep6Request {
