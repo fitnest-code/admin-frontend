@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Plus, Pencil, Trash2, Loader2, Play, Square } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useI18nStore } from "@/lib/i18n";
 import {
   useLegalDocuments,
   useCreateLegalDocument,
@@ -23,7 +24,8 @@ import {
 } from "@/components/ui/dialog";
 
 export function LegalDocumentsTab() {
-  const { data: documents, isLoading, refetch } = useLegalDocuments();
+  const selectedLang = useI18nStore((s) => s.locale);
+  const { data: documents, isLoading, refetch } = useLegalDocuments(selectedLang);
   const { mutate: deleteDoc, isPending: isDeleting } = useDeleteLegalDocument();
   const { mutate: activateDoc, isPending: isActivating } = useActivateLegalDocument();
   const { mutate: deactivateDoc, isPending: isDeactivating } = useDeactivateLegalDocument();
@@ -116,6 +118,7 @@ export function LegalDocumentsTab() {
               <th className="pb-3 pr-4">ID</th>
               <th className="pb-3 px-4">Tip</th>
               <th className="pb-3 px-4">Yaradılma tarixi</th>
+              <th className="pb-3 px-4">Son dəyişdirilmə tarixi</th>
               <th className="pb-3 px-4">Versiya</th>
               <th className="pb-3 px-4">Status</th>
               <th className="pb-3 pl-4 text-right">Əməliyyatlar</th>
@@ -124,7 +127,7 @@ export function LegalDocumentsTab() {
           <tbody>
             {!documents || documents.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center py-8 text-slate-500">
+                <td colSpan={7} className="text-center py-8 text-slate-500">
                   Hələ sənəd əlavə edilməyib
                 </td>
               </tr>
@@ -134,6 +137,7 @@ export function LegalDocumentsTab() {
                   <td className="py-4 pr-4 text-[#101828] font-medium">#{doc.id}</td>
                   <td className="py-4 px-4 text-[#4a5565]">{doc.type}</td>
                   <td className="py-4 px-4 text-[#101828] font-medium">{doc.createdAt || "---"}</td>
+                  <td className="py-4 px-4 text-[#101828] font-medium">{doc.updatedAt || "---"}</td>
                   <td className="py-4 px-4 text-[#4a5565]">{doc.version}</td>
                   <td className="py-4 px-4">
                     <span className={cn(
@@ -223,6 +227,7 @@ function DocumentFormModal({ isOpen, onClose, document, onSuccess }: {
   document: LegalDocument | null;
   onSuccess: () => void;
 }) {
+  const selectedLang = useI18nStore((s) => s.locale);
   const { mutate: createDoc, isPending: isCreating } = useCreateLegalDocument();
   const { mutate: updateDoc, isPending: isUpdating } = useUpdateLegalDocument();
 
@@ -268,7 +273,14 @@ function DocumentFormModal({ isOpen, onClose, document, onSuccess }: {
       );
     } else {
       createDoc(
-        { type: formData.type, title: formData.title, content: formData.content, version: formData.version, is_active: false },
+        {
+          type: formData.type,
+          title: formData.title,
+          content: formData.content,
+          version: formData.version,
+          is_active: false,
+          language: selectedLang,
+        },
         {
           onSuccess,
           onError: (err: any) => toast.error(err.message || "Xəta baş verdi"),
