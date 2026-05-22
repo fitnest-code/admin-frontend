@@ -207,8 +207,8 @@ function LoginForm() {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <h2 className="text-2xl font-bold text-foreground">Şifrəni unutmusunuz?</h2>
-          <p className="text-sm text-muted-foreground">Şifrəni sıfırlamaq üçün mobil nömrənizi daxil edin</p>
+          <h2 className="text-2xl font-bold text-foreground">Şifrənizi unutmusunuz?</h2>
+          <p className="text-sm text-muted-foreground">Şifrənizi sıfırlamaq üçün mobil nömrənizi daxil edin</p>
         </div>
 
         <form onSubmit={handleForgotPassword} className="flex flex-col gap-4" noValidate>
@@ -252,7 +252,7 @@ function LoginForm() {
               onClick={handleBackToLogin}
               className="text-center text-xs font-semibold text-[#00B4CC] hover:text-[#008799] transition-colors py-1"
             >
-              Geri daxil olmağa
+              Daxil olma ekranına qayıt
             </button>
           </div>
         </form>
@@ -275,7 +275,7 @@ function LoginForm() {
 
         <div className="flex flex-col gap-1.5">
           <h2 className="text-2xl font-bold text-foreground">Təsdiq kodu</h2>
-          <p className="text-sm text-muted-foreground">Mobil nömrənizə göndərilən 4 rəqəmli OTP kodunu daxil edin</p>
+          <p className="text-sm text-muted-foreground">Mobil nömrənizə göndərilən 4 rəqəmli təsdiq kodunu daxil edin</p>
         </div>
 
         <form onSubmit={handleVerifyOtp} className="flex flex-col gap-4" noValidate>
@@ -322,7 +322,7 @@ function LoginForm() {
               }}
               className="text-center text-xs font-semibold text-[#00B4CC] hover:text-[#008799] transition-colors py-1"
             >
-              Geri
+              Geri qayıt
             </button>
           </div>
         </form>
@@ -338,6 +338,9 @@ function LoginForm() {
             <svg viewBox="0 0 24 24" className="h-4 w-4 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
               <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
+              <line x1="6" y1="1" x2="6" y2="4" />
+              <line x1="10" y1="1" x2="10" y2="4" />
+              <line x1="14" y1="1" x2="14" y2="4" />
             </svg>
           </div>
           <span className="text-lg font-bold text-foreground">FitNest</span>
@@ -345,7 +348,7 @@ function LoginForm() {
 
         <div className="flex flex-col gap-1.5">
           <h2 className="text-2xl font-bold text-foreground">Yeni şifrə təyin edin</h2>
-          <p className="text-sm text-muted-foreground">Hesabınız üçün yeni etibarlı şifrə daxil edin</p>
+          <p className="text-sm text-muted-foreground">Hesabınız üçün yeni və etibarlı şifrə daxil edin</p>
         </div>
 
         <form onSubmit={handleResetPassword} className="flex flex-col gap-4" noValidate>
@@ -423,7 +426,7 @@ function LoginForm() {
               onClick={handleBackToLogin}
               className="text-center text-xs font-semibold text-[#00B4CC] hover:text-[#008799] transition-colors py-1"
             >
-              Geri daxil olmağa
+              Daxil olma ekranına qayıt
             </button>
           </div>
         </form>
@@ -480,7 +483,7 @@ function LoginForm() {
               }}
               className="text-xs font-semibold text-[#00B4CC] hover:text-[#008799] transition-colors"
             >
-              Şifrəni unutdun?
+              Şifrəni unutmusunuz?
             </button>
           </div>
           <div className="relative">
