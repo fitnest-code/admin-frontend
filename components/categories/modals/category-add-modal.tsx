@@ -63,6 +63,7 @@ export default function CategoryModal({
 
   const handleIconFile = useCallback((file: File) => {
     // Validating for SVG or images
+    if (!file.type.startsWith("image/") && file.type !== "image/svg+xml" && !file.name.endsWith(".svg")) return;
     setSelectedIconFile(file);
     const reader = new FileReader();
     reader.onload = (e) => setIconPreview(e.target?.result as string);
@@ -198,7 +199,7 @@ export default function CategoryModal({
                   </div>
                 )}
               </div>
-              <input ref={iconInputRef} type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleIconFile(e.target.files[0])} />
+              <input ref={iconInputRef} type="file" className="hidden" accept="image/*,image/svg+xml,.svg" onChange={(e) => e.target.files?.[0] && handleIconFile(e.target.files[0])} />
               <div className="w-full text-left text-[11px] sm:text-[12px] leading-[18px] tracking-[-0.15px] text-[#6a7282]">
                 JPG, PNG or SVG • Max size 2MB
               </div>
