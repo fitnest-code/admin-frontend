@@ -13,6 +13,7 @@ import {
 import { CustomCalendar } from '@/components/ui/custom-calendar'
 import { format, parse } from 'date-fns'
 import { Calendar as CalendarIcon, Loader2 } from 'lucide-react'
+import { SuccessAnimationModal } from '@/components/ui/success-animation-modal'
 
 interface Props {
     gymId: number
@@ -27,6 +28,7 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
     const [startTime, setStartTime] = useState('09:00')
     const [endTime, setEndTime] = useState('10:00')
     const [maxSlots, setMaxSlots] = useState(12)
+    const [showSuccess, setShowSuccess] = useState(false)
 
     // Fetch gym details & categories to extract all lesson types belonging to the gym's category
     const { data: gymDetails } = useGymDetailsAdmin(gymId)
@@ -82,7 +84,7 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                 maxSlots
             }
         }, {
-            onSuccess: () => onClose()
+            onSuccess: () => setShowSuccess(true)
         })
     }
 
@@ -232,9 +234,20 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
 
                 <div className={styles.footer}>
                     <button className={styles.cancelBtn} onClick={onClose}>Ləğv et</button>
-                    <button className={styles.saveBtn} onClick={handleSubmit}>Yadda saxla</button>
+                    <button className={styles.saveBtn} onClick={handleSubmit}>
+                        {addMutation.isPending ? 'Gözləyin...' : 'Yadda saxla'}
+                    </button>
                 </div>
             </div>
+            
+            <SuccessAnimationModal 
+                isOpen={showSuccess} 
+                onClose={() => {
+                    setShowSuccess(false);
+                    onClose();
+                }} 
+                message="Dərs saatı uğurla yaradıldı"
+            />
         </div>
     )
 }
