@@ -39,8 +39,14 @@ const DAY_FULL_LABELS: Record<string, string> = {
 
 const DAYS_ORDER = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 
-const formatToHHmm = (timeStr: string) => {
-  if (!timeStr) return "";
+const formatToHHmm = (timeVal: any): string => {
+  if (!timeVal) return "";
+  if (Array.isArray(timeVal)) {
+    const hours = timeVal[0] ?? 0;
+    const minutes = timeVal[1] ?? 0;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  }
+  const timeStr = String(timeVal);
   let isPM = timeStr.toLowerCase().includes("pm");
   let isAM = timeStr.toLowerCase().includes("am");
   let cleanTime = timeStr.replace(/(am|pm)/i, "").trim();
@@ -439,7 +445,7 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
           setModalOpen(val);
           if (!val) setEditingGroup(null);
         }}
-        editData={editingGroup ? { day: editingGroup.days[0], startTime: editingGroup.startTime, endTime: editingGroup.endTime } : null}
+        editData={editingGroup ? { days: editingGroup.days, startTime: editingGroup.startTime, endTime: editingGroup.endTime } : null}
         onSubmit={(data: ClassTimeData) => {
           const timeToMin = (t: string) => {
             const [h, m] = t.split(':').map(Number);
@@ -448,14 +454,17 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
 
           const newStart = timeToMin(data.startTime);
           const newEnd = timeToMin(data.endTime);
+          const targetDays = data.days || (data.day ? [data.day] : []);
 
           if (editingGroup) {
-            // Check conflicts for each day in the group (excluding the slot we are editing)
+            // Check conflicts for each day in the NEW selection (excluding the slot we are editing)
             let hasConflict = false;
-            for (const day of editingGroup.days) {
+            for (const day of targetDays) {
               const conflict = slots[activeTab].find(s => {
                 if (s.day !== day) return false;
-                if (s.startTime === editingGroup.startTime && s.endTime === editingGroup.endTime) return false;
+                if (editingGroup.days.includes(s.day) && s.startTime === editingGroup.startTime && s.endTime === editingGroup.endTime) {
+                  return false;
+                }
                 const sStart = timeToMin(s.startTime);
                 const sEnd = timeToMin(s.endTime);
                 return (newStart < sEnd) && (sStart < newEnd);
@@ -470,32 +479,54 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
               return toast.error("Bu zaman intervalı digəri ilə kəsişir və ya artıq mövcuddur");
             }
 
+            // Remove the old slots matching editingGroup.days and old time
+            const filteredSlots = slots[activeTab].filter(s => 
+              !(editingGroup.days.includes(s.day) && s.startTime === editingGroup.startTime && s.endTime === editingGroup.endTime)
+            );
+
+            // Add the new slots for each day in targetDays
+            const newSlotsForGroup = targetDays.map(day => ({
+              day,
+              startTime: data.startTime,
+              endTime: data.endTime,
+              id: Math.random().toString()
+            }));
+
             setSlots(prev => ({
               ...prev,
-              [activeTab]: prev[activeTab].map(s => {
-                if (editingGroup.days.includes(s.day) && s.startTime === editingGroup.startTime && s.endTime === editingGroup.endTime) {
-                  return { ...s, startTime: data.startTime, endTime: data.endTime };
-                }
-                return s;
-              })
+              [activeTab]: [...filteredSlots, ...newSlotsForGroup]
             }));
             setEditingGroup(null);
           } else {
             // Check conflict for each of the target days we are adding to
-            const conflict = slots[activeTab].find(s => {
-              if (s.day !== data.day) return false;
-              const sStart = timeToMin(s.startTime);
-              const sEnd = timeToMin(s.endTime);
-              return (newStart < sEnd) && (sStart < newEnd);
-            });
+            let hasConflict = false;
+            for (const day of targetDays) {
+              const conflict = slots[activeTab].find(s => {
+                if (s.day !== day) return false;
+                const sStart = timeToMin(s.startTime);
+                const sEnd = timeToMin(s.endTime);
+                return (newStart < sEnd) && (sStart < newEnd);
+              });
+              if (conflict) {
+                hasConflict = true;
+                break;
+              }
+            }
 
-            if (conflict) {
+            if (hasConflict) {
               return toast.error("Bu zaman intervalı digəri ilə kəsişir və ya artıq mövcuddur");
             }
 
+            const newSlots = targetDays.map(day => ({
+              day,
+              startTime: data.startTime,
+              endTime: data.endTime,
+              id: Math.random().toString()
+            }));
+
             setSlots(prev => ({
               ...prev,
-              [activeTab]: [...prev[activeTab], { id: Math.random().toString(), ...data }]
+              [activeTab]: [...prev[activeTab], ...newSlots]
             }));
           }
         }}

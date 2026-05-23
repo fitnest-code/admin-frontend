@@ -15,7 +15,8 @@ interface AddClassTimeModalProps {
 }
 
 export interface ClassTimeData {
-  day: string;
+  day?: string;
+  days?: string[];
   startTime: string;
   endTime: string;
 }
@@ -56,7 +57,13 @@ export function AddClassTimeModal({
   useEffect(() => {
     if (open) {
       if (editData) {
-        setSelectedDays(new Set([editData.day]));
+        if (editData.days && editData.days.length > 0) {
+          setSelectedDays(new Set(editData.days));
+        } else if (editData.day) {
+          setSelectedDays(new Set([editData.day]));
+        } else {
+          setSelectedDays(new Set());
+        }
         setStartTime(editData.startTime);
         setEndTime(editData.endTime);
       } else {
@@ -91,10 +98,7 @@ export function AddClassTimeModal({
       return toast.error("Bitiş vaxtı başlama vaxtından sonra olmalıdır");
     }
 
-    // Submit for each selected day
-    selectedDays.forEach(day => {
-      onSubmit?.({ day, startTime, endTime });
-    });
+    onSubmit?.({ days: Array.from(selectedDays), startTime, endTime });
 
     setSelectedDays(new Set());
     setStartTime('09:00');
