@@ -101,6 +101,8 @@ export interface SupportedServiceResponse {
   id: number
   name: string
   gymId?: number
+  iconImageUrl?: string
+  iconUrl?: string
 }
 
 export interface SupportedServiceRequest {
@@ -117,6 +119,7 @@ export interface GymCreateStep6SubscriptionRequest {
 
 export interface GymCreateStep6Request {
   subscriptions: GymCreateStep6SubscriptionRequest[]
+  serviceIcons?: File[]
 }
 
 export interface GymAdminCreateRequest {
@@ -193,6 +196,7 @@ export interface GymInfoAdminResponse {
 export interface GymPlanBenefitAdminResponse {
   id: number
   name: string
+  iconImageUrl?: string
 }
 
 export interface GymPlanItemAdminResponse {
