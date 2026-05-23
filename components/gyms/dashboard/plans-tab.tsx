@@ -12,6 +12,7 @@ import { ConfirmDeleteModal } from "../modals/confirm-delete-modal";
 import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 import { useT } from "@/lib/i18n";
 import { useQueryClient } from "@tanstack/react-query";
+import { useSubscriptionPackages } from "@/lib/query/use-subscription-packages";
 
 type Package = "Bronze" | "Silver" | "Gold" | "Platinum";
 
@@ -42,6 +43,7 @@ export function PlansTab({ gym }: { gym?: any }) {
   const queryClient = useQueryClient();
   const { gymId } = useGymStore();
   const { data: adminSubs, isLoading: subsLoading } = useGymSubscriptionsAdmin(gymId);
+  const { data: allPackageNames } = useSubscriptionPackages();
   const { data: allServices } = useSupportedServices(gymId ? Number(gymId) : undefined);
   const createServiceMutation = useCreateSupportedService();
   const deleteServiceMutation = useDeleteSupportedService();
@@ -177,6 +179,14 @@ export function PlansTab({ gym }: { gym?: any }) {
     const PACKAGE_IDS: Record<Package, number> = {
       Bronze: 1, Silver: 2, Gold: 3, Platinum: 4,
     };
+    if (allPackageNames) {
+      allPackageNames.forEach((p) => {
+        const name = p.name as Package;
+        if (PACKAGES.includes(name)) {
+          PACKAGE_IDS[name] = p.id;
+        }
+      });
+    }
 
     const subscriptions = Array.from(selectedPackages).map(pkg => {
       let serviceNames = packageServices[pkg] || [];
