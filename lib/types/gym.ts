@@ -144,6 +144,7 @@ export interface GymEntranceHistoryAdminResponse {
   status: string
   reason: string | null
   amount: number
+  profilePhotoUrl?: string
 }
 
 export interface GymAnalyticsResponse {

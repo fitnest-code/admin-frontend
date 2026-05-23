@@ -364,7 +364,7 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
                   {/* Table Header */}
                   <div className="w-full h-[48px] bg-[rgba(0,180,204,0.1)] flex items-center px-[20px] gap-[32px] text-[13px] font-bold text-[#101828]">
                     <div className="w-[60px] shrink-0 opacity-70 uppercase tracking-wider">ID</div>
-                    <div className="w-[120px] shrink-0 opacity-70 uppercase tracking-wider">Ad / Soyad</div>
+                    <div className="w-[160px] shrink-0 opacity-70 uppercase tracking-wider">Ad / Soyad</div>
                     <div className="w-[130px] shrink-0 opacity-70 uppercase tracking-wider">Telefon</div>
                     <div className="w-[110px] shrink-0 opacity-70 uppercase tracking-wider">Tarix / Saat</div>
                     <div className="w-[110px] shrink-0 opacity-70 uppercase tracking-wider text-center">Məbləğ</div>
@@ -387,7 +387,26 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
                         return (
                           <div key={item.id || i} className="w-full h-[64px] flex items-center px-[20px] gap-[32px] text-[14px] hover:bg-slate-50/80 transition-colors group">
                             <div className="w-[60px] shrink-0 text-slate-400 font-medium">#{item.id || '---'}</div>
-                            <div className="w-[120px] shrink-0 font-bold text-[#101828] group-hover:text-[#00B4CC] transition-colors truncate">{item.firstName} {item.lastName}</div>
+                            <div className="w-[160px] shrink-0 flex items-center gap-2 group-hover:text-[#00B4CC] transition-colors truncate">
+                              {item.profilePhotoUrl ? (
+                                <div className="w-8 h-8 rounded-full overflow-hidden border border-[#ececed] relative shrink-0">
+                                  <Image
+                                    src={item.profilePhotoUrl}
+                                    alt={`${item.firstName} ${item.lastName}`}
+                                    fill
+                                    sizes="32px"
+                                    className="object-cover"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="w-8 h-8 rounded-full bg-[#d5f0f3] border border-[#ececed] flex items-center justify-center text-[11px] font-bold shrink-0">
+                                  {item.firstName?.[0] || 'U'}
+                                </div>
+                              )}
+                              <span className="font-bold text-[#101828] group-hover:text-[#00B4CC] transition-colors truncate">
+                                {item.firstName} {item.lastName}
+                              </span>
+                            </div>
                             <div className="w-[130px] shrink-0 text-slate-600 font-medium">{item.phone || '---'}</div>
                             <div className="w-[110px] shrink-0 flex flex-col justify-center">
                               <span className="font-bold text-slate-700">{date}</span>

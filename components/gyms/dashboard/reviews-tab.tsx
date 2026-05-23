@@ -211,9 +211,21 @@ export function ReviewsTab({ gymName }: { gymName?: string }) {
               <div key={review.id} className="grid grid-cols-[1fr_180px_180px_180px_60px] items-center px-6 py-3 border-b border-[#ececed] last:border-0 hover:bg-slate-50 transition-colors">
                 {/* Customer */}
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-[#d5f0f3] border border-[#ececed] flex items-center justify-center text-[15px] font-bold">
-                    {review.author?.full_name?.[0] || "N"}
-                  </div>
+                  {review.author?.avatar_url ? (
+                    <div className="w-9 h-9 rounded-full overflow-hidden border border-[#ececed] relative shrink-0">
+                      <Image
+                        src={review.author.avatar_url}
+                        alt={review.author.full_name}
+                        fill
+                        sizes="36px"
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-9 h-9 rounded-full bg-[#d5f0f3] border border-[#ececed] flex items-center justify-center text-[15px] font-bold shrink-0">
+                      {review.author?.full_name?.[0] || "N"}
+                    </div>
+                  )}
                   <span className="text-[13px] font-semibold">{review.author?.full_name}</span>
                 </div>
 
@@ -273,9 +285,21 @@ export function ReviewsTab({ gymName }: { gymName?: string }) {
                {/* User Info & Status Row */}
                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                     <div className="w-11 h-11 rounded-full bg-[#d5f0f3] border border-[#ececed] flex items-center justify-center text-[18px] font-bold">
-                        {selectedReview.author?.full_name?.[0] || "N"}
-                     </div>
+                     {selectedReview.author?.avatar_url ? (
+                        <div className="w-11 h-11 rounded-full overflow-hidden border border-[#ececed] relative shrink-0">
+                          <Image
+                            src={selectedReview.author.avatar_url}
+                            alt={selectedReview.author.full_name}
+                            fill
+                            sizes="44px"
+                            className="object-cover"
+                          />
+                        </div>
+                     ) : (
+                        <div className="w-11 h-11 rounded-full bg-[#d5f0f3] border border-[#ececed] flex items-center justify-center text-[18px] font-bold shrink-0">
+                           {selectedReview.author?.full_name?.[0] || "N"}
+                        </div>
+                     )}
                      <div className="flex flex-col text-left">
                         <span className="text-[16px] font-medium leading-[24px]">{selectedReview.author?.full_name}</span>
                         <span className="text-[14px] text-[#4a5565] leading-[20px]">

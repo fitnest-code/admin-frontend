@@ -10,6 +10,7 @@ import { MesqcilerTab } from './tabs/mesqciler-tab'
 import { GirisQrTab } from './tabs/giris-qr-tab'
 import { ZalAdminiTab } from './tabs/zal-admini-tab'
 import { AnalitikaTab } from './tabs/analitika-tab'
+import { ZalWorkHoursTab } from './tabs/zal-work-hours-tab'
 
 interface ZalDetailProps {
   zal: Zal
@@ -29,6 +30,7 @@ export function ZalDetail({ zal, isNew = false }: ZalDetailProps) {
     switch (activeTab) {
       case 'analitika':  return <AnalitikaTab />
       case 'melumatlar': return <ZalMelumatlarTab zal={zal} isNew={isNew} />
+      case 'work-hours': return <ZalWorkHoursTab gymId={zal.id} />
       case 'mesqciler':  return <MesqcilerTab mesqciler={zal.mesqciler} zalName={zal.name} />
       case 'admin':      return <ZalAdminiTab admins={zal.admins} />
       case 'abunelik':

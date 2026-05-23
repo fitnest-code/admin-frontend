@@ -662,3 +662,31 @@ export function useGymLessonTypes(gymId: number | string | null | undefined) {
     enabled: !!gymId,
   })
 }
+
+// 30. Zalın iş saatlarını çəkmək üçün
+export function useGymWorkHours(gymId: number | string | null | undefined) {
+  return useQuery({
+    queryKey: ['gym-work-hours', gymId],
+    queryFn: () => {
+      if (!gymId) return Promise.resolve(null)
+      return apiGet<any>(`/admin/gyms/${gymId}/work-hours`)
+    },
+    enabled: !!gymId,
+  })
+}
+
+// 31. Zalın iş saatlarını yeniləmək üçün
+export function useUpdateGymWorkHours() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ gymId, payload }: { gymId: number | string, payload: any }) =>
+      apiPost(`/admin/gyms/${gymId}/step3`, payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-work-hours', variables.gymId] });
+      toast.success('İş saatları yeniləndi');
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Xəta baş verdi');
+    }
+  });
+}
