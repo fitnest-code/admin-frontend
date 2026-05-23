@@ -50,10 +50,10 @@ export const NAV_ITEMS: NavItem[] = [
     iconPath: "/Sidebar/Sidebar/odenisler.svg"
   },
   {
-    key: "hesabatlar",
+    key: "reports",
     label: "Hesabatlar",
     icon: BarChart2,
-    href: "/hesabatlar",
+    href: "/reports",
     iconPath: "/Sidebar/Sidebar/hesabatlar.svg"
   },
   { key: "diet", label: "Diet", icon: Salad, href: "/diet", iconPath: "/Sidebar/Sidebar/diet.svg" },
