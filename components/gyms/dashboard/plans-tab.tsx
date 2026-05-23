@@ -23,6 +23,12 @@ const packageStyles: Record<Package, { bg: string; text: string }> = {
   Platinum: { bg: "bg-zinc-900", text: "text-white" },
 };
 
+const getImageUrl = (urlOrFsId: string | undefined | null) => {
+  if (!urlOrFsId) return "";
+  if (urlOrFsId.startsWith("http") || urlOrFsId.startsWith("blob:") || urlOrFsId.startsWith("/")) return urlOrFsId;
+  return `/api/v1/media/stream/${urlOrFsId}`;
+};
+
 const DEFAULT_SERVICES = [
   { id: 1, name: "Base dərslər" },
   { id: 2, name: "Hovuz" },
@@ -53,7 +59,7 @@ export function PlansTab({ gym }: { gym?: any }) {
           selected.add(pkgName);
           prcs[pkgName] = String(sub.dailyPrice || "");
           svcs[pkgName] = (sub.benefits || [])
-            .map((b: any) => b.name)
+            .map((b: any) => b.name || b.description)
             .filter(Boolean);
         }
       });
@@ -72,6 +78,7 @@ export function PlansTab({ gym }: { gym?: any }) {
   const [packageServices, setPackageServices] = useState<Record<Package, string[]>>(initialData.services);
   const [hasSynced, setHasSynced] = useState(false);
   const [pendingService, setPendingService] = useState<string | null>(null);
+  const [pendingIcon, setPendingIcon] = useState<File | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [deleteServiceId, setDeleteServiceId] = useState<number | null>(null);
   const [isCreatingService, setIsCreatingService] = useState(false);
@@ -113,18 +120,20 @@ export function PlansTab({ gym }: { gym?: any }) {
 
     try {
       await createServiceMutation.mutateAsync({
-        name: pendingService.trim(),
-        gymId: gymId ? Number(gymId) : undefined
+        payload: {
+          name: pendingService.trim(),
+          gymId: gymId ? Number(gymId) : undefined
+        },
+        icon: pendingIcon || undefined
       });
 
       setPendingService(null);
+      setPendingIcon(null);
       setShowSuccessModal(true);
     } catch (err: any) {
       toast.error(err?.message || t.plans.serviceCreateFailed);
     }
   };
-
-
 
   const handleDeleteFromGym = async (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -167,7 +176,6 @@ export function PlansTab({ gym }: { gym?: any }) {
     };
 
     const subscriptions = Array.from(selectedPackages).map(pkg => {
-      // Get service names from state, fall back to gym benefits if state is empty
       let serviceNames = packageServices[pkg] || [];
       if (serviceNames.length === 0 && gym?.supportedSubscriptions) {
         const sub = gym.supportedSubscriptions.find((s: any) => s.packageName === pkg);
@@ -216,18 +224,14 @@ export function PlansTab({ gym }: { gym?: any }) {
 
   return (
     <div className="w-full flex flex-col gap-9 font-sans text-black animate-in fade-in duration-500">
-
-      {/* 1. Package Selector Section */}
       <div className="bg-white rounded-[12px] border border-[#ececed] p-5 flex flex-col gap-5 shadow-sm">
         <div className="border-b border-[#ececed] pb-2">
           <h2 className="text-[18px] font-semibold leading-[28px]">{t.plans.gymSubscriptions}</h2>
         </div>
-
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {PACKAGES.map((pkg) => {
             const isSelected = selectedPackages.has(pkg);
             const isActive = activePackage === pkg;
-
             return (
               <div
                 key={pkg}
@@ -251,14 +255,9 @@ export function PlansTab({ gym }: { gym?: any }) {
                 >
                   {isSelected && <Check className="text-black w-4 h-4 stroke-[4]" />}
                 </div>
-
-                <b className={cn(
-                  "ml-3 text-[16px] tracking-tight",
-                  pkg === "Platinum" ? "text-white" : "text-white drop-shadow-md"
-                )}>
+                <b className={cn("ml-3 text-[16px] tracking-tight", pkg === "Platinum" ? "text-white" : "text-white drop-shadow-md")}>
                   {pkg}
                 </b>
-
                 {isActive && (
                   <div className="absolute -top-1 -right-1 w-4 h-4 bg-[#00B4CC] rounded-full border-2 border-white shadow-sm animate-pulse" />
                 )}
@@ -267,13 +266,10 @@ export function PlansTab({ gym }: { gym?: any }) {
           })}
         </div>
       </div>
-
-      {/* 2. Price Section */}
       <div className="bg-white rounded-[12px] border border-[#ececed] p-5 flex flex-col gap-5 shadow-sm">
         <div className="border-b border-[#ececed] pb-2">
           <h2 className="text-[18px] font-semibold leading-[28px]">{t.plans.entrancePrice}</h2>
         </div>
-
         <div className="flex flex-col gap-2">
           <label className="text-[14px] text-black/60 font-medium">{t.plans.entrancePriceAzn}</label>
           <div className="h-[44px] w-full max-w-[320px] bg-[#fafafa] border border-[#ececed] rounded-lg flex items-center px-4">
@@ -288,10 +284,7 @@ export function PlansTab({ gym }: { gym?: any }) {
           </div>
         </div>
       </div>
-
-      {/* 3. Services Section */}
       <div className="bg-white rounded-[12px] border border-[#ececed] p-5 flex flex-col gap-6 shadow-sm">
-        {/* Add Service Section (Frame Group) */}
         {!isCreatingService ? (
           <div className="flex items-center justify-between border-b border-[#ececed] pb-2 animate-in fade-in duration-300">
             <h2 className="text-[18px] font-semibold leading-[28px]">
@@ -310,28 +303,47 @@ export function PlansTab({ gym }: { gym?: any }) {
             <div className="flex items-center justify-between border-b border-[#ececed] pb-1">
               <h3 className="text-[18px] font-semibold leading-[28px]">{t.plans.addService}</h3>
               <button 
-                onClick={() => setIsCreatingService(false)}
+                onClick={() => { setIsCreatingService(false); setPendingIcon(null); }}
                 className="flex items-center justify-center text-[#1F2937] hover:opacity-70 transition-opacity"
               >
                 <X size={20} />
               </button>
             </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-[14px] leading-[20px]">{t.plans.serviceName}</label>
-              <div className="h-[44px] bg-[#fafafa] border border-[#ececed] rounded-lg flex items-center px-3">
-                <input
-                  type="text"
-                  value={pendingService || ""}
-                  onChange={(e) => setPendingService(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleConfirmService()}
-                  placeholder={t.plans.exampleService}
-                  className="bg-transparent w-full h-full outline-none text-[15px] leading-[24px]"
-                  autoFocus
-                />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-[14px] leading-[20px]">{t.plans.serviceName}</label>
+                <div className="h-[44px] bg-[#fafafa] border border-[#ececed] rounded-lg flex items-center px-3">
+                  <input
+                    type="text"
+                    value={pendingService || ""}
+                    onChange={(e) => setPendingService(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleConfirmService()}
+                    placeholder={t.plans.exampleService}
+                    className="bg-transparent w-full h-full outline-none text-[15px] leading-[24px]"
+                    autoFocus
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-[14px] leading-[20px]">Xidmət ikonu</label>
+                <div className="h-[44px] flex items-center gap-3">
+                  <label className="h-full px-4 rounded-lg border border-[#ececed] bg-[#fafafa] flex items-center justify-center text-xs font-semibold text-black/60 hover:bg-slate-100 transition-colors cursor-pointer whitespace-nowrap">
+                    Şəkil seçin
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setPendingIcon(e.target.files?.[0] || null)}
+                      className="hidden"
+                    />
+                  </label>
+                  {pendingIcon && (
+                    <span className="text-[13px] text-[#00B4CC] font-medium truncate max-w-[150px]" title={pendingIcon.name}>
+                      {pendingIcon.name}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
-
             <div className="flex justify-end">
               <button
                 onClick={handleConfirmService}
@@ -343,12 +355,9 @@ export function PlansTab({ gym }: { gym?: any }) {
             </div>
           </div>
         )}
-
-        {/* Services List (Frame Container) */}
         <div className="flex flex-col gap-5">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
             {allServices?.map((svc) => {
-              // Check state first, then fall back to gym benefits data
               const stateSelected = packageServices[activePackage]?.includes(svc.name);
               const gymBenefits = gym?.supportedSubscriptions?.find(
                 (s: any) => s.packageName === activePackage
@@ -357,6 +366,9 @@ export function PlansTab({ gym }: { gym?: any }) {
                 (b: any) => b.description?.trim().toLowerCase() === svc.name?.trim().toLowerCase()
               );
               const isSelected = stateSelected || gymSelected;
+              const iconUrl = svc.iconImageUrl || svc.iconUrl || gymBenefits.find(
+                (b: any) => b.description?.trim().toLowerCase() === svc.name?.trim().toLowerCase()
+              )?.iconImageUrl;
 
               return (
                 <div
@@ -369,12 +381,18 @@ export function PlansTab({ gym }: { gym?: any }) {
                       : "bg-[#fafafa] border-[#ececed]"
                   )}
                 >
-                  <div className="flex items-center overflow-hidden">
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    {iconUrl && (
+                      <img
+                        src={getImageUrl(iconUrl)}
+                        alt={svc.name}
+                        className="w-5 h-5 object-contain rounded shrink-0"
+                      />
+                    )}
                     <span className="text-[14px] font-medium text-black truncate leading-[20px]">
                       {svc.name}
                     </span>
                   </div>
-
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -390,8 +408,6 @@ export function PlansTab({ gym }: { gym?: any }) {
           </div>
         </div>
       </div>
-
-      {/* 4. Footer Buttons */}
       <div className="flex items-center justify-end mt-4">
         <button
           onClick={handleSave}
@@ -402,7 +418,6 @@ export function PlansTab({ gym }: { gym?: any }) {
           {t.plans.save}
         </button>
       </div>
-
       {deleteServiceId !== null && (
         <ConfirmDeleteModal
           name={allServices?.find(s => s.id === deleteServiceId)?.name || t.plans.service}
@@ -411,7 +426,6 @@ export function PlansTab({ gym }: { gym?: any }) {
           isLoading={deleteServiceMutation.isPending}
         />
       )}
-
       <SuccessAnimationModal
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}

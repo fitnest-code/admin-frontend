@@ -47,6 +47,7 @@ export interface Step4Data {
 
 export interface Step6Data {
   subscriptions: any[];
+  serviceIcons?: File[];
 }
 
 interface GymState {
@@ -176,7 +177,7 @@ export const useGymStore = create<GymState>()(
         step2Trainers: state.step2Trainers.map(t => ({ ...t, photo: undefined })), // Don't persist File
         step3Data: state.step3Data,
         step4Data: state.step4Data,
-        step6Data: state.step6Data,
+        step6Data: state.step6Data ? { ...state.step6Data, serviceIcons: undefined } : null,
         step7Admins: state.step7Admins
       }),
     }

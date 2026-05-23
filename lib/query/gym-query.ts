@@ -92,8 +92,16 @@ export function useValidateGymStep5() {
 
 export function useValidateGymStep6() {
   return useMutation({
-    mutationFn: (payload: GymCreateStep6Request) =>
-      apiPost('/admin/gyms/validate/step6', payload),
+    mutationFn: ({ payload, serviceIcons }: { payload: GymCreateStep6Request, serviceIcons?: File[] }) => {
+      const formData = new FormData();
+      formData.append("data", new Blob([JSON.stringify(payload)], { type: "application/json" }));
+      if (serviceIcons && serviceIcons.length > 0) {
+        serviceIcons.forEach(file => {
+          formData.append("serviceIcons", file);
+        });
+      }
+      return apiPost('/admin/gyms/validate/step6', formData);
+    }
   });
 }
 
@@ -132,8 +140,24 @@ export function useCreateSupportedService() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: SupportedServiceRequest) =>
-      apiPost<SupportedServiceResponse>('/admin/gyms/services', payload),
+    mutationFn: (payload: SupportedServiceRequest | { payload: SupportedServiceRequest, icon?: File }) => {
+      const formData = new FormData();
+      let actualPayload: SupportedServiceRequest;
+      let actualIcon: File | undefined;
+
+      if ("payload" in payload) {
+        actualPayload = (payload as any).payload;
+        actualIcon = (payload as any).icon;
+      } else {
+        actualPayload = payload;
+      }
+
+      formData.append("data", new Blob([JSON.stringify(actualPayload)], { type: "application/json" }));
+      if (actualIcon) {
+        formData.append("icon", actualIcon);
+      }
+      return apiPost<SupportedServiceResponse>('/admin/gyms/services', formData);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['supported-services'] });
     }
@@ -156,8 +180,16 @@ export function useDeleteSupportedService() {
 // 6. Step 6: Abunəlik və xidmətləri aktivləşdirin
 export function useCreateGymStep6() {
   return useMutation({
-    mutationFn: ({ id, payload }: { id: number, payload: GymCreateStep6Request }) =>
-      apiPost(`/admin/gyms/${id}/step6`, payload),
+    mutationFn: ({ id, payload, serviceIcons }: { id: number, payload: GymCreateStep6Request, serviceIcons?: File[] }) => {
+      const formData = new FormData();
+      formData.append("data", new Blob([JSON.stringify(payload)], { type: "application/json" }));
+      if (serviceIcons && serviceIcons.length > 0) {
+        serviceIcons.forEach(file => {
+          formData.append("serviceIcons", file);
+        });
+      }
+      return apiPost(`/admin/gyms/${id}/step6`, formData);
+    }
   });
 }
 
@@ -243,6 +275,13 @@ export function useCreateGymComplete() {
       data.step5.rooms.forEach((r: any) => {
         formData.append("roomPhotos", r.file);
       });
+
+      // Append service icons
+      if (data.step6.serviceIcons) {
+        data.step6.serviceIcons.forEach((file: File) => {
+          formData.append("serviceIcons", file);
+        });
+      }
 
       const res = await apiPost<GymStep1Response>('/admin/gyms/create-complete', formData);
       return res.gymId;

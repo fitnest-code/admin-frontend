@@ -18,6 +18,12 @@ const gradientsMap: Record<string, string> = {
   Platinum: "linear-gradient(99.99deg, #313131, #515254 40.45%, #5b5b5d 55.32%, #565857)",
 };
 
+const getImageUrl = (urlOrFsId: string | undefined | null) => {
+  if (!urlOrFsId) return "";
+  if (urlOrFsId.startsWith("http") || urlOrFsId.startsWith("blob:") || urlOrFsId.startsWith("/")) return urlOrFsId;
+  return `/api/v1/media/stream/${urlOrFsId}`;
+};
+
 export function StepPlans({ onNext }: { onNext: () => void }) {
   const { step6Data, setStep6Data, gymId } = useGymStore();
   const { data: allPackageNames, isLoading: packagesLoading } = useSubscriptionPackages();
@@ -33,6 +39,8 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
   const [isCreatingService, setIsCreatingService] = useState(false);
   const [hasSynced, setHasSynced] = useState(false);
   const [customServicesList, setCustomServicesList] = useState<string[]>([]);
+  const [pendingIcon, setPendingIcon] = useState<File | null>(null);
+  const [customIcons, setCustomIcons] = useState<Record<string, File>>({});
   const { data: allServices } = useSupportedServices(gymId ? Number(gymId) : undefined);
 
   const servicesToRender = useMemo(() => {
@@ -75,7 +83,7 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
           }
           if (s.customServices) {
             names.push(...s.customServices);
-            s.customServices.forEach(cs => localCustoms.add(cs));
+            s.customServices.forEach((cs: string) => localCustoms.add(cs));
           }
           svcs[found.name] = names;
         }
@@ -131,6 +139,9 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
       }
       
       setCustomServicesList(prev => [...prev, trimmedName]);
+      if (pendingIcon) {
+        setCustomIcons(prev => ({ ...prev, [trimmedName]: pendingIcon }));
+      }
       if (activePackage) {
         setPackageServices(prev => {
           const current = prev[activePackage] || [];
@@ -141,13 +152,17 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
         });
       }
       setPendingService(null);
+      setPendingIcon(null);
       setIsCreatingService(false);
     } else {
       // API call since gymId exists
       try {
         const res = await createServiceMutation.mutateAsync({
-          name: trimmedName,
-          gymId: Number(gymId)
+          payload: {
+            name: trimmedName,
+            gymId: Number(gymId)
+          },
+          icon: pendingIcon || undefined
         });
         
         const createdName = res?.name || trimmedName;
@@ -162,6 +177,7 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
         }
 
         setPendingService(null);
+        setPendingIcon(null);
         setIsCreatingService(false);
       } catch (err: any) {
         setErrorMessage(err?.message || "Xidmət yaradıla bilmədi");
@@ -210,11 +226,20 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
   const handleNext = async () => {
     if (!allPackageNames) return;
 
+    const serviceIcons: File[] = [];
+    const processedPackages = new Set<number>();
+
     const subscriptions = Array.from(selectedPackages).map(pkgName => {
       const pkgInfo = allPackageNames.find(p => p.name === pkgName);
       const serviceNames = packageServices[pkgName] || [];
       const serviceIds: number[] = [];
       const customServices: string[] = [];
+
+      const pkgId = pkgInfo?.id || 0;
+      const isNewPackage = !processedPackages.has(pkgId);
+      if (isNewPackage) {
+        processedPackages.add(pkgId);
+      }
 
       serviceNames.forEach(name => {
         const found = allServices?.find(s => s.name === name);
@@ -222,11 +247,20 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
           serviceIds.push(found.id);
         } else {
           customServices.push(name);
+          if (isNewPackage) {
+            const file = customIcons[name];
+            if (file) {
+              serviceIcons.push(file);
+            } else {
+              const dummyFile = new File([new Blob([""], { type: "image/png" })], "empty.png", { type: "image/png" });
+              serviceIcons.push(dummyFile);
+            }
+          }
         }
       });
 
       return {
-        packageId: pkgInfo?.id || 0,
+        packageId: pkgId,
         dailyPrice: Number(prices[pkgName]) || 0,
         supportedServicesId: serviceIds,
         customServices: customServices
@@ -241,8 +275,8 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
 
     try {
       const payload = { subscriptions };
-      await validateStep6.mutateAsync(payload);
-      setStep6Data(payload);
+      await validateStep6.mutateAsync({ payload, serviceIcons });
+      setStep6Data({ ...payload, serviceIcons });
       onNext();
     } catch (err: any) {
       setErrorMessage(err?.response?.data?.message || err?.message || "Abunəlik məlumatları yanlışdır");
@@ -364,7 +398,7 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
             <div className="flex items-center justify-between border-b border-[#ececed] pb-1">
               <h3 className="text-[18px] font-semibold leading-[28px]">Xidmət əlavə et</h3>
               <button 
-                onClick={() => setIsCreatingService(false)}
+                onClick={() => { setIsCreatingService(false); setPendingIcon(null); }}
                 className="flex items-center justify-center text-[#1F2937] hover:opacity-70 transition-opacity"
                 title="Bağla"
               >
@@ -372,18 +406,40 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
               </button>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-[14px] leading-[20px]">Xidmət adı</label>
-              <div className="h-[44px] bg-[#fafafa] border border-[#ececed] rounded-lg flex items-center px-3">
-                <input
-                  type="text"
-                  value={pendingService || ""}
-                  onChange={(e) => setPendingService(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleConfirmService()}
-                  placeholder="Məs: Pilates"
-                  className="bg-transparent w-full h-full outline-none text-[15px] leading-[24px]"
-                  autoFocus
-                />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-[14px] leading-[20px]">Xidmət adı</label>
+                <div className="h-[44px] bg-[#fafafa] border border-[#ececed] rounded-lg flex items-center px-3">
+                  <input
+                    type="text"
+                    value={pendingService || ""}
+                    onChange={(e) => setPendingService(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleConfirmService()}
+                    placeholder="Məs: Pilates"
+                    className="bg-transparent w-full h-full outline-none text-[15px] leading-[24px]"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-[14px] leading-[20px]">Xidmət ikonu</label>
+                <div className="h-[44px] flex items-center gap-3">
+                  <label className="h-full px-4 rounded-lg border border-[#ececed] bg-[#fafafa] flex items-center justify-center text-xs font-semibold text-black/60 hover:bg-slate-100 transition-colors cursor-pointer whitespace-nowrap">
+                    Şəkil seçin
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setPendingIcon(e.target.files?.[0] || null)}
+                      className="hidden"
+                    />
+                  </label>
+                  {pendingIcon && (
+                    <span className="text-[13px] text-[#00B4CC] font-medium truncate max-w-[150px]" title={pendingIcon.name}>
+                      {pendingIcon.name}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -402,8 +458,12 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
         {/* Services List */}
         <div className="flex flex-col gap-5">
           <div className="flex flex-wrap gap-4">
-            {servicesToRender.map((svc) => {
+            {servicesToRender.map((svc: any) => {
               const isSelected = packageServices[activePackage]?.includes(svc.name);
+              let iconUrl = svc.iconImageUrl || svc.iconUrl;
+              if (!iconUrl && customIcons[svc.name]) {
+                iconUrl = URL.createObjectURL(customIcons[svc.name]);
+              }
 
               return (
                 <div
@@ -416,6 +476,13 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
                       : "bg-[#fafafa] border-[#ececed]"
                   )}
                 >
+                  {iconUrl && (
+                    <img
+                      src={getImageUrl(iconUrl)}
+                      alt={svc.name}
+                      className="w-5 h-5 object-contain rounded shrink-0"
+                    />
+                  )}
                   <span className="text-[14px] font-medium text-black leading-[20px] whitespace-nowrap">
                     {svc.name}
                   </span>
@@ -445,6 +512,8 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
             setSelectedPackages(new Set());
             setPrices({});
             setPackageServices({});
+            setCustomIcons({});
+            setPendingIcon(null);
           }}
           className="h-[40px] px-8 rounded-lg border border-[#ececed] text-[#101828] text-[14px] font-medium hover:bg-slate-50 transition-colors"
         >
