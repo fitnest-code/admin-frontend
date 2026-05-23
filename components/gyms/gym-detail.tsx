@@ -26,6 +26,7 @@ import LessonHoursTab from './dashboard/lesson-hours-tab'
 import { useDeleteGym } from '@/lib/query/gym-query'
 
 import { AnalitikaTab } from '@/components/zallar/tabs/analitika-tab'
+import { ZalWorkHoursTab } from '@/components/zallar/tabs/zal-work-hours-tab'
 import { StepNavigationWarningModal } from './modals/step-navigation-warning-modal'
 import { ExitConfirmationModal } from './modals/exit-confirmation-modal'
 import { useGymStore } from '@/lib/store/gym-store'
@@ -237,6 +238,8 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
         return <InfoTab gymId={gym.id} />
       case 'trainers':
         return <TrainersTab />
+      case 'workingHours':
+        return <ZalWorkHoursTab gymId={gym.id} />
       case 'plans':
         return <PlansTab gym={gym} />
       case 'reviews':

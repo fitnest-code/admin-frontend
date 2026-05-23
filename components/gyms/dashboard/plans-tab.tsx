@@ -11,6 +11,7 @@ import { ServiceSelectorModal } from "../modals/service-selector-modal";
 import { ConfirmDeleteModal } from "../modals/confirm-delete-modal";
 import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 import { useT } from "@/lib/i18n";
+import { useQueryClient } from "@tanstack/react-query";
 
 type Package = "Bronze" | "Silver" | "Gold" | "Platinum";
 
@@ -38,6 +39,7 @@ const DEFAULT_SERVICES = [
 
 export function PlansTab({ gym }: { gym?: any }) {
   const t = useT();
+  const queryClient = useQueryClient();
   const { gymId } = useGymStore();
   const { data: adminSubs, isLoading: subsLoading } = useGymSubscriptionsAdmin(gymId);
   const { data: allServices } = useSupportedServices(gymId ? Number(gymId) : undefined);
@@ -86,7 +88,8 @@ export function PlansTab({ gym }: { gym?: any }) {
   // Sync state when gym data arrives
   useEffect(() => {
     const sourceData = adminSubs?.subscriptions || gym?.supportedSubscriptions;
-    if (sourceData && !hasSynced) {
+    const hasData = adminSubs ? true : (gym?.supportedSubscriptions && gym.supportedSubscriptions.length > 0);
+    if (hasData && !hasSynced) {
       setSelectedPackages(initialData.selected);
       setPrices(initialData.prices);
       setPackageServices(initialData.services);
@@ -207,6 +210,9 @@ export function PlansTab({ gym }: { gym?: any }) {
       payload: { subscriptions }
     }, {
       onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['gym-subscriptions-admin', Number(gymId)] });
+        queryClient.invalidateQueries({ queryKey: ['gym-details', Number(gymId)] });
+        setHasSynced(false);
         setShowSuccessModal(true);
       },
       onError: (err: any) => {
