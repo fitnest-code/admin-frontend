@@ -37,6 +37,45 @@ const DAY_FULL_LABELS: Record<string, string> = {
   thursday: "Cümə axşamı", friday: "Cümə", saturday: "Şənbə", sunday: "Bazar"
 };
 
+const DAYS_ORDER = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+
+const formatToHHmm = (timeStr: string) => {
+  if (!timeStr) return "";
+  let isPM = timeStr.toLowerCase().includes("pm");
+  let isAM = timeStr.toLowerCase().includes("am");
+  let cleanTime = timeStr.replace(/(am|pm)/i, "").trim();
+  const parts = cleanTime.split(":");
+  if (parts.length >= 2) {
+    let hours = parseInt(parts[0], 10);
+    let minutes = parseInt(parts[1], 10);
+    if (isPM && hours < 12) hours += 12;
+    if (isAM && hours === 12) hours = 0;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  }
+  return timeStr;
+};
+
+const formatDayGroup = (days: string[]) => {
+  const sorted = [...days].sort((a, b) => DAYS_ORDER.indexOf(a) - DAYS_ORDER.indexOf(b));
+  if (sorted.length === 0) return "";
+  if (sorted.length === 1) return DAY_FULL_LABELS[sorted[0]];
+  
+  const indices = sorted.map(d => DAYS_ORDER.indexOf(d));
+  let isConsecutive = true;
+  for (let i = 1; i < indices.length; i++) {
+    if (indices[i] !== indices[i - 1] + 1) {
+      isConsecutive = false;
+      break;
+    }
+  }
+  
+  if (isConsecutive) {
+    return `${DAY_FULL_LABELS[sorted[0]]} — ${DAY_FULL_LABELS[sorted[sorted.length - 1]]}`;
+  }
+  
+  return sorted.map(d => DAY_FULL_LABELS[d]).join(", ");
+};
+
 interface ZalWorkHoursTabProps {
   gymId: string | number;
 }
@@ -46,7 +85,7 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
   const updateWorkHours = useUpdateGymWorkHours();
   const [activeTab, setActiveTab] = useState<GenderTab>("generalWorkHours");
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingGroup, setEditingGroup] = useState<{ days: string[]; startTime: string; endTime: string } | null>(null);
 
   const [slots, setSlots] = useState<Record<GenderTab, SavedSlot[]>>({
     generalWorkHours: [],
@@ -59,20 +98,20 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
       setSlots({
         generalWorkHours: (gymWorkHours.generalWorkHours || []).map((s: any) => ({
           day: s.period.toLowerCase(),
-          startTime: s.from,
-          endTime: s.to,
+          startTime: formatToHHmm(s.from),
+          endTime: formatToHHmm(s.to),
           id: Math.random().toString()
         })),
         workHoursMan: (gymWorkHours.workHoursMan || []).map((s: any) => ({
           day: s.period.toLowerCase(),
-          startTime: s.from,
-          endTime: s.to,
+          startTime: formatToHHmm(s.from),
+          endTime: formatToHHmm(s.to),
           id: Math.random().toString()
         })),
         workHoursWoman: (gymWorkHours.workHoursWoman || []).map((s: any) => ({
           day: s.period.toLowerCase(),
-          startTime: s.from,
-          endTime: s.to,
+          startTime: formatToHHmm(s.from),
+          endTime: formatToHHmm(s.to),
           id: Math.random().toString()
         })),
       });
@@ -135,6 +174,15 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
     };
   };
 
+  const handleDeleteSlot = (days: string[], startTime: string, endTime: string) => {
+    setSlots(prev => ({
+      ...prev,
+      [activeTab]: prev[activeTab].filter(s => 
+        !(days.includes(s.day) && s.startTime === startTime && s.endTime === endTime)
+      )
+    }));
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-24 text-slate-400">
@@ -157,6 +205,50 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
   } else {
     ALL_DAY_KEYS.forEach(d => computedRestDays.add(d));
   }
+
+  // 1. Group active slots by day
+  const slotsByDay: Record<string, SavedSlot[]> = {};
+  DAYS_ORDER.forEach(d => {
+    slotsByDay[d] = [];
+  });
+  slots[activeTab].forEach(s => {
+    if (slotsByDay[s.day]) {
+      slotsByDay[s.day].push(s);
+    }
+  });
+  DAYS_ORDER.forEach(d => {
+    slotsByDay[d].sort((a, b) => a.startTime.localeCompare(b.startTime));
+  });
+
+  // 2. Group days with identical slot configurations
+  interface GroupedDayConfig {
+    days: string[];
+    slots: SavedSlot[];
+  }
+  const groupedConfigs: GroupedDayConfig[] = [];
+  DAYS_ORDER.forEach(day => {
+    const daySlots = slotsByDay[day];
+    if (daySlots.length === 0) return;
+    
+    const foundGroup = groupedConfigs.find(g => {
+      if (g.slots.length !== daySlots.length) return false;
+      for (let i = 0; i < daySlots.length; i++) {
+        if (daySlots[i].startTime !== g.slots[i].startTime || daySlots[i].endTime !== g.slots[i].endTime) {
+          return false;
+        }
+      }
+      return true;
+    });
+    
+    if (foundGroup) {
+      foundGroup.days.push(day);
+    } else {
+      groupedConfigs.push({
+        days: [day],
+        slots: daySlots
+      });
+    }
+  });
 
   return (
     <div className="w-full bg-white rounded-[12px] border border-[#ECECED] p-5 sm:p-7 flex flex-col gap-9 font-sans text-black">
@@ -228,7 +320,7 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
             </div>
             <button 
               type="button"
-              onClick={() => { setEditingId(null); setModalOpen(true); }} 
+              onClick={() => { setEditingGroup(null); setModalOpen(true); }} 
               className="h-[35px] w-[140px] sm:w-[176px] rounded-[4px] bg-[#00B4CC] flex items-center justify-center px-2 py-1 gap-2 sm:gap-3 text-[14px] font-medium text-white hover:bg-[#009DB3] transition-colors shadow-sm"
             >
               <Plus size={16} />
@@ -238,25 +330,21 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
 
           {/* Time Slots List */}
           <div className="flex flex-col gap-4">
-            {slots[activeTab].length === 0 ? (
+            {groupedConfigs.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-slate-300 border-2 border-dashed border-slate-100 rounded-[24px] bg-slate-50/50">
                 <Clock size={32} className="mb-3 opacity-20" />
                 <p className="text-sm font-medium italic text-slate-400">Bu zal üçün hələ iş saatı əlavə edilməyib</p>
               </div>
             ) : (
-              Object.entries(
-                slots[activeTab].reduce((acc, slot) => {
-                  if (!acc[slot.day]) acc[slot.day] = [];
-                  acc[slot.day].push(slot);
-                  return acc;
-                }, {} as Record<string, SavedSlot[]>)
-              ).map(([dayKey, daySlots]) => (
-                <div key={dayKey} className="flex flex-col gap-4 pt-4 sm:pt-6">
+              groupedConfigs.map((group, groupIdx) => (
+                <div key={groupIdx} className="flex flex-col gap-4 pt-4 sm:pt-6">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-[18px] font-semibold tracking-[-0.44px] leading-[27px]">{DAY_FULL_LABELS[dayKey]}</h4>
+                    <h4 className="text-[18px] font-semibold tracking-[-0.44px] leading-[27px]">
+                      {formatDayGroup(group.days)}
+                    </h4>
                   </div>
                   <div className="flex flex-col gap-[16px] text-[14px] text-[#4A5565]">
-                    {daySlots.map((slot, index) => (
+                    {group.slots.map((slot, index) => (
                       <div key={slot.id} className="min-h-[73px] bg-[#F9FAFB] rounded-[14px] border border-[#E5E7EB] flex flex-wrap items-center justify-between p-3 sm:px-4 gap-4">
                         <div className="flex items-center gap-3">
                           <div className="w-[38px] h-[38px] rounded-[10px] bg-white border border-[#E5E7EB] flex items-center justify-center shrink-0">
@@ -281,14 +369,17 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
                         <div className="w-[94px] flex items-center justify-end gap-3 ml-auto">
                           <button 
                             type="button"
-                            onClick={() => { setEditingId(slot.id); setModalOpen(true); }}
+                            onClick={() => {
+                              setEditingGroup({ days: group.days, startTime: slot.startTime, endTime: slot.endTime });
+                              setModalOpen(true);
+                            }}
                             className="w-[30px] h-[30px] rounded bg-[#EEE1FB] flex items-center justify-center text-[#9035E9] hover:opacity-80 transition-opacity"
                           >
                             <Pencil size={18} />
                           </button>
                           <button 
                             type="button"
-                            onClick={() => setSlots(p => ({...p, [activeTab]: p[activeTab].filter(s => s.id !== slot.id)}))}
+                            onClick={() => handleDeleteSlot(group.days, slot.startTime, slot.endTime)}
                             className="w-[30px] h-[30px] rounded bg-[#F103031A] flex items-center justify-center text-[#F10303] hover:opacity-80 transition-opacity"
                           >
                             <Trash2 size={18} />
@@ -344,8 +435,11 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
 
       <AddClassTimeModal
         open={modalOpen}
-        onOpenChange={setModalOpen}
-        editData={editingId ? slots[activeTab].find(s => s.id === editingId) || null : null}
+        onOpenChange={(val) => {
+          setModalOpen(val);
+          if (!val) setEditingGroup(null);
+        }}
+        editData={editingGroup ? { day: editingGroup.days[0], startTime: editingGroup.startTime, endTime: editingGroup.endTime } : null}
         onSubmit={(data: ClassTimeData) => {
           const timeToMin = (t: string) => {
             const [h, m] = t.split(':').map(Number);
@@ -355,23 +449,54 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
           const newStart = timeToMin(data.startTime);
           const newEnd = timeToMin(data.endTime);
 
-          const conflict = slots[activeTab].find(s => {
-            if (s.day !== data.day) return false;
-            if (s.id === editingId) return false;
-            const sStart = timeToMin(s.startTime);
-            const sEnd = timeToMin(s.endTime);
-            return (newStart < sEnd) && (sStart < newEnd);
-          });
+          if (editingGroup) {
+            // Check conflicts for each day in the group (excluding the slot we are editing)
+            let hasConflict = false;
+            for (const day of editingGroup.days) {
+              const conflict = slots[activeTab].find(s => {
+                if (s.day !== day) return false;
+                if (s.startTime === editingGroup.startTime && s.endTime === editingGroup.endTime) return false;
+                const sStart = timeToMin(s.startTime);
+                const sEnd = timeToMin(s.endTime);
+                return (newStart < sEnd) && (sStart < newEnd);
+              });
+              if (conflict) {
+                hasConflict = true;
+                break;
+              }
+            }
 
-          if (conflict) {
-            return toast.error("Bu zaman intervalı digəri ilə kəsişir və ya artıq mövcuddur");
-          }
+            if (hasConflict) {
+              return toast.error("Bu zaman intervalı digəri ilə kəsişir və ya artıq mövcuddur");
+            }
 
-          if (editingId) {
-            setSlots(prev => ({...prev, [activeTab]: prev[activeTab].map(s => s.id === editingId ? {...s, ...data} : s)}));
-            setEditingId(null);
+            setSlots(prev => ({
+              ...prev,
+              [activeTab]: prev[activeTab].map(s => {
+                if (editingGroup.days.includes(s.day) && s.startTime === editingGroup.startTime && s.endTime === editingGroup.endTime) {
+                  return { ...s, startTime: data.startTime, endTime: data.endTime };
+                }
+                return s;
+              })
+            }));
+            setEditingGroup(null);
           } else {
-            setSlots(prev => ({...prev, [activeTab]: [...prev[activeTab], { id: Math.random().toString(), ...data }]}));
+            // Check conflict for each of the target days we are adding to
+            const conflict = slots[activeTab].find(s => {
+              if (s.day !== data.day) return false;
+              const sStart = timeToMin(s.startTime);
+              const sEnd = timeToMin(s.endTime);
+              return (newStart < sEnd) && (sStart < newEnd);
+            });
+
+            if (conflict) {
+              return toast.error("Bu zaman intervalı digəri ilə kəsişir və ya artıq mövcuddur");
+            }
+
+            setSlots(prev => ({
+              ...prev,
+              [activeTab]: [...prev[activeTab], { id: Math.random().toString(), ...data }]
+            }));
           }
         }}
       />
