@@ -452,6 +452,14 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
             return h * 60 + m;
           };
 
+          const isOverlapping = (s1: number, e1: number, s2: number, e2: number) => {
+            const intervals1 = s1 < e1 ? [[s1, e1]] : [[s1, 1440], [0, e1]];
+            const intervals2 = s2 < e2 ? [[s2, e2]] : [[s2, 1440], [0, e2]];
+            return intervals1.some(([a1, b1]) =>
+              intervals2.some(([a2, b2]) => a1 < b2 && a2 < b1)
+            );
+          };
+
           const newStart = timeToMin(data.startTime);
           const newEnd = timeToMin(data.endTime);
           const targetDays = data.days || (data.day ? [data.day] : []);
@@ -467,7 +475,7 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
                 }
                 const sStart = timeToMin(s.startTime);
                 const sEnd = timeToMin(s.endTime);
-                return (newStart < sEnd) && (sStart < newEnd);
+                return isOverlapping(newStart, newEnd, sStart, sEnd);
               });
               if (conflict) {
                 hasConflict = true;
@@ -505,7 +513,7 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
                 if (s.day !== day) return false;
                 const sStart = timeToMin(s.startTime);
                 const sEnd = timeToMin(s.endTime);
-                return (newStart < sEnd) && (sStart < newEnd);
+                return isOverlapping(newStart, newEnd, sStart, sEnd);
               });
               if (conflict) {
                 hasConflict = true;

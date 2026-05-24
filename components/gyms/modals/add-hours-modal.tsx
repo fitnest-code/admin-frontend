@@ -91,11 +91,8 @@ export function AddClassTimeModal({
       return toast.error("Zəhmət olmasa saatları daxil edin");
     }
 
-    const [startH, startM] = startTime.split(':').map(Number);
-    const [endH, endM] = endTime.split(':').map(Number);
-    
-    if (endH < startH || (endH === startH && endM <= startM)) {
-      return toast.error("Bitiş vaxtı başlama vaxtından sonra olmalıdır");
+    if (startTime === endTime) {
+      return toast.error("Bitiş vaxtı başlama vaxtı ilə eyni ola bilməz");
     }
 
     onSubmit?.({ days: Array.from(selectedDays), startTime, endTime });
