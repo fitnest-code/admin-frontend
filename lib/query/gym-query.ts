@@ -680,7 +680,7 @@ export function useUpdateGymWorkHours() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ gymId, payload }: { gymId: number | string, payload: any }) =>
-      apiPost(`/admin/gyms/${gymId}/step3`, payload),
+      apiPut(`/admin/gyms/${gymId}/work-hours`, payload),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['gym-work-hours', variables.gymId] });
       toast.success('İş saatları yeniləndi');
