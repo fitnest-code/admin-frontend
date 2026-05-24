@@ -683,10 +683,6 @@ export function useUpdateGymWorkHours() {
       apiPut(`/admin/gyms/${gymId}/work-hours`, payload),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['gym-work-hours', variables.gymId] });
-      toast.success('İş saatları yeniləndi');
-    },
-    onError: (err: any) => {
-      toast.error(err?.message || 'Xəta baş verdi');
     }
   });
 }

@@ -7,6 +7,7 @@ import { useGymWorkHours, useUpdateGymWorkHours } from "@/lib/query/gym-query";
 import { AddClassTimeModal, ClassTimeData } from "../../gyms/modals/add-hours-modal";
 import { IGymWorkHoursPayload, IWorkHour, IRestDay } from "@/lib/types/working-hours";
 import { cn } from "@/lib/utils";
+import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 
 type GenderTab = "generalWorkHours" | "workHoursMan" | "workHoursWoman";
 
@@ -93,6 +94,10 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<{ days: string[]; startTime: string; endTime: string } | null>(null);
 
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [modalType, setModalType] = useState<"success" | "error">("success");
+
   const [slots, setSlots] = useState<Record<GenderTab, SavedSlot[]>>({
     generalWorkHours: [],
     workHoursMan: [],
@@ -127,7 +132,10 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
   const handleSave = async () => {
     const totalSlots = slots.generalWorkHours.length + slots.workHoursMan.length + slots.workHoursWoman.length;
     if (totalSlots === 0) {
-      return toast.error("Ən azı bir iş saatı əlavə edilməlidir");
+      setSuccessMessage("Ən azı bir iş saatı əlavə edilməlidir");
+      setModalType("error");
+      setShowSuccessModal(true);
+      return;
     }
 
     const activeTabs = (["generalWorkHours", "workHoursMan", "workHoursWoman"] as GenderTab[]).filter(t => slots[t].length > 0);
@@ -135,8 +143,14 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
     try {
       const payload = buildPayload(activeTabs);
       await updateWorkHours.mutateAsync({ gymId, payload });
+      setSuccessMessage("İş saatları uğurla yeniləndi!");
+      setModalType("success");
+      setShowSuccessModal(true);
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || error?.message || "İş saatları məlumatları yanlışdır");
+      const errMsg = error?.response?.data?.message || error?.message || "İş saatları məlumatları yanlışdır";
+      setSuccessMessage(errMsg);
+      setModalType("error");
+      setShowSuccessModal(true);
     }
   };
 
@@ -538,6 +552,12 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
             }));
           }
         }}
+      />
+      <SuccessAnimationModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        message={successMessage}
+        type={modalType}
       />
     </div>
   );
