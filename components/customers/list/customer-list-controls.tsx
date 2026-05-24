@@ -147,7 +147,7 @@ function SortDropdown({
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((prev) => !prev)}
-        className="flex h-[40px] items-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-medium text-foreground hover:border-[#00B4CC] transition-all duration-200 shadow-sm"
+        className="flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-3 text-xs font-medium text-foreground hover:border-[#00B4CC] transition-all duration-200 shadow-sm"
       >
         {current ? current.label : 'Sırala'}
         <ChevronDown size={14} className={cn('transition-transform text-muted-foreground', open && 'rotate-180')} />
