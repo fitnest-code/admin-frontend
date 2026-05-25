@@ -36,3 +36,34 @@ export function normalizePhoneNumber(phone: string): string {
   return cleaned;
 }
 
+export function formatTo24h(timeStr: string | undefined | null): string {
+  if (!timeStr) return '';
+  
+  const parsePart = (part: string) => {
+    const trimmed = part.trim();
+    // Match hh:mm AM/PM or hh:mm:ss AM/PM
+    const match = trimmed.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?$/i);
+    if (!match) return trimmed;
+    
+    let [_, hoursStr, minutesStr, ampm] = match;
+    let hours = parseInt(hoursStr, 10);
+    
+    if (ampm) {
+      const isPm = ampm.toUpperCase() === 'PM';
+      if (isPm && hours !== 12) {
+        hours += 12;
+      } else if (!isPm && hours === 12) {
+        hours = 0;
+      }
+    }
+    
+    return `${String(hours).padStart(2, '0')}:${minutesStr}`;
+  };
+
+  if (timeStr.includes('-')) {
+    return timeStr.split('-').map(parsePart).join(' - ');
+  }
+  
+  return parsePart(timeStr);
+}
+

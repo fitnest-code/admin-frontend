@@ -10,7 +10,7 @@ import {
     useGymReservationStats 
 } from '@/lib/query/gym-query'
 import { useParams } from 'next/navigation'
-import { cn } from '@/lib/utils'
+import { cn, formatTo24h } from '@/lib/utils'
 import { ChevronDown } from 'lucide-react'
 
 const STATUS_OPTIONS = [
@@ -223,7 +223,7 @@ const ReservationsTab = () => {
                                     </div>
                                 </div>
                                 <div className={styles.mart2026}>{res.date}</div>
-                                <div className={styles.mkanAxtar}>{res.timeRange}</div>
+                                <div className={styles.mkanAxtar}>{formatTo24h(res.timeRange)}</div>
                                 <div className={getStatusClass(res.status)}>
                                     <div className={styles.component32Child} />
                                     <div className={styles.aktiv}>{getStatusText(res.status)}</div>
@@ -360,9 +360,9 @@ const ReservationsTab = () => {
                                     <div>{detailData.userEmail}</div>
                                 </div>
                                 <div className={styles.detailGroup}>
-                                    <label>Tarix / Saat</label>
-                                    <div>{detailData.date} | {detailData.timeRange}</div>
-                                </div>
+                                     <label>Tarix / Saat</label>
+                                     <div>{detailData.date} | {formatTo24h(detailData.timeRange)}</div>
+                                 </div>
                                 <div className={styles.detailGroup}>
                                     <label>Məşqçi</label>
                                     <div>{detailData.trainerName}</div>

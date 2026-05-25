@@ -70,6 +70,8 @@ export async function getGymById(id: string): Promise<Gym> {
     trainers: [],
     admins: [],
     supportedSubscriptions: [],
+    categoryId: response.categoryId,
+    categoryName: response.categoryName,
   }
 }
 
