@@ -241,54 +241,47 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                                 {startDropdown && (
                                     <>
                                         <div className="fixed inset-0 z-50" onClick={() => setStartDropdown(false)} />
-                                        <div className="absolute top-full left-0 right-0 z-[60] mt-1 bg-white border border-[#E5E7EB] rounded-xl shadow-xl p-3 flex gap-2 h-56 animate-in fade-in slide-in-from-top-1">
-                                            {/* Hours Column */}
-                                            <div className="flex-1 overflow-y-auto flex flex-col no-scrollbar">
-                                                <div className="text-[10px] font-bold text-slate-400 uppercase text-center mb-1 shrink-0">Saat</div>
-                                                {HOURS.map(h => {
-                                                    const currentH = startTime.split(':')[0] || '09';
-                                                    const currentM = startTime.split(':')[1] || '00';
-                                                    return (
-                                                        <button
-                                                            key={h}
-                                                            type="button"
-                                                            ref={h === currentH ? activeRef : undefined}
-                                                            onClick={() => setStartTime(`${h}:${currentM}`)}
-                                                            className={cn(
-                                                                "py-1 text-sm hover:bg-[#00B4CC08] rounded transition-colors text-center shrink-0",
-                                                                h === currentH ? "bg-[#00B4CC10] text-[#00B4CC] font-semibold" : "text-slate-700"
-                                                            )}
-                                                        >
-                                                            {h}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                            
-                                            {/* Divider */}
-                                            <div className="w-[1px] bg-slate-100 self-stretch shrink-0" />
-                                            
-                                            {/* Minutes Column */}
-                                            <div className="flex-1 overflow-y-auto flex flex-col no-scrollbar">
-                                                <div className="text-[10px] font-bold text-slate-400 uppercase text-center mb-1 shrink-0">Dəqiqə</div>
-                                                {MINUTES.map(m => {
-                                                    const currentH = startTime.split(':')[0] || '09';
-                                                    const currentM = startTime.split(':')[1] || '00';
-                                                    return (
-                                                        <button
-                                                            key={m}
-                                                            type="button"
-                                                            ref={m === currentM ? activeRef : undefined}
-                                                            onClick={() => setStartTime(`${currentH}:${m}`)}
-                                                            className={cn(
-                                                                "py-1 text-sm hover:bg-[#00B4CC08] rounded transition-colors text-center shrink-0",
-                                                                m === currentM ? "bg-[#00B4CC10] text-[#00B4CC] font-semibold" : "text-slate-700"
-                                                            )}
-                                                        >
-                                                            {m}
-                                                        </button>
-                                                    );
-                                                })}
+                                        <div className={cn("absolute top-full left-0 right-0 z-[60] mt-1 border border-[#E5E7EB] rounded-xl shadow-xl", styles.frameParent)}>
+                                            <div className={styles.columnsContainer}>
+                                                {/* Hours Column */}
+                                                <div className={styles.column}>
+                                                    {HOURS.map(h => {
+                                                        const currentH = startTime.split(':')[0] || '09';
+                                                        const currentM = startTime.split(':')[1] || '00';
+                                                        const isSelected = h === currentH;
+                                                        return (
+                                                            <button
+                                                                key={h}
+                                                                type="button"
+                                                                ref={isSelected ? activeRef : undefined}
+                                                                onClick={() => setStartTime(`${h}:${currentM}`)}
+                                                                className={isSelected ? cn(styles.wrapper, styles.frameGroup) : styles.frame}
+                                                            >
+                                                                <div className={styles.div}>{h}</div>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                                
+                                                {/* Minutes Column */}
+                                                <div className={styles.column}>
+                                                    {MINUTES.map(m => {
+                                                        const currentH = startTime.split(':')[0] || '09';
+                                                        const currentM = startTime.split(':')[1] || '00';
+                                                        const isSelected = m === currentM;
+                                                        return (
+                                                            <button
+                                                                key={m}
+                                                                type="button"
+                                                                ref={isSelected ? activeRef : undefined}
+                                                                onClick={() => setStartTime(`${currentH}:${m}`)}
+                                                                className={isSelected ? cn(styles.wrapper, styles.frameGroup) : styles.frame}
+                                                            >
+                                                                <div className={styles.div}>{m}</div>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
                                             </div>
                                         </div>
                                     </>
@@ -315,54 +308,47 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                                 {endDropdown && (
                                     <>
                                         <div className="fixed inset-0 z-50" onClick={() => setEndDropdown(false)} />
-                                        <div className="absolute top-full left-0 right-0 z-[60] mt-1 bg-white border border-[#E5E7EB] rounded-xl shadow-xl p-3 flex gap-2 h-56 animate-in fade-in slide-in-from-top-1">
-                                            {/* Hours Column */}
-                                            <div className="flex-1 overflow-y-auto flex flex-col no-scrollbar">
-                                                <div className="text-[10px] font-bold text-slate-400 uppercase text-center mb-1 shrink-0">Saat</div>
-                                                {HOURS.map(h => {
-                                                    const currentH = endTime.split(':')[0] || '10';
-                                                    const currentM = endTime.split(':')[1] || '00';
-                                                    return (
-                                                        <button
-                                                            key={h}
-                                                            type="button"
-                                                            ref={h === currentH ? activeRef : undefined}
-                                                            onClick={() => setEndTime(`${h}:${currentM}`)}
-                                                            className={cn(
-                                                                "py-1 text-sm hover:bg-[#00B4CC08] rounded transition-colors text-center shrink-0",
-                                                                h === currentH ? "bg-[#00B4CC10] text-[#00B4CC] font-semibold" : "text-slate-700"
-                                                            )}
-                                                        >
-                                                            {h}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                            
-                                            {/* Divider */}
-                                            <div className="w-[1px] bg-slate-100 self-stretch shrink-0" />
-                                            
-                                            {/* Minutes Column */}
-                                            <div className="flex-1 overflow-y-auto flex flex-col no-scrollbar">
-                                                <div className="text-[10px] font-bold text-slate-400 uppercase text-center mb-1 shrink-0">Dəqiqə</div>
-                                                {MINUTES.map(m => {
-                                                    const currentH = endTime.split(':')[0] || '10';
-                                                    const currentM = endTime.split(':')[1] || '00';
-                                                    return (
-                                                        <button
-                                                            key={m}
-                                                            type="button"
-                                                            ref={m === currentM ? activeRef : undefined}
-                                                            onClick={() => setEndTime(`${currentH}:${m}`)}
-                                                            className={cn(
-                                                                "py-1 text-sm hover:bg-[#00B4CC08] rounded transition-colors text-center shrink-0",
-                                                                m === currentM ? "bg-[#00B4CC10] text-[#00B4CC] font-semibold" : "text-slate-700"
-                                                            )}
-                                                        >
-                                                            {m}
-                                                        </button>
-                                                    );
-                                                })}
+                                        <div className={cn("absolute top-full left-0 right-0 z-[60] mt-1 border border-[#E5E7EB] rounded-xl shadow-xl", styles.frameParent)}>
+                                            <div className={styles.columnsContainer}>
+                                                {/* Hours Column */}
+                                                <div className={styles.column}>
+                                                    {HOURS.map(h => {
+                                                        const currentH = endTime.split(':')[0] || '10';
+                                                        const currentM = endTime.split(':')[1] || '00';
+                                                        const isSelected = h === currentH;
+                                                        return (
+                                                            <button
+                                                                key={h}
+                                                                type="button"
+                                                                ref={isSelected ? activeRef : undefined}
+                                                                onClick={() => setEndTime(`${h}:${currentM}`)}
+                                                                className={isSelected ? cn(styles.wrapper, styles.frameGroup) : styles.frame}
+                                                            >
+                                                                <div className={styles.div}>{h}</div>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                                
+                                                {/* Minutes Column */}
+                                                <div className={styles.column}>
+                                                    {MINUTES.map(m => {
+                                                        const currentH = endTime.split(':')[0] || '10';
+                                                        const currentM = endTime.split(':')[1] || '00';
+                                                        const isSelected = m === currentM;
+                                                        return (
+                                                            <button
+                                                                key={m}
+                                                                type="button"
+                                                                ref={isSelected ? activeRef : undefined}
+                                                                onClick={() => setEndTime(`${currentH}:${m}`)}
+                                                                className={isSelected ? cn(styles.wrapper, styles.frameGroup) : styles.frame}
+                                                            >
+                                                                <div className={styles.div}>{m}</div>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
                                             </div>
                                         </div>
                                     </>
