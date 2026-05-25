@@ -17,6 +17,7 @@ import {
   Target,
   Scale,
   PhoneCall,
+  Languages,
 } from "lucide-react";
 
 export interface NavItem {
@@ -93,6 +94,12 @@ export const NAV_ITEMS: NavItem[] = [
     labelKey: "contactDetails",
     icon: PhoneCall,
     href: "/contact-details",
+  },
+  {
+    key: "translations",
+    labelKey: "translations",
+    icon: Languages,
+    href: "/translations",
   },
   {
     key: "tenzimlemeler",

@@ -19,6 +19,7 @@ const en: TranslationKeys = {
     faq: "FAQ",
     legal: "Legal Documents",
     contactDetails: "Contact Details",
+    translations: "Translations",
   },
 
   common: {
@@ -274,6 +275,21 @@ const en: TranslationKeys = {
     validationEmail: "Please enter a valid email address",
     validationPhone: "Please enter a valid phone number (+994 xx xxx xx xx)",
     copied: "Copied to clipboard!",
+  },
+  translations: {
+    title: "System Translations",
+    add: "Add Translation",
+    edit: "Update Translation",
+    entityType: "Entity Type",
+    entityId: "Entity ID",
+    fieldName: "Field Name",
+    languageCode: "Language Code",
+    fieldValue: "Translated Value",
+    placeholderEntityType: "E.g.: CATEGORY, GYM, STORE",
+    placeholderFieldName: "E.g.: name, description, city",
+    placeholderValue: "Type translated value...",
+    created: "Translation saved successfully!",
+    deleted: "Translation deleted!",
   },
 } as const;
 
