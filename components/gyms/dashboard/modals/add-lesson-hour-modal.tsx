@@ -165,7 +165,7 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                     </div>
 
                     {/* Date and Slots */}
-                    <div className={cn(styles.row, "relative z-20")}>
+                    <div className={cn(styles.row, "relative", showCalendar ? "z-30" : "z-20")}>
                         <div className={cn(styles.inputGroup, "relative")}>
                             <label className={styles.label}>Tarix</label>
                             <div className="relative">
@@ -215,7 +215,7 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                     </div>
 
                     {/* Times */}
-                    <div className={cn(styles.row, "relative z-10")}>
+                    <div className={cn(styles.row, "relative", (showStartPicker || showEndPicker) ? "z-30" : "z-10")}>
                         <div className={styles.inputGroup}>
                             <label className={styles.label}>Başlama saatı</label>
                             <div className="relative">
@@ -325,25 +325,41 @@ const TimePickerList = ({ items, selectedValue, onChange }: { items: string[], s
     }, [selectedValue]);
 
     return (
-        <div ref={listRef} className={styles.timePickerList}>
-            {items.map((item) => {
-                const isSelected = item === selectedValue;
-                return (
-                    <button
-                        key={item}
-                        type="button"
-                        data-active={isSelected ? "true" : "false"}
-                        onClick={() => onChange(item)}
-                        className={cn(
-                            styles.timePickerItem,
-                            isSelected ? styles.timePickerItemActive : styles.timePickerItemInactive
-                        )}
-                    >
-                        {item}
-                    </button>
-                );
-            })}
-        </div>
+        <>
+            <style>{`
+                .hide-scrollbar::-webkit-scrollbar {
+                    display: none !important;
+                    width: 0 !important;
+                    height: 0 !important;
+                }
+            `}</style>
+            <div 
+                ref={listRef} 
+                className={cn(styles.timePickerList, "hide-scrollbar")}
+                style={{
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none'
+                }}
+            >
+                {items.map((item) => {
+                    const isSelected = item === selectedValue;
+                    return (
+                        <button
+                            key={item}
+                            type="button"
+                            data-active={isSelected ? "true" : "false"}
+                            onClick={() => onChange(item)}
+                            className={cn(
+                                styles.timePickerItem,
+                                isSelected ? styles.timePickerItemActive : styles.timePickerItemInactive
+                            )}
+                        >
+                            {item}
+                        </button>
+                    );
+                })}
+            </div>
+        </>
     );
 };
 
@@ -355,16 +371,13 @@ const TimePicker = ({ value, onChange }: TimePickerProps) => {
     return (
         <div className={styles.timePickerContainer}>
             <div className={styles.timePickerColumn}>
-                <div className={styles.timePickerHeader}>Saat</div>
                 <TimePickerList 
                     items={hours} 
                     selectedValue={hVal} 
                     onChange={(h) => onChange(`${h}:${mVal}`)} 
                 />
             </div>
-            <div className={styles.timePickerDivider}>:</div>
             <div className={styles.timePickerColumn}>
-                <div className={styles.timePickerHeader}>Dəqiqə</div>
                 <TimePickerList 
                     items={minutes} 
                     selectedValue={mVal} 
