@@ -63,8 +63,15 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
   const router = useRouter()
   const user = useAuthStore((state) => state.user)
   const roleUpper = user?.role?.toUpperCase()
-  const isGymAdmin = roleUpper === 'ROLE_GYM_SUPER_ADMIN' || roleUpper === 'ROLE_GYM_ADMIN'
-  const isYogaOrPilates = gym?.categoryName ? ['Yoqa', 'Yoga', 'Йога', 'Pilates', 'Пилатес'].includes(gym.categoryName) : false
+  const isGymAdmin = roleUpper === 'ROLE_GYM_SUPER_ADMIN' || 
+                     roleUpper === 'ROLE_GYM_ADMIN' || 
+                     roleUpper === 'GYM_SUPER_ADMIN' || 
+                     roleUpper === 'GYM_ADMIN'
+  const isYogaOrPilates = gym?.categoryName ? [
+    'Yoqa', 'Yoga', 'Йога', 'Pilates', 'Пилатес',
+    'yoqa', 'yoga', 'йога', 'pilates', 'пилатес',
+    'YOQA', 'YOGA', 'ЙОГА', 'PILATES', 'ПИЛАТЕС'
+  ].includes(gym.categoryName.trim()) : false
   const visibleTabs = GYM_TABS.filter((tab) => {
     if (!isGymAdmin) return true;
     if (isYogaOrPilates && (tab.key === 'analitika' || tab.key === 'reservations' || tab.key === 'lessonHours')) {

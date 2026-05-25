@@ -198,3 +198,93 @@
     font-size: 14px;
     font-style: italic;
 }
+
+/* Custom Time Picker styling */
+.timePickerContainer {
+    width: 100%;
+    height: 214px;
+    background-color: #fff;
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    box-sizing: border-box;
+    font-family: 'SF Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.timePickerColumn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    height: 100%;
+}
+
+.timePickerHeader {
+    font-size: 12px;
+    font-weight: 600;
+    color: #94979C;
+    text-align: center;
+    padding-bottom: 2px;
+}
+
+.timePickerList {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-right: 4px;
+}
+
+/* Hide scrollbar but allow scrolling */
+.timePickerList::-webkit-scrollbar {
+    width: 4px;
+}
+.timePickerList::-webkit-scrollbar-track {
+    background: transparent;
+}
+.timePickerList::-webkit-scrollbar-thumb {
+    background: #E5E7EB;
+    border-radius: 2px;
+}
+
+.timePickerDivider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 600;
+    color: #00B4CC;
+    padding-top: 18px;
+}
+
+.timePickerItem {
+    width: 100%;
+    min-height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.timePickerItemInactive {
+    color: #000;
+    border-radius: 2px;
+}
+
+.timePickerItemInactive:hover {
+    background-color: #F9FAFB;
+}
+
+.timePickerItemActive {
+    color: #00B4CC;
+    border: 0.5px solid #00B4CC;
+    border-radius: 2px;
+    font-weight: 600;
+    background-color: rgba(0, 180, 204, 0.04);
+}
+
