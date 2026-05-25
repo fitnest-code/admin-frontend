@@ -96,6 +96,8 @@ export interface Gym {
   trainers: Trainer[]
   admins: GymAdmin[]
   supportedSubscriptions?: any[]
+  categoryId?: number
+  categoryName?: string
 }
 
 export const DEFAULT_WORKING_HOURS: WorkingHour[] = [

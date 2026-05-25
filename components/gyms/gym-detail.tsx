@@ -64,6 +64,14 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
   const user = useAuthStore((state) => state.user)
   const roleUpper = user?.role?.toUpperCase()
   const isGymAdmin = roleUpper === 'ROLE_GYM_SUPER_ADMIN' || roleUpper === 'ROLE_GYM_ADMIN'
+  const isYogaOrPilates = gym?.categoryName ? ['Yoqa', 'Yoga', 'Йога', 'Pilates', 'Пилатес'].includes(gym.categoryName) : false
+  const visibleTabs = GYM_TABS.filter((tab) => {
+    if (!isGymAdmin) return true;
+    if (isYogaOrPilates && (tab.key === 'analitika' || tab.key === 'reservations' || tab.key === 'lessonHours')) {
+      return true;
+    }
+    return false;
+  });
 
   const [adminGyms, setAdminGyms] = useState<any[]>([])
   const [isSwitcherOpen, setIsSwitcherOpen] = useState(false)
@@ -173,10 +181,13 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
   }, [currentTab])
 
   useEffect(() => {
-    if (isGymAdmin && activeTab !== 'analitika') {
-      setActiveTab('analitika')
+    if (isGymAdmin) {
+      const allowed = isYogaOrPilates ? ['analitika', 'reservations', 'lessonHours'] : ['analitika']
+      if (!allowed.includes(activeTab)) {
+        setActiveTab('analitika')
+      }
     }
-  }, [isGymAdmin, activeTab])
+  }, [isGymAdmin, activeTab, isYogaOrPilates])
 
   const handleConfirmExit = () => {
     if (isNew && gymId) {
@@ -371,9 +382,11 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
             <h1 className="text-[20px] font-bold text-[#101828] tracking-tight">{gym.name}</h1>
-            <button onClick={() => setIsQrModalOpen(true)} className={styles.qrcodeParent} title="QR Kod">
-              <Image src="/QrCode.svg" className={styles.qrcodeIcon} width={32} height={32} alt="QR" />
-            </button>
+            {!isGymAdmin && (
+              <button onClick={() => setIsQrModalOpen(true)} className={styles.qrcodeParent} title="QR Kod">
+                <Image src="/QrCode.svg" className={styles.qrcodeIcon} width={32} height={32} alt="QR" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -434,10 +447,10 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       </div>
 
       {/* STRETCHED TABS */}
-      {!isGymAdmin && (
+      {(!isGymAdmin || (isGymAdmin && isYogaOrPilates)) && (
         <div className="w-full border-b border-[#ececed]">
           <nav className="-mb-px flex w-full overflow-x-auto no-scrollbar" aria-label="Zal bölmələri">
-            {GYM_TABS.map((tab) => (
+            {visibleTabs.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}

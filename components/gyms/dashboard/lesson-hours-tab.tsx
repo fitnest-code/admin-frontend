@@ -12,6 +12,7 @@ import {
 import { useParams } from 'next/navigation'
 import { AddLessonHourModal } from './modals/add-lesson-hour-modal'
 import { ConfirmDeleteModal } from '../modals/confirm-delete-modal'
+import { formatTo24h } from '@/lib/utils'
 
 const LessonHoursTab = () => {
     const { id: gymId } = useParams()
@@ -66,7 +67,7 @@ const LessonHoursTab = () => {
                                     <td>{hour.lessonTypeName}</td>
                                     <td>{hour.trainerName}</td>
                                     <td>{hour.date}</td>
-                                    <td>{hour.timeRange}</td>
+                                    <td>{formatTo24h(hour.timeRange)}</td>
                                     <td>{hour.emptySpaces}</td>
                                     <td>
                                         <span className={styles.statusBadge}>
