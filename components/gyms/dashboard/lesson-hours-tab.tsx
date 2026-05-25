@@ -11,12 +11,14 @@ import {
 } from '@/lib/query/gym-query'
 import { useParams } from 'next/navigation'
 import { AddLessonHourModal } from './modals/add-lesson-hour-modal'
+import { EditGymRulesModal } from './modals/edit-gym-rules-modal'
 import { ConfirmDeleteModal } from '../modals/confirm-delete-modal'
 import { formatTo24h } from '@/lib/utils'
 
 const LessonHoursTab = () => {
     const { id: gymId } = useParams()
     const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+    const [isRulesModalOpen, setIsRulesModalOpen] = useState(false)
     const [deleteLessonId, setDeleteLessonId] = useState<number | null>(null)
 
     const { data: lessonHours, isLoading } = useGymLessonHours(gymId as string)
@@ -35,9 +37,17 @@ const LessonHoursTab = () => {
         <div className={styles.container}>
             <div className={styles.header}>
                 <h2 className={styles.title}>Dərs saatları</h2>
-                <button className={styles.addBtn} onClick={() => setIsAddModalOpen(true)}>
-                    Əlavə et
-                </button>
+                <div className="flex items-center gap-3">
+                    <button 
+                        className={cn(styles.addBtn, "bg-white border border-[#00B4CC] text-[#00B4CC] hover:bg-slate-50")} 
+                        onClick={() => setIsRulesModalOpen(true)}
+                    >
+                        Qaydaları əlavə et
+                    </button>
+                    <button className={styles.addBtn} onClick={() => setIsAddModalOpen(true)}>
+                        Əlavə et
+                    </button>
+                </div>
             </div>
 
             {!lessonHours || lessonHours.length === 0 ? (
@@ -90,6 +100,12 @@ const LessonHoursTab = () => {
                 <AddLessonHourModal 
                     gymId={Number(gymId)} 
                     onClose={() => setIsAddModalOpen(false)} 
+                />
+            )}
+            {isRulesModalOpen && (
+                <EditGymRulesModal
+                    gymId={Number(gymId)}
+                    onClose={() => setIsRulesModalOpen(false)}
                 />
             )}
             {deleteLessonId !== null && (

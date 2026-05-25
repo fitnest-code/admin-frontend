@@ -686,3 +686,34 @@ export function useUpdateGymWorkHours() {
     }
   });
 }
+
+// 32. Get gym reservation rules (direct / category / lesson rules)
+export function useGymRulesQuery(gymId: number | string | null | undefined, categoryId?: number | string | null, lessonId?: number | string | null) {
+  return useQuery({
+    queryKey: ['gym-rules', gymId, categoryId, lessonId],
+    queryFn: () => {
+      if (!gymId) return Promise.resolve(null)
+      const params = new URLSearchParams()
+      if (categoryId) params.append('categoryId', categoryId.toString())
+      if (lessonId) params.append('lessonId', lessonId.toString())
+      return apiGet<any>(`/reservations/rules?gymId=${gymId}&${params.toString()}`)
+    },
+    enabled: !!gymId
+  })
+}
+
+// 33. Save/Update gym rules (direct / gym-wide)
+export function useUpdateGymRules() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ gymId, htmlContent }: { gymId: number, htmlContent: string }) =>
+      apiPost(`/admin/reservations/gyms/${gymId}/rules`, { htmlContent }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-rules', variables.gymId] })
+      toast.success('Rezervasiya qaydaları uğurla yeniləndi')
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Xəta baş verdi')
+    }
+  })
+}
