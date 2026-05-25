@@ -19,6 +19,7 @@ const en: TranslationKeys = {
     faq: "FAQ",
     legal: "Legal Documents",
     contactDetails: "Contact Details",
+    languages: "Languages",
   },
 
   common: {
@@ -274,6 +275,20 @@ const en: TranslationKeys = {
     validationEmail: "Please enter a valid email address",
     validationPhone: "Please enter a valid phone number (+994 xx xxx xx xx)",
     copied: "Copied to clipboard!",
+  },
+  languages: {
+    title: "System Languages",
+    add: "Add Language",
+    code: "Language Code",
+    flag: "Flag",
+    actions: "Actions",
+    deleteConfirmTitle: "Delete Language",
+    deleteConfirmMessage: "Are you sure you want to delete this language? This action cannot be undone.",
+    created: "Language added successfully!",
+    deleted: "Language deleted successfully!",
+    codePlaceholder: "E.g., AZ, EN, TR",
+    errorSelect: "Please enter a language code",
+    codeLengthError: "Language code must be between 2 and 10 characters",
   },
 } as const;
 

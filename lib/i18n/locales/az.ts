@@ -18,6 +18,7 @@ const az = {
     faq: "FAQ",
     legal: "Hüquqi Sənədlər",
     contactDetails: "Əlaqə məlumatları",
+    languages: "Dillər",
   },
 
   // Common / Shared
@@ -283,6 +284,20 @@ const az = {
     validationEmail: "Düzgün e-poçt ünvanı daxil edin",
     validationPhone: "Düzgün telefon nömrəsi daxil edin (+994 xx xxx xx xx)",
     copied: "Nömrə kopyalandı!",
+  },
+  languages: {
+    title: "Sistem Dilləri",
+    add: "Dil əlavə et",
+    code: "Dil Kodu",
+    flag: "Bayraq",
+    actions: "Əməliyyatlar",
+    deleteConfirmTitle: "Dili sil",
+    deleteConfirmMessage: "Bu dili silmək istədiyinizdən əminsiniz? Bu əməliyyat geri qaytarıla bilməz.",
+    created: "Dil uğurla əlavə edildi!",
+    deleted: "Dil silindi!",
+    codePlaceholder: "Məs: AZ, EN, TR",
+    errorSelect: "Zəhmət olmasa dil kodu daxil edin",
+    codeLengthError: "Dil kodu 2 ilə 10 simvol arasında olmalıdır",
   },
 } as const;
 

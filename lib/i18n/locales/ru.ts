@@ -19,6 +19,7 @@ const ru: TranslationKeys = {
     faq: "FAQ",
     legal: "Юридические документы",
     contactDetails: "Контактные данные",
+    languages: "Языки",
   },
 
   common: {
@@ -274,6 +275,20 @@ const ru: TranslationKeys = {
     validationEmail: "Пожалуйста, введите корректный адрес эл. почты",
     validationPhone: "Пожалуйста, введите корректный номер телефона (+994 xx xxx xx xx)",
     copied: "Скопировано в буфер обмена!",
+  },
+  languages: {
+    title: "Системные языки",
+    add: "Добавить язык",
+    code: "Код языка",
+    flag: "Флаг",
+    actions: "Действия",
+    deleteConfirmTitle: "Удалить язык",
+    deleteConfirmMessage: "Вы уверены, что хотите удалить этот язык? Это действие нельзя отменить.",
+    created: "Язык успешно добавлен!",
+    deleted: "Язык удален!",
+    codePlaceholder: "Например: AZ, EN, TR",
+    errorSelect: "Пожалуйста, введите код языка",
+    codeLengthError: "Код языка должен быть от 2 до 10 символов",
   },
 } as const;
 
