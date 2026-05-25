@@ -154,19 +154,9 @@ export function ContactDetailsPage() {
       </div>
 
       {/* Main Content Form Card */}
-      <div className="max-w-4xl w-full">
+      <div className="w-full">
         {/* Form */}
         <div className="w-full rounded-2xl bg-white border border-[#ececed] flex flex-col p-6 sm:p-8 gap-8 text-left shadow-sm transition-all duration-300 hover:shadow-md">
-          <div className="flex items-center gap-3 border-b border-[#ececed] pb-4">
-            <div className="w-9 h-9 rounded-lg bg-[#00B4CC15] flex items-center justify-center text-[#00B4CC]">
-              <Phone size={18} />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-[#101828]">Əlaqə Kanalları</h2>
-              <p className="text-xs text-slate-500">Məlumatların düzgünlüyünə əmin olun.</p>
-            </div>
-          </div>
-
           <div className="flex flex-col gap-6">
             {/* Email Input */}
             <div className="flex flex-col gap-2.5">

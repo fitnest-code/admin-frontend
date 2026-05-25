@@ -12,8 +12,11 @@ import {
 } from '@/lib/query/gym-query'
 import { CustomCalendar } from '@/components/ui/custom-calendar'
 import { format, parse } from 'date-fns'
-import { Calendar as CalendarIcon, Loader2 } from 'lucide-react'
+import { Calendar as CalendarIcon, Loader2, Clock, ChevronDown } from 'lucide-react'
 import { SuccessAnimationModal } from '@/components/ui/success-animation-modal'
+
+const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 
 interface Props {
     gymId: number
@@ -29,6 +32,14 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
     const [endTime, setEndTime] = useState('10:00')
     const [maxSlots, setMaxSlots] = useState(12)
     const [showSuccess, setShowSuccess] = useState(false)
+    const [startDropdown, setStartDropdown] = useState(false)
+    const [endDropdown, setEndDropdown] = useState(false)
+
+    const activeRef = (node: HTMLButtonElement | null) => {
+        if (node) {
+            node.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+        }
+    };
 
     // Fetch gym details & categories to extract all lesson types belonging to the gym's category
     const { data: gymDetails } = useGymDetailsAdmin(gymId)
@@ -181,16 +192,19 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                                 </button>
 
                                 {showCalendar && (
-                                    <div className="absolute top-full left-0 z-[60] mt-1">
-                                        <CustomCalendar 
-                                            selectedDate={selectedDateObj}
-                                            onSelect={(d) => {
-                                                setDate(format(d, 'yyyy-MM-dd'))
-                                                setShowCalendar(false)
-                                            }}
-                                            onClose={() => setShowCalendar(false)}
-                                        />
-                                    </div>
+                                    <>
+                                        <div className="fixed inset-0 z-50" onClick={() => setShowCalendar(false)} />
+                                        <div className="absolute top-full left-0 z-[60] mt-1">
+                                            <CustomCalendar 
+                                                selectedDate={selectedDateObj}
+                                                onSelect={(d) => {
+                                                    setDate(format(d, 'yyyy-MM-dd'))
+                                                    setShowCalendar(false)
+                                                }}
+                                                onClose={() => setShowCalendar(false)}
+                                            />
+                                        </div>
+                                    </>
                                 )}
                             </div>
                         </div>
@@ -209,24 +223,150 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                     <div className={styles.row}>
                         <div className={styles.inputGroup}>
                             <label className={styles.label}>Başlama saatı</label>
-                            <div className={styles.timeInputWrapper}>
-                                <input 
-                                    type="time" 
-                                    className={styles.input} 
-                                    value={startTime}
-                                    onChange={(e) => setStartTime(e.target.value)}
-                                />
+                            <div className="relative w-full">
+                                <button
+                                    type="button"
+                                    onClick={() => { setStartDropdown(!startDropdown); setEndDropdown(false); }}
+                                    className={cn(
+                                        styles.input,
+                                        "w-full flex items-center justify-between text-sm font-medium bg-white hover:border-[#00B4CC80] transition-colors"
+                                    )}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Clock size={14} className="text-[#00B4CC]" />
+                                        <span>{startTime}</span>
+                                    </div>
+                                    <ChevronDown size={14} className="text-slate-400" />
+                                </button>
+                                {startDropdown && (
+                                    <>
+                                        <div className="fixed inset-0 z-50" onClick={() => setStartDropdown(false)} />
+                                        <div className="absolute top-full left-0 right-0 z-[60] mt-1 bg-white border border-[#E5E7EB] rounded-xl shadow-xl p-3 flex gap-2 h-56 animate-in fade-in slide-in-from-top-1">
+                                            {/* Hours Column */}
+                                            <div className="flex-1 overflow-y-auto flex flex-col no-scrollbar">
+                                                <div className="text-[10px] font-bold text-slate-400 uppercase text-center mb-1 shrink-0">Saat</div>
+                                                {HOURS.map(h => {
+                                                    const currentH = startTime.split(':')[0] || '09';
+                                                    const currentM = startTime.split(':')[1] || '00';
+                                                    return (
+                                                        <button
+                                                            key={h}
+                                                            type="button"
+                                                            ref={h === currentH ? activeRef : undefined}
+                                                            onClick={() => setStartTime(`${h}:${currentM}`)}
+                                                            className={cn(
+                                                                "py-1 text-sm hover:bg-[#00B4CC08] rounded transition-colors text-center shrink-0",
+                                                                h === currentH ? "bg-[#00B4CC10] text-[#00B4CC] font-semibold" : "text-slate-700"
+                                                            )}
+                                                        >
+                                                            {h}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                            
+                                            {/* Divider */}
+                                            <div className="w-[1px] bg-slate-100 self-stretch shrink-0" />
+                                            
+                                            {/* Minutes Column */}
+                                            <div className="flex-1 overflow-y-auto flex flex-col no-scrollbar">
+                                                <div className="text-[10px] font-bold text-slate-400 uppercase text-center mb-1 shrink-0">Dəqiqə</div>
+                                                {MINUTES.map(m => {
+                                                    const currentH = startTime.split(':')[0] || '09';
+                                                    const currentM = startTime.split(':')[1] || '00';
+                                                    return (
+                                                        <button
+                                                            key={m}
+                                                            type="button"
+                                                            ref={m === currentM ? activeRef : undefined}
+                                                            onClick={() => setStartTime(`${currentH}:${m}`)}
+                                                            className={cn(
+                                                                "py-1 text-sm hover:bg-[#00B4CC08] rounded transition-colors text-center shrink-0",
+                                                                m === currentM ? "bg-[#00B4CC10] text-[#00B4CC] font-semibold" : "text-slate-700"
+                                                            )}
+                                                        >
+                                                            {m}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
                         <div className={styles.inputGroup}>
                             <label className={styles.label}>Bitmə saatı</label>
-                            <div className={styles.timeInputWrapper}>
-                                <input 
-                                    type="time" 
-                                    className={styles.input} 
-                                    value={endTime}
-                                    onChange={(e) => setEndTime(e.target.value)}
-                                />
+                            <div className="relative w-full">
+                                <button
+                                    type="button"
+                                    onClick={() => { setEndDropdown(!endDropdown); setStartDropdown(false); }}
+                                    className={cn(
+                                        styles.input,
+                                        "w-full flex items-center justify-between text-sm font-medium bg-white hover:border-[#00B4CC80] transition-colors"
+                                    )}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Clock size={14} className="text-[#00B4CC]" />
+                                        <span>{endTime}</span>
+                                    </div>
+                                    <ChevronDown size={14} className="text-slate-400" />
+                                </button>
+                                {endDropdown && (
+                                    <>
+                                        <div className="fixed inset-0 z-50" onClick={() => setEndDropdown(false)} />
+                                        <div className="absolute top-full left-0 right-0 z-[60] mt-1 bg-white border border-[#E5E7EB] rounded-xl shadow-xl p-3 flex gap-2 h-56 animate-in fade-in slide-in-from-top-1">
+                                            {/* Hours Column */}
+                                            <div className="flex-1 overflow-y-auto flex flex-col no-scrollbar">
+                                                <div className="text-[10px] font-bold text-slate-400 uppercase text-center mb-1 shrink-0">Saat</div>
+                                                {HOURS.map(h => {
+                                                    const currentH = endTime.split(':')[0] || '10';
+                                                    const currentM = endTime.split(':')[1] || '00';
+                                                    return (
+                                                        <button
+                                                            key={h}
+                                                            type="button"
+                                                            ref={h === currentH ? activeRef : undefined}
+                                                            onClick={() => setEndTime(`${h}:${currentM}`)}
+                                                            className={cn(
+                                                                "py-1 text-sm hover:bg-[#00B4CC08] rounded transition-colors text-center shrink-0",
+                                                                h === currentH ? "bg-[#00B4CC10] text-[#00B4CC] font-semibold" : "text-slate-700"
+                                                            )}
+                                                        >
+                                                            {h}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                            
+                                            {/* Divider */}
+                                            <div className="w-[1px] bg-slate-100 self-stretch shrink-0" />
+                                            
+                                            {/* Minutes Column */}
+                                            <div className="flex-1 overflow-y-auto flex flex-col no-scrollbar">
+                                                <div className="text-[10px] font-bold text-slate-400 uppercase text-center mb-1 shrink-0">Dəqiqə</div>
+                                                {MINUTES.map(m => {
+                                                    const currentH = endTime.split(':')[0] || '10';
+                                                    const currentM = endTime.split(':')[1] || '00';
+                                                    return (
+                                                        <button
+                                                            key={m}
+                                                            type="button"
+                                                            ref={m === currentM ? activeRef : undefined}
+                                                            onClick={() => setEndTime(`${currentH}:${m}`)}
+                                                            className={cn(
+                                                                "py-1 text-sm hover:bg-[#00B4CC08] rounded transition-colors text-center shrink-0",
+                                                                m === currentM ? "bg-[#00B4CC10] text-[#00B4CC] font-semibold" : "text-slate-700"
+                                                            )}
+                                                        >
+                                                            {m}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>
