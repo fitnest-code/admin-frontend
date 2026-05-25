@@ -74,7 +74,8 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
   ].includes(gym.categoryName.trim()) : false
   const visibleTabs = GYM_TABS.filter((tab) => {
     if (!isGymAdmin) return true;
-    if (isYogaOrPilates && (tab.key === 'analitika' || tab.key === 'reservations' || tab.key === 'lessonHours')) {
+    if (tab.key === 'analitika') return true;
+    if (isYogaOrPilates && (tab.key === 'reservations' || tab.key === 'lessonHours')) {
       return true;
     }
     return false;

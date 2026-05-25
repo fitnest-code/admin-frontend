@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Clock, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
@@ -170,7 +170,7 @@ export function AddClassTimeModal({
             <label className="text-[14px] font-semibold text-black/60">Saat</label>
             <div className="flex items-center gap-0">
               {/* Start Time */}
-              <div className="flex-1 relative">
+              <div className={cn("flex-1 relative", startDropdown ? "z-30" : "z-10")}>
                 <button
                   type="button"
                   onClick={() => { setStartDropdown(!startDropdown); setEndDropdown(false); }}
@@ -183,21 +183,17 @@ export function AddClassTimeModal({
                   <ChevronDown size={14} className="text-slate-400" />
                 </button>
                 {startDropdown && (
-                  <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-[#E5E7EB] rounded-xl shadow-xl max-h-48 overflow-y-auto animate-in fade-in slide-in-from-top-1">
-                    {TIME_OPTIONS.map(t => (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => { setStartTime(t); setStartDropdown(false); }}
-                        className={cn(
-                          "w-full text-left px-4 py-2 text-sm hover:bg-[#00B4CC08] transition-colors",
-                          t === startTime ? "bg-[#00B4CC10] text-[#00B4CC] font-semibold" : "text-slate-700"
-                        )}
-                      >
-                        {t}
-                      </button>
-                    ))}
-                  </div>
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setStartDropdown(false)} />
+                    <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-[#E5E7EB] rounded-xl shadow-xl p-3 animate-in fade-in slide-in-from-top-1">
+                      <TimePicker 
+                        value={startTime}
+                        onChange={(val) => {
+                          setStartTime(val);
+                        }}
+                      />
+                    </div>
+                  </>
                 )}
               </div>
 
@@ -207,7 +203,7 @@ export function AddClassTimeModal({
               </div>
 
               {/* End Time */}
-              <div className="flex-1 relative">
+              <div className={cn("flex-1 relative", endDropdown ? "z-30" : "z-10")}>
                 <button
                   type="button"
                   onClick={() => { setEndDropdown(!endDropdown); setStartDropdown(false); }}
@@ -220,21 +216,17 @@ export function AddClassTimeModal({
                   <ChevronDown size={14} className="text-slate-400" />
                 </button>
                 {endDropdown && (
-                  <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-[#E5E7EB] rounded-xl shadow-xl max-h-48 overflow-y-auto animate-in fade-in slide-in-from-top-1">
-                    {TIME_OPTIONS.map(t => (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => { setEndTime(t); setEndDropdown(false); }}
-                        className={cn(
-                          "w-full text-left px-4 py-2 text-sm hover:bg-[#00B4CC08] transition-colors",
-                          t === endTime ? "bg-[#00B4CC10] text-[#00B4CC] font-semibold" : "text-slate-700"
-                        )}
-                      >
-                        {t}
-                      </button>
-                    ))}
-                  </div>
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setEndDropdown(false)} />
+                    <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-[#E5E7EB] rounded-xl shadow-xl p-3 animate-in fade-in slide-in-from-top-1">
+                      <TimePicker 
+                        value={endTime}
+                        onChange={(val) => {
+                          setEndTime(val);
+                        }}
+                      />
+                    </div>
+                  </>
                 )}
               </div>
             </div>
@@ -255,4 +247,87 @@ export function AddClassTimeModal({
   );
 
   return createPortal(modalContent, document.body);
+}
+
+interface TimePickerProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+function TimePickerList({ items, selectedValue, onChange }: { items: string[], selectedValue: string, onChange: (val: string) => void }) {
+  const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (listRef.current) {
+      const activeEl = listRef.current.querySelector('[data-active="true"]');
+      if (activeEl) {
+        activeEl.scrollIntoView({ block: 'center', behavior: 'auto' });
+      }
+    }
+  }, [selectedValue]);
+
+  return (
+    <>
+      <style>{`
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none !important;
+          width: 0 !important;
+          height: 0 !important;
+        }
+      `}</style>
+      <div 
+        ref={listRef} 
+        className="flex-1 overflow-y-auto flex flex-col gap-1 hide-scrollbar"
+        style={{
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none'
+        }}
+      >
+        {items.map((item) => {
+          const isSelected = item === selectedValue;
+          return (
+            <button
+              key={item}
+              type="button"
+              data-active={isSelected ? "true" : "false"}
+              onClick={() => onChange(item)}
+              className={cn(
+                "w-full h-6 flex items-center justify-center text-[12px] border-none bg-transparent cursor-pointer p-1 box-border transition-all duration-150 shrink-0",
+                isSelected 
+                  ? "text-[#00B4CC] border-[0.5px] border-[#00B4CC] rounded-[2px] font-semibold bg-[#00B4CC]/[0.04]"
+                  : "text-black hover:bg-[#F9FAFB]"
+              )}
+            >
+              {item}
+            </button>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+function TimePicker({ value, onChange }: TimePickerProps) {
+  const [hVal, mVal] = value.split(':');
+  const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+  const minutes = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+
+  return (
+    <div className="w-full h-[214px] bg-white flex items-stretch gap-1 p-2 box-border font-sans">
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        <TimePickerList 
+          items={hours} 
+          selectedValue={hVal} 
+          onChange={(h) => onChange(`${h}:${mVal}`)} 
+        />
+      </div>
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        <TimePickerList 
+          items={minutes} 
+          selectedValue={mVal} 
+          onChange={(m) => onChange(`${hVal}:${m}`)} 
+        />
+      </div>
+    </div>
+  );
 }
