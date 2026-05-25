@@ -17,7 +17,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const { sidebarCollapsed } = useUIStore()
   const user = useAuthStore((state) => state.user)
   const roleUpper = user?.role?.toUpperCase()
-  const isGymAdmin = roleUpper === 'ROLE_GYM_SUPER_ADMIN' || roleUpper === 'ROLE_GYM_ADMIN'
+  const isGymAdmin = roleUpper === 'ROLE_GYM_SUPER_ADMIN' || 
+                     roleUpper === 'ROLE_GYM_ADMIN' || 
+                     roleUpper === 'GYM_SUPER_ADMIN' || 
+                     roleUpper === 'GYM_ADMIN'
   const router = useRouter()
   const pathname = usePathname()
   const [mounted, setMounted] = useState(false)

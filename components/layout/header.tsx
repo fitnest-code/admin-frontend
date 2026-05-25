@@ -104,7 +104,12 @@ export function Header() {
     <header className="relative mx-6 mt-6 mb-6 h-[60px] rounded-xl bg-[#00B4CC26] px-5 flex items-center justify-between gap-4 transition-all duration-300">
       {/* Left: Profile Chip & Mobile Toggle */}
       <div className="flex items-center gap-3 shrink-0">
-        {!(user?.role?.toUpperCase() === 'ROLE_GYM_SUPER_ADMIN' || user?.role?.toUpperCase() === 'ROLE_GYM_ADMIN') && (
+        {!(
+          user?.role?.toUpperCase() === 'ROLE_GYM_SUPER_ADMIN' || 
+          user?.role?.toUpperCase() === 'ROLE_GYM_ADMIN' ||
+          user?.role?.toUpperCase() === 'GYM_SUPER_ADMIN' || 
+          user?.role?.toUpperCase() === 'GYM_ADMIN'
+        ) && (
           <button
             onClick={toggleMobileSidebar}
             className="lg:hidden mr-1 p-1.5 text-[#00b4cc] hover:bg-[#00B4CC15] rounded-lg transition-colors flex items-center justify-center shrink-0 cursor-pointer"
