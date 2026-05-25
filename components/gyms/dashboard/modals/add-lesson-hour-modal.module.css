@@ -10,6 +10,7 @@
     justify-content: center;
     z-index: 1000;
     padding: 20px;
+    overflow-y: auto;
 }
 
 .modal {
@@ -21,8 +22,8 @@
     display: flex;
     flex-direction: column;
     gap: 32px;
-    max-height: 90vh;
-    overflow-y: auto;
+    overflow: visible;
+    margin: auto;
 }
 
 .header {
