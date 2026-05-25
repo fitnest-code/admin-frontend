@@ -18,6 +18,75 @@ import { SuccessAnimationModal } from '@/components/ui/success-animation-modal'
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 
+const TimePickerDropdown = ({ 
+    value, 
+    onChange, 
+    onClose 
+}: { 
+    value: string; 
+    onChange: (val: string) => void; 
+    onClose: () => void;
+}) => {
+    const currentH = value.split(':')[0] || '09';
+    const currentM = value.split(':')[1] || '00';
+
+    const activeRef = (node: HTMLButtonElement | null) => {
+        if (node) {
+            const parent = node.parentElement;
+            if (parent) {
+                parent.scrollTop = node.offsetTop;
+            }
+        }
+    };
+
+    return (
+        <>
+            <div className="fixed inset-0 z-50" onClick={onClose} />
+            <div className="absolute top-full left-0 right-0 z-[60] mt-1 border border-[#E5E7EB] rounded-2xl shadow-xl bg-white overflow-hidden">
+                <div className={styles.frameParent}>
+                    <div className={styles.columnsContainer}>
+                        {/* Hours Column */}
+                        <div className={styles.column}>
+                            {HOURS.map(h => {
+                                const isSelected = h === currentH;
+                                return (
+                                    <button
+                                        key={h}
+                                        type="button"
+                                        ref={isSelected ? activeRef : undefined}
+                                        onClick={() => onChange(`${h}:${currentM}`)}
+                                        className={isSelected ? cn(styles.wrapper, styles.frameGroup) : styles.frame}
+                                    >
+                                        <div className={styles.div}>{h}</div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        
+                        {/* Minutes Column */}
+                        <div className={styles.column}>
+                            {MINUTES.map(m => {
+                                const isSelected = m === currentM;
+                                return (
+                                    <button
+                                        key={m}
+                                        type="button"
+                                        ref={isSelected ? activeRef : undefined}
+                                        onClick={() => onChange(`${currentH}:${m}`)}
+                                        className={isSelected ? cn(styles.wrapper, styles.frameGroup) : styles.frame}
+                                    >
+                                        <div className={styles.div}>{m}</div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </>
+    );
+};
+
 interface Props {
     gymId: number
     onClose: () => void
@@ -34,16 +103,6 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
     const [showSuccess, setShowSuccess] = useState(false)
     const [startDropdown, setStartDropdown] = useState(false)
     const [endDropdown, setEndDropdown] = useState(false)
-
-    const activeRef = (node: HTMLButtonElement | null) => {
-        if (node) {
-            const parent = node.parentElement;
-            if (parent) {
-                // Scroll the parent container so the active node is at the top
-                parent.scrollTop = node.offsetTop;
-            }
-        }
-    };
 
     // Fetch gym details & categories to extract all lesson types belonging to the gym's category
     const { data: gymDetails } = useGymDetailsAdmin(gymId)
@@ -242,57 +301,14 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                                     </div>
                                     <ChevronDown size={14} className="text-slate-400" />
                                 </button>
-                                 {startDropdown && (
-                                     <>
-                                         <div className="fixed inset-0 z-50" onClick={() => setStartDropdown(false)} />
-                                         <div className="absolute top-full left-0 right-0 z-[60] mt-1 border border-[#E5E7EB] rounded-2xl shadow-xl bg-white overflow-hidden">
-                                             <div className={styles.frameParent}>
-                                                 <div className={styles.columnsContainer}>
-                                                     {/* Hours Column */}
-                                                     <div className={styles.column}>
-                                                         {HOURS.map(h => {
-                                                             const currentH = startTime.split(':')[0] || '09';
-                                                             const currentM = startTime.split(':')[1] || '00';
-                                                             const isSelected = h === currentH;
-                                                             return (
-                                                                 <button
-                                                                     key={h}
-                                                                     type="button"
-                                                                     ref={isSelected ? activeRef : undefined}
-                                                                     onClick={() => setStartTime(`${h}:${currentM}`)}
-                                                                     className={isSelected ? cn(styles.wrapper, styles.frameGroup) : styles.frame}
-                                                                 >
-                                                                     <div className={styles.div}>{h}</div>
-                                                                 </button>
-                                                             );
-                                                         })}
-                                                     </div>
-                                                     
-                                                     {/* Minutes Column */}
-                                                     <div className={styles.column}>
-                                                         {MINUTES.map(m => {
-                                                             const currentH = startTime.split(':')[0] || '09';
-                                                             const currentM = startTime.split(':')[1] || '00';
-                                                             const isSelected = m === currentM;
-                                                             return (
-                                                                 <button
-                                                                     key={m}
-                                                                     type="button"
-                                                                     ref={isSelected ? activeRef : undefined}
-                                                                     onClick={() => setStartTime(`${currentH}:${m}`)}
-                                                                     className={isSelected ? cn(styles.wrapper, styles.frameGroup) : styles.frame}
-                                                                 >
-                                                                     <div className={styles.div}>{m}</div>
-                                                                 </button>
-                                                             );
-                                                         })}
-                                                     </div>
-                                                 </div>
-                                             </div>
-                                         </div>
-                                     </>
-                                 )}
-                             </div>
+                                {startDropdown && (
+                                    <TimePickerDropdown
+                                        value={startTime}
+                                        onChange={setStartTime}
+                                        onClose={() => setStartDropdown(false)}
+                                    />
+                                )}
+                            </div>
                         </div>
                         <div className={styles.inputGroup}>
                             <label className={styles.label}>Bitmə saatı</label>
@@ -312,54 +328,11 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                                     <ChevronDown size={14} className="text-slate-400" />
                                 </button>
                                 {endDropdown && (
-                                    <>
-                                        <div className="fixed inset-0 z-50" onClick={() => setEndDropdown(false)} />
-                                        <div className="absolute top-full left-0 right-0 z-[60] mt-1 border border-[#E5E7EB] rounded-2xl shadow-xl bg-white overflow-hidden">
-                                            <div className={styles.frameParent}>
-                                                <div className={styles.columnsContainer}>
-                                                    {/* Hours Column */}
-                                                    <div className={styles.column}>
-                                                        {HOURS.map(h => {
-                                                            const currentH = endTime.split(':')[0] || '10';
-                                                            const currentM = endTime.split(':')[1] || '00';
-                                                            const isSelected = h === currentH;
-                                                            return (
-                                                                <button
-                                                                    key={h}
-                                                                    type="button"
-                                                                    ref={isSelected ? activeRef : undefined}
-                                                                    onClick={() => setEndTime(`${h}:${currentM}`)}
-                                                                    className={isSelected ? cn(styles.wrapper, styles.frameGroup) : styles.frame}
-                                                                >
-                                                                    <div className={styles.div}>{h}</div>
-                                                                </button>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                    
-                                                    {/* Minutes Column */}
-                                                    <div className={styles.column}>
-                                                        {MINUTES.map(m => {
-                                                            const currentH = endTime.split(':')[0] || '10';
-                                                            const currentM = endTime.split(':')[1] || '00';
-                                                            const isSelected = m === currentM;
-                                                            return (
-                                                                <button
-                                                                    key={m}
-                                                                    type="button"
-                                                                    ref={isSelected ? activeRef : undefined}
-                                                                    onClick={() => setEndTime(`${currentH}:${m}`)}
-                                                                    className={isSelected ? cn(styles.wrapper, styles.frameGroup) : styles.frame}
-                                                                >
-                                                                    <div className={styles.div}>{m}</div>
-                                                                </button>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </>
+                                    <TimePickerDropdown
+                                        value={endTime}
+                                        onChange={setEndTime}
+                                        onClose={() => setEndDropdown(false)}
+                                    />
                                 )}
                             </div>
                         </div>
