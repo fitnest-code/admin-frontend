@@ -18,7 +18,6 @@ const az = {
     faq: "FAQ",
     legal: "Hüquqi Sənədlər",
     contactDetails: "Əlaqə məlumatları",
-    translations: "Tərcümələr",
   },
 
   // Common / Shared
@@ -284,21 +283,6 @@ const az = {
     validationEmail: "Düzgün e-poçt ünvanı daxil edin",
     validationPhone: "Düzgün telefon nömrəsi daxil edin (+994 xx xxx xx xx)",
     copied: "Nömrə kopyalandı!",
-  },
-  translations: {
-    title: "Sistem Tərcümələri",
-    add: "Tərcümə Əlavə Et",
-    edit: "Tərcüməni Yenilə",
-    entityType: "Obyekt Tipi",
-    entityId: "Obyekt ID-si",
-    fieldName: "Sahə Adı",
-    languageCode: "Dil Kodu",
-    fieldValue: "Tərcümə Dəyəri",
-    placeholderEntityType: "Məs: CATEGORY, GYM, STORE",
-    placeholderFieldName: "Məs: name, description, city",
-    placeholderValue: "Tərcümə dəyərini yazın...",
-    created: "Tərcümə uğurla saxlanıldı!",
-    deleted: "Tərcümə silindi!",
   },
 } as const;
 

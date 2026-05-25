@@ -19,7 +19,6 @@ const ru: TranslationKeys = {
     faq: "FAQ",
     legal: "Юридические документы",
     contactDetails: "Контактные данные",
-    translations: "Переводы",
   },
 
   common: {
@@ -275,21 +274,6 @@ const ru: TranslationKeys = {
     validationEmail: "Пожалуйста, введите корректный адрес эл. почты",
     validationPhone: "Пожалуйста, введите корректный номер телефона (+994 xx xxx xx xx)",
     copied: "Скопировано в буфер обмена!",
-  },
-  translations: {
-    title: "Системные Переводы",
-    add: "Добавить перевод",
-    edit: "Обновить перевод",
-    entityType: "Тип объекта",
-    entityId: "ID объекта",
-    fieldName: "Имя поля",
-    languageCode: "Код языка",
-    fieldValue: "Значение перевода",
-    placeholderEntityType: "Напр: CATEGORY, GYM, STORE",
-    placeholderFieldName: "Напр: name, description, city",
-    placeholderValue: "Введите значение перевода...",
-    created: "Перевод успешно сохранен!",
-    deleted: "Перевод удален!",
   },
 } as const;
 
