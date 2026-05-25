@@ -32,7 +32,7 @@ export function Header() {
   const toggleMobileSidebar = useUIStore((state) => state.toggleMobileSidebar)
   
   const [currentLang, setCurrentLang] = useState<string>("AZ")
-  const [languages, setLanguages] = useState<string[]>(["AZ", "RU", "EN"])
+  const [languages, setLanguages] = useState<string[]>([])
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false)
   const langRef = useRef<HTMLDivElement>(null)
 
