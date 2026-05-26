@@ -565,3 +565,344 @@
     border-radius: 8px;
     cursor: pointer;
 }
+
+/* Popover dropdown styles */
+.popoverMenu {
+  	width: 160px;
+  	height: 122px;
+  	position: absolute;
+    right: 20px;
+    margin-top: 5px;
+  	box-shadow: 0px 10px 15px -3px rgba(0, 0, 0, 0.1), 0px 4px 6px -4px rgba(0, 0, 0, 0.1);
+  	border-radius: 10px;
+  	background-color: #fff;
+  	border: 0.6px solid #e5e7eb;
+  	box-sizing: border-box;
+  	text-align: center;
+  	font-size: 14px;
+  	color: #364153;
+  	font-family: 'SF Pro', sans-serif;
+    z-index: 50;
+}
+.popoverBtn {
+  	position: absolute;
+  	top: 4.63px;
+  	left: 0.64px;
+  	width: 158.7px;
+  	height: 36px;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+}
+.popoverBtn:hover, .popoverBtn2:hover, .popoverBtn3:hover {
+    background-color: #f3f4f6;
+    border-radius: 8px;
+}
+.popoverFrameParent {
+  	position: absolute;
+  	top: 8.37px;
+  	left: 16.36px;
+  	width: 53px;
+  	display: flex;
+  	align-items: center;
+  	gap: 8px;
+}
+.popoverEyeWrapper {
+  	height: 16px;
+  	width: 16px;
+  	display: flex;
+  	align-items: center;
+  	justify-content: flex-end;
+}
+.popoverEye {
+  	height: 16px;
+  	width: 16px;
+  	position: relative;
+}
+.popoverEye2 {
+  	position: absolute;
+  	height: 100%;
+  	width: 100%;
+  	top: 0%;
+  	right: 0%;
+  	bottom: 0%;
+  	left: 0%;
+}
+.popoverVectorIcon {
+  	position: absolute;
+  	height: 62.5%;
+  	width: 100%;
+  	top: 18.75%;
+  	right: 3.12%;
+  	bottom: 18.75%;
+  	left: 3.13%;
+  	max-width: 100%;
+  	overflow: hidden;
+  	max-height: 100%;
+}
+.popoverBax {
+  	position: relative;
+  	line-height: 18px;
+}
+.popoverBtn2 {
+  	position: absolute;
+  	top: 40.63px;
+  	left: 0.64px;
+  	width: 158.7px;
+  	height: 36px;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+}
+.popoverCheckWrapper {
+  	position: absolute;
+  	top: 9.99px;
+  	left: 15.99px;
+  	width: 16px;
+  	height: 16px;
+  	display: flex;
+  	align-items: center;
+  	justify-content: flex-end;
+}
+.popoverVectorIcon2 {
+  	position: absolute;
+  	height: 59.38%;
+  	width: 100%;
+  	top: 23.43%;
+  	right: 7.82%;
+  	bottom: 17.19%;
+  	left: 10.93%;
+  	max-width: 100%;
+  	overflow: hidden;
+  	max-height: 100%;
+}
+.popoverTsdiqEt {
+  	position: absolute;
+  	top: 8.27px;
+  	left: 42.98px;
+  	line-height: 18px;
+}
+.popoverBtn3 {
+  	position: absolute;
+  	top: 76.62px;
+  	left: 0.64px;
+  	width: 158.7px;
+  	height: 36px;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+}
+.popoverVectorIcon3 {
+  	position: absolute;
+  	height: 62.5%;
+  	width: 100%;
+  	top: 18.75%;
+  	right: 18.75%;
+  	bottom: 18.75%;
+  	left: 18.75%;
+  	max-width: 100%;
+  	overflow: hidden;
+  	max-height: 100%;
+}
+.popoverLine {
+  	position: absolute;
+  	top: 116.61px;
+  	left: 0.64px;
+  	border-top: 0.6px solid #f3f4f6;
+  	box-sizing: border-box;
+  	width: 158.7px;
+  	height: 0.6px;
+}
+
+/* Detail view page styles */
+.detailContainer {
+    width: 100%;
+    background-color: #f9fafb;
+    border-radius: 12px;
+    border: 1px solid #ececed;
+    padding: 24px;
+    font-family: 'SF Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+.detailHeaderRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+.detailTitle {
+    font-size: 20px;
+    font-weight: 700;
+    color: #101828;
+}
+.backBtn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #4b5563;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.backBtn:hover {
+    color: #00B4CC;
+}
+.detailCardParent {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+.detailCard {
+    background: #ffffff;
+    border: 1px solid #ececed;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.detailCardTitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: #101828;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #f3f4f6;
+    padding-bottom: 8px;
+}
+.customerHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+.customerNameSection {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.customerName {
+    font-size: 18px;
+    font-weight: 700;
+    color: #101828;
+}
+.statusBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+}
+.statusPending { background-color: #ec972f; }
+.statusApproved { background-color: #166728; }
+.statusCancelled { background-color: #c9373a; }
+.statusRejected { background-color: #8a38f5; }
+
+.metaInfoGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+.metaInfoItem {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.metaLabel {
+    font-size: 12px;
+    color: #667085;
+    font-weight: 500;
+}
+.metaValue {
+    font-size: 14px;
+    color: #1d2939;
+    font-weight: 700;
+}
+.detailGrid2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+}
+.actionPanel {
+    background: #ffffff;
+    border: 1px solid #ececed;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.actionTitle {
+    font-size: 15px;
+    font-weight: 600;
+    color: #344054;
+}
+.reasonArea {
+    width: 100%;
+    height: 100px;
+    border: 1px solid #d0d5dd;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 14px;
+    color: #1d2939;
+    resize: none;
+    outline: none;
+    transition: border-color 0.2s;
+}
+.reasonArea:focus {
+    border-color: #00B4CC;
+}
+.actionButtonRow {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+.actionApproveBtn {
+    flex: 1;
+    background: #00B4CC;
+    color: #ffffff;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background-color 0.2s;
+}
+.actionApproveBtn:hover {
+    background: #008c9e;
+}
+.actionRejectBtn {
+    flex: 1;
+    background: #ffffff;
+    border: 1.5px solid #d0d5dd;
+    color: #344054;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background-color 0.2s;
+}
+.actionRejectBtn:hover {
+    background: #f9fafb;
+}
+.errorText {
+    font-size: 12px;
+    color: #c9373a;
+    font-weight: 500;
+    margin-top: -8px;
+}

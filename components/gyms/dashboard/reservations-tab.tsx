@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import styles from './reservations-tab.module.css'
 import { 
@@ -11,7 +11,7 @@ import {
 } from '@/lib/query/gym-query'
 import { useParams } from 'next/navigation'
 import { cn, formatTo24h } from '@/lib/utils'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, ArrowLeft } from 'lucide-react'
 
 const STATUS_OPTIONS = [
     { key: "", label: "Hamısı", color: "#4b5563" },
@@ -27,14 +27,14 @@ const ReservationsTab = () => {
     const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined)
     const [page, setPage] = useState(1)
     const [selectedReservationId, setSelectedReservationId] = useState<number | null>(null)
-    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
-    const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false)
     const [rejectionReason, setRejectionReason] = useState('')
     const [rejectionError, setRejectionError] = useState(false)
 
     // Dropdown states
     const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false)
-    const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false)
+    const [activeActionsDropdownId, setActiveActionsDropdownId] = useState<number | null>(null)
+    const [viewMode, setViewMode] = useState<'list' | 'detail'>('list')
+    const dropdownRef = useRef<HTMLDivElement | null>(null)
 
     const { data: stats } = useGymReservationStats(gymId as string)
     const { data: reservationsData, isLoading } = useGymReservations(gymId as string, {
@@ -46,48 +46,33 @@ const ReservationsTab = () => {
     const { data: detailData } = useReservationDetail(selectedReservationId)
     const updateStatusMutation = useUpdateReservationStatus()
 
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setActiveActionsDropdownId(null)
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [])
+
     const handleStatusFilter = (status: string | undefined) => {
         setStatusFilter(status)
         setPage(1)
         setIsStatusDropdownOpen(false)
     }
 
-    const handleOpenDetail = (id: number) => {
-        setSelectedReservationId(id)
-        setIsDetailModalOpen(true)
-    }
-
     const handleApprove = (id: number) => {
         updateStatusMutation.mutate({
             reservationId: id,
             status: 'APPROVED'
+        }, {
+            onSuccess: () => {
+                setActiveActionsDropdownId(null)
+            }
         })
-    }
-
-    const handleRejectClick = (id: number) => {
-        setSelectedReservationId(id)
-        setIsRejectionModalOpen(true)
-    }
-
-    const handleConfirmRejection = () => {
-        if (!rejectionReason.trim()) {
-            setRejectionError(true)
-            return
-        }
-        if (selectedReservationId) {
-            updateStatusMutation.mutate({
-                reservationId: selectedReservationId,
-                status: 'REJECTED',
-                reason: rejectionReason
-            }, {
-                onSuccess: () => {
-                    setIsRejectionModalOpen(false)
-                    setRejectionReason('')
-                    setRejectionError(false)
-                    setIsDetailModalOpen(false)
-                }
-            })
-        }
     }
 
     const getStatusText = (status: string) => {
@@ -112,6 +97,167 @@ const ReservationsTab = () => {
 
     const totalPages = Math.ceil((reservationsData?.total || 0) / 10) || 1;
 
+    // Detailed Reservation View Mode
+    if (viewMode === 'detail' && detailData) {
+        const getDetailStatusBadge = (status: string) => {
+            switch (status) {
+                case 'PENDING': return <span className={`${styles.statusBadge} ${styles.statusPending}`}>Gözləmədə</span>
+                case 'APPROVED': return <span className={`${styles.statusBadge} ${styles.statusApproved}`}>Təsdiq edilib</span>
+                case 'CANCELLED': return <span className={`${styles.statusBadge} ${styles.statusCancelled}`}>Ləğv edilib</span>
+                case 'REJECTED': return <span className={`${styles.statusBadge} ${styles.statusRejected}`}>İmtina edilib</span>
+                default: return <span className={styles.statusBadge}>{status}</span>
+            }
+        }
+
+        const handleDetailApprove = () => {
+            updateStatusMutation.mutate({
+                reservationId: detailData.id,
+                status: 'APPROVED'
+            }, {
+                onSuccess: () => {
+                    setViewMode('list')
+                }
+            })
+        }
+
+        const handleDetailReject = () => {
+            if (!rejectionReason.trim()) {
+                setRejectionError(true)
+                return
+            }
+            updateStatusMutation.mutate({
+                reservationId: detailData.id,
+                status: 'REJECTED',
+                reason: rejectionReason
+            }, {
+                onSuccess: () => {
+                    setRejectionReason('')
+                    setRejectionError(false)
+                    setViewMode('list')
+                }
+            })
+        }
+
+        return (
+            <div className={styles.detailContainer}>
+                {/* Back button and title */}
+                <div className={styles.detailHeaderRow}>
+                    <button className={styles.backBtn} onClick={() => {
+                        setViewMode('list');
+                        setRejectionReason('');
+                        setRejectionError(false);
+                    }}>
+                        <ArrowLeft size={18} strokeWidth={2.5} />
+                        <span>Geri qayıt</span>
+                    </button>
+                    <div className={styles.detailTitle}>Rezervasiya detallı</div>
+                </div>
+
+                <div className={styles.detailCardParent}>
+                    {/* User profile / basic info header card */}
+                    <div className={styles.detailCard}>
+                        <div className={styles.customerHeader}>
+                            <div className={styles.customerNameSection}>
+                                <div className={styles.customerName}>{detailData.userFullName}</div>
+                                {getDetailStatusBadge(detailData.status)}
+                            </div>
+                        </div>
+
+                        <div className={styles.metaInfoGrid}>
+                            <div className={styles.metaInfoItem}>
+                                <span className={styles.metaLabel}>User ID:</span>
+                                <span className={styles.metaValue}>{String(detailData.userId).padStart(7, '0')}</span>
+                            </div>
+                            <div className={styles.metaInfoItem}>
+                                <span className={styles.metaLabel}>Qeydiyyat tarixi:</span>
+                                <span className={styles.metaValue}>{detailData.regDate || 'N/A'}</span>
+                            </div>
+                            <div className={styles.metaInfoItem}>
+                                <span className={styles.metaLabel}>Platforma:</span>
+                                <span className={styles.metaValue}>{detailData.platform === 'N/A' ? 'İOS' : detailData.platform}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Personal & Lesson Info Grid */}
+                    <div className={styles.detailGrid2}>
+                        {/* Personal info card */}
+                        <div className={styles.detailCard}>
+                            <div className={styles.detailCardTitle}>Şəxsi məlumatlar</div>
+                            <div className="flex flex-col gap-4">
+                                <div className="flex justify-between items-center py-1 border-b border-[#f3f4f6]">
+                                    <span className="text-[13px] text-slate-500 font-medium">Telefon nömrəsi:</span>
+                                    <span className="text-[14px] text-slate-800 font-bold">{detailData.userPhone || 'N/A'}</span>
+                                </div>
+                                <div className="flex justify-between items-center py-1 border-b border-[#f3f4f6]">
+                                    <span className="text-[13px] text-slate-500 font-medium">Email:</span>
+                                    <span className="text-[14px] text-slate-800 font-bold">{detailData.userEmail || 'N/A'}</span>
+                                </div>
+                                <div className="flex justify-between items-center py-1 border-b border-[#f3f4f6]">
+                                    <span className="text-[13px] text-slate-500 font-medium">Doğum tarixi:</span>
+                                    <span className="text-[14px] text-slate-800 font-bold">{detailData.birthDate || 'N/A'}</span>
+                                </div>
+                                <div className="flex justify-between items-center py-1 border-b border-[#f3f4f6]">
+                                    <span className="text-[13px] text-slate-500 font-medium">Məşqçi:</span>
+                                    <span className="text-[14px] text-slate-800 font-bold">{detailData.trainerName || 'N/A'}</span>
+                                </div>
+                                <div className="flex justify-between items-center py-1 border-b border-[#f3f4f6]">
+                                    <span className="text-[13px] text-slate-500 font-medium">Növ:</span>
+                                    <span className="text-[14px] text-slate-800 font-bold">{detailData.lessonType || 'N/A'}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Action Panel for rejection/approval */}
+                        {detailData.status === 'PENDING' && (
+                            <div className={styles.actionPanel}>
+                                <div className={styles.actionTitle}>Imtina səbəbi qeyd olunmalıdır</div>
+                                <textarea
+                                    id="rejectionReasonTextarea"
+                                    className={cn(styles.reasonArea, rejectionError && "border-red-500")}
+                                    placeholder="İmtina səbəbini bura qeyd edin..."
+                                    value={rejectionReason}
+                                    onChange={(e) => {
+                                        setRejectionReason(e.target.value)
+                                        if (e.target.value.trim()) setRejectionError(false)
+                                    }}
+                                />
+                                {rejectionError && <span className={styles.errorText}>Zəhmət olmasa imtina səbəbini qeyd edin</span>}
+
+                                <div className={styles.actionButtonRow}>
+                                    <button className={styles.actionRejectBtn} onClick={handleDetailReject}>
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                        <span>İmtina</span>
+                                    </button>
+                                    <button className={styles.actionApproveBtn} onClick={handleDetailApprove}>
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                        <span>Təsdiq et</span>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* If status is already REJECTED or CANCELLED, show the saved reason */}
+                        {(detailData.status === 'REJECTED' || detailData.status === 'CANCELLED') && detailData.cancelReasonText && (
+                            <div className={styles.detailCard}>
+                                <div className={styles.detailCardTitle} style={{ color: '#c9373a', borderBottomColor: '#fee2e2' }}>Ləğv etmə səbəbi</div>
+                                <p className="text-[15px] font-bold text-slate-800 leading-relaxed bg-red-50/50 p-4 rounded-lg border border-red-100">
+                                    {detailData.cancelReasonText}
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    // Reservation List View Mode
     return (
         <div className={styles.container}>
             {/* Header / Stats */}
@@ -231,12 +377,73 @@ const ReservationsTab = () => {
                                 <div className={styles.adSoyadContainer}>
                                     <div className={styles.mkanAxtar}>{res.trainerName}</div>
                                 </div>
-                                <div className={styles.moreWrapper} onClick={() => handleOpenDetail(res.id)}>
-                                    <div className={styles.moreWrapper}>
+                                <div className="relative">
+                                    <div className={styles.moreWrapper} onClick={(e) => {
+                                        e.stopPropagation();
+                                        setActiveActionsDropdownId(activeActionsDropdownId === res.id ? null : res.id);
+                                    }}>
                                         <div className={styles.more}>
                                             <Image src="/more.svg" width={24} height={24} alt="More" className={styles.vuesaxlinearmoreIcon} />
                                         </div>
                                     </div>
+                                    {activeActionsDropdownId === res.id && (
+                                        <div ref={dropdownRef} className={styles.popoverMenu} onClick={(e) => e.stopPropagation()}>
+                                            <button className={styles.popoverBtn} onClick={() => {
+                                                setSelectedReservationId(res.id);
+                                                setViewMode('detail');
+                                                setActiveActionsDropdownId(null);
+                                            }}>
+                                                <div className={styles.popoverFrameParent}>
+                                                    <div className={styles.popoverEyeWrapper}>
+                                                        <div className={styles.popoverEye}>
+                                                            <div className={styles.popoverEye2}>
+                                                                <svg className={styles.popoverVectorIcon} width="15" height="10" viewBox="0 0 15 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                    <path d="M7.5 0.5C4.0625 0.5 1.15625 2.58125 0 5.5C1.15625 8.41875 4.0625 10.5 7.5 10.5C10.9375 10.5 13.8438 8.41875 15 5.5C13.8438 2.58125 10.9375 0.5 7.5 0.5ZM7.5 8.83333C5.65625 8.83333 4.16667 7.34375 4.16667 5.5C4.16667 3.65625 5.65625 2.16667 7.5 2.16667C9.34375 2.16667 10.8333 3.65625 10.8333 5.5C10.8333 7.34375 9.34375 8.83333 7.5 8.83333ZM7.5 3.5C6.39583 3.5 5.5 4.39583 5.5 5.5C5.5 6.60417 6.39583 7.5 7.5 7.5C8.60417 7.5 9.5 6.60417 9.5 5.5C9.5 4.39583 8.60417 3.5 7.5 3.5Z" fill="#364153"/>
+                                                                </svg>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className={styles.popoverBax}>Bax</div>
+                                                </div>
+                                            </button>
+                                            <button className={styles.popoverBtn2} onClick={() => {
+                                                handleApprove(res.id);
+                                                setActiveActionsDropdownId(null);
+                                            }}>
+                                                <div className={styles.popoverCheckWrapper}>
+                                                    <div className={styles.popoverEye}>
+                                                        <div className={styles.popoverEye2}>
+                                                            <svg className={styles.popoverVectorIcon2} width="13" height="10" viewBox="0 0 13 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                <path d="M1.5 5L4.5 8L11.5 1.5" stroke="#364153" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                            </svg>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className={styles.popoverTsdiqEt}>Təsdiq et</div>
+                                            </button>
+                                            <button className={styles.popoverBtn3} onClick={() => {
+                                                setSelectedReservationId(res.id);
+                                                setViewMode('detail');
+                                                setActiveActionsDropdownId(null);
+                                                setTimeout(() => {
+                                                    const textarea = document.getElementById('rejectionReasonTextarea');
+                                                    if (textarea) textarea.focus();
+                                                }, 150);
+                                            }}>
+                                                <div className={styles.popoverCheckWrapper}>
+                                                    <div className={styles.popoverEye}>
+                                                        <div className={styles.popoverEye2}>
+                                                            <svg className={styles.popoverVectorIcon3} width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                <path d="M1 1L9 9M9 1L1 9" stroke="#364153" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                            </svg>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className={styles.popoverTsdiqEt}>İmtina et</div>
+                                            </button>
+                                            <div className={styles.popoverLine} />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             {(res.status === 'REJECTED' || res.status === 'CANCELLED') && res.reason && (
@@ -260,7 +467,6 @@ const ReservationsTab = () => {
             {/* Pagination Section */}
             {totalPages > 1 && (
                 <div className="flex items-center justify-center gap-[18px] mt-8 select-none">
-                {/* Page 1 */}
                 <button 
                     onClick={() => setPage(1)}
                     className={cn(
@@ -271,7 +477,6 @@ const ReservationsTab = () => {
                     1
                 </button>
                 
-                {/* Page 2 */}
                 {totalPages >= 2 && (
                     <button 
                     onClick={() => setPage(2)}
@@ -284,7 +489,6 @@ const ReservationsTab = () => {
                     </button>
                 )}
 
-                {/* Page 3 */}
                 {totalPages >= 3 && (
                     <button 
                     onClick={() => setPage(3)}
@@ -297,7 +501,6 @@ const ReservationsTab = () => {
                     </button>
                 )}
 
-                {/* Page 4 */}
                 {totalPages >= 4 && (
                     <button 
                     onClick={() => setPage(4)}
@@ -310,7 +513,6 @@ const ReservationsTab = () => {
                     </button>
                 )}
 
-                {/* Ellipsis */}
                 {totalPages > 5 && (
                     <div className="h-8 w-8 rounded bg-white border border-[#ececed] flex items-center justify-center gap-[1px]">
                     <div className="h-[3px] w-[3px] rounded-full bg-black" />
@@ -319,7 +521,6 @@ const ReservationsTab = () => {
                     </div>
                 )}
 
-                {/* Last Page */}
                 {totalPages > 4 && (
                     <button 
                     onClick={() => setPage(totalPages)}
@@ -331,91 +532,6 @@ const ReservationsTab = () => {
                     {totalPages}
                     </button>
                 )}
-                </div>
-            )}
-
-            {/* Detail Modal */}
-            {isDetailModalOpen && detailData && (
-                <div className={styles.modalOverlay}>
-                    <div className={styles.modalContent}>
-                        <div className={styles.modalHeader}>
-                            <h2>Rezervasiya Detalları</h2>
-                            <button className={styles.closeBtn} onClick={() => setIsDetailModalOpen(false)}>
-                                <Image src="/close.svg" width={24} height={24} alt="Close" />
-                            </button>
-                        </div>
-                        
-                        <div className={styles.modalBody}>
-                            <div className={styles.detailGrid}>
-                                <div className={styles.detailGroup}>
-                                    <label>Müştəri</label>
-                                    <div>{detailData.userFullName}</div>
-                                </div>
-                                <div className={styles.detailGroup}>
-                                    <label>Telefon</label>
-                                    <div>{detailData.userPhone}</div>
-                                </div>
-                                <div className={styles.detailGroup}>
-                                    <label>E-poçt</label>
-                                    <div>{detailData.userEmail}</div>
-                                </div>
-                                <div className={styles.detailGroup}>
-                                     <label>Tarix / Saat</label>
-                                     <div>{detailData.date} | {formatTo24h(detailData.timeRange)}</div>
-                                 </div>
-                                <div className={styles.detailGroup}>
-                                    <label>Məşqçi</label>
-                                    <div>{detailData.trainerName}</div>
-                                </div>
-                                <div className={styles.detailGroup}>
-                                    <label>Dərs növü</label>
-                                    <div>{detailData.lessonType}</div>
-                                </div>
-                            </div>
-
-                            {detailData.cancelReason && (
-                                <div className={styles.reasonBox}>
-                                    <label>İmtina səbəbi:</label>
-                                    <p>{detailData.cancelReason}</p>
-                                </div>
-                            )}
-
-                            {detailData.status === 'PENDING' && (
-                                <div className={styles.modalActions}>
-                                    <button className={styles.approveBtn} onClick={() => handleApprove(detailData.id)}>
-                                        Təsdiqlə
-                                    </button>
-                                    <button className={styles.rejectBtn} onClick={() => handleRejectClick(detailData.id)}>
-                                        İmtina et
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Rejection Modal */}
-            {isRejectionModalOpen && (
-                <div className={styles.modalOverlay}>
-                    <div className={styles.rejectionModal}>
-                        <h3>İmtina səbəbi</h3>
-                        <p>Zəhmət olmasa imtina səbəbini qeyd edin</p>
-                        <textarea 
-                            className={`${styles.reasonInput} ${rejectionError ? styles.inputError : ''}`}
-                            placeholder="Səbəbi bura yazın..."
-                            value={rejectionReason}
-                            onChange={(e) => {
-                                setRejectionReason(e.target.value)
-                                if (e.target.value.trim()) setRejectionError(false)
-                            }}
-                        />
-                        {rejectionError && <span className={styles.errorText}>Səbəb qeyd edilməlidir</span>}
-                        <div className={styles.rejectionActions}>
-                            <button className={styles.cancelBtn} onClick={() => setIsRejectionModalOpen(false)}>Ləğv et</button>
-                            <button className={styles.confirmRejectBtn} onClick={handleConfirmRejection}>Təsdiqlə</button>
-                        </div>
-                    </div>
                 </div>
             )}
         </div>
