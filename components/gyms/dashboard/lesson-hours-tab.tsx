@@ -13,7 +13,7 @@ import { useParams } from 'next/navigation'
 import { AddLessonHourModal } from './modals/add-lesson-hour-modal'
 import { EditGymRulesModal } from './modals/edit-gym-rules-modal'
 import { ConfirmDeleteModal } from '../modals/confirm-delete-modal'
-import { formatTo24h } from '@/lib/utils'
+import { formatTo24h, cn } from '@/lib/utils'
 
 const LessonHoursTab = () => {
     const { id: gymId } = useParams()
