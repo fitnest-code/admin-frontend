@@ -8,10 +8,12 @@ import { useGoals, IGoal } from "@/lib/query/goal-query";
 import GoalModal, { GoalFormData } from "./modals/goal-modal";
 import { SuccessAnimationModal } from "../ui/success-animation-modal";
 import { ConfirmDeleteModal } from "../gyms/modals/confirm-delete-modal";
-import az from "@/lib/i18n/locales/az";
+import { useI18nStore, useT } from "@/lib/i18n";
 
 export default function GoalsMain() {
-  const { goals, isLoading, createGoal, updateGoal, deleteGoal } = useGoals("AZ");
+  const t = useT();
+  const selectedLang = useI18nStore((s) => s.locale);
+  const { goals, isLoading, createGoal, updateGoal, deleteGoal } = useGoals(selectedLang);
   const [search, setSearch] = useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -25,8 +27,6 @@ export default function GoalsMain() {
     message: "",
     type: "success",
   });
-
-  const t = az;
 
   const filteredGoals = goals?.filter(
     (g: IGoal) =>
