@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json(
       {
         access_token: parsed.accessToken,
+        refresh_token: parsed.refreshToken,
         user: parsed.user,
       },
       { status: 200 },
