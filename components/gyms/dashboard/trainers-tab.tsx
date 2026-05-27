@@ -4,13 +4,68 @@ import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import { AddTrainerModal } from "../modals/add-trainer-modal";
 import { TrainerDetailsModal } from "../modals/trainer-details-modal";
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useGymStore } from "@/lib/store/gym-store";
 import { useGymTrainers, useDeleteTrainer } from "@/lib/query/gym-query";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ConfirmDeleteModal } from "../modals/confirm-delete-modal";
 import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
+import { useI18nStore } from "@/lib/i18n";
+
+const LOCAL_TRANSLATIONS: Record<string, Record<string, string>> = {
+  AZ: {
+    errorOccurred: "Xəta baş verdi",
+    searchPlaceholder: "Ad/Soyad , Zal , Telefon üzrə axtarış.....",
+    addTrainer: "Məşqçi əlavə et",
+    loading: "Məşqçilər yüklənir...",
+    noTrainers: "Hələ ki, məşqçi yoxdur",
+    noTrainersHint: "Yeni məşqçi əlavə etmək üçün yuxarıdakı düyməni sıxın",
+    nameSurname: "Ad / Soyad",
+    phone: "Telefon",
+    email: "Email",
+    details: "Ətraflı",
+    unknown: "Bilinmir",
+    trainer: "Məşqçi",
+    viewDetails: "Məlumatlara bax",
+    deleteTrainer: "Məşqçini sil",
+    noTrainerFound: "Məşqçi tapılmadı",
+  },
+  EN: {
+    errorOccurred: "An error occurred",
+    searchPlaceholder: "Search by Name/Surname, Gym, Phone.....",
+    addTrainer: "Add Trainer",
+    loading: "Loading trainers...",
+    noTrainers: "No trainers yet",
+    noTrainersHint: "Click the button above to add a new trainer",
+    nameSurname: "Name / Surname",
+    phone: "Phone",
+    email: "Email",
+    details: "Details",
+    unknown: "Unknown",
+    trainer: "Trainer",
+    viewDetails: "View details",
+    deleteTrainer: "Delete trainer",
+    noTrainerFound: "No trainer found",
+  },
+  RU: {
+    errorOccurred: "Произошла ошибка",
+    searchPlaceholder: "Поиск по имени/фамилии, залу, телефону.....",
+    addTrainer: "Добавить тренера",
+    loading: "Загрузка тренеров...",
+    noTrainers: "Тренеров пока нет",
+    noTrainersHint: "Нажмите кнопку выше, чтобы добавить нового тренера",
+    nameSurname: "Имя / Фамилия",
+    phone: "Телефон",
+    email: "Email",
+    details: "Подробнее",
+    unknown: "Неизвестно",
+    trainer: "Тренер",
+    viewDetails: "Посмотреть данные",
+    deleteTrainer: "Удалить тренера",
+    noTrainerFound: "Тренер не найден",
+  },
+};
 
 export function TrainersTab() {
   const [showAdd, setShowAdd] = useState(false);
@@ -21,6 +76,9 @@ export function TrainersTab() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const pageSize = 10;
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const locale = useI18nStore((s) => s.locale);
+  const lt = LOCAL_TRANSLATIONS[locale] || LOCAL_TRANSLATIONS.AZ;
 
   const { gymId } = useGymStore();
 
@@ -49,7 +107,7 @@ export function TrainersTab() {
         setShowSuccessModal(true);
       },
       onError: (err: any) => {
-        toast.error(err?.message || "Xəta baş verdi");
+        toast.error(err?.message || lt.errorOccurred);
       }
     });
     setOpenMenuId(null);
@@ -66,7 +124,7 @@ export function TrainersTab() {
           <Image src="/search.svg" width={20} height={20} alt="search" className="shrink-0 opacity-50" />
           <input
             type="text"
-            placeholder="Ad/Soyad , Zal , Telefon üzrə axtarış....."
+            placeholder={lt.searchPlaceholder}
             className="flex-1 bg-transparent text-[13px] text-black outline-none placeholder:text-[#94979c]"
           />
         </div>
@@ -75,7 +133,7 @@ export function TrainersTab() {
           onClick={() => setShowAdd(true)}
           className="h-10 w-full lg:w-[190px] flex items-center justify-center gap-3 bg-[#00B4CC] text-white px-5 rounded-lg text-sm font-medium hover:bg-[#009DB3] transition-all shadow-sm active:scale-[0.98]"
         >
-          <span className="leading-[24px]">Məşqçi əlavə et</span>
+          <span className="leading-[24px]">{lt.addTrainer}</span>
           <div className="h-5 w-5 relative">
             <Image src="/trainer-add.svg" width={20} height={20} alt="plus" />
           </div>
@@ -86,7 +144,7 @@ export function TrainersTab() {
       <div className="w-full rounded-[12px] bg-white border border-[#ececed] min-h-[350px] flex flex-col shadow-sm">
         {apiLoading ? (
           <div className="flex-1 py-20 flex justify-center items-center text-slate-400">
-            <Loader2 className="animate-spin mr-2" /> Məşqçilər yüklənir...
+            <Loader2 className="animate-spin mr-2" /> {lt.loading}
           </div>
         ) : trainers.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center p-10 gap-2 text-center font-sans">
@@ -94,10 +152,10 @@ export function TrainersTab() {
               <Image src="/no-trainer.svg" fill className="opacity-20 object-contain" alt="No Trainer" />
             </div>
             <div className="self-stretch text-[16px] leading-[24px] font-medium text-[#6a7282]">
-              Hələ ki, məşqçi yoxdur
+              {lt.noTrainers}
             </div>
             <div className="self-stretch text-[14px] leading-[18px] text-[#99a1af]">
-              Yeni məşqçi əlavə etmək üçün yuxarıdakı düyməni sıxın
+              {lt.noTrainersHint}
             </div>
           </div>
         ) : (
@@ -106,10 +164,10 @@ export function TrainersTab() {
               {/* Header */}
               <thead>
                 <tr className="bg-[rgba(0,180,204,0.1)] h-[48px] text-[14px] font-bold text-black font-sans">
-                  <th className="border-y border-l border-[#ececed] rounded-tl-[12px] pl-[84px] text-left whitespace-nowrap">Ad / Soyad</th>
-                  <th className="border-y border-[#ececed] px-10 text-left whitespace-nowrap">Telefon</th>
-                  <th className="border-y border-[#ececed] px-10 text-left whitespace-nowrap">Email</th>
-                  <th className="border-y border-r border-[#ececed] rounded-tr-[12px] px-10 text-center whitespace-nowrap">Ətraflı</th>
+                  <th className="border-y border-l border-[#ececed] rounded-tl-[12px] pl-[84px] text-left whitespace-nowrap">{lt.nameSurname}</th>
+                  <th className="border-y border-[#ececed] px-10 text-left whitespace-nowrap">{lt.phone}</th>
+                  <th className="border-y border-[#ececed] px-10 text-left whitespace-nowrap">{lt.email}</th>
+                  <th className="border-y border-r border-[#ececed] rounded-tr-[12px] px-10 text-center whitespace-nowrap">{lt.details}</th>
                 </tr>
               </thead>
 
@@ -117,12 +175,12 @@ export function TrainersTab() {
               <tbody className="bg-white">
                 {trainers.length > 0 ? (
                   trainers.map((t: any, i: number) => {
-                    const firstName = t.name || t.firstName || "Bilinmir";
+                    const firstName = t.name || t.firstName || lt.unknown;
                     const lastName = t.surname || t.lastName || "";
                     const pictureUrl = t.picture || t.photo;
                     const email = t.email || "";
                     const phone = t.phone || "";
-                    const role = t.profession?.name || t.role || "Məşqçi";
+                    const role = t.profession?.name || t.role || lt.trainer;
                     const trainerUid = String(t.trainer_id || t.id || i);
                     
                     const fullPicUrl = pictureUrl 
@@ -197,7 +255,7 @@ export function TrainersTab() {
                                 className="w-full h-11 flex items-center px-4 hover:bg-slate-50 transition-colors gap-3 font-medium text-slate-700 whitespace-nowrap"
                               >
                                 <Image src="/Eye.png" width={18} height={18} alt="View" />
-                                <span>Məlumatlara bax</span>
+                                <span>{lt.viewDetails}</span>
                               </button>
                               <div className="h-px bg-slate-100 mx-2" />
                               <button
@@ -208,21 +266,21 @@ export function TrainersTab() {
                                 className="w-full h-11 flex items-center px-4 text-red-600 hover:bg-red-50 transition-colors gap-3 font-medium whitespace-nowrap"
                               >
                                 <Image src="/trash.png" width={18} height={18} alt="Delete" />
-                                <span>Məşqçini sil</span>
+                                <span>{lt.deleteTrainer}</span>
                               </button>
                             </div>
                           )}
                         </div>
                       </td>
                     </tr>
-                  );
-                })
+                    );
+                  })
                 ) : (
                   <tr>
                     <td colSpan={4} className="h-[200px] text-center border-b border-x border-[#ececed] rounded-b-[12px]">
                       <div className="flex flex-col items-center justify-center gap-2 text-slate-400">
                         <Loader2 className="w-8 h-8 animate-spin opacity-20" />
-                        <p className="text-[16px] font-medium">Məşqçi tapılmadı</p>
+                        <p className="text-[16px] font-medium">{lt.noTrainerFound}</p>
                       </div>
                     </td>
                   </tr>
@@ -314,7 +372,7 @@ export function TrainersTab() {
       {showDetails && <TrainerDetailsModal trainer={showDetails} onClose={() => setShowDetails(null)} />}
       {deleteTrainerId !== null && (
         <ConfirmDeleteModal
-          name={trainers.find((t: any) => (t.trainer_id || t.id) === deleteTrainerId)?.name || "Məşqçi"}
+          name={trainers.find((t: any) => (t.trainer_id || t.id) === deleteTrainerId)?.name || lt.trainer}
           onConfirm={handleDelete}
           onCancel={() => setDeleteTrainerId(null)}
           isLoading={isDeletingTrainer}

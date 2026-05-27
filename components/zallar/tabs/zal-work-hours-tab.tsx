@@ -8,6 +8,7 @@ import { AddClassTimeModal, ClassTimeData } from "../../gyms/modals/add-hours-mo
 import { IGymWorkHoursPayload, IWorkHour, IRestDay } from "@/lib/types/working-hours";
 import { cn } from "@/lib/utils";
 import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
+import { useI18nStore } from "@/lib/i18n";
 
 type GenderTab = "generalWorkHours" | "workHoursMan" | "workHoursWoman";
 
@@ -23,19 +24,64 @@ const BACKEND_DAY_MAP: Record<string, string> = {
   thursday: "Thursday", friday: "Friday", saturday: "Saturday", sunday: "Sunday",
 };
 
-const DAY_SHORT_LABELS = [
-  { key: "monday", label: "B.e" },
-  { key: "tuesday", label: "Ç.a" },
-  { key: "wednesday", label: "Ç" },
-  { key: "thursday", label: "C.a" },
-  { key: "friday", label: "C" },
-  { key: "saturday", label: "Ş" },
-  { key: "sunday", label: "B" },
-];
-
-const DAY_FULL_LABELS: Record<string, string> = {
-  monday: "Bazar ertəsi", tuesday: "Çərşənbə axşamı", wednesday: "Çərşənbə",
-  thursday: "Cümə axşamı", friday: "Cümə", saturday: "Şənbə", sunday: "Bazar"
+const LOCAL_TRANSLATIONS: Record<string, Record<string, string>> = {
+  AZ: {
+    title: "Zal iş saatları",
+    general: "Ümumi zal",
+    onlyMen: "Yalnız kişilər",
+    onlyWomen: "Yalnız qadınlar",
+    workHours: "İş saatları",
+    add: "Əlavə et",
+    noHours: "Bu zal üçün hələ iş saatı əlavə edilməyib",
+    restDay: "İstirahət günü",
+    restDayHint: "İstirahət günündə dərs saatları əlavə edilə bilməz",
+    save: "Yadda saxla",
+    loading: "İş saatları yüklənir...",
+    minOneHour: "Ən azı bir iş saatı əlavə edilməlidir",
+    successUpdate: "İş saatları uğurla yeniləndi!",
+    errorUpdate: "İş saatları məlumatları yanlışdır",
+    mon: "B.e", tue: "Ç.a", wed: "Ç", thu: "C.a", fri: "C", sat: "Ş", sun: "B",
+    monday: "Bazar ertəsi", tuesday: "Çərşənbə axşamı", wednesday: "Çərşənbə",
+    thursday: "Cümə axşamı", friday: "Cümə", saturday: "Şənbə", sunday: "Bazar"
+  },
+  EN: {
+    title: "Gym Working Hours",
+    general: "General Gym",
+    onlyMen: "Men Only",
+    onlyWomen: "Women Only",
+    workHours: "Working Hours",
+    add: "Add Time",
+    noHours: "No working hours have been added for this gym yet",
+    restDay: "Rest Day",
+    restDayHint: "Class hours cannot be added on a rest day",
+    save: "Save",
+    loading: "Loading working hours...",
+    minOneHour: "At least one working hour must be added",
+    successUpdate: "Working hours updated successfully!",
+    errorUpdate: "Working hours data is invalid",
+    mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun",
+    monday: "Monday", tuesday: "Tuesday", wednesday: "Wednesday",
+    thursday: "Thursday", friday: "Friday", saturday: "Saturday", sunday: "Sunday"
+  },
+  RU: {
+    title: "Часы работы зала",
+    general: "Общий зал",
+    onlyMen: "Только мужчины",
+    onlyWomen: "Только женщины",
+    workHours: "Часы работы",
+    add: "Добавить",
+    noHours: "Часы работы для этого зала еще не добавлены",
+    restDay: "Выходной день",
+    restDayHint: "Часы занятий не могут быть добавлены в выходной день",
+    save: "Сохранить",
+    loading: "Загрузка часов работы...",
+    minOneHour: "Необходимо добавить как минимум один рабочий час",
+    successUpdate: "Часы работы успешно обновлены!",
+    errorUpdate: "Данные часов работы недействительны",
+    mon: "Пн", tue: "Вт", wed: "Ср", thu: "Чт", fri: "Пт", sat: "Сб", sun: "Вс",
+    monday: "Понедельник", tuesday: "Вторник", wednesday: "Среда",
+    thursday: "Четверг", friday: "Пятница", saturday: "Суббота", sunday: "Воскресенье"
+  }
 };
 
 const DAYS_ORDER = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
@@ -62,32 +108,52 @@ const formatToHHmm = (timeVal: any): string => {
   return timeStr;
 };
 
-const formatDayGroup = (days: string[]) => {
-  const sorted = [...days].sort((a, b) => DAYS_ORDER.indexOf(a) - DAYS_ORDER.indexOf(b));
-  if (sorted.length === 0) return "";
-  if (sorted.length === 1) return DAY_FULL_LABELS[sorted[0]];
-  
-  const indices = sorted.map(d => DAYS_ORDER.indexOf(d));
-  let isConsecutive = true;
-  for (let i = 1; i < indices.length; i++) {
-    if (indices[i] !== indices[i - 1] + 1) {
-      isConsecutive = false;
-      break;
-    }
-  }
-  
-  if (isConsecutive) {
-    return `${DAY_FULL_LABELS[sorted[0]]} — ${DAY_FULL_LABELS[sorted[sorted.length - 1]]}`;
-  }
-  
-  return sorted.map(d => DAY_FULL_LABELS[d]).join(", ");
-};
-
 interface ZalWorkHoursTabProps {
   gymId: string | number;
 }
 
 export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
+  const selectedLang = useI18nStore((s) => s.locale) || "AZ";
+  const lt = LOCAL_TRANSLATIONS[selectedLang] || LOCAL_TRANSLATIONS.AZ;
+
+  const dayShortLabels = [
+    { key: "monday", label: lt.mon },
+    { key: "tuesday", label: lt.tue },
+    { key: "wednesday", label: lt.wed },
+    { key: "thursday", label: lt.thu },
+    { key: "friday", label: lt.fri },
+    { key: "saturday", label: lt.sat },
+    { key: "sunday", label: lt.sun },
+  ];
+
+  const dayFullLabels: Record<string, string> = {
+    monday: lt.monday, tuesday: lt.tuesday, wednesday: lt.wednesday,
+    thursday: lt.thursday, friday: lt.friday, saturday: lt.saturday, sunday: lt.sunday
+  };
+
+  const formatDayGroup = (days: string[]) => {
+    const sorted = [...days].sort((a, b) => DAYS_ORDER.indexOf(a) - DAYS_ORDER.indexOf(b));
+    if (sorted.length === 0) return "";
+    if (sorted.length === 1) return dayFullLabels[sorted[0]];
+    
+    const indices = sorted.map(d => DAYS_ORDER.indexOf(d));
+    let isConsecutive = true;
+    for (let i = 1; i < indices.length; i++) {
+      if (indices[i] !== indices[i - 1] + 1) {
+        isConsecutive = false;
+        break;
+      }
+    }
+    
+    if (isConsecutive) {
+      return `${dayFullLabels[sorted[0]]} — ${dayFullLabels[sorted[sorted.length - 1]]}`;
+    }
+    
+    return sorted.map(d => dayFullLabels[d]).join(", ");
+  };
+
+  const ALL_DAY_KEYS = dayShortLabels.map(d => d.key);
+
   const { data: gymWorkHours, isLoading } = useGymWorkHours(gymId);
   const updateWorkHours = useUpdateGymWorkHours();
   const [activeTab, setActiveTab] = useState<GenderTab>("generalWorkHours");
@@ -132,7 +198,7 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
   const handleSave = async () => {
     const totalSlots = slots.generalWorkHours.length + slots.workHoursMan.length + slots.workHoursWoman.length;
     if (totalSlots === 0) {
-      setSuccessMessage("Ən azı bir iş saatı əlavə edilməlidir");
+      setSuccessMessage(lt.minOneHour);
       setModalType("error");
       setShowSuccessModal(true);
       return;
@@ -143,11 +209,11 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
     try {
       const payload = buildPayload(activeTabs);
       await updateWorkHours.mutateAsync({ gymId, payload });
-      setSuccessMessage("İş saatları uğurla yeniləndi!");
+      setSuccessMessage(lt.successUpdate);
       setModalType("success");
       setShowSuccessModal(true);
     } catch (error: any) {
-      const errMsg = error?.response?.data?.message || error?.message || "İş saatları məlumatları yanlışdır";
+      const errMsg = error?.response?.data?.message || error?.message || lt.errorUpdate;
       setSuccessMessage(errMsg);
       setModalType("error");
       setShowSuccessModal(true);
@@ -155,7 +221,6 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
   };
 
   const isSaving = updateWorkHours.isPending;
-  const ALL_DAY_KEYS = DAY_SHORT_LABELS.map(d => d.key);
 
   const buildPayload = (activeTabs: GenderTab[]): IGymWorkHoursPayload => {
     const mapToWorkHour = (key: GenderTab): IWorkHour[] => {
@@ -207,7 +272,7 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
     return (
       <div className="flex justify-center items-center py-24 text-slate-400">
         <Loader2 className="animate-spin text-[#00B4CC] mr-2" />
-        <span>İş saatları yüklənir...</span>
+        <span>{lt.loading}</span>
       </div>
     );
   }
@@ -276,18 +341,18 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
         
         {/* Header & Title */}
         <div className="border-b border-[#ECECED] flex items-center justify-between pb-3">
-          <h2 className="text-[20px] font-semibold text-black leading-[30px]">Zal iş saatları</h2>
+          <h2 className="text-[20px] font-semibold text-black leading-[30px]">{lt.title}</h2>
         </div>
-
+ 
         {/* Main Content Area */}
         <div className="flex flex-col gap-7 text-base">
           
           {/* Gender Tabs */}
           <div className="flex w-full items-center justify-between gap-3 sm:gap-5 overflow-x-auto pb-2 sm:pb-0">
             {[
-              { id: "generalWorkHours" as GenderTab, label: "Ümumi zal" },
-              { id: "workHoursMan" as GenderTab, label: "Yalnız kişilər" },
-              { id: "workHoursWoman" as GenderTab, label: "Yalnız qadınlar" },
+              { id: "generalWorkHours" as GenderTab, label: lt.general },
+              { id: "workHoursMan" as GenderTab, label: lt.onlyMen },
+              { id: "workHoursWoman" as GenderTab, label: lt.onlyWomen },
             ].map((tab) => {
               const isActive = activeTab === tab.id;
               return (
@@ -307,10 +372,10 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
               )
             })}
           </div>
-
+ 
           {/* Week Days Indicators (with checkboxes) */}
           <div className="flex w-full items-center justify-between gap-2 sm:gap-[18.5px] text-[14px] text-center overflow-x-auto pb-2 sm:pb-0">
-            {DAY_SHORT_LABELS.map((day) => {
+            {dayShortLabels.map((day) => {
               const hasSlot = activeDays.has(day.key);
               return (
                 <div 
@@ -332,11 +397,11 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
               );
             })}
           </div>
-
+ 
           {/* Working Hours Header & Add Button */}
           <div className="flex items-center justify-between h-[47px] mt-2">
             <div className="flex flex-col items-start">
-              <h3 className="text-[18px] font-semibold tracking-[-0.44px] leading-[27px]">İş saatları</h3>
+              <h3 className="text-[18px] font-semibold tracking-[-0.44px] leading-[27px]">{lt.workHours}</h3>
             </div>
             <button 
               type="button"
@@ -344,16 +409,16 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
               className="h-[35px] w-[140px] sm:w-[176px] rounded-[4px] bg-[#00B4CC] flex items-center justify-center px-2 py-1 gap-2 sm:gap-3 text-[14px] font-medium text-white hover:bg-[#009DB3] transition-colors shadow-sm"
             >
               <Plus size={16} />
-              <span className="tracking-[-0.15px] leading-[20px]">Əlavə et</span>
+              <span className="tracking-[-0.15px] leading-[20px]">{lt.add}</span>
             </button>
           </div>
-
+ 
           {/* Time Slots List */}
           <div className="flex flex-col gap-4">
             {groupedConfigs.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-slate-300 border-2 border-dashed border-slate-100 rounded-[24px] bg-slate-50/50">
                 <Clock size={32} className="mb-3 opacity-20" />
-                <p className="text-sm font-medium italic text-slate-400">Bu zal üçün hələ iş saatı əlavə edilməyib</p>
+                <p className="text-sm font-medium italic text-slate-400">{lt.noHours}</p>
               </div>
             ) : (
               groupedConfigs.map((group, groupIdx) => (
@@ -414,13 +479,13 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
           </div>
         </div>
       </div>
-
+ 
       {/* Rest Days Section */}
       <div className="bg-white rounded-[14px] pt-[25px] pb-[1px] flex flex-col gap-4 font-sans text-[14px]">
-        <h3 className="text-[18px] font-semibold tracking-[-0.44px] leading-[28px]">İstirahət günü</h3>
+        <h3 className="text-[18px] font-semibold tracking-[-0.44px] leading-[28px]">{lt.restDay}</h3>
         
         <div className="flex w-full items-center justify-between gap-2 sm:gap-3 relative overflow-x-auto pb-2 sm:pb-0 pointer-events-none">
-          {DAY_SHORT_LABELS.map((day) => {
+          {dayShortLabels.map((day) => {
             const isRest = computedRestDays.has(day.key);
             return (
               <div
@@ -437,10 +502,10 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
             );
           })}
         </div>
-
-        <p className="text-[#6A7282] leading-[20px] tracking-[-0.15px]">İstirahət günündə dərs saatları əlavə edilə bilməz</p>
+ 
+        <p className="text-[#6A7282] leading-[20px] tracking-[-0.15px]">{lt.restDayHint}</p>
       </div>
-
+ 
       {/* Footer Save Button */}
       <div className="flex items-center justify-end gap-3 mt-4">
         <button
@@ -449,7 +514,7 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
           disabled={isSaving}
           className="w-full sm:w-[200px] h-[48px] rounded-[10px] bg-[#00B4CC] text-white flex items-center justify-center px-4 py-2 hover:bg-[#009DB3] transition-colors disabled:opacity-50 font-semibold"
         >
-          {isSaving ? <Loader2 className="animate-spin" size={20} /> : "Yadda saxla"}
+          {isSaving ? <Loader2 className="animate-spin" size={20} /> : lt.save}
         </button>
       </div>
 

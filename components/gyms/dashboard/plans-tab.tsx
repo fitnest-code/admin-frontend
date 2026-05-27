@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { ServiceSelectorModal } from "../modals/service-selector-modal";
 import { ConfirmDeleteModal } from "../modals/confirm-delete-modal";
 import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
-import { useT } from "@/lib/i18n";
+import { useT, useI18nStore } from "@/lib/i18n";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSubscriptionPackages } from "@/lib/query/use-subscription-packages";
 
@@ -38,8 +38,25 @@ const DEFAULT_SERVICES = [
   { id: 4, name: "Dəsmal" },
 ];
 
+const LOCAL_TRANSLATIONS: Record<string, Record<string, string>> = {
+  AZ: {
+    serviceIcon: "Xidmət ikonu",
+    selectImage: "Şəkil seçin",
+  },
+  EN: {
+    serviceIcon: "Service icon",
+    selectImage: "Select image",
+  },
+  RU: {
+    serviceIcon: "Иконка услуги",
+    selectImage: "Выберите изображение",
+  },
+};
+
 export function PlansTab({ gym }: { gym?: any }) {
   const t = useT();
+  const locale = useI18nStore((s) => s.locale);
+  const lt = LOCAL_TRANSLATIONS[locale] || LOCAL_TRANSLATIONS.AZ;
   const queryClient = useQueryClient();
   const { gymId } = useGymStore();
   const { data: adminSubs, isLoading: subsLoading } = useGymSubscriptionsAdmin(gymId);
@@ -341,10 +358,10 @@ export function PlansTab({ gym }: { gym?: any }) {
                 </div>
               </div>
               <div className="flex flex-col gap-2">
-                <label className="text-[14px] leading-[20px]">Xidmət ikonu</label>
+                <label className="text-[14px] leading-[20px]">{lt.serviceIcon}</label>
                 <div className="h-[44px] flex items-center gap-3">
                   <label className="h-full px-4 rounded-lg border border-[#ececed] bg-[#fafafa] flex items-center justify-center text-xs font-semibold text-black/60 hover:bg-slate-100 transition-colors cursor-pointer whitespace-nowrap">
-                    Şəkil seçin
+                    {lt.selectImage}
                     <input
                       type="file"
                       accept="image/*"

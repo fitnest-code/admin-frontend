@@ -7,6 +7,7 @@ import { useGymDetailsAdmin, useUpdateGymDetails, useCategories } from "@/lib/qu
 import { useGetAddressByCoords } from "@/lib/query/location-query";
 import LocationPickerMap from "@/components/ui/location-picker-map";
 import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
+import { useI18nStore } from "@/lib/i18n";
 
 interface InfoTabProps {
   gymId?: number | string
@@ -18,6 +19,84 @@ const getImageUrl = (urlOrFsId: string | undefined | null) => {
   return `/api/v1/media/stream/${urlOrFsId}`;
 };
 
+const LOCAL_TRANSLATIONS: Record<string, Record<string, string>> = {
+  AZ: {
+    loading: "Yüklənir...",
+    dataNotFound: "Məlumat tapılmadı",
+    gymInfo: "Zal məlumatları",
+    category: "Kateqoriya",
+    select: "Seçin",
+    notSpecified: "Göstərilməyib",
+    gymName: "Zal adı",
+    about: "Haqqında",
+    gymPhotos: "Zal şəkilləri",
+    coverPhoto: "Cover Şəkil",
+    uploadCover: "Upload cover",
+    otherPhotos: "Digər şəkillər",
+    noImage: "Şəkil yoxdur",
+    namePlaceholder: "Ad (məs: SPA)",
+    contact: "Əlaqə",
+    phoneNumber: "Telefon nömrəsi",
+    email: "E-Poçt",
+    city: "Şəhər",
+    address: "Ünvan",
+    creationDate: "Yaradılma tarixi",
+    cancel: "Ləğv et",
+    save: "Yadda saxla",
+    successMessage: "Zal məlumatları uğurla yeniləndi!",
+  },
+  EN: {
+    loading: "Loading...",
+    dataNotFound: "Data not found",
+    gymInfo: "Gym Information",
+    category: "Category",
+    select: "Select",
+    notSpecified: "Not specified",
+    gymName: "Gym Name",
+    about: "About",
+    gymPhotos: "Gym Photos",
+    coverPhoto: "Cover Photo",
+    uploadCover: "Upload cover",
+    otherPhotos: "Other photos",
+    noImage: "No image",
+    namePlaceholder: "Name (e.g. SPA)",
+    contact: "Contact",
+    phoneNumber: "Phone number",
+    email: "Email",
+    city: "City",
+    address: "Address",
+    creationDate: "Creation date",
+    cancel: "Cancel",
+    save: "Save",
+    successMessage: "Gym information updated successfully!",
+  },
+  RU: {
+    loading: "Загрузка...",
+    dataNotFound: "Данные не найдены",
+    gymInfo: "Информация о зале",
+    category: "Категория",
+    select: "Выберите",
+    notSpecified: "Не указано",
+    gymName: "Название зала",
+    about: "О зале",
+    gymPhotos: "Фотографии зала",
+    coverPhoto: "Обложка",
+    uploadCover: "Загрузить обложку",
+    otherPhotos: "Другие фотографии",
+    noImage: "Нет изображения",
+    namePlaceholder: "Название (напр. SPA)",
+    contact: "Контакты",
+    phoneNumber: "Номер телефона",
+    email: "Email",
+    city: "Город",
+    address: "Адрес",
+    creationDate: "Дата создания",
+    cancel: "Отмена",
+    save: "Сохранить",
+    successMessage: "Информация о зале успешно обновлена!",
+  },
+};
+
 export function InfoTab({ gymId }: InfoTabProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -26,6 +105,9 @@ export function InfoTab({ gymId }: InfoTabProps) {
   const { mutate: updateGymInfo, isPending } = useUpdateGymDetails();
   const { data: categoriesData } = useCategories();
   
+  const locale = useI18nStore((s) => s.locale);
+  const lt = LOCAL_TRANSLATIONS[locale] || LOCAL_TRANSLATIONS.AZ;
+
   const [formData, setFormData] = useState({
     categoryId: 0,
     name: "",
@@ -136,8 +218,6 @@ export function InfoTab({ gymId }: InfoTabProps) {
     }
   }, [gymInfo]);
 
-
-
   // Sync reverse geocoding result to address field
   useEffect(() => {
     if (isEditing && isUpdatingFromCoords && !isAddressFetching && (revAddressData?.addressText || revAddressData?.city)) {
@@ -179,8 +259,8 @@ export function InfoTab({ gymId }: InfoTabProps) {
     });
   };
 
-  if (isLoading) return <div className="p-8 text-center text-muted-foreground">Yüklənir...</div>;
-  if (!gymInfo) return <div className="p-8 text-center text-muted-foreground">Məlumat tapılmadı</div>;
+  if (isLoading) return <div className="p-8 text-center text-muted-foreground">{lt.loading}</div>;
+  if (!gymInfo) return <div className="p-8 text-center text-muted-foreground">{lt.dataNotFound}</div>;
 
   return (
     <div className="w-full rounded-[12px] bg-white border border-[#ececed] flex flex-col items-start p-4 sm:p-5 gap-8 text-left text-sm text-foreground font-sans shadow-sm">
@@ -191,7 +271,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
       {/* Header */}
       <div className="self-stretch border-b border-[#ececed] flex items-center justify-between pb-3">
         <div className="flex items-center gap-3">
-          <div className="text-[18px] font-bold text-[#101828] font-sans tracking-tight">Zal məlumatları</div>
+          <div className="text-[18px] font-bold text-[#101828] font-sans tracking-tight">{lt.gymInfo}</div>
           <button 
             onClick={() => setIsEditing(!isEditing)}
             className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
@@ -206,7 +286,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
           
           {/* Kateqoriya */}
           <div className="self-stretch flex flex-col items-start gap-3">
-            <div className="self-stretch relative leading-[24px]">Kateqoriya</div>
+            <div className="self-stretch relative leading-[24px]">{lt.category}</div>
             <div className={cn(
               "self-stretch h-[44px] rounded-lg border flex items-center justify-between p-[0px_12px] text-sm transition-colors",
               isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
@@ -218,13 +298,13 @@ export function InfoTab({ gymId }: InfoTabProps) {
                   onChange={handleChange}
                   className="bg-transparent text-foreground outline-none w-full appearance-none h-full"
                 >
-                  <option value={0} disabled>Seçin</option>
+                  <option value={0} disabled>{lt.select}</option>
                   {categoriesData?.items?.map(cat => (
                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                   ))}
                 </select>
               ) : (
-                <span className="text-foreground">{gymInfo.categoryName || "Göstərilməyib"}</span>
+                <span className="text-foreground">{gymInfo.categoryName || lt.notSpecified}</span>
               )}
               {isEditing && <ChevronDown size={20} className="text-foreground pointer-events-none" />}
             </div>
@@ -232,7 +312,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
 
           {/* Zal adı */}
           <div className="flex flex-col items-start gap-3 w-full">
-            <div className="self-stretch relative leading-[24px]">Zal adı</div>
+            <div className="self-stretch relative leading-[24px]">{lt.gymName}</div>
             <div className={cn(
               "self-stretch h-[44px] rounded-lg border flex items-center p-[0px_12px] text-sm transition-colors",
               isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
@@ -250,7 +330,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
 
           {/* Haqqında */}
           <div className="self-stretch flex flex-col items-start gap-3">
-            <div className="self-stretch relative leading-[24px]">Haqqında</div>
+            <div className="self-stretch relative leading-[24px]">{lt.about}</div>
             <div className={cn(
               "self-stretch min-h-[80px] rounded-lg border flex flex-col items-start p-[8px_12px] text-sm transition-colors",
               isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
@@ -267,7 +347,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
 
           {/* Zal Şəkilləri Header */}
           <div className="self-stretch border-b border-[#ececed] flex items-center justify-between pb-1 mt-4">
-            <div className="relative leading-[30px] font-semibold text-lg sm:text-xl">Zal şəkilləri</div>
+            <div className="relative leading-[30px] font-semibold text-lg sm:text-xl">{lt.gymPhotos}</div>
           </div>
 
           {/* Images Section */}
@@ -276,7 +356,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
             {/* Cover Image */}
             <div className="self-stretch flex flex-col items-start gap-3">
               <div className="h-5 flex items-center">
-                <div className="relative leading-[24px] text-sm text-[#000]">Cover Şəkil</div>
+                <div className="relative leading-[24px] text-sm text-[#000]">{lt.coverPhoto}</div>
               </div>
               <div className="w-full sm:w-[444px] h-[252px] relative text-sm text-[#6a7282]">
                 <div className="absolute top-[264px] left-0 w-full h-5">
@@ -290,7 +370,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
                   <div className="absolute top-0 left-0 w-full h-full rounded-2xl border border-dashed border-[#99a1af] text-center text-[#4a5565] flex flex-col items-center justify-center gap-[30px] cursor-pointer hover:bg-slate-50 transition-colors">
                     {gymInfo.coverImageUrl && <img src={getImageUrl(gymInfo.coverImageUrl)} className="w-full h-full object-cover absolute inset-0 opacity-40 rounded-2xl" alt="cover" />}
                     <Upload size={40} className="relative z-10" />
-                    <div className="relative tracking-[-0.15px] leading-[20px] font-medium z-10">Upload cover</div>
+                    <div className="relative tracking-[-0.15px] leading-[20px] font-medium z-10">{lt.uploadCover}</div>
                   </div>
                 )}
               </div>
@@ -298,7 +378,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
 
             {/* Digər Şəkillər */}
             <div className="w-full h-5 relative mt-6">
-              <div className="absolute top-0 left-0 leading-[24px] text-sm">Digər şəkillər ( {gymInfo.rooms?.length || 0}/9)</div>
+              <div className="absolute top-0 left-0 leading-[24px] text-sm">{lt.otherPhotos} ( {gymInfo.rooms?.length || 0}/9)</div>
             </div>
 
             <div className="w-full flex items-start flex-wrap content-start gap-4 text-center text-sm text-[#4a5565]">
@@ -313,7 +393,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
                           alt="room" 
                         />
                       ) : (
-                        <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-xs">Şəkil yoxdur</div>
+                        <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-xs">{lt.noImage}</div>
                       )}
                       
                       {isEditing && (
@@ -351,7 +431,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
                     <div className="self-stretch h-8 rounded-lg bg-[#f9fafb] border border-[#e5e7eb] flex items-center p-[4px_12px]">
                       <input 
                         type="text" 
-                        placeholder="Ad (məs: SPA)" 
+                        placeholder={lt.namePlaceholder} 
                         className="bg-transparent outline-none w-full tracking-[-0.15px] placeholder:text-[#717182]" 
                       />
                     </div>
@@ -367,14 +447,14 @@ export function InfoTab({ gymId }: InfoTabProps) {
       {/* Əlaqə Group */}
       <div className="self-stretch flex flex-col items-start gap-[28px]">
         <div className="self-stretch border-b border-[#ececed] flex items-center justify-between pb-1">
-          <div className="relative leading-[30px] font-semibold text-lg sm:text-xl">Əlaqə</div>
+          <div className="relative leading-[30px] font-semibold text-lg sm:text-xl">{lt.contact}</div>
         </div>
 
         <div className="self-stretch flex flex-col items-start gap-5">
           <div className="self-stretch flex flex-col sm:flex-row items-center justify-between gap-5">
             {/* Telefon */}
             <div className="flex-1 w-full flex flex-col items-start gap-3">
-              <div className="self-stretch relative leading-[24px]">Telefon nömrəsi</div>
+              <div className="self-stretch relative leading-[24px]">{lt.phoneNumber}</div>
               <div className={cn(
                 "self-stretch h-[44px] rounded-lg border flex items-center p-[0px_12px] text-sm transition-colors relative",
                 isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
@@ -392,7 +472,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
             </div>
             {/* E-poçt */}
             <div className="flex-1 w-full flex flex-col items-start gap-3">
-              <div className="self-stretch relative leading-[24px]">E-Poçt</div>
+              <div className="self-stretch relative leading-[24px]">{lt.email}</div>
               <div className={cn(
                 "self-stretch h-[44px] rounded-lg border flex items-center p-[0px_12px] text-sm transition-colors",
                 isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
@@ -410,9 +490,9 @@ export function InfoTab({ gymId }: InfoTabProps) {
           </div>
 
           <div className="self-stretch flex flex-col sm:flex-row items-center justify-between gap-5">
-            {/* Şəhər (Not explicitly in Figma but exists in your form data) */}
+            {/* Şəhər */}
             <div className="flex-1 w-full flex flex-col items-start gap-3 relative">
-              <div className="self-stretch relative leading-[24px]">Şəhər</div>
+              <div className="self-stretch relative leading-[24px]">{lt.city}</div>
               <div className={cn(
                 "self-stretch h-[44px] rounded-lg border flex items-center p-[0px_12px] text-sm transition-colors relative",
                 isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
@@ -456,7 +536,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
 
             {/* Ünvan */}
             <div className="flex-1 w-full flex flex-col items-start gap-3 relative">
-              <div className="self-stretch relative leading-[24px]">Ünvan</div>
+              <div className="self-stretch relative leading-[24px]">{lt.address}</div>
               <div className={cn(
                 "self-stretch h-[44px] rounded-lg border flex items-center p-[0px_12px] text-sm transition-colors relative",
                 isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
@@ -499,7 +579,6 @@ export function InfoTab({ gymId }: InfoTabProps) {
             </div>
           </div>
 
-
           {/* Map */}
           <div className="self-stretch rounded-xl overflow-hidden border border-[#ececed] w-full mt-4">
             <LocationPickerMap
@@ -519,7 +598,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
       {/* Yaradılma tarixi */}
       <div className="self-stretch flex items-start text-sm">
         <div className="flex-1 flex flex-col items-start gap-2">
-          <div className="self-stretch relative leading-[20px]">Yaradılma tarixi</div>
+          <div className="self-stretch relative leading-[20px]">{lt.creationDate}</div>
           <div className="self-stretch h-[44px] rounded-lg bg-[#fafafa] border border-[#ececed] flex items-center p-[0px_12px] text-sm">
             <div className="relative leading-[24px] font-semibold">{gymInfo.createdAt || "---"}</div>
           </div>
@@ -549,7 +628,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
               }}
               className="h-[44px] px-8 rounded-lg border border-[#ececed] bg-white text-[14px] font-medium text-[#101828] hover:bg-slate-50 transition-colors"
             >
-              Ləğv et
+              {lt.cancel}
             </button>
             <button 
               onClick={handleSave}
@@ -559,7 +638,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
                 hasChanges ? "bg-[#00B4CC] hover:bg-[#009DB3]" : "bg-[#c1c1cc]"
               )}
             >
-              {isPending ? <Loader2 size={18} className="animate-spin" /> : "Yadda saxla"}
+              {isPending ? <Loader2 size={18} className="animate-spin" /> : lt.save}
             </button>
           </div>
         </div>
@@ -568,7 +647,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
       <SuccessAnimationModal
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
-        message="Zal məlumatları uğurla yeniləndi!"
+        message={lt.successMessage}
       />
     </div>
   );
