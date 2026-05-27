@@ -40,6 +40,64 @@ function pickForwardHeaders(
   return headers
 }
 
+function sniffContentType(buffer: Buffer, pathParts: string[]): string | null {
+  if (buffer.length === 0) return null
+
+  // 1. Check magic bytes for common image formats
+  if (buffer.length >= 4) {
+    // PNG: 89 50 4E 47
+    if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) {
+      return 'image/png'
+    }
+    // JPEG: FF D8 FF
+    if (buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF) {
+      return 'image/jpeg'
+    }
+    // GIF: 47 49 46 38 ('GIF8')
+    if (buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x38) {
+      return 'image/gif'
+    }
+    // WEBP: RIFF .... WEBP
+    if (buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46) {
+      if (buffer.length >= 12 && buffer[8] === 0x57 && buffer[9] === 0x45 && buffer[10] === 0x42 && buffer[11] === 0x50) {
+        return 'image/webp'
+      }
+    }
+  }
+
+  // 2. Check text prefix (HTML, SVG, JSON)
+  const textStart = buffer.slice(0, 500).toString('utf8').trim().toLowerCase()
+  
+  if (textStart.startsWith('<svg') || textStart.startsWith('<?xml') || textStart.includes('<svg')) {
+    return 'image/svg+xml'
+  }
+  if (textStart.startsWith('<!doctype html') || textStart.startsWith('<html')) {
+    return 'text/html'
+  }
+  if (textStart.startsWith('{') || textStart.startsWith('[')) {
+    return 'application/json'
+  }
+
+  // 3. Fallback based on extension
+  const lastPart = pathParts[pathParts.length - 1] || ''
+  if (lastPart.endsWith('.svg')) return 'image/svg+xml'
+  if (lastPart.endsWith('.png')) return 'image/png'
+  if (lastPart.endsWith('.jpg') || lastPart.endsWith('.jpeg')) return 'image/jpeg'
+  if (lastPart.endsWith('.gif')) return 'image/gif'
+  if (lastPart.endsWith('.webp')) return 'image/webp'
+  if (lastPart.endsWith('.json')) return 'application/json'
+
+  // 4. Fallback based on folder keywords
+  if (pathParts.includes('images') || pathParts.includes('image') || pathParts.includes('photo') || pathParts.includes('avatar') || pathParts.includes('cover')) {
+    if (textStart.startsWith('<') || textStart.includes('svg')) {
+      return 'image/svg+xml'
+    }
+    return 'image/png'
+  }
+
+  return null
+}
+
 async function forward(request: NextRequest, context: RouteContext) {
   try {
     assertAuthEnv()
@@ -99,8 +157,18 @@ async function forward(request: NextRequest, context: RouteContext) {
       responseHeaders.set('content-type', responseType)
     }
 
-    // Use backendResponse.body (ReadableStream) directly instead of .text() to avoid corrupting binary files like images
-    return new NextResponse(backendResponse.body, { 
+    // Read response body as buffer to prevent corruption and allow content-type sniffing
+    const arrayBuffer = await backendResponse.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+
+    if (!responseHeaders.has('content-type')) {
+      const sniffed = sniffContentType(buffer, path)
+      if (sniffed) {
+        responseHeaders.set('content-type', sniffed)
+      }
+    }
+
+    return new NextResponse(buffer, { 
       status, 
       headers: responseHeaders 
     })

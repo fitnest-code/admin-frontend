@@ -166,7 +166,7 @@ const ReservationsTab = () => {
                 </div>
 
                 {/* Main detail card */}
-                <div className={styles.frameWrapper}>
+                <div className={styles.detailMainCard}>
                     <div className={styles.frameContainer}>
                         <div className={styles.ayxanSalmanzadParent}>
                             <div className={styles.ayxanSalmanzad}>{detailData.userFullName}</div>
@@ -279,7 +279,8 @@ const ReservationsTab = () => {
                             <div className={styles.statusUp_btn}>
                                 <div className={styles.logout_btn}>
                                     <svg className={styles.vectorIcon5} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                        <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="2"/>
+                                        <path d="M7 7L13 13M13 7L7 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                                     </svg>
                                 </div>
                             </div>
@@ -303,7 +304,7 @@ const ReservationsTab = () => {
 
     // Reservation List View Mode
     return (
-        <div className={styles.container}>
+        <div className="flex flex-col gap-6 py-4 w-full font-sans">
             {/* Header / Stats */}
             <div className={styles.statsRow}>
                 <div className={styles.statCard}>
@@ -352,86 +353,102 @@ const ReservationsTab = () => {
                 </div>
             </div>
 
-            {/* Filters and Table */}
-            <div className={styles.frameParent2}>
-                <div className={styles.statusParent}>
-                    <div className={styles.statusLabel}>Status:</div>
-                    <div className="relative">
-                        <div 
-                            onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
-                            className="h-[40px] w-[180px] bg-white border border-[#ececed] rounded-lg flex items-center justify-between px-4 cursor-pointer hover:border-[#00B4CC] transition-all shadow-sm"
-                        >
-                            <span className="text-[14px] text-black">
-                                {statusFilter ? STATUS_OPTIONS.find(o => o.key === statusFilter)?.label : "Hamısı"}
-                            </span>
-                            <ChevronDown size={18} className={cn("text-black transition-transform flex-shrink-0", isStatusDropdownOpen && "rotate-180")} />
-                        </div>
-                        {isStatusDropdownOpen && (
-                            <>
-                                <div className="fixed inset-0 z-40" onClick={() => setIsStatusDropdownOpen(false)} />
-                                <div className="absolute top-full left-0 mt-2 w-full bg-white border border-[#ececed] rounded-xl shadow-xl flex flex-col p-4 gap-3 z-50 animate-in fade-in slide-in-from-top-1 duration-200">
-                                    {STATUS_OPTIONS.map((opt) => (
-                                        <button 
-                                            key={opt.key}
-                                            onClick={() => {
-                                                handleStatusFilter(opt.key ? opt.key : undefined);
-                                            }}
-                                            className="flex items-center gap-2 hover:opacity-70 transition-opacity"
-                                        >
-                                            {opt.key && <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: opt.color }} />}
-                                            <span className="text-[14px] font-medium text-[#001028] whitespace-nowrap">{opt.label}</span>
-                                        </button>
-                                    ))}
+            {/* Main Card Wrapper containing filters and table */}
+            <div className="w-full rounded-[12px] bg-white border border-[#ececed] flex flex-col p-5 gap-6 font-sans shadow-sm">
+                <div className="flex flex-col gap-4">
+                    <div className="text-[18px] font-bold text-black">Rezervasiyalar</div>
+                    
+                    <div className="w-full flex flex-col lg:flex-row items-center justify-between gap-5">
+                        <div className="flex items-center gap-4">
+                            <div className="text-[14px] font-medium text-slate-500">Status:</div>
+                            <div className="relative">
+                                <div 
+                                    onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+                                    className="h-[40px] w-[180px] bg-white border border-[#ececed] rounded-lg flex items-center justify-between px-4 cursor-pointer hover:border-[#00B4CC] transition-all shadow-sm"
+                                >
+                                    <span className="text-[14px] text-black">
+                                        {statusFilter ? STATUS_OPTIONS.find(o => o.key === statusFilter)?.label : "Hamısı"}
+                                    </span>
+                                    <ChevronDown size={18} className={cn("text-black transition-transform flex-shrink-0", isStatusDropdownOpen && "rotate-180")} />
                                 </div>
-                            </>
-                        )}
+                                {isStatusDropdownOpen && (
+                                    <>
+                                        <div className="fixed inset-0 z-40" onClick={() => setIsStatusDropdownOpen(false)} />
+                                        <div className="absolute top-full left-0 mt-2 w-full bg-white border border-[#ececed] rounded-xl shadow-xl flex flex-col p-4 gap-3 z-50 animate-in fade-in slide-in-from-top-1 duration-200">
+                                            {STATUS_OPTIONS.map((opt) => (
+                                                <button 
+                                                    key={opt.key}
+                                                    onClick={() => {
+                                                        handleStatusFilter(opt.key ? opt.key : undefined);
+                                                    }}
+                                                    className="flex items-center gap-2 hover:opacity-70 transition-opacity"
+                                                >
+                                                    {opt.key && <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: opt.color }} />}
+                                                    <span className="text-[14px] font-medium text-[#001028] whitespace-nowrap">{opt.label}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div className={styles.musteriParent}>
-                    <div className={styles.musteri}>
-                        <div className={styles.adSoyadWrapper}>
-                            <div className={styles.adSoyad}>Ad / Soyad</div>
+                <div className="w-full overflow-x-auto rounded-[12px] border border-[#cecfd2] bg-white">
+                    <div className="w-full min-w-[1000px] flex flex-col bg-white">
+                        {/* Header */}
+                        <div className="w-full h-[48px] bg-[rgba(0,180,204,0.15)] flex items-center px-[20px] text-[14px] font-bold text-[#101828] border-b border-[#cecfd2]">
+                            <div className="flex-1 min-w-[200px] opacity-80 uppercase text-[12px] tracking-wider">Ad / Soyad</div>
+                            <div className="w-[140px] shrink-0 opacity-80 uppercase text-[12px] tracking-wider">Tarix</div>
+                            <div className="w-[140px] shrink-0 opacity-80 uppercase text-[12px] tracking-wider">Saat</div>
+                            <div className="w-[140px] shrink-0 opacity-80 uppercase text-[12px] tracking-wider">Status</div>
+                            <div className="flex-1 min-w-[200px] opacity-80 uppercase text-[12px] tracking-wider">Məşqçi</div>
+                            <div className="w-[100px] shrink-0 opacity-80 uppercase text-[12px] tracking-wider text-center">Əməliyyatlar</div>
                         </div>
-                        <div className={styles.tarix}>Tarix</div>
-                        <div className={styles.saat}>Saat</div>
-                        <div className={styles.status}>Status</div>
-                        <div className={styles.mqi}>Məşqçi</div>
-                        <div className={styles.trafl} style={{ textAlign: 'center', width: '94px' }}>Əməliyyatlar</div>
-                    </div>
 
-                    {isLoading ? (
-                        <div className={styles.frameParent3} style={{ justifyContent: 'center', color: '#999' }}>Yüklənir...</div>
-                    ) : reservationsData?.items?.length === 0 ? (
-                        <div className={styles.frameParent3} style={{ justifyContent: 'center', color: '#999' }}>Rezervasiya tapılmadı</div>
-                    ) : reservationsData?.items?.map((res: any) => (
-                        <React.Fragment key={res.id}>
-                            <div className={res.status === 'REJECTED' || res.status === 'CANCELLED' ? styles.frameParent3 : styles.frameParent}>
-                                <div className={styles.frameWrapper}>
-                                    <div className={styles.ayxanSalmanzadWrapper}>
-                                        <div className={styles.trafl}>{res.userFullName}</div>
-                                    </div>
-                                </div>
-                                <div className={styles.mart2026}>{res.date}</div>
-                                <div className={styles.trafl} style={{ width: '93px', textAlign: 'left' }}>{formatTo24h(res.timeRange)}</div>
-                                <div className={getStatusClass(res.status)}>
-                                    <div className={styles.odeniStatusChild} />
-                                    <div className={styles.cradadr}>{getStatusText(res.status)}</div>
-                                </div>
-                                <div className={styles.adSoyadContainer}>
-                                    <div className={styles.trafl}>{res.trainerName}</div>
-                                </div>
-                                <div className={styles.frameContainer}>
-                                    <div className={styles.frameContainer}>
-                                        <div className="relative">
-                                            <div className={styles.more} onClick={(e) => {
+                        {/* List Items */}
+                        <div className="flex flex-col bg-white divide-y divide-[#ececed]">
+                            {isLoading ? (
+                                <div className="w-full h-[64px] flex items-center justify-center text-[14px] text-slate-400">Yüklənir...</div>
+                            ) : reservationsData?.items?.length === 0 ? (
+                                <div className="w-full h-[64px] flex items-center justify-center text-[14px] text-slate-400">Rezervasiya tapılmadı</div>
+                            ) : reservationsData?.items?.map((res: any) => (
+                                <React.Fragment key={res.id}>
+                                    <div className="w-full h-[64px] flex items-center px-[20px] text-[14px] hover:bg-slate-50 transition-colors group">
+                                        <div className="flex-1 min-w-[200px] font-bold text-[#101828] group-hover:text-[#00B4CC] transition-colors truncate">
+                                            {res.userFullName}
+                                        </div>
+                                        <div className="w-[140px] shrink-0 text-slate-600 font-medium">
+                                            {res.date}
+                                        </div>
+                                        <div className="w-[140px] shrink-0 text-slate-600 font-medium">
+                                            {formatTo24h(res.timeRange)}
+                                        </div>
+                                        <div className="w-[140px] shrink-0 flex items-center">
+                                            <div className={cn(
+                                                "h-[26px] min-w-[90px] rounded-[20px] flex items-center justify-center gap-1.5 px-3 text-[12px] font-bold text-white shadow-xs",
+                                                res.status === 'PENDING' && "bg-[#ec972f]",
+                                                res.status === 'APPROVED' && "bg-[#166728]",
+                                                res.status === 'CANCELLED' && "bg-[#c9373a]",
+                                                res.status === 'REJECTED' && "bg-[#8a38f5]"
+                                            )}>
+                                                <div className="h-1.5 w-1.5 rounded-full bg-white shadow-sm" />
+                                                <span className="uppercase tracking-tight text-[10px]">{getStatusText(res.status)}</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex-1 min-w-[200px] text-slate-600 font-medium truncate">
+                                            {res.trainerName || 'N/A'}
+                                        </div>
+                                        <div className="w-[100px] shrink-0 flex justify-center relative">
+                                            <div className="cursor-pointer p-1.5 hover:bg-slate-100 rounded-md transition-colors" onClick={(e) => {
                                                 e.stopPropagation();
                                                 setActiveActionsDropdownId(activeActionsDropdownId === res.id ? null : res.id);
-                                            }} style={{ cursor: 'pointer' }}>
-                                                <Image src="/more.svg" width={24} height={24} alt="More" className={styles.vuesaxlinearmoreIcon} />
+                                            }}>
+                                                <Image src="/more.svg" width={20} height={20} alt="More" className="opacity-70 group-hover:opacity-100 transition-opacity" />
                                             </div>
                                             {activeActionsDropdownId === res.id && (
-                                                <div ref={dropdownRef} className={styles.popoverMenu} onClick={(e) => e.stopPropagation()}>
+                                                <div ref={dropdownRef} className={styles.popoverMenu} onClick={(e) => e.stopPropagation()} style={{ right: 'auto', left: '50%', transform: 'translateX(-50%)', top: '100%' }}>
                                                     <button className={styles.popoverBtn} onClick={() => {
                                                         setSelectedReservationId(res.id);
                                                         setViewMode('detail');
@@ -490,96 +507,92 @@ const ReservationsTab = () => {
                                             )}
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                            {(res.status === 'REJECTED' || res.status === 'CANCELLED') && res.reason && (
-                                <div className={styles.frameWrapper9}>
-                                    <div className={styles.frameWrapper10}>
-                                        <div className={styles.rectangleParent}>
-                                            <div className={styles.frameItem} />
-                                            <div className={styles.lvEtmSbbiParent}>
-                                                <div className={styles.lvEtmSbbi}>Ləğv etmə səbəbi</div>
-                                                <b className={styles.tciliIlLaqdar}>{res.reason}</b>
+                                    {/* Sub row showing cancellation reason */}
+                                    {(res.status === 'REJECTED' || res.status === 'CANCELLED') && res.reason && (
+                                        <div className="w-full bg-[#fafafa] border-t border-[#ececed] px-[20px] py-[10px] text-[13px] text-slate-500">
+                                            <div className="flex gap-2">
+                                                <span className="font-bold text-red-500">Ləğv etmə səbəbi:</span>
+                                                <span>{res.reason}</span>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                            )}
-                        </React.Fragment>
-                    ))}
+                                    )}
+                                </React.Fragment>
+                            ))}
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            {/* Pagination Section */}
-            {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-[18px] mt-8 select-none">
-                <button 
-                    onClick={() => setPage(1)}
-                    className={cn(
-                    "h-8 w-8 rounded flex items-center justify-center text-[16px] font-semibold transition-all",
-                    page === 1 ? "bg-[#00b4cc] text-white" : "bg-white border border-[#ececed] text-black hover:bg-slate-50"
-                    )}
-                >
-                    1
-                </button>
-                
-                {totalPages >= 2 && (
-                    <button 
-                    onClick={() => setPage(2)}
-                    className={cn(
-                        "h-8 w-8 rounded flex items-center justify-center text-[16px] font-semibold transition-all",
-                        page === 2 ? "bg-[#00b4cc] text-white" : "bg-white border border-[#ececed] text-black hover:bg-slate-50"
-                    )}
-                    >
-                    2
-                    </button>
-                )}
+                {/* Pagination Section */}
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-[18px] mt-8 select-none">
+                        <button 
+                            onClick={() => setPage(1)}
+                            className={cn(
+                                "h-8 w-8 rounded flex items-center justify-center text-[16px] font-semibold transition-all",
+                                page === 1 ? "bg-[#00b4cc] text-white shadow-md" : "bg-white border border-[#ececed] text-black hover:bg-slate-50"
+                            )}
+                        >
+                            1
+                        </button>
+                        
+                        {totalPages >= 2 && (
+                            <button 
+                                onClick={() => setPage(2)}
+                                className={cn(
+                                    "h-8 w-8 rounded flex items-center justify-center text-[16px] font-semibold transition-all",
+                                    page === 2 ? "bg-[#00b4cc] text-white shadow-md" : "bg-white border border-[#ececed] text-black hover:bg-slate-50"
+                                )}
+                            >
+                                2
+                            </button>
+                        )}
 
-                {totalPages >= 3 && (
-                    <button 
-                    onClick={() => setPage(3)}
-                    className={cn(
-                        "h-8 w-8 rounded flex items-center justify-center text-[16px] font-semibold transition-all",
-                        page === 3 ? "bg-[#00b4cc] text-white" : "bg-white border border-[#ececed] text-black hover:bg-slate-50"
-                    )}
-                    >
-                    3
-                    </button>
-                )}
+                        {totalPages >= 3 && (
+                            <button 
+                                onClick={() => setPage(3)}
+                                className={cn(
+                                    "h-8 w-8 rounded flex items-center justify-center text-[16px] font-semibold transition-all",
+                                    page === 3 ? "bg-[#00b4cc] text-white shadow-md" : "bg-white border border-[#ececed] text-black hover:bg-slate-50"
+                                )}
+                            >
+                                3
+                            </button>
+                        )}
 
-                {totalPages >= 4 && (
-                    <button 
-                    onClick={() => setPage(4)}
-                    className={cn(
-                        "h-8 w-8 rounded flex items-center justify-center text-[16px] font-semibold transition-all",
-                        page === 4 ? "bg-[#00b4cc] text-white" : "bg-white border border-[#ececed] text-black hover:bg-slate-50"
-                    )}
-                    >
-                    4
-                    </button>
-                )}
+                        {totalPages >= 4 && (
+                            <button 
+                                onClick={() => setPage(4)}
+                                className={cn(
+                                    "h-8 w-8 rounded flex items-center justify-center text-[16px] font-semibold transition-all",
+                                    page === 4 ? "bg-[#00b4cc] text-white shadow-md" : "bg-white border border-[#ececed] text-black hover:bg-slate-50"
+                                )}
+                            >
+                                4
+                            </button>
+                        )}
 
-                {totalPages > 5 && (
-                    <div className="h-8 w-8 rounded bg-white border border-[#ececed] flex items-center justify-center gap-[1px]">
-                    <div className="h-[3px] w-[3px] rounded-full bg-black" />
-                    <div className="h-[3px] w-[3px] rounded-full bg-black" />
-                    <div className="h-[3px] w-[3px] rounded-full bg-black" />
+                        {totalPages > 5 && (
+                            <div className="h-8 w-8 rounded bg-white border border-[#ececed] flex items-center justify-center gap-[1px]">
+                                <div className="h-[3px] w-[3px] rounded-full bg-black" />
+                                <div className="h-[3px] w-[3px] rounded-full bg-black" />
+                                <div className="h-[3px] w-[3px] rounded-full bg-black" />
+                            </div>
+                        )}
+
+                        {totalPages > 4 && (
+                            <button 
+                                onClick={() => setPage(totalPages)}
+                                className={cn(
+                                    "h-8 w-8 rounded flex items-center justify-center text-[16px] font-semibold transition-all",
+                                    page === totalPages ? "bg-[#00b4cc] text-white shadow-md" : "bg-white border border-[#ececed] text-black hover:bg-slate-50"
+                                )}
+                            >
+                                {totalPages}
+                            </button>
+                        )}
                     </div>
                 )}
-
-                {totalPages > 4 && (
-                    <button 
-                    onClick={() => setPage(totalPages)}
-                    className={cn(
-                        "h-8 w-8 rounded flex items-center justify-center text-[16px] font-semibold transition-all",
-                        page === totalPages ? "bg-[#00b4cc] text-white" : "bg-white border border-[#ececed] text-black hover:bg-slate-50"
-                    )}
-                    >
-                    {totalPages}
-                    </button>
-                )}
-                </div>
-            )}
+            </div>
         </div>
     )
 }

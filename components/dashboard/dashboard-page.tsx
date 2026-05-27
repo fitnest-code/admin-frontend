@@ -2,9 +2,18 @@
 
 import { useState } from 'react'
 import { StatCard } from './stat-card'
-import { RevenueChart } from './revenue-chart'
-import { CustomerGrowthChart } from './customer-growth-chart'
+import dynamic from 'next/dynamic'
 import { STAT_DATA, STAT_ICONS } from '@/lib/dashboard-data'
+
+const RevenueChart = dynamic(() => import('./revenue-chart').then((m) => m.RevenueChart), {
+  ssr: false,
+  loading: () => <div className="h-64 w-full bg-slate-50 animate-pulse rounded-xl border border-border" />,
+})
+
+const CustomerGrowthChart = dynamic(() => import('./customer-growth-chart').then((m) => m.CustomerGrowthChart), {
+  ssr: false,
+  loading: () => <div className="h-64 w-full bg-slate-50 animate-pulse rounded-xl border border-border" />,
+})
 
 type PeriodKey = 'daily' | 'weekly' | 'monthly' | 'yearly'
 
