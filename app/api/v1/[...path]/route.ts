@@ -18,6 +18,11 @@ function pickForwardHeaders(
   const headers = new Headers()
   headers.set('Accept', request.headers.get('accept') ?? 'application/json')
 
+  const acceptLanguage = request.headers.get('accept-language')
+  if (acceptLanguage) {
+    headers.set('Accept-Language', acceptLanguage)
+  }
+
   if (!options?.omitContentType) {
     const contentType = request.headers.get('content-type')
     if (contentType) {
