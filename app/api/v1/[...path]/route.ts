@@ -155,17 +155,20 @@ async function forward(request: NextRequest, context: RouteContext) {
     const responseType = backendResponse.headers.get('content-type')
     if (responseType) {
       responseHeaders.set('content-type', responseType)
+      // Stream the body directly to avoid buffering latency/memory overhead for standard responses
+      return new NextResponse(backendResponse.body, {
+        status,
+        headers: responseHeaders
+      })
     }
 
-    // Read response body as buffer to prevent corruption and allow content-type sniffing
+    // Read response body as buffer only when content-type is missing to allow content-type sniffing (e.g. for untyped SVGs)
     const arrayBuffer = await backendResponse.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
-    if (!responseHeaders.has('content-type')) {
-      const sniffed = sniffContentType(buffer, path)
-      if (sniffed) {
-        responseHeaders.set('content-type', sniffed)
-      }
+    const sniffed = sniffContentType(buffer, path)
+    if (sniffed) {
+      responseHeaders.set('content-type', sniffed)
     }
 
     return new NextResponse(buffer, { 
