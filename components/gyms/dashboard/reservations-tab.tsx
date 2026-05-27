@@ -78,9 +78,9 @@ const ReservationsTab = () => {
     const getStatusText = (status: string) => {
         switch (status) {
             case 'PENDING': return 'Gözləmədə'
-            case 'APPROVED': return 'Təsdiqlənib'
-            case 'CANCELLED': return 'Ləğv edilib'
-            case 'REJECTED': return 'İmtina edilib'
+            case 'APPROVED': return 'Uğurlu'
+            case 'CANCELLED': return 'Ləğv'
+            case 'REJECTED': return 'Imtina olundu'
             default: return status
         }
     }
@@ -389,15 +389,15 @@ const ReservationsTab = () => {
                 </div>
 
                 <div className={styles.musteriParent}>
-                    <div className={styles.musteri3}>
+                    <div className={styles.musteri}>
                         <div className={styles.adSoyadWrapper}>
                             <div className={styles.adSoyad}>Ad / Soyad</div>
                         </div>
                         <div className={styles.tarix}>Tarix</div>
                         <div className={styles.saat}>Saat</div>
-                        <div className={styles.status2}>Status</div>
+                        <div className={styles.status}>Status</div>
                         <div className={styles.mqi}>Məşqçi</div>
-                        <div className={styles.mkanAxtar}>Əməliyyatlar</div>
+                        <div className={styles.trafl} style={{ textAlign: 'center', width: '94px' }}>Əməliyyatlar</div>
                     </div>
 
                     {isLoading ? (
@@ -406,88 +406,90 @@ const ReservationsTab = () => {
                         <div className={styles.frameParent3} style={{ justifyContent: 'center', color: '#999' }}>Rezervasiya tapılmadı</div>
                     ) : reservationsData?.items?.map((res: any) => (
                         <React.Fragment key={res.id}>
-                            <div className={styles.frameParent3}>
+                            <div className={res.status === 'REJECTED' || res.status === 'CANCELLED' ? styles.frameParent3 : styles.frameParent}>
                                 <div className={styles.frameWrapper}>
                                     <div className={styles.ayxanSalmanzadWrapper}>
-                                        <div className={styles.mkanAxtar}>{res.userFullName}</div>
+                                        <div className={styles.trafl}>{res.userFullName}</div>
                                     </div>
                                 </div>
                                 <div className={styles.mart2026}>{res.date}</div>
-                                <div className={styles.mkanAxtar}>{formatTo24h(res.timeRange)}</div>
+                                <div className={styles.trafl} style={{ width: '93px', textAlign: 'left' }}>{formatTo24h(res.timeRange)}</div>
                                 <div className={getStatusClass(res.status)}>
-                                    <div className={styles.component32Child} />
-                                    <div className={styles.aktiv}>{getStatusText(res.status)}</div>
+                                    <div className={styles.odeniStatusChild} />
+                                    <div className={styles.cradadr}>{getStatusText(res.status)}</div>
                                 </div>
                                 <div className={styles.adSoyadContainer}>
-                                    <div className={styles.mkanAxtar}>{res.trainerName}</div>
+                                    <div className={styles.trafl}>{res.trainerName}</div>
                                 </div>
-                                <div className="relative">
-                                    <div className={styles.moreWrapper} onClick={(e) => {
-                                        e.stopPropagation();
-                                        setActiveActionsDropdownId(activeActionsDropdownId === res.id ? null : res.id);
-                                    }}>
-                                        <div className={styles.more}>
-                                            <Image src="/more.svg" width={24} height={24} alt="More" className={styles.vuesaxlinearmoreIcon} />
-                                        </div>
-                                    </div>
-                                    {activeActionsDropdownId === res.id && (
-                                        <div ref={dropdownRef} className={styles.popoverMenu} onClick={(e) => e.stopPropagation()}>
-                                            <button className={styles.popoverBtn} onClick={() => {
-                                                setSelectedReservationId(res.id);
-                                                setViewMode('detail');
-                                                setActiveActionsDropdownId(null);
-                                            }}>
-                                                <div className={styles.popoverFrameParent}>
-                                                    <div className={styles.popoverEyeWrapper}>
-                                                        <div className={styles.popoverEye}>
-                                                            <div className={styles.popoverEye2}>
-                                                                <svg className={styles.popoverVectorIcon} width="15" height="10" viewBox="0 0 15 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                    <path d="M7.5 0.5C4.0625 0.5 1.15625 2.58125 0 5.5C1.15625 8.41875 4.0625 10.5 7.5 10.5C10.9375 10.5 13.8438 8.41875 15 5.5C13.8438 2.58125 10.9375 0.5 7.5 0.5ZM7.5 8.83333C5.65625 8.83333 4.16667 7.34375 4.16667 5.5C4.16667 3.65625 5.65625 2.16667 7.5 2.16667C9.34375 2.16667 10.8333 3.65625 10.8333 5.5C10.8333 7.34375 9.34375 8.83333 7.5 8.83333ZM7.5 3.5C6.39583 3.5 5.5 4.39583 5.5 5.5C5.5 6.60417 6.39583 7.5 7.5 7.5C8.60417 7.5 9.5 6.60417 9.5 5.5C9.5 4.39583 8.60417 3.5 7.5 3.5Z" fill="#364153"/>
-                                                                </svg>
+                                <div className={styles.frameContainer}>
+                                    <div className={styles.frameContainer}>
+                                        <div className="relative">
+                                            <div className={styles.more} onClick={(e) => {
+                                                e.stopPropagation();
+                                                setActiveActionsDropdownId(activeActionsDropdownId === res.id ? null : res.id);
+                                            }} style={{ cursor: 'pointer' }}>
+                                                <Image src="/more.svg" width={24} height={24} alt="More" className={styles.vuesaxlinearmoreIcon} />
+                                            </div>
+                                            {activeActionsDropdownId === res.id && (
+                                                <div ref={dropdownRef} className={styles.popoverMenu} onClick={(e) => e.stopPropagation()}>
+                                                    <button className={styles.popoverBtn} onClick={() => {
+                                                        setSelectedReservationId(res.id);
+                                                        setViewMode('detail');
+                                                        setActiveActionsDropdownId(null);
+                                                    }}>
+                                                        <div className={styles.popoverFrameParent}>
+                                                            <div className={styles.popoverEyeWrapper}>
+                                                                <div className={styles.popoverEye}>
+                                                                    <div className={styles.popoverEye2}>
+                                                                        <svg className={styles.popoverVectorIcon} width="15" height="10" viewBox="0 0 15 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                            <path d="M7.5 0.5C4.0625 0.5 1.15625 2.58125 0 5.5C1.15625 8.41875 4.0625 10.5 7.5 10.5C10.9375 10.5 13.8438 8.41875 15 5.5C13.8438 2.58125 10.9375 0.5 7.5 0.5ZM7.5 8.83333C5.65625 8.83333 4.16667 7.34375 4.16667 5.5C4.16667 3.65625 5.65625 2.16667 7.5 2.16667C9.34375 2.16667 10.8333 3.65625 10.8333 5.5C10.8333 7.34375 9.34375 8.83333 7.5 8.83333ZM7.5 3.5C6.39583 3.5 5.5 4.39583 5.5 5.5C5.5 6.60417 6.39583 7.5 7.5 7.5C8.60417 7.5 9.5 6.60417 9.5 5.5C9.5 4.39583 8.60417 3.5 7.5 3.5Z" fill="#364153"/>
+                                                                        </svg>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div className={styles.popoverBax}>Bax</div>
+                                                        </div>
+                                                    </button>
+                                                    <button className={styles.popoverBtn2} onClick={() => {
+                                                        handleApprove(res.id);
+                                                        setActiveActionsDropdownId(null);
+                                                    }}>
+                                                        <div className={styles.popoverCheckWrapper}>
+                                                            <div className={styles.popoverEye}>
+                                                                <div className={styles.popoverEye2}>
+                                                                    <svg className={styles.popoverVectorIcon2} width="13" height="10" viewBox="0 0 13 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                        <path d="M1.5 5L4.5 8L11.5 1.5" stroke="#364153" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                                    </svg>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                    <div className={styles.popoverBax}>Bax</div>
-                                                </div>
-                                            </button>
-                                            <button className={styles.popoverBtn2} onClick={() => {
-                                                handleApprove(res.id);
-                                                setActiveActionsDropdownId(null);
-                                            }}>
-                                                <div className={styles.popoverCheckWrapper}>
-                                                    <div className={styles.popoverEye}>
-                                                        <div className={styles.popoverEye2}>
-                                                            <svg className={styles.popoverVectorIcon2} width="13" height="10" viewBox="0 0 13 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                <path d="M1.5 5L4.5 8L11.5 1.5" stroke="#364153" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                                            </svg>
+                                                        <div className={styles.popoverTsdiqEt}>Təsdiq et</div>
+                                                    </button>
+                                                    <button className={styles.popoverBtn3} onClick={() => {
+                                                        setSelectedReservationId(res.id);
+                                                        setViewMode('detail');
+                                                        setActiveActionsDropdownId(null);
+                                                        setTimeout(() => {
+                                                            const textarea = document.getElementById('rejectionReasonTextarea');
+                                                            if (textarea) textarea.focus();
+                                                        }, 150);
+                                                    }}>
+                                                        <div className={styles.popoverCheckWrapper}>
+                                                            <div className={styles.popoverEye}>
+                                                                <div className={styles.popoverEye2}>
+                                                                    <svg className={styles.popoverVectorIcon3} width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                        <path d="M1 1L9 9M9 1L1 9" stroke="#364153" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                                    </svg>
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                    </div>
+                                                        <div className={styles.popoverTsdiqEt}>İmtina et</div>
+                                                    </button>
+                                                    <div className={styles.popoverLine} />
                                                 </div>
-                                                <div className={styles.popoverTsdiqEt}>Təsdiq et</div>
-                                            </button>
-                                            <button className={styles.popoverBtn3} onClick={() => {
-                                                setSelectedReservationId(res.id);
-                                                setViewMode('detail');
-                                                setActiveActionsDropdownId(null);
-                                                setTimeout(() => {
-                                                    const textarea = document.getElementById('rejectionReasonTextarea');
-                                                    if (textarea) textarea.focus();
-                                                }, 150);
-                                            }}>
-                                                <div className={styles.popoverCheckWrapper}>
-                                                    <div className={styles.popoverEye}>
-                                                        <div className={styles.popoverEye2}>
-                                                            <svg className={styles.popoverVectorIcon3} width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                <path d="M1 1L9 9M9 1L1 9" stroke="#364153" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                                            </svg>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className={styles.popoverTsdiqEt}>İmtina et</div>
-                                            </button>
-                                            <div className={styles.popoverLine} />
+                                            )}
                                         </div>
-                                    )}
+                                    </div>
                                 </div>
                             </div>
                             {(res.status === 'REJECTED' || res.status === 'CANCELLED') && res.reason && (
