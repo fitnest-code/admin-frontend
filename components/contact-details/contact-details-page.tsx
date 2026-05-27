@@ -144,33 +144,9 @@ export function ContactDetailsPage() {
 
   return (
     <div className="flex flex-col gap-8 w-full font-sans p-4 sm:p-6 lg:p-8">
-      {/* Page Header */}
-      <div className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-[#ececed] pb-4 gap-4">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-[22px] font-bold text-[#101828] tracking-tight">
-            {t.contactDetails.title}
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 font-medium">
-            FitNest mobil tətbiqi və istifadəçilər üçün görünən rəsmi əlaqə məlumatlarını tənzimləyin.
-          </p>
-        </div>
-      </div>
-
       {/* Main Content Form Card */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {/* Left Side: Form */}
-        <div className="lg:col-span-2 w-full rounded-2xl bg-white border border-[#ececed] flex flex-col p-6 sm:p-8 gap-8 text-left shadow-sm transition-all duration-300 hover:shadow-md">
-          <div className="flex items-center gap-3 border-b border-[#ececed] pb-4">
-            <div className="w-9 h-9 rounded-lg bg-[#00B4CC15] flex items-center justify-center text-[#00B4CC]">
-              <Phone size={18} />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-[#101828]">Əlaqə Kanalları</h2>
-              <p className="text-xs text-slate-500">Məlumatların düzgünlüyünə əmin olun.</p>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-6">
+      <div className="w-full rounded-2xl bg-white border border-[#ececed] flex flex-col p-6 sm:p-8 gap-8 text-left shadow-sm transition-all duration-300 hover:shadow-md">
+        <div className="flex flex-col gap-6">
             {/* Email Input */}
             <div className="flex flex-col gap-2.5">
               <label className="text-xs sm:text-sm font-semibold text-slate-700 flex items-center gap-2">
@@ -240,26 +216,6 @@ export function ContactDetailsPage() {
               )}
             </button>
           </div>
-        </div>
-
-        {/* Right Side: Informational Card */}
-        <div className="w-full rounded-2xl bg-[#00B4CC08] border border-[#00B4CC15] p-6 flex flex-col gap-5 text-left">
-          <div className="flex items-center gap-2.5 text-[#00B4CC]">
-            <ShieldCheck size={20} />
-            <h3 className="font-bold text-sm sm:text-base">Mühüm Qeyd</h3>
-          </div>
-          <div className="flex flex-col gap-4 text-slate-600 text-xs sm:text-sm font-medium leading-relaxed">
-            <p>
-              Qeyd etdiyiniz məlumatlar mobil tətbiq istifadəçilərinə kömək, dəstək və əlaqə bölmələrində təqdim edilir.
-            </p>
-            <p>
-              Telefon nömrəsinin <span className="font-bold text-[#00B4CC]">+994 xx xxx xx xx</span> formatına uyğun olmasına diqqət yetirin. Düzgün format tətbiqdaxili birbaşa zəng funksiyasının problemsiz işləməsini təmin edir.
-            </p>
-            <p>
-              Hər hansı dəyişiklik dərhal qüvvəyə minir və sistemdə yenilənir.
-            </p>
-          </div>
-        </div>
       </div>
 
       {/* Success Lottie Animation Modal */}
