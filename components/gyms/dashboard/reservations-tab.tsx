@@ -99,13 +99,23 @@ const ReservationsTab = () => {
 
     // Detailed Reservation View Mode
     if (viewMode === 'detail' && detailData) {
-        const getDetailStatusBadge = (status: string) => {
+        const getStatusBadgeText = (status: string) => {
             switch (status) {
-                case 'PENDING': return <span className={`${styles.statusBadge} ${styles.statusPending}`}>Gözləmədə</span>
-                case 'APPROVED': return <span className={`${styles.statusBadge} ${styles.statusApproved}`}>Təsdiq edilib</span>
-                case 'CANCELLED': return <span className={`${styles.statusBadge} ${styles.statusCancelled}`}>Ləğv edilib</span>
-                case 'REJECTED': return <span className={`${styles.statusBadge} ${styles.statusRejected}`}>İmtina edilib</span>
-                default: return <span className={styles.statusBadge}>{status}</span>
+                case 'PENDING': return 'Gözləmədə';
+                case 'APPROVED': return 'Təsdiq edilib';
+                case 'CANCELLED': return 'Ləğv edilib';
+                case 'REJECTED': return 'İmtina edilib';
+                default: return status;
+            }
+        }
+
+        const getStatusBadgeClass = (status: string) => {
+            switch (status) {
+                case 'PENDING': return styles.odeniStatusPending;
+                case 'APPROVED': return styles.odeniStatusApproved;
+                case 'CANCELLED': return styles.odeniStatusCancelled;
+                case 'REJECTED': return styles.odeniStatusRejected;
+                default: return '';
             }
         }
 
@@ -140,8 +150,11 @@ const ReservationsTab = () => {
 
         return (
             <div className={styles.detailContainer}>
-                {/* Back button and title */}
-                <div className={styles.detailHeaderRow}>
+                {/* Heading & Back Button */}
+                <div className={styles.heading1Wrapper}>
+                    <div className={styles.heading1}>
+                        <div className={styles.rezervasiyaDetall}>Rezervasiya detallı</div>
+                    </div>
                     <button className={styles.backBtn} onClick={() => {
                         setViewMode('list');
                         setRejectionReason('');
@@ -150,109 +163,140 @@ const ReservationsTab = () => {
                         <ArrowLeft size={18} strokeWidth={2.5} />
                         <span>Geri qayıt</span>
                     </button>
-                    <div className={styles.detailTitle}>Rezervasiya detallı</div>
                 </div>
 
-                <div className={styles.detailCardParent}>
-                    {/* User profile / basic info header card */}
-                    <div className={styles.detailCard}>
-                        <div className={styles.customerHeader}>
-                            <div className={styles.customerNameSection}>
-                                <div className={styles.customerName}>{detailData.userFullName}</div>
-                                {getDetailStatusBadge(detailData.status)}
+                {/* Main detail card */}
+                <div className={styles.frameWrapper}>
+                    <div className={styles.frameContainer}>
+                        <div className={styles.ayxanSalmanzadParent}>
+                            <div className={styles.ayxanSalmanzad}>{detailData.userFullName}</div>
+                            <div className={cn(styles.odeniStatus, getStatusBadgeClass(detailData.status))}>
+                                <div className={styles.component32Child} />
+                                <div className={styles.aktiv}>{getStatusBadgeText(detailData.status)}</div>
                             </div>
                         </div>
-
-                        <div className={styles.metaInfoGrid}>
-                            <div className={styles.metaInfoItem}>
-                                <span className={styles.metaLabel}>User ID:</span>
-                                <span className={styles.metaValue}>{String(detailData.userId).padStart(7, '0')}</span>
+                        <div className={styles.frameDiv}>
+                            <div className={styles.userIdParent}>
+                                <div className={styles.mkanAxtar}>User ID:</div>
+                                <b className={styles.mkanAxtar}>{String(detailData.userId).padStart(7, '0')}</b>
                             </div>
-                            <div className={styles.metaInfoItem}>
-                                <span className={styles.metaLabel}>Qeydiyyat tarixi:</span>
-                                <span className={styles.metaValue}>{detailData.regDate || 'N/A'}</span>
+                            <div className={styles.userIdParent}>
+                                <div className={styles.mkanAxtar}>Qeydiyyat tarixi:</div>
+                                <b className={styles.mkanAxtar}>{detailData.regDate || '31.03.2026'}</b>
                             </div>
-                            <div className={styles.metaInfoItem}>
-                                <span className={styles.metaLabel}>Platforma:</span>
-                                <span className={styles.metaValue}>{detailData.platform === 'N/A' ? 'İOS' : detailData.platform}</span>
+                            <div className={styles.userIdParent}>
+                                <div className={styles.mkanAxtar}>Platforma:</div>
+                                <b className={styles.mkanAxtar}>{detailData.platform === 'N/A' || !detailData.platform ? 'İOS' : detailData.platform}</b>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    {/* Personal & Lesson Info Grid */}
-                    <div className={styles.detailGrid2}>
-                        {/* Personal info card */}
-                        <div className={styles.detailCard}>
-                            <div className={styles.detailCardTitle}>Şəxsi məlumatlar</div>
-                            <div className="flex flex-col gap-4">
-                                <div className="flex justify-between items-center py-1 border-b border-[#f3f4f6]">
-                                    <span className="text-[13px] text-slate-500 font-medium">Telefon nömrəsi:</span>
-                                    <span className="text-[14px] text-slate-800 font-bold">{detailData.userPhone || 'N/A'}</span>
-                                </div>
-                                <div className="flex justify-between items-center py-1 border-b border-[#f3f4f6]">
-                                    <span className="text-[13px] text-slate-500 font-medium">Email:</span>
-                                    <span className="text-[14px] text-slate-800 font-bold">{detailData.userEmail || 'N/A'}</span>
-                                </div>
-                                <div className="flex justify-between items-center py-1 border-b border-[#f3f4f6]">
-                                    <span className="text-[13px] text-slate-500 font-medium">Doğum tarixi:</span>
-                                    <span className="text-[14px] text-slate-800 font-bold">{detailData.birthDate || 'N/A'}</span>
-                                </div>
-                                <div className="flex justify-between items-center py-1 border-b border-[#f3f4f6]">
-                                    <span className="text-[13px] text-slate-500 font-medium">Məşqçi:</span>
-                                    <span className="text-[14px] text-slate-800 font-bold">{detailData.trainerName || 'N/A'}</span>
-                                </div>
-                                <div className="flex justify-between items-center py-1 border-b border-[#f3f4f6]">
-                                    <span className="text-[13px] text-slate-500 font-medium">Növ:</span>
-                                    <span className="text-[14px] text-slate-800 font-bold">{detailData.lessonType || 'N/A'}</span>
+                {/* Personal & Lesson Info Card */}
+                <div className={styles.superAdminUsersDetailInner}>
+                    <div className={styles.frameWrapper2}>
+                        <div className={styles.frameWrapper3}>
+                            <div className={styles.frameWrapper4}>
+                                <div className={styles.frameParent2_detail}>
+                                    <div className={styles.xsiMlumatlarWrapper}>
+                                        <div className={styles.mkanAxtar} style={{ fontWeight: 600 }}>Şəxsi məlumatlar</div>
+                                    </div>
+                                    <div className={styles.frameParent3_detail}>
+                                        <div className={styles.telefonNmrsiParent}>
+                                            <div className={styles.telefonNmrsi}>Telefon nömrəsi:</div>
+                                            <b className={styles.fitnestMailcom}>{detailData.userPhone || '+994 00 000 00 00'}</b>
+                                        </div>
+                                        <div className={styles.telefonNmrsiParent}>
+                                            <div className={styles.telefonNmrsi}>{`Email: `}</div>
+                                            <b className={styles.fitnestMailcom}>{detailData.userEmail || 'fitnest@ mail.com'}</b>
+                                        </div>
+                                        <div className={styles.telefonNmrsiParent}>
+                                            <div className={styles.telefonNmrsi}>Doğum tarixi:</div>
+                                            <b className={styles.fitnestMailcom}>{detailData.birthDate || '12.07.2000'}</b>
+                                        </div>
+                                        <div className={styles.telefonNmrsiParent}>
+                                            <div className={styles.telefonNmrsi}>Məşqçi</div>
+                                            <b className={styles.fitnestMailcom}>{detailData.trainerName || 'Ayxan Salmanzadə'}</b>
+                                        </div>
+                                        <div className={styles.telefonNmrsiParent}>
+                                            <div className={styles.telefonNmrsi}>Növ</div>
+                                            <b className={styles.fitnestMailcom}>{detailData.lessonType || 'Yoga'}</b>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-
-                        {/* Action Panel for rejection/approval */}
-                        {detailData.status === 'PENDING' && (
-                            <div className={styles.actionPanel}>
-                                <div className={styles.actionTitle}>Imtina səbəbi qeyd olunmalıdır</div>
-                                <textarea
-                                    id="rejectionReasonTextarea"
-                                    className={cn(styles.reasonArea, rejectionError && "border-red-500")}
-                                    placeholder="İmtina səbəbini bura qeyd edin..."
-                                    value={rejectionReason}
-                                    onChange={(e) => {
-                                        setRejectionReason(e.target.value)
-                                        if (e.target.value.trim()) setRejectionError(false)
-                                    }}
-                                />
-                                {rejectionError && <span className={styles.errorText}>Zəhmət olmasa imtina səbəbini qeyd edin</span>}
-
-                                <div className={styles.actionButtonRow}>
-                                    <button className={styles.actionRejectBtn} onClick={handleDetailReject}>
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                                        </svg>
-                                        <span>İmtina</span>
-                                    </button>
-                                    <button className={styles.actionApproveBtn} onClick={handleDetailApprove}>
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                            <polyline points="20 6 9 17 4 12"></polyline>
-                                        </svg>
-                                        <span>Təsdiq et</span>
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* If status is already REJECTED or CANCELLED, show the saved reason */}
-                        {(detailData.status === 'REJECTED' || detailData.status === 'CANCELLED') && detailData.cancelReasonText && (
-                            <div className={styles.detailCard}>
-                                <div className={styles.detailCardTitle} style={{ color: '#c9373a', borderBottomColor: '#fee2e2' }}>Ləğv etmə səbəbi</div>
-                                <p className="text-[15px] font-bold text-slate-800 leading-relaxed bg-red-50/50 p-4 rounded-lg border border-red-100">
-                                    {detailData.cancelReasonText}
-                                </p>
-                            </div>
-                        )}
                     </div>
                 </div>
+
+                {/* Rejection / Cancellation Reason */}
+                {detailData.status === 'PENDING' && (
+                    <>
+                        <div className={styles.imtinaSbbiQeydOlunmaldrParent}>
+                            <div className={styles.as_label}>Imtina səbəbi qeyd olunmalıdır</div>
+                            <div className={styles.frameWrapper5}>
+                                <div className={styles.imtinaSbbiWrapper}>
+                                    <textarea
+                                        id="rejectionReasonTextarea"
+                                        className={styles.imtinaTextarea}
+                                        placeholder="İmtina səbəbini bura qeyd edin..."
+                                        value={rejectionReason}
+                                        maxLength={100}
+                                        onChange={(e) => {
+                                            setRejectionReason(e.target.value)
+                                            if (e.target.value.trim()) setRejectionError(false)
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div className={styles.wrapper_counter}>
+                            <div className={styles.mkanAxtar}>{rejectionReason.length}/100</div>
+                        </div>
+                        {rejectionError && (
+                            <div className={styles.errorText} style={{ maxWidth: '1068px', width: '100%', paddingLeft: '12px' }}>
+                                Zəhmət olmasa imtina səbəbini qeyd edin
+                            </div>
+                        )}
+                    </>
+                )}
+
+                {(detailData.status === 'REJECTED' || detailData.status === 'CANCELLED') && detailData.cancelReasonText && (
+                    <div className={styles.imtinaSbbiQeydOlunmaldrParent}>
+                        <div className={styles.as_label} style={{ color: '#c9373a' }}>Ləğv etmə / İmtina səbəbi</div>
+                        <div className={styles.frameWrapper5} style={{ height: 'auto', minHeight: '60px', padding: '12px' }}>
+                            <p className={styles.mkanAxtar} style={{ color: '#c9373a', fontWeight: 500, margin: 0 }}>
+                                {detailData.cancelReasonText}
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {/* Action buttons (only in PENDING state) */}
+                {detailData.status === 'PENDING' && (
+                    <div className={styles.buttonParent}>
+                        <button className={styles.button3} onClick={handleDetailReject}>
+                            <div className={styles.statusUp_btn}>
+                                <div className={styles.logout_btn}>
+                                    <svg className={styles.vectorIcon5} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <span>İmtina</span>
+                        </button>
+                        <button className={styles.button4} onClick={handleDetailApprove}>
+                            <div className={styles.statusUp_btn}>
+                                <div className={styles.logout_btn}>
+                                    <svg className={styles.vectorIcon6} viewBox="0 0 20 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M2 7.5L7.5 13L18 2" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <span>Təsdiq et</span>
+                        </button>
+                    </div>
+                )}
             </div>
         )
     }

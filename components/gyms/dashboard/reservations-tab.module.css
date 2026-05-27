@@ -717,23 +717,44 @@
 /* Detail view page styles */
 .detailContainer {
     width: 100%;
-    background-color: #f9fafb;
-    border-radius: 12px;
-    border: 1px solid #ececed;
-    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    background-color: #fafafa;
+    text-align: left;
+    font-size: 16px;
+    color: #000;
     font-family: 'SF Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    padding: 0;
 }
-.detailHeaderRow {
+
+.heading1Wrapper {
+  	width: 100%;
+  	max-width: 1063px;
+  	height: 48px;
+  	border-bottom: 1px solid #ececed;
+  	box-sizing: border-box;
+  	display: flex;
+  	align-items: center;
+  	justify-content: space-between;
+  	color: #101828;
+    position: relative;
+}
+
+.heading1 {
+  	height: 32px;
+  	width: 100%;
+  	position: relative;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 24px;
 }
-.detailTitle {
-    font-size: 20px;
-    font-weight: 700;
-    color: #101828;
+
+.rezervasiyaDetall {
+  	line-height: 28px;
+  	font-weight: 600;
+    font-size: 24px;
 }
+
 .backBtn {
     display: flex;
     align-items: center;
@@ -746,163 +767,362 @@
     cursor: pointer;
     transition: color 0.2s;
 }
+
 .backBtn:hover {
     color: #00B4CC;
 }
-.detailCardParent {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+
+.frameWrapper {
+  	width: 100%;
+  	max-width: 1063px;
+  	border-radius: 16px;
+  	background-color: #fff;
+  	border: 1px solid #ececed;
+  	box-sizing: border-box;
+  	display: flex;
+  	align-items: center;
+  	padding: 28px 40px;
+  	color: #000;
 }
-.detailCard {
-    background: #ffffff;
+
+.frameContainer {
+  	width: 100%;
+  	max-width: 851px;
+  	display: flex;
+  	flex-direction: column;
+  	align-items: flex-start;
+  	gap: 20px;
+}
+
+.ayxanSalmanzadParent {
+  	align-self: stretch;
+  	display: flex;
+  	align-items: center;
+  	gap: 20px;
+}
+
+.ayxanSalmanzad {
+  	position: relative;
+  	line-height: 28px;
+  	font-weight: 600;
+    font-size: 20px;
+}
+
+.odeniStatus {
+  	height: 26px;
+  	width: auto;
+  	min-width: 100px;
+  	border-radius: 20px;
+  	display: flex;
+  	align-items: center;
+  	justify-content: center;
+  	padding: 4px 12px;
+  	box-sizing: border-box;
+  	gap: 4px;
+  	text-align: center;
+  	font-size: 12px;
+  	color: #fff;
+}
+
+.odeniStatusPending {
+    background-color: #ec972f;
+}
+
+.odeniStatusApproved {
+    background-color: #166728;
+}
+
+.odeniStatusCancelled {
+    background-color: #c9373a;
+}
+
+.odeniStatusRejected {
+    background-color: #8a38f5;
+}
+
+.component32Child {
+  	height: 6px;
+  	width: 6px;
+  	position: relative;
+  	border-radius: 50%;
+  	background-color: #fff;
+}
+
+.aktiv {
+  	position: relative;
+  	line-height: 18px;
+  	font-weight: 500;
+}
+
+.frameDiv {
+  	align-self: stretch;
+  	display: flex;
+  	align-items: center;
+  	justify-content: space-between;
+  	gap: 20px;
+  	font-size: 16px;
+    flex-wrap: wrap;
+}
+
+.userIdParent {
+  	display: flex;
+  	flex-direction: column;
+  	align-items: flex-start;
+  	justify-content: center;
+  	gap: 4px;
+}
+
+.mkanAxtar {
+  	position: relative;
+  	line-height: 24px;
+    font-size: 16px;
+}
+
+.superAdminUsersDetailInner {
+  	width: 100%;
+  	max-width: 1068px;
+  	display: flex;
+  	align-items: center;
+  	font-size: 20px;
+}
+
+.frameWrapper2 {
+  	width: 100%;
+  	display: flex;
+  	align-items: flex-start;
+}
+
+.frameWrapper3 {
+  	width: 100%;
+  	display: flex;
+  	flex-direction: column;
+  	align-items: flex-start;
+}
+
+.frameWrapper4 {
+  	align-self: stretch;
+  	width: 100%;
+  	border-radius: 12px;
+  	background-color: #fff;
+  	border: 1px solid #ececed;
+  	display: flex;
+  	flex-direction: column;
+  	align-items: flex-end;
+  	padding: 20px;
+}
+
+.frameParent2_detail {
+  	align-self: stretch;
+  	display: flex;
+  	flex-direction: column;
+  	align-items: flex-start;
+  	gap: 20px;
+}
+
+.xsiMlumatlarWrapper {
+  	align-self: stretch;
+  	border-bottom: 1px solid #ececed;
+  	display: flex;
+  	align-items: center;
+  	justify-content: space-between;
+  	padding: 0px 0px 4px;
+}
+
+.frameParent3_detail {
+  	align-self: stretch;
+  	display: flex;
+  	flex-direction: column;
+  	align-items: flex-start;
+  	gap: 12px;
+  	font-size: 18px;
+}
+
+.telefonNmrsiParent {
+  	align-self: stretch;
+  	height: 60px;
+  	display: flex;
+  	align-items: center;
+  	justify-content: space-between;
+  	padding: 0px 12px;
+  	box-sizing: border-box;
+  	gap: 20px;
+}
+
+.telefonNmrsi {
+  	position: relative;
+  	line-height: 28px;
+  	font-weight: 500;
+    font-size: 16px;
+    color: #000;
+}
+
+.fitnestMailcom {
+  	position: relative;
+  	line-height: 28px;
+    font-size: 16px;
+    color: #000;
+}
+
+.imtinaSbbiQeydOlunmaldrParent {
+  	border-radius: 12px;
+  	background-color: #fff;
+  	width: 100%;
+  	max-width: 1068px;
+  	display: flex;
+  	flex-direction: column;
+  	align-items: flex-start;
+  	padding: 24px;
+  	box-sizing: border-box;
+  	gap: 12px;
+  	color: #030305;
     border: 1px solid #ececed;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
-.detailCardTitle {
+
+.as_label {
+    line-height: 24px;
     font-size: 16px;
     font-weight: 600;
-    color: #101828;
-    margin-bottom: 16px;
-    border-bottom: 1px solid #f3f4f6;
-    padding-bottom: 8px;
+    color: #030305;
 }
-.customerHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    gap: 16px;
-}
-.customerNameSection {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-.customerName {
-    font-size: 18px;
-    font-weight: 700;
-    color: #101828;
-}
-.statusBadge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    border-radius: 20px;
-    padding: 4px 12px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #ffffff;
-}
-.statusPending { background-color: #ec972f; }
-.statusApproved { background-color: #166728; }
-.statusCancelled { background-color: #c9373a; }
-.statusRejected { background-color: #8a38f5; }
 
-.metaInfoGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 16px;
-    margin-top: 16px;
+.frameWrapper5 {
+  	align-self: stretch;
+  	height: 82px;
+  	border-radius: 12px;
+  	background-color: #fafafa;
+  	border: 1px solid #ececed;
+  	box-sizing: border-box;
+  	display: flex;
+  	flex-direction: column;
+  	align-items: flex-start;
+  	padding: 8px 12px;
 }
-.metaInfoItem {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+
+.imtinaSbbiWrapper {
+  	align-self: stretch;
+  	display: flex;
+  	align-items: flex-start;
+    height: 100%;
 }
-.metaLabel {
-    font-size: 12px;
-    color: #667085;
-    font-weight: 500;
-}
-.metaValue {
-    font-size: 14px;
-    color: #1d2939;
-    font-weight: 700;
-}
-.detailGrid2 {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 20px;
-}
-.actionPanel {
-    background: #ffffff;
-    border: 1px solid #ececed;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-.actionTitle {
-    font-size: 15px;
-    font-weight: 600;
-    color: #344054;
-}
-.reasonArea {
+
+.imtinaTextarea {
     width: 100%;
-    height: 100px;
-    border: 1px solid #d0d5dd;
-    border-radius: 8px;
-    padding: 12px;
-    font-size: 14px;
-    color: #1d2939;
-    resize: none;
-    outline: none;
-    transition: border-color 0.2s;
-}
-.reasonArea:focus {
-    border-color: #00B4CC;
-}
-.actionButtonRow {
-    display: flex;
-    gap: 12px;
-    margin-top: 8px;
-}
-.actionApproveBtn {
-    flex: 1;
-    background: #00B4CC;
-    color: #ffffff;
+    height: 100%;
+    background: transparent;
     border: none;
-    padding: 10px 16px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
+    outline: none;
+    font-family: inherit;
+    font-size: 16px;
+    color: #000;
+    resize: none;
+}
+
+.imtinaTextarea::placeholder {
+    color: #a3a3a3;
+}
+
+.wrapper_counter {
+  	width: 100%;
+  	max-width: 1068px;
+  	display: flex;
+  	align-items: flex-start;
+  	color: #030305;
+    justify-content: flex-end;
+    padding-right: 12px;
+    margin-top: -6px;
+}
+
+.buttonParent {
+  	width: 100%;
+  	max-width: 1068px;
+  	display: flex;
+  	align-items: center;
+  	justify-content: flex-end;
+  	gap: 20px;
+  	text-align: center;
+}
+
+.button3 {
+  	height: 48px;
+  	flex: 1;
+    max-width: 271px;
+  	border-radius: 10px;
+  	background-color: #fff;
+  	border: 1px solid #00b4cc;
+  	box-sizing: border-box;
+  	display: flex;
+  	align-items: center;
+  	justify-content: center;
+  	padding: 8px 16px;
+  	gap: 12px;
     cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    color: #00b4cc;
+    transition: all 0.2s;
+}
+
+.button3:hover {
+    background-color: #00b4cc10;
+}
+
+.button4 {
+  	height: 48px;
+  	flex: 1;
+    max-width: 271px;
+  	border-radius: 10px;
+  	background-color: #00b4cc;
+  	display: flex;
+  	align-items: center;
+  	justify-content: center;
+  	padding: 8px 16px;
+  	box-sizing: border-box;
+  	gap: 12px;
+  	color: #fff;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    border: none;
+    transition: all 0.2s;
+}
+
+.button4:hover {
+    background-color: #008799;
+}
+
+.statusUp_btn {
+  	height: 24px;
+  	width: 24px;
+  	position: relative;
+}
+
+.logout_btn {
+  	position: absolute;
+  	height: 100%;
+  	width: 100%;
+  	top: 0%;
+  	right: 0%;
+  	bottom: 0%;
+  	left: 0%;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    transition: background-color 0.2s;
 }
-.actionApproveBtn:hover {
-    background: #008c9e;
+
+.vectorIcon5 {
+    width: 19.5px;
+    height: 19.5px;
 }
-.actionRejectBtn {
-    flex: 1;
-    background: #ffffff;
-    border: 1.5px solid #d0d5dd;
-    color: #344054;
-    padding: 10px 16px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: background-color 0.2s;
+
+.vectorIcon6 {
+    width: 19.5px;
+    height: 14.3px;
 }
-.actionRejectBtn:hover {
-    background: #f9fafb;
-}
+
 .errorText {
     font-size: 12px;
     color: #c9373a;
     font-weight: 500;
-    margin-top: -8px;
+    margin-top: 4px;
 }
+
