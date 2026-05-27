@@ -275,6 +275,13 @@ const ru: TranslationKeys = {
     validationPhone: "Пожалуйста, введите корректный номер телефона (+994 xx xxx xx xx)",
     copied: "Скопировано в буфер обмена!",
   },
+  notifications: {
+    title: "Уведомления",
+    markAllAsRead: "Отметить все как прочитанные",
+    markAsRead: "Отметить как прочитанное",
+    noNotifications: "Уведомлений не найдено",
+    unread: "непрочитано",
+  },
 } as const;
 
 export default ru;

@@ -281,8 +281,14 @@ const az = {
     successMsg: "Əlaqə məlumatları uğurla yadda saxlanıldı!",
     validationFillAll: "Bütün xanaları doldurun",
     validationEmail: "Düzgün e-poçt ünvanı daxil edin",
-    validationPhone: "Düzgün telefon nömrəsi daxil edin (+994 xx xxx xx xx)",
     copied: "Nömrə kopyalandı!",
+  },
+  notifications: {
+    title: "Bildirişlər",
+    markAllAsRead: "Hamısını oxundu kimi qeyd et",
+    markAsRead: "Oxundu kimi qeyd et",
+    noNotifications: "Məlumat tapılmadı",
+    unread: "oxunmamış",
   },
 } as const;
 

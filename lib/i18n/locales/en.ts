@@ -275,6 +275,13 @@ const en: TranslationKeys = {
     validationPhone: "Please enter a valid phone number (+994 xx xxx xx xx)",
     copied: "Copied to clipboard!",
   },
+  notifications: {
+    title: "Notifications",
+    markAllAsRead: "Mark all as read",
+    markAsRead: "Mark as read",
+    noNotifications: "No notifications found",
+    unread: "unread",
+  },
 } as const;
 
 export default en;

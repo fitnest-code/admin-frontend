@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Search, LogOut, User, Menu, Globe, ChevronDown } from 'lucide-react'
+import { Search, LogOut, User, Menu, Globe, ChevronDown, Bell, CheckCheck } from 'lucide-react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { apiPost, apiGet, apiPut } from '@/lib/api/client'
+import { apiPost, apiGet, apiPut, apiPatch, apiDelete } from '@/lib/api/client'
 import { useAuthStore } from '@/lib/store/auth-store'
 import { useUIStore } from '@/lib/store/ui-store'
 import { NAV_ITEMS } from '@/lib/nav-config'
@@ -35,6 +35,62 @@ export function Header() {
   const [languages, setLanguages] = useState<string[]>(["AZ", "RU", "EN"])
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false)
   const langRef = useRef<HTMLDivElement>(null)
+
+  const [notifications, setNotifications] = useState<any[]>([])
+  const [unreadCount, setUnreadCount] = useState<number>(0)
+  const [notificationsOpen, setNotificationsOpen] = useState<boolean>(false)
+  const notificationsRef = useRef<HTMLDivElement>(null)
+
+  const fetchUnreadCount = async () => {
+    try {
+      const count = await apiGet<number>('/notifications/unread-count')
+      setUnreadCount(count)
+    } catch (err) {
+      console.error("Failed to fetch unread count:", err)
+    }
+  }
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await apiGet<any>('/notifications', { params: { page: 0, size: 20 } })
+      setNotifications(res?.items || [])
+    } catch (err) {
+      console.error("Failed to fetch notifications:", err)
+    }
+  }
+
+  const handleMarkAsRead = async (id: number, wasRead: boolean) => {
+    if (wasRead) return;
+    try {
+      await apiPatch(`/notifications/${id}/read`)
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n))
+      setUnreadCount(prev => Math.max(0, prev - 1))
+    } catch (err) {
+      console.error("Failed to mark notification as read:", err)
+    }
+  }
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await apiPatch('/notifications/read-all')
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))
+      setUnreadCount(0)
+    } catch (err) {
+      console.error("Failed to mark all as read:", err)
+    }
+  }
+
+  useEffect(() => {
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (notificationsOpen) {
+      fetchNotifications();
+    }
+  }, [notificationsOpen]);
 
   useEffect(() => {
     // Fetch languages list
@@ -68,6 +124,9 @@ export function Header() {
     function handleClickOutside(event: MouseEvent) {
       if (langRef.current && !langRef.current.contains(event.target as Node)) {
         setDropdownOpen(false)
+      }
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+        setNotificationsOpen(false)
       }
     }
     document.addEventListener("mousedown", handleClickOutside)
@@ -128,6 +187,66 @@ export function Header() {
 
       {/* Right: Language Dropdown & Exit Action */}
       <div className="flex items-center gap-6 shrink-0">
+        {/* Notifications Bell */}
+        <div className="relative flex items-center" ref={notificationsRef}>
+          <button
+            onClick={() => setNotificationsOpen(!notificationsOpen)}
+            className="p-2 hover:bg-[#00B4CC15] rounded-full transition-colors relative cursor-pointer flex items-center justify-center text-slate-700"
+          >
+            <Bell size={22} className="text-black" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold px-1 shadow-sm">
+                {unreadCount}
+              </span>
+            )}
+          </button>
+          {notificationsOpen && (
+            <div className="absolute right-0 top-full mt-2 w-[340px] max-h-[480px] rounded-xl border border-[#ececed] bg-white shadow-xl z-50 flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-[#ececed] bg-slate-50 shrink-0">
+                <div className="text-sm font-bold text-black">{t.notifications.title}</div>
+                {unreadCount > 0 && (
+                  <button
+                    onClick={handleMarkAllAsRead}
+                    className="text-[12px] font-semibold text-[#00B4CC] hover:opacity-85 transition-opacity cursor-pointer flex items-center gap-1"
+                  >
+                    <CheckCheck size={14} />
+                    {t.notifications.markAllAsRead}
+                  </button>
+                )}
+              </div>
+              {/* List */}
+              <div className="flex-1 overflow-y-auto min-h-[100px] max-h-[380px] divide-y divide-[#ececed]">
+                {notifications.length === 0 ? (
+                  <div className="py-8 px-4 text-center text-slate-400 text-sm">
+                    {t.notifications.noNotifications}
+                  </div>
+                ) : (
+                  notifications.map((n) => (
+                    <div
+                      key={n.id}
+                      onClick={() => handleMarkAsRead(n.id, n.isRead)}
+                      className={cn(
+                        "p-4 flex flex-col gap-1.5 transition-colors cursor-pointer text-left",
+                        !n.isRead ? "bg-[#00B4CC10] hover:bg-[#00B4CC15]" : "hover:bg-slate-50"
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="font-semibold text-sm text-black line-clamp-1">{n.title}</span>
+                        {!n.isRead && (
+                          <span className="w-2 h-2 rounded-full bg-[#00B4CC] mt-1.5 shrink-0" />
+                        )}
+                      </div>
+                      <p className="text-[13px] text-slate-600 leading-relaxed font-normal">{n.body}</p>
+                      <span className="text-[10px] text-slate-400 mt-0.5">{n.createdAt}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Language Dropdown */}
         <div className="relative flex items-center" ref={langRef}>
           <button
