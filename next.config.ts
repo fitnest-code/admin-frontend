@@ -47,14 +47,6 @@ const nextConfig: NextConfig = {
       "date-fns",
     ],
   },
-  async rewrites() {
-    return [
-      {
-        source: "/api/v1/:path*",
-        destination: "https://dev-api.fitnest.az/api/v1/:path*",
-      },
-    ];
-  },
 };
 
 export default nextConfig;

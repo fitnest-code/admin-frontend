@@ -1,5 +1,7 @@
 export const env = {
-  apiBaseUrl: process.env.API_BASE_URL?.trim() ?? process.env.NEXT_PUBLIC_API_BASE_URL?.trim() ?? '',
+  get apiBaseUrl() {
+    return process.env.API_BASE_URL?.trim() ?? process.env.NEXT_PUBLIC_API_BASE_URL?.trim() ?? '';
+  }
 }
 
 export function assertPublicEnv() {
