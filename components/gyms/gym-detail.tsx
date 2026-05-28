@@ -420,14 +420,6 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
         <div className="flex items-center gap-3">
           {isGymAdmin && adminGyms.length > 1 && (
             <div className="flex items-center gap-2">
-              <button
-                onClick={handlePrevGym}
-                className="flex items-center justify-center p-1.5 hover:bg-slate-100 rounded-lg transition-colors outline-none cursor-pointer border border-[#ececed] bg-white text-slate-600 hover:text-black shadow-sm"
-                title="Əvvəlki zal"
-              >
-                <ChevronLeft size={20} strokeWidth={2.5} />
-              </button>
-
               <div className="relative">
                 <button 
                   onClick={() => setIsSwitcherOpen(true)} 
@@ -459,14 +451,6 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
                   </div>
                 )}
               </div>
-
-              <button
-                onClick={handleNextGym}
-                className="flex items-center justify-center p-1.5 hover:bg-slate-100 rounded-lg transition-colors outline-none cursor-pointer border border-[#ececed] bg-white text-slate-600 hover:text-black shadow-sm"
-                title="Növbəti zal"
-              >
-                <ChevronRight size={20} strokeWidth={2.5} />
-              </button>
             </div>
           )}
 
