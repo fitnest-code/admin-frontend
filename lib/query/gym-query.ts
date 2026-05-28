@@ -484,10 +484,11 @@ export function useResetGymAdminPassword() {
 
 // 18. Zal rəylərini çəkmək üçün
 export function useGymReviews(gymId: number | string | null | undefined, params?: { status?: string, search?: string, page?: number, pageSize?: number, sort?: string }) {
+  const normalizedGymId = gymId ? Number(gymId) : null;
   return useQuery({
-    queryKey: ['gym-reviews', gymId, params],
+    queryKey: ['gym-reviews', normalizedGymId, params],
     queryFn: () => {
-      if (!gymId) return Promise.resolve(null)
+      if (!normalizedGymId) return Promise.resolve(null)
       const searchParams = new URLSearchParams()
       if (params?.status) searchParams.append('status', params.status)
       if (params?.search) searchParams.append('search', params.search)
@@ -495,7 +496,7 @@ export function useGymReviews(gymId: number | string | null | undefined, params?
       if (params?.pageSize) searchParams.append('pageSize', params.pageSize.toString())
       if (params?.sort) searchParams.append('sort', params.sort)
       
-      return apiGet<any>(`/admin/gyms/${gymId}/reviews?${searchParams.toString()}`)
+      return apiGet<any>(`/admin/gyms/${normalizedGymId}/reviews?${searchParams.toString()}`)
     },
     enabled: !!gymId,
   })
@@ -541,16 +542,17 @@ export function useRejectReview() {
 
 // 22. Rezervasiyaları çəkmək üçün
 export function useGymReservations(gymId: number | string | null | undefined, params?: { status?: string, page?: number, pageSize?: number }) {
+  const normalizedGymId = gymId ? Number(gymId) : null;
   return useQuery({
-    queryKey: ['gym-reservations', gymId, params],
+    queryKey: ['gym-reservations', normalizedGymId, params],
     queryFn: () => {
-      if (!gymId) return Promise.resolve(null)
+      if (!normalizedGymId) return Promise.resolve(null)
       const searchParams = new URLSearchParams()
       if (params?.status) searchParams.append('status', params.status)
       if (params?.page) searchParams.append('page', params.page.toString())
       if (params?.pageSize) searchParams.append('pageSize', params.pageSize.toString())
       
-      return apiGet<any>(`/admin/gyms/${gymId}/reservations?${searchParams.toString()}`)
+      return apiGet<any>(`/admin/gyms/${normalizedGymId}/reservations?${searchParams.toString()}`)
     },
     enabled: !!gymId,
   })
@@ -593,11 +595,12 @@ export function useUpdateReservationStatus() {
 
 // 25. Rezervasiya statistikasını çəkmək üçün
 export function useGymReservationStats(gymId: number | string | null | undefined) {
+  const normalizedGymId = gymId ? Number(gymId) : null;
   return useQuery({
-    queryKey: ['gym-reservation-stats', gymId],
+    queryKey: ['gym-reservation-stats', normalizedGymId],
     queryFn: () => {
-      if (!gymId) return Promise.resolve(null)
-      return apiGet<any>(`/admin/gyms/${gymId}/reservations/stats`)
+      if (!normalizedGymId) return Promise.resolve(null)
+      return apiGet<any>(`/admin/gyms/${normalizedGymId}/reservations/stats`)
     },
     enabled: !!gymId,
   })
@@ -615,11 +618,13 @@ export function useGymLessonHours(
     endDate: params?.endDate || undefined
   };
 
+  const normalizedGymId = gymId ? Number(gymId) : null;
+
   return useQuery({
-    queryKey: ['gym-lesson-hours', gymId, normalizedParams],
+    queryKey: ['gym-lesson-hours', normalizedGymId, normalizedParams],
     queryFn: () => {
-      if (!gymId) return Promise.resolve({ items: [], total: 0, page: 1, pageSize: 10 })
-      return apiGet<any>(`/admin/gyms/${gymId}/lesson-hours`, { params: normalizedParams })
+      if (!normalizedGymId) return Promise.resolve({ items: [], total: 0, page: 1, pageSize: 10 })
+      return apiGet<any>(`/admin/gyms/${normalizedGymId}/lesson-hours`, { params: normalizedParams })
     },
     enabled: !!gymId,
   })
@@ -632,7 +637,7 @@ export function useAddLessonHour() {
     mutationFn: ({ gymId, payload }: { gymId: number, payload: any }) =>
       apiPost(`/admin/gyms/${gymId}/lesson-hours`, payload),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['gym-lesson-hours', variables.gymId] });
+      queryClient.invalidateQueries({ queryKey: ['gym-lesson-hours', variables.gymId ? Number(variables.gymId) : null] });
     },
     onError: (err: any) => {
     }
@@ -646,18 +651,19 @@ export function useDeleteLessonHour() {
     mutationFn: ({ gymId, lessonHourId }: { gymId: number, lessonHourId: number | string }) =>
       apiDelete(`/admin/gyms/lesson-hours/${lessonHourId}`),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['gym-lesson-hours', variables.gymId] });
+      queryClient.invalidateQueries({ queryKey: ['gym-lesson-hours', variables.gymId ? Number(variables.gymId) : null] });
     }
   });
 }
 
 // 29. Zalın dərs növlərini çəkmək üçün
 export function useGymLessonTypes(gymId: number | string | null | undefined) {
+  const normalizedGymId = gymId ? Number(gymId) : null;
   return useQuery({
-    queryKey: ['gym-lesson-types', gymId],
+    queryKey: ['gym-lesson-types', normalizedGymId],
     queryFn: () => {
-      if (!gymId) return Promise.resolve([])
-      return apiGet<any[]>(`/admin/reservations/gyms/${gymId}/lesson-types`)
+      if (!normalizedGymId) return Promise.resolve([])
+      return apiGet<any[]>(`/admin/reservations/gyms/${normalizedGymId}/lesson-types`)
     },
     enabled: !!gymId,
   })
@@ -665,11 +671,12 @@ export function useGymLessonTypes(gymId: number | string | null | undefined) {
 
 // 30. Zalın iş saatlarını çəkmək üçün
 export function useGymWorkHours(gymId: number | string | null | undefined) {
+  const normalizedGymId = gymId ? Number(gymId) : null;
   return useQuery({
-    queryKey: ['gym-work-hours', gymId],
+    queryKey: ['gym-work-hours', normalizedGymId],
     queryFn: () => {
-      if (!gymId) return Promise.resolve(null)
-      return apiGet<any>(`/admin/gyms/${gymId}/work-hours`)
+      if (!normalizedGymId) return Promise.resolve(null)
+      return apiGet<any>(`/admin/gyms/${normalizedGymId}/work-hours`)
     },
     enabled: !!gymId,
   })
@@ -682,16 +689,12 @@ export function useUpdateGymWorkHours() {
     mutationFn: ({ gymId, payload }: { gymId: number | string, payload: any }) =>
       apiPut(`/admin/gyms/${gymId}/work-hours`, payload),
     onSuccess: async (_, variables) => {
-      const gymId = variables.gymId;
+      const gymId = variables.gymId ? Number(variables.gymId) : null;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['gym-work-hours', gymId] }),
-        queryClient.invalidateQueries({ queryKey: ['gym-work-hours', Number(gymId)] }),
-        queryClient.invalidateQueries({ queryKey: ['gym-work-hours', String(gymId)] }),
       ]);
       await Promise.all([
         queryClient.refetchQueries({ queryKey: ['gym-work-hours', gymId], exact: true }),
-        queryClient.refetchQueries({ queryKey: ['gym-work-hours', Number(gymId)], exact: true }),
-        queryClient.refetchQueries({ queryKey: ['gym-work-hours', String(gymId)], exact: true }),
       ]);
     }
   });
@@ -699,14 +702,15 @@ export function useUpdateGymWorkHours() {
 
 // 32. Get gym reservation rules (direct / category / lesson rules)
 export function useGymRulesQuery(gymId: number | string | null | undefined, categoryId?: number | string | null, lessonId?: number | string | null) {
+  const normalizedGymId = gymId ? Number(gymId) : null;
   return useQuery({
-    queryKey: ['gym-rules', gymId, categoryId, lessonId],
+    queryKey: ['gym-rules', normalizedGymId, categoryId ? Number(categoryId) : null, lessonId ? Number(lessonId) : null],
     queryFn: () => {
-      if (!gymId) return Promise.resolve(null)
+      if (!normalizedGymId) return Promise.resolve(null)
       const params = new URLSearchParams()
       if (categoryId) params.append('categoryId', categoryId.toString())
       if (lessonId) params.append('lessonId', lessonId.toString())
-      return apiGet<any>(`/reservations/rules?gymId=${gymId}&${params.toString()}`)
+      return apiGet<any>(`/reservations/rules?gymId=${normalizedGymId}&${params.toString()}`)
     },
     enabled: !!gymId
   })
@@ -719,7 +723,7 @@ export function useUpdateGymRules() {
     mutationFn: ({ gymId, htmlContent }: { gymId: number, htmlContent: string }) =>
       apiPost(`/admin/reservations/gyms/${gymId}/rules`, { htmlContent }),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['gym-rules', variables.gymId] })
+      queryClient.invalidateQueries({ queryKey: ['gym-rules', variables.gymId ? Number(variables.gymId) : null] })
     },
     onError: (err: any) => {
     }
