@@ -14,8 +14,10 @@ import { AddLessonHourModal } from './modals/add-lesson-hour-modal'
 import { EditGymRulesModal } from './modals/edit-gym-rules-modal'
 import { ConfirmDeleteModal } from '../modals/confirm-delete-modal'
 import { formatTo24h, cn } from '@/lib/utils'
+import { useT } from '@/lib/i18n'
 
 const LessonHoursTab = () => {
+    const t = useT()
     const { id: gymId } = useParams()
     const [isAddModalOpen, setIsAddModalOpen] = useState(false)
     const [isRulesModalOpen, setIsRulesModalOpen] = useState(false)
@@ -31,21 +33,21 @@ const LessonHoursTab = () => {
         })
     }
 
-    if (isLoading) return <div className={styles.loading}>Yüklənir...</div>
+    if (isLoading) return <div className={styles.loading}>{t.lessonHours.loading}</div>
 
     return (
         <div className={styles.container}>
             <div className={styles.header}>
-                <h2 className={styles.title}>Dərs saatları</h2>
+                <h2 className={styles.title}>{t.lessonHours.title}</h2>
                 <div className="flex items-center gap-3">
                     <button 
                         className={cn(styles.addBtn, "bg-white border border-[#00B4CC] text-[#00B4CC] hover:bg-slate-50")} 
                         onClick={() => setIsRulesModalOpen(true)}
                     >
-                        Qaydaları əlavə et
+                        {t.lessonHours.addRulesBtn}
                     </button>
                     <button className={styles.addBtn} onClick={() => setIsAddModalOpen(true)}>
-                        Əlavə et
+                        {t.lessonHours.addBtn}
                     </button>
                 </div>
             </div>
@@ -53,8 +55,8 @@ const LessonHoursTab = () => {
             {!lessonHours || lessonHours.length === 0 ? (
                 <div className={styles.emptyState}>
                     <div className={styles.emptyContent}>
-                        <h3 className={styles.emptyTitle}>Dərs saatları əlavə edilməyib</h3>
-                        <p className={styles.emptySubtitle}>Dərs saatı əlavə etmək üçün əlavə et düyməsini sıxın</p>
+                        <h3 className={styles.emptyTitle}>{t.lessonHours.emptyTitle}</h3>
+                        <p className={styles.emptySubtitle}>{t.lessonHours.emptySubtitle}</p>
                     </div>
                 </div>
             ) : (
@@ -62,12 +64,12 @@ const LessonHoursTab = () => {
                     <table className={styles.table}>
                         <thead>
                             <tr>
-                                <th>Dərs növü</th>
-                                <th>Məşqçi</th>
-                                <th>Tarix</th>
-                                <th>Saat</th>
-                                <th>Yer</th>
-                                <th>Status</th>
+                                <th>{t.lessonHours.classType}</th>
+                                <th>{t.lessonHours.trainer}</th>
+                                <th>{t.lessonHours.date}</th>
+                                <th>{t.lessonHours.time}</th>
+                                <th>{t.lessonHours.places}</th>
+                                <th>{t.lessonHours.status}</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -81,7 +83,7 @@ const LessonHoursTab = () => {
                                     <td>{hour.emptySpaces}</td>
                                     <td>
                                         <span className={styles.statusBadge}>
-                                            {hour.status === 'OPEN' ? 'Aktiv' : 'Bağlı'}
+                                            {hour.status === 'OPEN' ? t.lessonHours.statusActive : t.lessonHours.statusClosed}
                                         </span>
                                     </td>
                                     <td className={styles.actions}>
@@ -110,7 +112,7 @@ const LessonHoursTab = () => {
             )}
             {deleteLessonId !== null && (
                 <ConfirmDeleteModal
-                    name={lessonHours?.find((h: any) => h.id === deleteLessonId)?.lessonTypeName || 'Dərs saatı'}
+                    name={lessonHours?.find((h: any) => h.id === deleteLessonId)?.lessonTypeName || t.lessonHours.fallbackName}
                     onConfirm={handleDelete}
                     onCancel={() => setDeleteLessonId(null)}
                     isLoading={deleteMutation.isPending}

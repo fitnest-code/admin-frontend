@@ -6,6 +6,7 @@ import styles from './add-lesson-hour-modal.module.css' // Reuse modal layout st
 import { cn } from '@/lib/utils'
 import { useGymRulesQuery, useUpdateGymRules } from '@/lib/query/gym-query'
 import { SuccessAnimationModal } from '@/components/ui/success-animation-modal'
+import { useT } from '@/lib/i18n'
 
 interface Props {
     gymId: number
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export const EditGymRulesModal = ({ gymId, onClose }: Props) => {
+    const t = useT()
     const { data: rulesData, isLoading } = useGymRulesQuery(gymId)
     const updateRulesMutation = useUpdateGymRules()
     
@@ -38,7 +40,7 @@ export const EditGymRulesModal = ({ gymId, onClose }: Props) => {
         <div className={styles.overlay} onClick={(e) => e.target === e.currentTarget && onClose()}>
             <div className={styles.modal} style={{ maxWidth: '600px' }}>
                 <div className={styles.header}>
-                    <h2 className={styles.title}>Rezervasiya Qaydalarını Redaktə Et</h2>
+                    <h2 className={styles.title}>{t.lessonHours.rulesModalTitle}</h2>
                     <button className={styles.closeBtn} onClick={onClose}>
                         <Image src="/Sidebar/X.svg" width={24} height={24} alt="Close" />
                     </button>
@@ -46,9 +48,9 @@ export const EditGymRulesModal = ({ gymId, onClose }: Props) => {
 
                 <div className={styles.body}>
                     <div className={styles.inputGroup} style={{ gap: '12px' }}>
-                        <label className={styles.label} style={{ fontWeight: '500' }}>Qaydaların HTML Mətni</label>
+                        <label className={styles.label} style={{ fontWeight: '500' }}>{t.lessonHours.rulesHtmlLabel}</label>
                         {isLoading ? (
-                            <div className="py-8 text-center text-sm text-slate-400">Yüklənir...</div>
+                            <div className="py-8 text-center text-sm text-slate-400">{t.lessonHours.loading}</div>
                         ) : (
                             <textarea
                                 className={cn(styles.input, "min-h-[240px] font-mono text-sm leading-relaxed p-4")}
@@ -62,13 +64,13 @@ export const EditGymRulesModal = ({ gymId, onClose }: Props) => {
                 </div>
 
                 <div className={styles.footer}>
-                    <button className={styles.cancelBtn} onClick={onClose}>Ləğv et</button>
+                    <button className={styles.cancelBtn} onClick={onClose}>{t.lessonHours.cancelBtn}</button>
                     <button 
                         className={styles.saveBtn} 
                         onClick={handleSubmit}
                         disabled={updateRulesMutation.isPending || isLoading}
                     >
-                        {updateRulesMutation.isPending ? 'Gözləyin...' : 'Yadda saxla'}
+                        {updateRulesMutation.isPending ? t.lessonHours.waiting : t.lessonHours.saveBtn}
                     </button>
                 </div>
             </div>
@@ -79,7 +81,7 @@ export const EditGymRulesModal = ({ gymId, onClose }: Props) => {
                     setShowSuccess(false);
                     onClose();
                 }} 
-                message="Qaydalar uğurla yeniləndi"
+                message={t.lessonHours.rulesSuccess}
             />
         </div>
     )

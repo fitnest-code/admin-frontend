@@ -56,10 +56,11 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
   const [isUpdatingFromCoords, setIsUpdatingFromCoords] = useState(false);
 
   // 1. Reverse Geocoding when coordinates are typed manually
+  const hasCoordinates = contact.latitude !== 0 && contact.longitude !== 0 && contact.latitude != null && contact.longitude != null;
   const { data: addressData, isFetching: isAddressFetching } = useGetAddressByCoords(
     contact.latitude || 0,
     contact.longitude || 0,
-    isUpdatingFromCoords
+    isUpdatingFromCoords && hasCoordinates
   );
 
 

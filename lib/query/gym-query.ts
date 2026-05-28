@@ -681,8 +681,18 @@ export function useUpdateGymWorkHours() {
   return useMutation({
     mutationFn: ({ gymId, payload }: { gymId: number | string, payload: any }) =>
       apiPut(`/admin/gyms/${gymId}/work-hours`, payload),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['gym-work-hours', variables.gymId] });
+    onSuccess: async (_, variables) => {
+      const gymId = variables.gymId;
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['gym-work-hours', gymId] }),
+        queryClient.invalidateQueries({ queryKey: ['gym-work-hours', Number(gymId)] }),
+        queryClient.invalidateQueries({ queryKey: ['gym-work-hours', String(gymId)] }),
+      ]);
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['gym-work-hours', gymId], exact: true }),
+        queryClient.refetchQueries({ queryKey: ['gym-work-hours', Number(gymId)], exact: true }),
+        queryClient.refetchQueries({ queryKey: ['gym-work-hours', String(gymId)], exact: true }),
+      ]);
     }
   });
 }

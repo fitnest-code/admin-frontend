@@ -14,6 +14,7 @@ import { CustomCalendar } from '@/components/ui/custom-calendar'
 import { format, parse } from 'date-fns'
 import { Calendar as CalendarIcon, Loader2, Clock } from 'lucide-react'
 import { SuccessAnimationModal } from '@/components/ui/success-animation-modal'
+import { useT } from '@/lib/i18n'
 
 interface Props {
     gymId: number
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
+    const t = useT()
     const [selectedLessonType, setSelectedLessonType] = useState<number | null>(null)
     const [selectedTrainer, setSelectedTrainer] = useState<string | null>(null)
     const [date, setDate] = useState('')
@@ -71,7 +73,7 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
 
     const handleSubmit = () => {
         if (!date) {
-            alert('Zəhmət olmasa tarix seçin')
+            alert(t.lessonHours.dateRequiredAlert)
             return
         }
 
@@ -96,7 +98,7 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
         <div className={styles.overlay} onClick={(e) => e.target === e.currentTarget && onClose()}>
             <div className={styles.modal}>
                 <div className={styles.header}>
-                    <h2 className={styles.title}>Dərs saatı məlumatları</h2>
+                    <h2 className={styles.title}>{t.lessonHours.addModalTitle}</h2>
                     <button className={styles.closeBtn} onClick={onClose}>
                         <Image src="/Sidebar/X.svg" width={24} height={24} alt="Close" />
                     </button>
@@ -116,14 +118,14 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                                 </div>
                             ))}
                             {availableLessonTypes.length === 0 && (
-                                <p className={styles.emptyText}>Dərs növü tapılmadı</p>
+                                <p className={styles.emptyText}>{t.lessonHours.noClassTypes}</p>
                             )}
                         </div>
                     </div>
 
                     {/* Trainer Selection */}
                     <div className={styles.section}>
-                        <h3 className={styles.sectionTitle}>Məşqi seçin (İstəyə bağlı)</h3>
+                        <h3 className={styles.sectionTitle}>{t.lessonHours.selectTrainerLabel}</h3>
                         <div className={cn(styles.trainersList, "max-h-[220px] overflow-y-auto relative p-1")}>
                             {trainersLoading ? (
                                 <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-10">
@@ -152,13 +154,13 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                                     </div>
                                     <div className={styles.trainerInfo}>
                                         <div className={styles.trainerName}>{trainer.name} {trainer.surname}</div>
-                                        <div className={styles.trainerRole}>{trainer.profession?.name || trainer.professionName || 'Məşqi'}</div>
+                                        <div className={styles.trainerRole}>{trainer.profession?.name || trainer.professionName || t.lessonHours.trainer}</div>
                                     </div>
                                 </div>
                             ))}
                             {!trainersLoading && currentTrainers.length === 0 && (
                                 <p className={styles.emptyText}>
-                                    Bu dərs növü üzrə məşqi tapılmadı
+                                    {t.lessonHours.noTrainersFound}
                                 </p>
                             )}
                         </div>
@@ -167,7 +169,7 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                     {/* Date and Slots */}
                     <div className={cn(styles.row, "relative", showCalendar ? "z-30" : "z-20")}>
                         <div className={cn(styles.inputGroup, "relative")}>
-                            <label className={styles.label}>Tarix</label>
+                            <label className={styles.label}>{t.lessonHours.date}</label>
                             <div className="relative">
                                 <button 
                                     onClick={() => {
@@ -181,7 +183,7 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                                     )}
                                 >
                                     <span className={cn(!date && "text-slate-400")}>
-                                        {date ? format(selectedDateObj!, 'dd.MM.yyyy') : 'Tarix seçin'}
+                                        {date ? format(selectedDateObj!, 'dd.MM.yyyy') : t.lessonHours.datePlaceholder}
                                     </span>
                                     <CalendarIcon size={18} className="text-slate-400" />
                                 </button>
@@ -204,7 +206,7 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                             </div>
                         </div>
                         <div className={styles.inputGroup}>
-                            <label className={styles.label}>Yer / Nəfər ( max. 12 )</label>
+                            <label className={styles.label}>{t.lessonHours.places} ( max. 12 )</label>
                             <input 
                                 type="number" 
                                 className={styles.input} 
@@ -217,7 +219,7 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                     {/* Times */}
                     <div className={cn(styles.row, "relative", (showStartPicker || showEndPicker) ? "z-30" : "z-10")}>
                         <div className={styles.inputGroup}>
-                            <label className={styles.label}>Başlama saatı</label>
+                            <label className={styles.label}>{t.lessonHours.startTimeLabel}</label>
                             <div className="relative">
                                 <button 
                                     type="button"
@@ -251,7 +253,7 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                             </div>
                         </div>
                         <div className={styles.inputGroup}>
-                            <label className={styles.label}>Bitmə saatı</label>
+                            <label className={styles.label}>{t.lessonHours.endTimeLabel}</label>
                             <div className="relative">
                                 <button 
                                     type="button"
@@ -288,9 +290,9 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                 </div>
 
                 <div className={styles.footer}>
-                    <button className={styles.cancelBtn} onClick={onClose}>Ləğv et</button>
+                    <button className={styles.cancelBtn} onClick={onClose}>{t.lessonHours.cancelBtn}</button>
                     <button className={styles.saveBtn} onClick={handleSubmit}>
-                        {addMutation.isPending ? 'Gözləyin...' : 'Yadda saxla'}
+                        {addMutation.isPending ? t.lessonHours.waiting : t.lessonHours.saveBtn}
                     </button>
                 </div>
             </div>
@@ -301,7 +303,7 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                     setShowSuccess(false);
                     onClose();
                 }} 
-                message="Dərs saatı uğurla yaradıldı"
+                message={t.lessonHours.createSuccess}
             />
         </div>
     )

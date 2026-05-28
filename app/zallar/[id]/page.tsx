@@ -1,6 +1,6 @@
 'use client'
 
-import { use } from 'react'
+import { use, Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { AdminLayout } from '@/components/layout/admin-layout'
 import { ZalDetail } from '@/components/zallar/zal-detail'
@@ -18,7 +18,9 @@ export default function ZalDetailPage({ params }: ZalDetailPageProps) {
 
   return (
     <AdminLayout>
-      <ZalDetail zal={zal} />
+      <Suspense fallback={<div className="text-center py-16 text-slate-400">Yüklənir...</div>}>
+        <ZalDetail zal={zal} />
+      </Suspense>
     </AdminLayout>
   )
 }

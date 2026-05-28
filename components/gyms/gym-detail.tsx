@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { ArrowLeft, ChevronDown, Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
@@ -178,12 +178,30 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [isNew])
 
-  const [activeTab, setActiveTab] = useState(currentTab || (isNew ? 'info' : 'analitika'))
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+  const tabParam = searchParams.get('tab')
+
+  const [activeTab, setActiveTabState] = useState(tabParam || currentTab || (isNew ? 'info' : 'analitika'))
   const [showExitConfirm, setShowExitConfirm] = useState(false)
   const [showWarning, setShowWarning] = useState(false)
 
   useEffect(() => {
-    if (currentTab) {
+    if (tabParam && tabParam !== activeTab) {
+      setActiveTabState(tabParam)
+    }
+  }, [tabParam])
+
+  const setActiveTab = (tabKey: string) => {
+    setActiveTabState(tabKey)
+    setCurrentTab(tabKey)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('tab', tabKey)
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }
+
+  useEffect(() => {
+    if (currentTab && currentTab !== activeTab) {
       setActiveTab(currentTab)
     }
   }, [currentTab])

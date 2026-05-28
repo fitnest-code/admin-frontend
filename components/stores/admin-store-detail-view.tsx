@@ -21,7 +21,6 @@ import {
   Globe, 
   Settings,
   ChevronLeft,
-  Copy,
   Clock,
   Upload,
   RefreshCw,
@@ -30,7 +29,6 @@ import {
 } from "lucide-react";
 import { useAdminStoreDetailQuery } from "@/modules/stores";
 import { useSubscriptionPackages } from "@/lib/query/use-subscription-packages";
-import { toast } from "sonner";
 import styles from "./index.module.css";
 import { cn } from "@/lib/utils";
 import LocationPickerMap from "@/components/ui/location-picker-map";
@@ -46,13 +44,7 @@ export function AdminStoreDetailView({ storeId }: { storeId: number }) {
     return pkg?.name ?? `Paket #${packageId}`;
   }
 
-  function copyText(text: string) {
-    if (!text) return;
-    void navigator.clipboard.writeText(text).then(
-      () => toast.success("Kopyalandı"),
-      () => toast.error("Kopyalanmadı"),
-    );
-  }
+
 
   if (isLoading) {
     return (
@@ -133,22 +125,6 @@ export function AdminStoreDetailView({ storeId }: { storeId: number }) {
             <div className={styles.infoGroup}>
               <span className={styles.label}>Ünvan</span>
               <div className={styles.valueBox}>{typeof data.address === 'object' ? JSON.stringify(data.address) : data.address}</div>
-            </div>
-            <div className={styles.grid2}>
-              <div className={styles.infoGroup}>
-                <span className={styles.label}>En (Latitude)</span>
-                <div className={styles.valueBox}>
-                  {data.latitude}
-                  <Copy size={16} className={styles.copyButton} onClick={() => copyText(String(data.latitude))} />
-                </div>
-              </div>
-              <div className={styles.infoGroup}>
-                <span className={styles.label}>Uzunluq (Longitude)</span>
-                <div className={styles.valueBox}>
-                  {data.longitude}
-                  <Copy size={16} className={styles.copyButton} onClick={() => copyText(String(data.longitude))} />
-                </div>
-              </div>
             </div>
 
             {/* Map moved here */}

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
 import { Loader2 } from 'lucide-react'
+import { useT } from '@/lib/i18n'
 
 interface ConfirmDeleteModalProps {
   name: string
@@ -14,6 +15,7 @@ interface ConfirmDeleteModalProps {
 
 export function ConfirmDeleteModal({ name, onConfirm, onCancel, isLoading }: ConfirmDeleteModalProps) {
   const [mounted, setMounted] = useState(false)
+  const t = useT()
 
   useEffect(() => {
     setMounted(true)
@@ -30,7 +32,7 @@ export function ConfirmDeleteModal({ name, onConfirm, onCancel, isLoading }: Con
     >
       <div className="w-full max-w-[548px] min-h-[170px] rounded-[12px] bg-white flex flex-col items-center justify-center p-10 gap-7 shadow-2xl animate-in zoom-in-95 duration-200 font-sans">
         <div className="text-[26px] font-medium text-[#131212] leading-[40px] text-center">
-          Silmək istədiyinizə əminsiniz?
+          {t.lessonHours.deleteConfirmTitle}
         </div>
         
         <div className="w-full flex items-center justify-between gap-5">
@@ -39,7 +41,7 @@ export function ConfirmDeleteModal({ name, onConfirm, onCancel, isLoading }: Con
             disabled={isLoading}
             className="flex-1 h-[48px] max-w-[250px] rounded-[10px] bg-white border border-[#00b4cc] flex items-center justify-center px-4 transition-all hover:bg-slate-50 disabled:opacity-50"
           >
-            <span className="text-[16px] font-medium text-black leading-[24px]">Ləğv et</span>
+            <span className="text-[16px] font-medium text-black leading-[24px]">{t.lessonHours.deleteConfirmCancel}</span>
           </button>
           
           <button 
@@ -51,7 +53,7 @@ export function ConfirmDeleteModal({ name, onConfirm, onCancel, isLoading }: Con
               {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-white" />
               ) : (
-                <span className="text-[16px] font-medium text-white leading-[24px]">Bəli</span>
+                <span className="text-[16px] font-medium text-white leading-[24px]">{t.lessonHours.deleteConfirmYes}</span>
               )}
             </div>
           </button>

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { ArrowLeft, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ZAL_TABS, type Zal } from '@/lib/zallar-data'
@@ -24,7 +24,24 @@ const STATUS_STYLES = {
 
 export function ZalDetail({ zal, isNew = false }: ZalDetailProps) {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState(ZAL_TABS[0].key) // 'analitika' is now the first tab
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+  const tabParam = searchParams.get('tab')
+
+  const [activeTab, setActiveTabState] = useState(tabParam || ZAL_TABS[0].key) // 'analitika' is now the first tab
+
+  useEffect(() => {
+    if (tabParam && tabParam !== activeTab) {
+      setActiveTabState(tabParam)
+    }
+  }, [tabParam])
+
+  const setActiveTab = (tabKey: string) => {
+    setActiveTabState(tabKey)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('tab', tabKey)
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }
 
   function renderTab() {
     switch (activeTab) {

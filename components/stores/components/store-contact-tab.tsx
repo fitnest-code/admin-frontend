@@ -41,10 +41,11 @@ export default function ContactInfoTab({ data, onChange }: Step2Props) {
   const [isUpdatingFromCoords, setIsUpdatingFromCoords] = useState(false);
 
   // 1. Reverse Geocoding when coordinates are typed manually
+  const hasCoordinates = data.latitude !== 0 && data.longitude !== 0 && data.latitude != null && data.longitude != null;
   const { data: addressData, isFetching: isAddressFetching } = useGetAddressByCoords(
     data.latitude || 0,
     data.longitude || 0,
-    isUpdatingFromCoords
+    isUpdatingFromCoords && hasCoordinates
   );
 
   // Sync inputs when data.latitude/longitude changes (e.g. from suggestion select)
