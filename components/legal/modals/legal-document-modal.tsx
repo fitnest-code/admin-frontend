@@ -86,7 +86,11 @@ export function LegalDocumentModal({
       updateDoc(
         {
           id: document.id,
-          payload: { content: formData.content, version: formData.version },
+          payload: { 
+            content: formData.content, 
+            version: formData.version,
+            language: selectedLang 
+          },
         },
         {
           onSuccess: () => {

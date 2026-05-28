@@ -26,6 +26,7 @@ export interface LegalDocumentCreatePayload {
 export interface LegalDocumentUpdatePayload {
   content?: string;
   version?: string;
+  language?: string;
 }
 
 type LegalDocumentApiResponse = {
