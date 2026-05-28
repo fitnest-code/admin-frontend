@@ -31,7 +31,7 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
     const [showEndPicker, setShowEndPicker] = useState(false)
     const [startTime, setStartTime] = useState('09:00')
     const [endTime, setEndTime] = useState('10:00')
-    const [maxSlots, setMaxSlots] = useState(12)
+    const [maxSlots, setMaxSlots] = useState<number | ''>('')
     const [showSuccess, setShowSuccess] = useState(false)
 
     // Fetch gym details & categories to extract all lesson types belonging to the gym's category
@@ -74,6 +74,10 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
     const handleSubmit = () => {
         if (!date) {
             alert(t.lessonHours.dateRequiredAlert)
+            return
+        }
+        if (maxSlots === '') {
+            alert('Zəhmət olmasa yer sayını qeyd edin')
             return
         }
 
@@ -211,7 +215,17 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                                 type="number" 
                                 className={styles.input} 
                                 value={maxSlots}
-                                onChange={(e) => setMaxSlots(Number(e.target.value))}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val === '') {
+                                        setMaxSlots('');
+                                    } else {
+                                        const num = parseInt(val, 10);
+                                        if (!isNaN(num)) {
+                                            setMaxSlots(num);
+                                        }
+                                    }
+                                }}
                             />
                         </div>
                     </div>

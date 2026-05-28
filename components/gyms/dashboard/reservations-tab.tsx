@@ -96,6 +96,7 @@ const ReservationsTab = () => {
     }
 
     const totalPages = Math.ceil((reservationsData?.total || 0) / 10) || 1;
+    const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
 
     // Detailed Reservation View Mode
     if (viewMode === 'detail' && detailData) {
@@ -524,72 +525,19 @@ const ReservationsTab = () => {
 
                 {/* Pagination Section */}
                 {totalPages > 1 && (
-                    <div className="flex items-center justify-center gap-[18px] mt-8 select-none">
-                        <button 
-                            onClick={() => setPage(1)}
-                            className={cn(
-                                "h-8 w-8 rounded flex items-center justify-center text-[16px] font-semibold transition-all",
-                                page === 1 ? "bg-[#00b4cc] text-white shadow-md" : "bg-white border border-[#ececed] text-black hover:bg-slate-50"
-                            )}
-                        >
-                            1
-                        </button>
-                        
-                        {totalPages >= 2 && (
-                            <button 
-                                onClick={() => setPage(2)}
+                    <div className="flex items-center justify-center gap-1 border-t border-border px-4 py-4 mt-8 select-none">
+                        {pages.map((p) => (
+                            <button
+                                key={p}
+                                onClick={() => setPage(p)}
                                 className={cn(
-                                    "h-8 w-8 rounded flex items-center justify-center text-[16px] font-semibold transition-all",
-                                    page === 2 ? "bg-[#00b4cc] text-white shadow-md" : "bg-white border border-[#ececed] text-black hover:bg-slate-50"
+                                    'flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors',
+                                    p === page ? 'bg-[#00B4CC] text-white' : 'text-[#101828] hover:bg-slate-100',
                                 )}
                             >
-                                2
+                                {p}
                             </button>
-                        )}
-
-                        {totalPages >= 3 && (
-                            <button 
-                                onClick={() => setPage(3)}
-                                className={cn(
-                                    "h-8 w-8 rounded flex items-center justify-center text-[16px] font-semibold transition-all",
-                                    page === 3 ? "bg-[#00b4cc] text-white shadow-md" : "bg-white border border-[#ececed] text-black hover:bg-slate-50"
-                                )}
-                            >
-                                3
-                            </button>
-                        )}
-
-                        {totalPages >= 4 && (
-                            <button 
-                                onClick={() => setPage(4)}
-                                className={cn(
-                                    "h-8 w-8 rounded flex items-center justify-center text-[16px] font-semibold transition-all",
-                                    page === 4 ? "bg-[#00b4cc] text-white shadow-md" : "bg-white border border-[#ececed] text-black hover:bg-slate-50"
-                                )}
-                            >
-                                4
-                            </button>
-                        )}
-
-                        {totalPages > 5 && (
-                            <div className="h-8 w-8 rounded bg-white border border-[#ececed] flex items-center justify-center gap-[1px]">
-                                <div className="h-[3px] w-[3px] rounded-full bg-black" />
-                                <div className="h-[3px] w-[3px] rounded-full bg-black" />
-                                <div className="h-[3px] w-[3px] rounded-full bg-black" />
-                            </div>
-                        )}
-
-                        {totalPages > 4 && (
-                            <button 
-                                onClick={() => setPage(totalPages)}
-                                className={cn(
-                                    "h-8 w-8 rounded flex items-center justify-center text-[16px] font-semibold transition-all",
-                                    page === totalPages ? "bg-[#00b4cc] text-white shadow-md" : "bg-white border border-[#ececed] text-black hover:bg-slate-50"
-                                )}
-                            >
-                                {totalPages}
-                            </button>
-                        )}
+                        ))}
                     </div>
                 )}
             </div>

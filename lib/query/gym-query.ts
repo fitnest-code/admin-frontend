@@ -19,7 +19,7 @@ import {
   GymAnalyticsResponse
 } from '../types/gym'
 import { useGymStore } from '../store/gym-store'
-import { toast } from 'sonner'
+
 
 // 1. Kateqoriyaları çəkmək üçün
 export function useCategories() {
@@ -353,10 +353,8 @@ export function useUpdateGymDetails() {
       apiPut(`/admin/gyms/${id}/details`, payload),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['gym-details', variables.id] });
-      toast.success('Məlumatlar uğurla yeniləndi');
     },
     onError: (err: any) => {
-      toast.error(err?.message || 'Məlumatların yenilənməsində xəta baş verdi');
     }
   });
 }
@@ -399,10 +397,8 @@ export function useAddTrainer() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['gym-trainers', variables.gymId] });
-      toast.success('Məşqçi uğurla əlavə edildi');
     },
     onError: (err: any) => {
-      toast.error(err?.message || 'Məşqçi əlavə edilərkən xəta baş verdi');
     }
   });
 }
@@ -416,7 +412,6 @@ export function useDeleteTrainer() {
       apiDelete(`/admin/gyms/${gymId}/trainers/${trainerId}`),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['gym-trainers', variables.gymId] });
-      toast.success('Məşqçi silindi');
     }
   });
 }
@@ -590,10 +585,8 @@ export function useUpdateReservationStatus() {
       queryClient.invalidateQueries({ queryKey: ['gym-reservations'] });
       queryClient.invalidateQueries({ queryKey: ['reservation-detail', variables.reservationId] });
       queryClient.invalidateQueries({ queryKey: ['gym-reservation-stats', variables.reservationId] }); // Fixed key
-      toast.success('Status yeniləndi');
     },
     onError: (err: any) => {
-      toast.error(err?.message || 'Xəta baş verdi');
     }
   });
 }
@@ -613,11 +606,13 @@ export function useGymReservationStats(gymId: number | string | null | undefined
 // 26. Dərs saatlarını çəkmək üçün
 export function useGymLessonHours(
   gymId: number | string | null | undefined,
-  params?: { page?: number; pageSize?: number }
+  params?: { page?: number; pageSize?: number; startDate?: string; endDate?: string }
 ) {
   const normalizedParams = {
     page: params?.page || 1,
-    pageSize: params?.pageSize || 10
+    pageSize: params?.pageSize || 10,
+    startDate: params?.startDate || undefined,
+    endDate: params?.endDate || undefined
   };
 
   return useQuery({
@@ -638,10 +633,8 @@ export function useAddLessonHour() {
       apiPost(`/admin/gyms/${gymId}/lesson-hours`, payload),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['gym-lesson-hours', variables.gymId] });
-      toast.success('Dərs saatı əlavə edildi');
     },
     onError: (err: any) => {
-      toast.error(err?.message || 'Xəta baş verdi');
     }
   });
 }
@@ -654,7 +647,6 @@ export function useDeleteLessonHour() {
       apiDelete(`/admin/gyms/lesson-hours/${lessonHourId}`),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['gym-lesson-hours', variables.gymId] });
-      toast.success('Dərs saatı silindi');
     }
   });
 }
@@ -728,10 +720,8 @@ export function useUpdateGymRules() {
       apiPost(`/admin/reservations/gyms/${gymId}/rules`, { htmlContent }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['gym-rules', variables.gymId] })
-      toast.success('Rezervasiya qaydaları uğurla yeniləndi')
     },
     onError: (err: any) => {
-      toast.error(err?.message || 'Xəta baş verdi')
     }
   })
 }
