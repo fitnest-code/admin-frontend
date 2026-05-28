@@ -33,6 +33,7 @@ import { useSubscriptionPackages } from "@/lib/query/use-subscription-packages";
 import { toast } from "sonner";
 import styles from "./index.module.css";
 import { cn } from "@/lib/utils";
+import LocationPickerMap from "@/components/ui/location-picker-map";
 
 
 export function AdminStoreDetailView({ storeId }: { storeId: number }) {
@@ -151,14 +152,12 @@ export function AdminStoreDetailView({ storeId }: { storeId: number }) {
             </div>
 
             {/* Map moved here */}
-            <div className="w-full h-[240px] rounded-xl overflow-hidden border border-[#ececed] mt-4">
-              <iframe 
-                width="100%" 
-                height="100%" 
-                style={{ border: 0 }} 
-                src={`https://www.google.com/maps?q=${data.latitude},${data.longitude}&z=15&output=embed`} 
-                allowFullScreen 
-                loading="lazy"
+            <div className="w-full rounded-xl overflow-hidden border border-[#ececed] mt-4">
+              <LocationPickerMap
+                lat={data.latitude}
+                lng={data.longitude}
+                height="240px"
+                disabled={true}
               />
             </div>
 
