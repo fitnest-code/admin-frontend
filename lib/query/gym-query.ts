@@ -611,12 +611,20 @@ export function useGymReservationStats(gymId: number | string | null | undefined
 }
 
 // 26. Dərs saatlarını çəkmək üçün
-export function useGymLessonHours(gymId: number | string | null | undefined) {
+export function useGymLessonHours(
+  gymId: number | string | null | undefined,
+  params?: { page?: number; pageSize?: number }
+) {
+  const normalizedParams = {
+    page: params?.page || 1,
+    pageSize: params?.pageSize || 10
+  };
+
   return useQuery({
-    queryKey: ['gym-lesson-hours', gymId],
+    queryKey: ['gym-lesson-hours', gymId, normalizedParams],
     queryFn: () => {
-      if (!gymId) return Promise.resolve([])
-      return apiGet<any[]>(`/admin/gyms/${gymId}/lesson-hours`)
+      if (!gymId) return Promise.resolve({ items: [], total: 0, page: 1, pageSize: 10 })
+      return apiGet<any>(`/admin/gyms/${gymId}/lesson-hours`, { params: normalizedParams })
     },
     enabled: !!gymId,
   })
