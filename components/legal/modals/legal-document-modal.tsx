@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { useI18nStore } from "@/lib/i18n";
+import { useI18nStore, useT } from "@/lib/i18n";
 import {
   useCreateLegalDocument,
   useUpdateLegalDocument,
@@ -33,6 +33,7 @@ export function LegalDocumentModal({
   onSuccess,
 }: LegalDocumentModalProps) {
   const selectedLang = useI18nStore((s) => s.locale);
+  const t = useT();
   const { mutate: createDoc, isPending: isCreating } = useCreateLegalDocument();
   const { mutate: updateDoc, isPending: isUpdating } = useUpdateLegalDocument();
   const { mutate: activateDoc, isPending: isActivating } = useActivateLegalDocument();
@@ -77,7 +78,7 @@ export function LegalDocumentModal({
 
   const handleSave = () => {
     if (!formData.content.trim() || !formData.type.trim()) {
-      toast.error("Bütün vacib xanaları doldurun");
+      toast.error(t.legal.fillAllFields);
       return;
     }
 
@@ -94,13 +95,13 @@ export function LegalDocumentModal({
               action(document.id, {
                 onSuccess,
                 onError: (err: any) =>
-                  toast.error(err.message || "Status yenilənərkən xəta baş verdi"),
+                  toast.error(err.message || t.legal.statusUpdateError),
               });
             } else {
               onSuccess();
             }
           },
-          onError: (err: any) => toast.error(err.message || "Xəta baş verdi"),
+          onError: (err: any) => toast.error(err.message || t.legal.errorOccurred),
         }
       );
     } else {
@@ -114,7 +115,7 @@ export function LegalDocumentModal({
         },
         {
           onSuccess,
-          onError: (err: any) => toast.error(err.message || "Xəta baş verdi"),
+          onError: (err: any) => toast.error(err.message || t.legal.errorOccurred),
         }
       );
     }
@@ -135,13 +136,13 @@ export function LegalDocumentModal({
       >
         <DialogHeader className="pb-4 border-b border-[#ECECED]">
           <DialogTitle className="text-2xl font-semibold leading-[28px] text-[#101828]">
-            {document ? "Sənədi yenilə" : "Yeni sənəd"}
+            {document ? t.legal.updateDocument : t.legal.newDocument}
           </DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-[28px] py-2">
           {/* Status Switch (aligned to right) */}
           <div className="flex items-center justify-end gap-3 self-stretch">
-            <span className="text-base font-normal leading-6 text-[#101828]">Status</span>
+            <span className="text-base font-normal leading-6 text-[#101828]">{t.legal.status}</span>
             <button
               type="button"
               role="switch"
@@ -167,12 +168,12 @@ export function LegalDocumentModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full">
             {/* Tip (Dropdown) */}
             <div className="flex flex-col gap-3 w-full text-left">
-              <label className="text-base font-normal leading-6 text-black">Tip</label>
+              <label className="text-base font-normal leading-6 text-black">{t.legal.type}</label>
               {document ? (
                 <div className="h-[60px] w-full rounded-xl bg-[#FAFAFA] border border-[#ECECED] px-3 flex items-center justify-start text-lg font-normal text-[#101828]">
                   {formData.type === "TERMS_OF_USE"
-                    ? "İstifadə Şərtləri"
-                    : "Məxfilik Siyasəti"}
+                    ? t.legal.termsOfUse
+                    : t.legal.privacyPolicy}
                 </div>
               ) : (
                 <div className="relative w-full">
@@ -182,8 +183,8 @@ export function LegalDocumentModal({
                     onChange={handleChange}
                     className="w-full h-[60px] bg-[#FAFAFA] border border-[#ECECED] rounded-xl px-3 text-lg font-normal text-[#101828] outline-none focus:border-[#00B4CC] focus:bg-white transition-all appearance-none cursor-pointer"
                   >
-                    <option value="TERMS_OF_USE">İstifadə Şərtləri</option>
-                    <option value="PRIVACY_POLICY">Məxfilik Siyasəti</option>
+                    <option value="TERMS_OF_USE">{t.legal.termsOfUse}</option>
+                    <option value="PRIVACY_POLICY">{t.legal.privacyPolicy}</option>
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[#101828]">
                     <svg
@@ -200,13 +201,13 @@ export function LegalDocumentModal({
 
             {/* Versiya */}
             <div className="flex flex-col gap-3 w-full text-left">
-              <label className="text-base font-normal leading-6 text-black">Versiya</label>
+              <label className="text-base font-normal leading-6 text-black">{t.legal.version}</label>
               <input
                 type="text"
                 name="version"
                 value={formData.version}
                 onChange={handleChange}
-                placeholder="Məs: 1.0"
+                placeholder={t.legal.placeholderVersion}
                 className="w-full h-[60px] bg-[#FAFAFA] border border-[#ECECED] rounded-xl px-3 text-lg font-medium text-[#101828] outline-none focus:border-[#00B4CC] focus:bg-white transition-all"
               />
             </div>
@@ -215,14 +216,14 @@ export function LegalDocumentModal({
           {/* Məzmun */}
           <div className="flex flex-col gap-3 w-full text-left">
             <label className="text-base font-normal leading-6 text-[#030305]">
-              Məzmun
+              {t.legal.content}
             </label>
             <div className="h-[400px] rounded-xl bg-[#FAFAFA] border border-[#ECECED] flex flex-col p-3">
               <textarea
                 name="content"
                 value={formData.content}
                 onChange={handleChange}
-                placeholder="Sənədin məzmununu bura daxil edin..."
+                placeholder={t.legal.placeholderContent}
                 className="w-full h-full bg-transparent outline-none resize-none text-base leading-6 text-[#101828] font-normal"
               />
             </div>
@@ -236,7 +237,7 @@ export function LegalDocumentModal({
               className="w-[280px] h-[48px] rounded-xl bg-[#00B4CC] hover:bg-[#009DB3] text-white font-medium text-base transition-all flex items-center justify-center cursor-pointer disabled:bg-[#C1C1CC] disabled:cursor-not-allowed"
             >
               {isPending && <Loader2 size={18} className="animate-spin mr-2" />}
-              Yadda saxla
+              {t.legal.save}
             </button>
           </div>
         </div>

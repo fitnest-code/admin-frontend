@@ -5,7 +5,7 @@ import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { useI18nStore } from "@/lib/i18n";
+import { useI18nStore, useT } from "@/lib/i18n";
 import {
   useLegalDocuments,
   useDeleteLegalDocument,
@@ -24,6 +24,7 @@ import { LegalDocumentModal } from "./modals/legal-document-modal";
 
 export function LegalDocumentsTab() {
   const selectedLang = useI18nStore((s) => s.locale);
+  const t = useT();
   const { data: documents, isLoading, refetch } = useLegalDocuments(selectedLang);
   const { mutate: deleteDoc, isPending: isDeleting } = useDeleteLegalDocument();
 
@@ -47,7 +48,7 @@ export function LegalDocumentsTab() {
       onSuccess: () => {
         setStatusModal({
           isOpen: true,
-          message: "Sənəd uğurla silindi",
+          message: t.legal.deleteSuccess,
           type: "success",
         });
         setDeleteTarget(null);
@@ -56,7 +57,7 @@ export function LegalDocumentsTab() {
       onError: (err: any) => {
         setStatusModal({
           isOpen: true,
-          message: err.message || "Xəta baş verdi",
+          message: err.message || t.legal.errorOccurred,
           type: "error",
         });
       },
@@ -74,7 +75,7 @@ export function LegalDocumentsTab() {
   return (
     <div className="w-full rounded-[12px] bg-white border border-[#ececed] flex flex-col items-start p-4 sm:p-5 gap-6 text-left text-sm text-foreground font-sans shadow-sm">
       <div className="self-stretch flex items-center justify-between pb-3 border-b border-[#ececed]">
-        <h2 className="text-[18px] font-bold text-[#101828] font-sans tracking-tight">Hüquqi Sənədlər</h2>
+        <h2 className="text-[18px] font-bold text-[#101828] font-sans tracking-tight">{t.legal.sectionTitle}</h2>
         <button
           onClick={() => {
             setEditingDoc(null);
@@ -83,7 +84,7 @@ export function LegalDocumentsTab() {
           className="h-10 px-4 bg-[#00B4CC] text-white rounded-lg font-semibold flex items-center gap-2 hover:bg-[#009DB3] transition-colors"
         >
           <Plus size={18} />
-          <span>Yeni Sənəd</span>
+          <span>{t.legal.newDocument}</span>
         </button>
       </div>
 
@@ -91,20 +92,20 @@ export function LegalDocumentsTab() {
         <table className="w-full min-w-[700px]">
           <thead>
             <tr className="border-b border-[#ececed] text-left text-[13px] font-semibold text-[#6a7282]">
-              <th className="pb-3 pr-4">ID</th>
-              <th className="pb-3 px-4">Tip</th>
-              <th className="pb-3 px-4">Yaradılma tarixi</th>
-              <th className="pb-3 px-4">Son dəyişdirilmə tarixi</th>
-              <th className="pb-3 px-4">Versiya</th>
-              <th className="pb-3 px-4">Status</th>
-              <th className="pb-3 pl-4 text-right">Əməliyyatlar</th>
+              <th className="pb-3 pr-4">{t.legal.id}</th>
+              <th className="pb-3 px-4">{t.legal.type}</th>
+              <th className="pb-3 px-4">{t.legal.createdAt}</th>
+              <th className="pb-3 px-4">{t.legal.updatedAt}</th>
+              <th className="pb-3 px-4">{t.legal.version}</th>
+              <th className="pb-3 px-4">{t.legal.status}</th>
+              <th className="pb-3 pl-4 text-right">{t.legal.actions}</th>
             </tr>
           </thead>
           <tbody>
             {!documents || documents.length === 0 ? (
               <tr>
                 <td colSpan={7} className="text-center py-8 text-slate-500">
-                  Hələ sənəd əlavə edilməyib
+                  {t.legal.noDocuments}
                 </td>
               </tr>
             ) : (
@@ -113,9 +114,9 @@ export function LegalDocumentsTab() {
                   <td className="py-4 pr-4 text-[#101828] font-medium">#{doc.id}</td>
                   <td className="py-4 px-4 text-[#4a5565]">
                     {doc.type === "TERMS_OF_USE"
-                      ? "İstifadə Şərtləri"
+                      ? t.legal.termsOfUse
                       : doc.type === "PRIVACY_POLICY"
-                      ? "Məxfilik Siyasəti"
+                      ? t.legal.privacyPolicy
                       : doc.type}
                   </td>
                   <td className="py-4 px-4 text-[#101828] font-medium">{doc.createdAt || "---"}</td>
@@ -126,7 +127,7 @@ export function LegalDocumentsTab() {
                       "px-2.5 py-1 text-xs font-semibold rounded-full",
                       doc.isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
                     )}>
-                      {doc.isActive ? "Aktiv" : "Deaktiv"}
+                      {doc.isActive ? t.legal.active : t.legal.deactive}
                     </span>
                   </td>
                   <td className="py-4 pl-4 text-right">
@@ -134,7 +135,7 @@ export function LegalDocumentsTab() {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button className="p-1 hover:bg-slate-100 rounded-lg transition-colors inline-flex items-center justify-center cursor-pointer">
-                            <Image src="/more.svg" width={24} height={24} alt="Daha çox" />
+                            <Image src="/more.svg" width={24} height={24} alt={t.legal.more} />
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-36 bg-white border border-[#ececed] rounded-lg shadow-sm">
@@ -146,14 +147,14 @@ export function LegalDocumentsTab() {
                             className="flex items-center gap-2 px-3 py-2 text-sm text-[#4a5565] hover:bg-slate-50 cursor-pointer"
                           >
                             <Pencil size={14} className="text-[#00B4CC]" />
-                            <span>Redaktə et</span>
+                            <span>{t.legal.edit}</span>
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handleDelete(doc)}
                             className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 cursor-pointer"
                           >
                             <Trash2 size={14} className="text-red-500" />
-                            <span>Sil</span>
+                            <span>{t.legal.delete}</span>
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -189,7 +190,7 @@ export function LegalDocumentsTab() {
       <SuccessAnimationModal
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
-        message="Əməliyyat uğurla tamamlandı!"
+        message={t.legal.successMsg}
       />
 
       <SuccessAnimationModal
