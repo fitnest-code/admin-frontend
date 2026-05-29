@@ -55,6 +55,74 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
 
   const [isUpdatingFromCoords, setIsUpdatingFromCoords] = useState(false);
 
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  // Clean up searchTimeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeout) clearTimeout(searchTimeout);
+    };
+  }, [searchTimeout]);
+
+  // Forward Geocoding via dedicated backend proxy
+  const debouncedSearch = (query: string) => {
+    if (searchTimeout) clearTimeout(searchTimeout);
+    if (!query || query.length < 3) {
+      setSuggestions([]);
+      return;
+    }
+
+    // Check if query is lat/lng coordinates (e.g. "40.4093, 49.8671" or "40.4093 49.8671")
+    const matchCoords = query.match(/^\s*(-?\d+(?:\.\d+)?)\s*[\s,]\s*(-?\d+(?:\.\d+)?)\s*$/);
+    if (matchCoords) {
+      const lat = parseFloat(matchCoords[1]);
+      const lng = parseFloat(matchCoords[2]);
+      if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+        setContact(prev => ({ ...prev, latitude: lat, longitude: lng }));
+        setIsUpdatingFromCoords(true);
+        setSuggestions([]);
+        return;
+      }
+    }
+
+    const timeout = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const res = await fetch(`/api/v1/admin/gyms/geocoding/forward?query=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        setSuggestions(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Geocoding proxy error:", error);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 600);
+    setSearchTimeout(timeout);
+  };
+
+  const handleSelectSuggestion = (s: any) => {
+    const lat = typeof s.latitude === "number" ? s.latitude : parseFloat(s.lat || 0);
+    const lng = typeof s.longitude === "number" ? s.longitude : parseFloat(s.lon || 0);
+    setContact(prev => ({ ...prev, latitude: lat, longitude: lng }));
+
+    const suggestedText = s.addressText || s.display_name || "";
+    
+    // Extract custom typed numbers/house indicators missing from the map result
+    const matchNumber = address.match(/\b\d+(?:\/[a-zA-Z0-9]+|-[a-zA-Z0-9]+|[a-zA-Z])?\b/);
+    
+    if (matchNumber && !suggestedText.includes(matchNumber[0])) {
+      const parts = suggestedText.split(',');
+      parts[0] = `${parts[0].trim()} ${matchNumber[0]}`;
+      setAddress(parts.join(', '));
+    } else {
+      setAddress(suggestedText);
+    }
+    
+    setSuggestions([]);
+  };
+
   // 1. Reverse Geocoding when coordinates are typed manually
   const hasCoordinates = contact.latitude !== 0 && contact.longitude !== 0 && contact.latitude != null && contact.longitude != null;
   const { data: addressData, isFetching: isAddressFetching } = useGetAddressByCoords(
@@ -210,22 +278,51 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
               <h2 className={styles.sectionTitle}>Əlaqə</h2>
             </div>
             
-            <div className={styles.infoGroup}>
+            <div className={cn(styles.infoGroup, "relative")}>
               <label className={styles.label}>Ünvan</label>
-              <input 
-                className={styles.input} 
-                value={address} 
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="Bakı, Nərimanov rayonu"
-              />
+              <div className="relative">
+                <input 
+                  className={styles.input} 
+                  value={isAddressFetching ? "Ünvan təyin edilir..." : address} 
+                  onChange={(e) => {
+                    setAddress(e.target.value);
+                    debouncedSearch(e.target.value);
+                  }}
+                  placeholder="Bakı, Nərimanov rayonu"
+                />
+                {(isAddressFetching || isSearching) && (
+                  <Loader2 className="absolute right-4 top-3 animate-spin text-[#00B4D8]" size={20} />
+                )}
+              </div>
+
+              {/* Suggestions Dropdown */}
+              {suggestions.length > 0 && (
+                <div className="absolute top-[100%] left-0 right-0 z-[1000] mt-1 bg-white border border-[#ECECED] rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2">
+                  {suggestions.map((s, i) => {
+                    const text = s.addressText || s.display_name || "";
+                    const shortText = text.split(',')[0] || text;
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => handleSelectSuggestion(s)}
+                        className="w-full text-left px-4 py-3 text-sm font-medium hover:bg-slate-50 border-b border-slate-50 last:border-0 transition-colors flex flex-col gap-0.5"
+                      >
+                        <span className="text-slate-800">{shortText}</span>
+                        <span className="text-xs text-slate-400 truncate">{text}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
 
             {/* Map */}
             <div className="w-full rounded-xl overflow-hidden border border-[#ececed] mt-4">
               <LocationPickerMap
-                lat={contact.latitude}
-                lng={contact.longitude}
+                lat={contact.latitude || 40.4093}
+                lng={contact.longitude || 49.8671}
                 height="240px"
                 onLocationSelect={(lat, lng) => {
                   setContact(prev => ({ ...prev, latitude: lat, longitude: lng }));

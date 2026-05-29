@@ -54,17 +54,26 @@ function mergeDetailFromApi(
   }
   const str = (v: unknown, d = '') => (typeof v === 'string' ? v : v != null ? String(v) : d)
   const id = num(raw.id, fallbackId)
+  
+  const addrObj = raw.address && typeof raw.address === 'object' ? (raw.address as Record<string, unknown>) : null
+  const addressText = addrObj ? str(addrObj.addressText ?? addrObj.fullAddress ?? '', '') : str(raw.address ?? raw.fullAddress, '')
+  const latitude = addrObj ? num(addrObj.latitude, 0) : num(raw.latitude, 0)
+  const longitude = addrObj ? num(addrObj.longitude, 0) : num(raw.longitude, 0)
+
   const wh = raw.workHours as Record<string, unknown> | undefined
+  const socialObj = raw.socialLink && typeof raw.socialLink === 'object' ? (raw.socialLink as Record<string, unknown>) : null
+  const socialUrl = socialObj ? str(socialObj.url ?? socialObj.socialUrl ?? socialObj.social_url, '') : str(raw.socialUrl ?? raw.social_url, '')
+
   return {
     id,
     name: str(raw.name, ''),
     coverImageUrl: str(raw.coverImageUrl ?? raw.photoUrl ?? raw.imageUrl, '') || null,
-    address: str(raw.address ?? raw.fullAddress, ''),
-    latitude: num(raw.latitude, 0),
-    longitude: num(raw.longitude, 0),
+    address: addressText,
+    latitude,
+    longitude,
     phone: str(raw.phone, ''),
     email: str(raw.email, ''),
-    socialUrl: str(raw.socialUrl ?? raw.social_url, ''),
+    socialUrl,
     workHours: {
       from: str(wh?.from ?? raw.workHoursFrom, '09:00'),
       to: str(wh?.to ?? raw.workHoursTo, '18:00'),
