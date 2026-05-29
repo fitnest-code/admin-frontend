@@ -362,8 +362,7 @@ export function ReviewsTab({ gymName }: { gymName?: string }) {
                >
                   Bağla
                </button>
-               {selectedReview.status === 'PENDING' && (
-                 <>
+               {(selectedReview.status === 'PENDING' || selectedReview.status === 'ACCEPTED') && (
                    <button 
                      onClick={() => handleAction(selectedReview.id, 'reject')}
                      disabled={isRejecting || isApproving}
@@ -371,6 +370,8 @@ export function ReviewsTab({ gymName }: { gymName?: string }) {
                    >
                      {isRejecting ? <Loader2 size={20} className="animate-spin mx-auto" /> : "Rədd et"}
                    </button>
+               )}
+               {(selectedReview.status === 'PENDING' || selectedReview.status === 'REJECTED') && (
                    <button 
                      onClick={() => handleAction(selectedReview.id, 'approve')}
                      disabled={isRejecting || isApproving}
@@ -378,7 +379,6 @@ export function ReviewsTab({ gymName }: { gymName?: string }) {
                    >
                      {isApproving ? <Loader2 size={20} className="animate-spin mx-auto" /> : "Təsdiq et"}
                    </button>
-                 </>
                )}
             </div>
           </div>
