@@ -19,6 +19,7 @@ const en: TranslationKeys = {
     faq: "FAQ",
     legal: "Legal Documents",
     contactDetails: "Contact Details",
+    cancellationReasons: "Cancellation Reasons",
   },
 
   common: {
@@ -346,6 +347,24 @@ const en: TranslationKeys = {
     deleteConfirmTitle: "Are you sure you want to delete?",
     deleteConfirmYes: "Yes",
     deleteConfirmCancel: "Cancel",
+  },
+  cancellationReasons: {
+    title: "Reservation Cancellation Reasons",
+    description: "Management of reasons selected during reservation cancellation by users and admins.",
+    code: "Reason code",
+    label: "Reason text",
+    requiresComment: "Requires comment",
+    actions: "Action",
+    noReasons: "No cancellation reasons defined",
+    addBtn: "New reason",
+    editModalTitle: "Edit Cancellation Reason",
+    createModalTitle: "Add New Cancellation Reason",
+    codeInstruction: "Write in uppercase, using _ instead of spaces. Cannot be edited later.",
+    commentHelpText: "The user must write an additional comment when selecting this reason.",
+    successAdded: "New cancellation reason added successfully.",
+    successUpdated: "Cancellation reason updated successfully.",
+    successDeleted: "Cancellation reason deleted successfully.",
+    deleteConfirm: "cancellation reason with code",
   },
 } as const;
 

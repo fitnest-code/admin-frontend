@@ -17,6 +17,7 @@ import {
   Target,
   Scale,
   PhoneCall,
+  Ban,
 } from "lucide-react";
 
 export interface NavItem {
@@ -93,6 +94,12 @@ export const NAV_ITEMS: NavItem[] = [
     labelKey: "contactDetails",
     icon: PhoneCall,
     href: "/contact-details",
+  },
+  {
+    key: "cancellation-reasons",
+    labelKey: "cancellationReasons",
+    icon: Ban,
+    href: "/cancellation-reasons",
   },
   {
     key: "tenzimlemeler",

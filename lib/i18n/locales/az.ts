@@ -18,6 +18,7 @@ const az = {
     faq: "FAQ",
     legal: "Hüquqi Sənədlər",
     contactDetails: "Əlaqə məlumatları",
+    cancellationReasons: "Ləğv Səbəbləri",
   },
 
   // Common / Shared
@@ -354,6 +355,24 @@ const az = {
     deleteConfirmTitle: "Silmək istədiyinizə əminsiniz?",
     deleteConfirmYes: "Bəli",
     deleteConfirmCancel: "Ləğv et",
+  },
+  cancellationReasons: {
+    title: "Rezervasiya ləğv səbəbləri",
+    description: "İstifadəçilər və adminlər tərəfindən rezervasiyanın ləğvi zamanı seçilən səbəblərin idarə olunması.",
+    code: "Səbəb kodu",
+    label: "Səbəb mətni (AZ)",
+    requiresComment: "Şərh tələb olunur",
+    actions: "Əməliyyat",
+    noReasons: "Heç bir ləğv səbəbi təyin edilməyib",
+    addBtn: "Yeni səbəb",
+    editModalTitle: "Ləğv səbəbini redaktə et",
+    createModalTitle: "Yeni ləğv səbəbi əlavə et",
+    codeInstruction: "Böyük hərflərlə, boşluq yerinə _ işarəsi ilə yazın. Redaktə edilə bilməz.",
+    commentHelpText: "İstifadəçi bu səbəbi seçdikdə əlavə rəy yazmalıdır.",
+    successAdded: "Yeni ləğv səbəbi əlavə edildi.",
+    successUpdated: "Ləğv səbəbi uğurla yeniləndi.",
+    successDeleted: "Ləğv səbəbi uğurla silindi.",
+    deleteConfirm: "kodu olan ləğv səbəbini",
   },
 } as const;
 

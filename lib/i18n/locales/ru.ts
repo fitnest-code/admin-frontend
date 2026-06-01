@@ -19,6 +19,7 @@ const ru: TranslationKeys = {
     faq: "FAQ",
     legal: "Юридические документы",
     contactDetails: "Контактные данные",
+    cancellationReasons: "Причины Отмены",
   },
 
   common: {
@@ -346,6 +347,24 @@ const ru: TranslationKeys = {
     deleteConfirmTitle: "Вы уверены, что хотите удалить?",
     deleteConfirmYes: "Да",
     deleteConfirmCancel: "Отмена",
+  },
+  cancellationReasons: {
+    title: "Причины отмены бронирования",
+    description: "Управление причинами, выбираемыми пользователями и администраторами при отмене бронирования.",
+    code: "Код причины",
+    label: "Текст причины",
+    requiresComment: "Требуется комментарий",
+    actions: "Действие",
+    noReasons: "Причины отмены не заданы",
+    addBtn: "Новая причина",
+    editModalTitle: "Редактировать причину отмены",
+    createModalTitle: "Добавить новую причину отмены",
+    codeInstruction: "Пишите заглавными буквами, используя _ вместо пробелов. Нельзя отредактировать позже.",
+    commentHelpText: "Пользователь должен написать дополнительный комментарий при выборе этой причины.",
+    successAdded: "Новая причина отмены успешно добавлена.",
+    successUpdated: "Причина отмены успешно обновлена.",
+    successDeleted: "Причина отмены успешно удалена.",
+    deleteConfirm: "причину отмены с кодом",
   },
 } as const;
 
