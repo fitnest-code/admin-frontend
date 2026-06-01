@@ -729,3 +729,46 @@ export function useUpdateGymRules() {
     }
   })
 }
+
+// 34. Update gym cover photo
+export function useUpdateGymCover() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, file }: { id: number; file: File }) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      return apiPost(`/admin/gyms/${id}/cover`, formData);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-details', variables.id] });
+    }
+  });
+}
+
+// 35. Add gym room photos
+export function useAddGymRoomImages() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, roomNames, files }: { id: number; roomNames: string[]; files: File[] }) => {
+      const formData = new FormData();
+      roomNames.forEach(name => formData.append("roomNames", name));
+      files.forEach(file => formData.append("files", file));
+      return apiPost(`/admin/gyms/${id}/rooms`, formData);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-details', variables.id] });
+    }
+  });
+}
+
+// 36. Delete gym room by ID
+export function useDeleteGymRoom() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, roomId }: { id: number; roomId: number }) =>
+      apiDelete(`/admin/gyms/${id}/rooms/${roomId}`),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-details', variables.id] });
+    }
+  });
+}

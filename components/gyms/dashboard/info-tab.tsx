@@ -1,13 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Upload, Trash2, ChevronDown, Pencil, Loader2, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useGymDetailsAdmin, useUpdateGymDetails, useCategories } from "@/lib/query/gym-query";
+import { 
+  useGymDetailsAdmin, 
+  useUpdateGymDetails, 
+  useCategories,
+  useUpdateGymCover,
+  useAddGymRoomImages,
+  useDeleteGymRoom
+} from "@/lib/query/gym-query";
 import { useGetAddressByCoords } from "@/lib/query/location-query";
 import LocationPickerMap from "@/components/ui/location-picker-map";
 import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 import { useI18nStore } from "@/lib/i18n";
+import { toast } from "sonner";
 
 interface InfoTabProps {
   gymId?: number | string
@@ -44,6 +52,10 @@ const LOCAL_TRANSLATIONS: Record<string, Record<string, string>> = {
     cancel: "Ləğv et",
     save: "Yadda saxla",
     successMessage: "Zal məlumatları uğurla yeniləndi!",
+    pleaseEnterRoomName: "Zəhmət olmasa otaq adını daxil edin",
+    coverUpdated: "Üz qabığı şəkli uğurla yeniləndi!",
+    roomAdded: "Otaq şəkli uğurla əlavə edildi!",
+    roomDeleted: "Otaq uğurla silindi!",
   },
   EN: {
     loading: "Loading...",
@@ -69,6 +81,10 @@ const LOCAL_TRANSLATIONS: Record<string, Record<string, string>> = {
     cancel: "Cancel",
     save: "Save",
     successMessage: "Gym information updated successfully!",
+    pleaseEnterRoomName: "Please enter a room name",
+    coverUpdated: "Cover photo updated successfully!",
+    roomAdded: "Room photo added successfully!",
+    roomDeleted: "Room deleted successfully!",
   },
   RU: {
     loading: "Загрузка...",
@@ -94,6 +110,10 @@ const LOCAL_TRANSLATIONS: Record<string, Record<string, string>> = {
     cancel: "Отмена",
     save: "Сохранить",
     successMessage: "Информация о зале успешно обновлена!",
+    pleaseEnterRoomName: "Пожалуйста, введите название комнаты",
+    coverUpdated: "Фото обложки успешно обновлено!",
+    roomAdded: "Фото комнаты успешно добавлено!",
+    roomDeleted: "Комната успешно удалена!",
   },
 };
 
@@ -104,6 +124,19 @@ export function InfoTab({ gymId }: InfoTabProps) {
   const { data: gymInfo, isLoading } = useGymDetailsAdmin(gymId);
   const { mutate: updateGymInfo, isPending } = useUpdateGymDetails();
   const { data: categoriesData } = useCategories();
+
+  const { mutate: updateGymCover, isPending: isCoverUpdating } = useUpdateGymCover();
+  const { mutate: addRoomImages, isPending: isRoomAdding } = useAddGymRoomImages();
+  const { mutate: deleteGymRoom, isPending: isRoomDeleting } = useDeleteGymRoom();
+
+  const coverInputRef = useRef<HTMLInputElement | null>(null);
+  const editRoomInputRef = useRef<HTMLInputElement | null>(null);
+  const roomInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
+
+  const [emptyRoomNames, setEmptyRoomNames] = useState<Record<number, string>>({});
+  const [editingRoom, setEditingRoom] = useState<{ id: number; name: string } | null>(null);
+  const [actionRoomId, setActionRoomId] = useState<number | null>(null);
+  const [uploadingSlotIndex, setUploadingSlotIndex] = useState<number | null>(null);
   
   const locale = useI18nStore((s) => s.locale);
   const lt = LOCAL_TRANSLATIONS[locale] || LOCAL_TRANSLATIONS.AZ;
@@ -234,6 +267,108 @@ export function InfoTab({ gymId }: InfoTabProps) {
       }
     }
   }, [revAddressData, isAddressFetching, isEditing, isUpdatingFromCoords, formData.latitude, formData.longitude]);
+
+  const handleCoverClick = () => {
+    if (isEditing && coverInputRef.current) {
+      coverInputRef.current.click();
+    }
+  };
+
+  const handleCoverFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && gymId) {
+      updateGymCover({ id: Number(gymId), file }, {
+        onSuccess: () => {
+          toast.success(lt.coverUpdated);
+        },
+        onError: (err: any) => {
+          toast.error(err?.message || "Error uploading cover photo");
+        }
+      });
+    }
+  };
+
+  const handleEmptySlotClick = (index: number) => {
+    const name = emptyRoomNames[index]?.trim();
+    if (!name) {
+      toast.error(lt.pleaseEnterRoomName);
+      return;
+    }
+    if (roomInputRefs.current[index]) {
+      roomInputRefs.current[index]?.click();
+    }
+  };
+
+  const handleEmptySlotFileChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const file = e.target.files?.[0];
+    const name = emptyRoomNames[index]?.trim();
+    if (file && name && gymId) {
+      setUploadingSlotIndex(index);
+      addRoomImages({ id: Number(gymId), roomNames: [name], files: [file] }, {
+        onSuccess: () => {
+          toast.success(lt.roomAdded);
+          setEmptyRoomNames(prev => ({ ...prev, [index]: "" }));
+          setUploadingSlotIndex(null);
+        },
+        onError: (err: any) => {
+          toast.error(err?.message || "Error uploading room photo");
+          setUploadingSlotIndex(null);
+        }
+      });
+    }
+  };
+
+  const handleEditRoomClick = (room: any) => {
+    setEditingRoom({ id: room.id, name: room.name });
+    if (editRoomInputRef.current) {
+      editRoomInputRef.current.click();
+    }
+  };
+
+  const handleEditRoomFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && editingRoom && gymId) {
+      const roomToReplace = { ...editingRoom };
+      setActionRoomId(roomToReplace.id);
+      deleteGymRoom({ id: Number(gymId), roomId: roomToReplace.id }, {
+        onSuccess: () => {
+          addRoomImages({ id: Number(gymId), roomNames: [roomToReplace.name], files: [file] }, {
+            onSuccess: () => {
+              toast.success(lt.roomAdded);
+              setActionRoomId(null);
+              setEditingRoom(null);
+            },
+            onError: (err: any) => {
+              toast.error(err?.message || "Error uploading new photo");
+              setActionRoomId(null);
+              setEditingRoom(null);
+            }
+          });
+        },
+        onError: (err: any) => {
+          toast.error(err?.message || "Error removing old photo");
+          setActionRoomId(null);
+          setEditingRoom(null);
+        }
+      });
+    }
+  };
+
+  const handleDeleteRoomClick = (roomId: number) => {
+    if (gymId) {
+      setActionRoomId(roomId);
+      deleteGymRoom({ id: Number(gymId), roomId }, {
+        onSuccess: () => {
+          toast.success(lt.roomDeleted);
+          setActionRoomId(null);
+        },
+        onError: (err: any) => {
+          toast.error(err?.message || "Error deleting room");
+          setActionRoomId(null);
+        }
+      });
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -367,12 +502,28 @@ export function InfoTab({ gymId }: InfoTabProps) {
                     <img src={getImageUrl(gymInfo.coverImageUrl)} className="w-full h-full object-cover" alt="cover" />
                   </div>
                 ) : (
-                  <div className="absolute top-0 left-0 w-full h-full rounded-2xl border border-dashed border-[#99a1af] text-center text-[#4a5565] flex flex-col items-center justify-center gap-[30px] cursor-pointer hover:bg-slate-50 transition-colors">
+                  <div 
+                    onClick={handleCoverClick}
+                    className="absolute top-0 left-0 w-full h-full rounded-2xl border border-dashed border-[#99a1af] text-center text-[#4a5565] flex flex-col items-center justify-center gap-[30px] cursor-pointer hover:bg-slate-50 transition-colors overflow-hidden"
+                  >
                     {gymInfo.coverImageUrl && <img src={getImageUrl(gymInfo.coverImageUrl)} className="w-full h-full object-cover absolute inset-0 opacity-40 rounded-2xl" alt="cover" />}
                     <Upload size={40} className="relative z-10" />
                     <div className="relative tracking-[-0.15px] leading-[20px] font-medium z-10">{lt.uploadCover}</div>
+                    
+                    {isCoverUpdating && (
+                      <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded-2xl z-20">
+                        <Loader2 className="animate-spin text-[#00B4CC]" size={36} />
+                      </div>
+                    )}
                   </div>
                 )}
+                <input 
+                  type="file" 
+                  ref={coverInputRef} 
+                  onChange={handleCoverFileChange} 
+                  accept="image/*" 
+                  className="hidden" 
+                />
               </div>
             </div>
 
@@ -380,6 +531,14 @@ export function InfoTab({ gymId }: InfoTabProps) {
             <div className="w-full h-5 relative mt-6">
               <div className="absolute top-0 left-0 leading-[24px] text-sm">{lt.otherPhotos} ( {gymInfo.rooms?.length || 0}/9)</div>
             </div>
+
+            <input 
+              type="file" 
+              ref={editRoomInputRef} 
+              onChange={handleEditRoomFileChange} 
+              accept="image/*" 
+              className="hidden" 
+            />
 
             <div className="w-full flex items-start flex-wrap content-start gap-4 text-center text-sm text-[#4a5565]">
               {gymInfo.rooms?.map((room, i) => (
@@ -398,12 +557,24 @@ export function InfoTab({ gymId }: InfoTabProps) {
                       
                       {isEditing && (
                         <div className="relative z-10 overflow-hidden flex items-center gap-[9px] opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button className="rounded-full bg-white flex items-center p-1 hover:text-[#00B4CC]">
+                          <button 
+                            onClick={() => handleEditRoomClick(room)}
+                            className="rounded-full bg-white flex items-center p-1 hover:text-[#00B4CC]"
+                          >
                             <Pencil size={16} />
                           </button>
-                          <button className="rounded-full bg-white flex items-center p-1 hover:text-red-500">
+                          <button 
+                            onClick={() => handleDeleteRoomClick(room.id)}
+                            className="rounded-full bg-white flex items-center p-1 hover:text-red-500"
+                          >
                             <Trash2 size={16} />
                           </button>
+                        </div>
+                      )}
+
+                      {actionRoomId === room.id && (
+                        <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded-2xl z-20">
+                          <Loader2 className="animate-spin text-[#00B4CC]" size={28} />
                         </div>
                       )}
                     </div>
@@ -411,7 +582,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
                       <input 
                         type="text" 
                         value={room.name || ""} 
-                        readOnly={!isEditing}
+                        readOnly={true}
                         className="bg-transparent outline-none w-full tracking-[-0.15px] text-[#000]" 
                       />
                     </div>
@@ -422,19 +593,37 @@ export function InfoTab({ gymId }: InfoTabProps) {
               {isEditing && [...Array(Math.max(0, 9 - (gymInfo.rooms?.length || 0)))].map((_, i) => (
                 <div key={`empty-${i}`} className="h-[224px] w-[180px] relative text-left text-[#717182]">
                   <div className="absolute inset-0 flex flex-col items-start gap-3">
-                    <div className="self-stretch h-[180px] rounded-2xl border border-dashed border-[#d1d5dc] flex items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors">
+                    <div 
+                      onClick={() => handleEmptySlotClick(i)}
+                      className="self-stretch h-[180px] rounded-2xl border border-dashed border-[#d1d5dc] flex items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors relative overflow-hidden"
+                    >
                       <div className="flex flex-col items-center gap-4">
                         <Upload size={28} />
                         <div className="relative leading-[18px]">Upload</div>
                       </div>
+
+                      {uploadingSlotIndex === i && isRoomAdding && (
+                        <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded-2xl z-20">
+                          <Loader2 className="animate-spin text-[#00B4CC]" size={28} />
+                        </div>
+                      )}
                     </div>
                     <div className="self-stretch h-8 rounded-lg bg-[#f9fafb] border border-[#e5e7eb] flex items-center p-[4px_12px]">
                       <input 
                         type="text" 
                         placeholder={lt.namePlaceholder} 
+                        value={emptyRoomNames[i] || ""}
+                        onChange={(e) => setEmptyRoomNames(prev => ({ ...prev, [i]: e.target.value }))}
                         className="bg-transparent outline-none w-full tracking-[-0.15px] placeholder:text-[#717182]" 
                       />
                     </div>
+                    <input 
+                      type="file" 
+                      ref={el => { roomInputRefs.current[i] = el; }} 
+                      onChange={(e) => handleEmptySlotFileChange(e, i)} 
+                      accept="image/*" 
+                      className="hidden" 
+                    />
                   </div>
                 </div>
               ))}
