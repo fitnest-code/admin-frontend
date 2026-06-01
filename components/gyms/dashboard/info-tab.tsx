@@ -9,7 +9,8 @@ import {
   useCategories,
   useUpdateGymCover,
   useAddGymRoomImages,
-  useDeleteGymRoom
+  useDeleteGymRoom,
+  useUpdateGymRoomName
 } from "@/lib/query/gym-query";
 import { useGetAddressByCoords } from "@/lib/query/location-query";
 import LocationPickerMap from "@/components/ui/location-picker-map";
@@ -128,6 +129,9 @@ export function InfoTab({ gymId }: InfoTabProps) {
   const { mutate: updateGymCover, isPending: isCoverUpdating } = useUpdateGymCover();
   const { mutate: addRoomImages, isPending: isRoomAdding } = useAddGymRoomImages();
   const { mutate: deleteGymRoom, isPending: isRoomDeleting } = useDeleteGymRoom();
+  const updateRoomNameMutate = useUpdateGymRoomName();
+
+  const [roomNames, setRoomNames] = useState<Record<number, string>>({});
 
   const coverInputRef = useRef<HTMLInputElement | null>(null);
   const editRoomInputRef = useRef<HTMLInputElement | null>(null);
@@ -232,7 +236,11 @@ export function InfoTab({ gymId }: InfoTabProps) {
     longitude: gymInfo.longitude || 0,
   }) : "";
 
-  const hasChanges = isEditing && JSON.stringify(formData) !== initialDataStr;
+  const hasRoomNameChanges = isEditing && gymInfo?.rooms?.some(
+    room => roomNames[room.id] !== undefined && roomNames[room.id] !== room.name
+  );
+
+  const hasChanges = isEditing && (JSON.stringify(formData) !== initialDataStr || hasRoomNameChanges);
 
   useEffect(() => {
     if (gymInfo) {
@@ -248,6 +256,14 @@ export function InfoTab({ gymId }: InfoTabProps) {
         longitude: gymInfo.longitude || 0,
       });
       setIsUpdatingFromCoords(false);
+
+      if (gymInfo.rooms) {
+        const names: Record<number, string> = {};
+        gymInfo.rooms.forEach(r => {
+          names[r.id] = r.name || "";
+        });
+        setRoomNames(names);
+      }
     }
   }, [gymInfo]);
 
@@ -375,23 +391,50 @@ export function InfoTab({ gymId }: InfoTabProps) {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!gymId) return;
-    updateGymInfo({
-      id: Number(gymId),
-      payload: {
-        ...formData,
-        categoryId: Number(formData.categoryId),
-        latitude: Number(formData.latitude),
-        longitude: Number(formData.longitude),
-        email: formData.email.trim()
+
+    try {
+      if (gymInfo?.rooms) {
+        const renamePromises = gymInfo.rooms
+          .filter(room => roomNames[room.id] !== undefined && roomNames[room.id] !== room.name)
+          .map(room => {
+            return updateRoomNameMutate.mutateAsync({
+              id: Number(gymId),
+              roomId: room.id,
+              name: roomNames[room.id].trim()
+            });
+          });
+        
+        if (renamePromises.length > 0) {
+          await Promise.all(renamePromises);
+        }
       }
-    }, {
-      onSuccess: () => {
+
+      const infoHasChanges = JSON.stringify(formData) !== initialDataStr;
+      if (infoHasChanges) {
+        updateGymInfo({
+          id: Number(gymId),
+          payload: {
+            ...formData,
+            categoryId: Number(formData.categoryId),
+            latitude: Number(formData.latitude),
+            longitude: Number(formData.longitude),
+            email: formData.email.trim()
+          }
+        }, {
+          onSuccess: () => {
+            setIsEditing(false);
+            setShowSuccessModal(true);
+          }
+        });
+      } else {
         setIsEditing(false);
         setShowSuccessModal(true);
       }
-    });
+    } catch (err: any) {
+      toast.error(err?.message || "Otaq adlarının yenilənməsində xəta baş verdi");
+    }
   };
 
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">{lt.loading}</div>;
@@ -581,8 +624,9 @@ export function InfoTab({ gymId }: InfoTabProps) {
                     <div className="self-stretch h-8 rounded-lg bg-[#f9fafb] border border-[#e5e7eb] flex items-center p-[4px_12px]">
                       <input 
                         type="text" 
-                        value={room.name || ""} 
-                        readOnly={true}
+                        value={roomNames[room.id] !== undefined ? roomNames[room.id] : (room.name || "")} 
+                        onChange={(e) => setRoomNames(prev => ({ ...prev, [room.id]: e.target.value }))}
+                        readOnly={!isEditing}
                         className="bg-transparent outline-none w-full tracking-[-0.15px] text-[#000]" 
                       />
                     </div>
@@ -813,6 +857,13 @@ export function InfoTab({ gymId }: InfoTabProps) {
                     latitude: gymInfo.latitude || 0,
                     longitude: gymInfo.longitude || 0,
                   });
+                  if (gymInfo.rooms) {
+                    const names: Record<number, string> = {};
+                    gymInfo.rooms.forEach(r => {
+                      names[r.id] = r.name || "";
+                    });
+                    setRoomNames(names);
+                  }
                 }
               }}
               className="h-[44px] px-8 rounded-lg border border-[#ececed] bg-white text-[14px] font-medium text-[#101828] hover:bg-slate-50 transition-colors"

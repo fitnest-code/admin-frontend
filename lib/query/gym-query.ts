@@ -772,3 +772,15 @@ export function useDeleteGymRoom() {
     }
   });
 }
+
+// 36.1 Update gym room name
+export function useUpdateGymRoomName() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, roomId, name }: { id: number; roomId: number; name: string }) =>
+      apiPut(`/admin/gyms/${id}/rooms/${roomId}/name?name=${encodeURIComponent(name)}`, {}),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-details', variables.id] });
+    }
+  });
+}
