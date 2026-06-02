@@ -12,6 +12,7 @@ import {
 import { useParams } from 'next/navigation'
 import { cn, formatTo24h } from '@/lib/utils'
 import { ChevronDown, ArrowLeft } from 'lucide-react'
+import { SuccessAnimationModal } from '@/components/ui/success-animation-modal'
 
 const STATUS_OPTIONS = [
     { key: "", label: "Hamısı", color: "#4b5563" },
@@ -35,6 +36,11 @@ const ReservationsTab = () => {
     const [activeActionsDropdownId, setActiveActionsDropdownId] = useState<number | null>(null)
     const [viewMode, setViewMode] = useState<'list' | 'detail'>('list')
     const dropdownRef = useRef<HTMLDivElement | null>(null)
+    const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; message: string; type: "success" | "error" }>({
+        isOpen: false,
+        message: "",
+        type: "success"
+    })
 
     const { data: stats } = useGymReservationStats(gymId as string)
     const { data: reservationsData, isLoading } = useGymReservations(gymId as string, {
@@ -71,6 +77,18 @@ const ReservationsTab = () => {
         }, {
             onSuccess: () => {
                 setActiveActionsDropdownId(null)
+                setModalConfig({
+                    isOpen: true,
+                    message: "Rezervasiya uğurla təsdiq edildi",
+                    type: "success"
+                })
+            },
+            onError: (err: any) => {
+                setModalConfig({
+                    isOpen: true,
+                    message: err?.message || "Rezervasiyanın təsdiqi zamanı xəta baş verdi",
+                    type: "error"
+                })
             }
         })
     }
@@ -127,6 +145,18 @@ const ReservationsTab = () => {
             }, {
                 onSuccess: () => {
                     setViewMode('list')
+                    setModalConfig({
+                        isOpen: true,
+                        message: "Rezervasiya uğurla təsdiq edildi",
+                        type: "success"
+                    })
+                },
+                onError: (err: any) => {
+                    setModalConfig({
+                        isOpen: true,
+                        message: err?.message || "Rezervasiyanın təsdiqi zamanı xəta baş verdi",
+                        type: "error"
+                    })
                 }
             })
         }
@@ -145,6 +175,18 @@ const ReservationsTab = () => {
                     setRejectionReason('')
                     setRejectionError(false)
                     setViewMode('list')
+                    setModalConfig({
+                        isOpen: true,
+                        message: "Rezervasiyadan uğurla imtina edildi",
+                        type: "success"
+                    })
+                },
+                onError: (err: any) => {
+                    setModalConfig({
+                        isOpen: true,
+                        message: err?.message || "Rezervasiyadan imtina zamanı xəta baş verdi",
+                        type: "error"
+                    })
                 }
             })
         }
@@ -299,6 +341,13 @@ const ReservationsTab = () => {
                         </button>
                     </div>
                 )}
+                
+                <SuccessAnimationModal
+                    isOpen={modalConfig.isOpen}
+                    onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
+                    message={modalConfig.message}
+                    type={modalConfig.type}
+                />
             </div>
         )
     }
@@ -409,14 +458,17 @@ const ReservationsTab = () => {
                         </div>
 
                         {/* List Items */}
-                        <div className="flex flex-col bg-white divide-y divide-[#ececed]">
+                        <div className="flex flex-col bg-white divide-y divide-[#ececed] min-h-[220px]">
                             {isLoading ? (
                                 <div className="w-full h-[64px] flex items-center justify-center text-[14px] text-slate-400">Yüklənir...</div>
                             ) : reservationsData?.items?.length === 0 ? (
                                 <div className="w-full h-[64px] flex items-center justify-center text-[14px] text-slate-400">Rezervasiya tapılmadı</div>
                             ) : reservationsData?.items?.map((res: any) => (
                                 <React.Fragment key={res.id}>
-                                    <div className="w-full h-[64px] flex items-center px-[20px] text-[14px] hover:bg-slate-50 transition-colors group">
+                                    <div className={cn(
+                                        "w-full h-[64px] flex items-center px-[20px] text-[14px] hover:bg-slate-50 transition-colors group",
+                                        activeActionsDropdownId === res.id ? "relative z-30" : "relative z-0"
+                                    )}>
                                         <div className="flex-1 min-w-[200px] font-bold text-[#101828] group-hover:text-[#00B4CC] transition-colors truncate">
                                             {res.userFullName}
                                         </div>
@@ -541,6 +593,13 @@ const ReservationsTab = () => {
                     </div>
                 )}
             </div>
+            
+            <SuccessAnimationModal
+                isOpen={modalConfig.isOpen}
+                onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
+                message={modalConfig.message}
+                type={modalConfig.type}
+            />
         </div>
     )
 }
