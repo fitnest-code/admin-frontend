@@ -520,41 +520,45 @@ const ReservationsTab = () => {
                                                             <div className={styles.popoverBax}>Bax</div>
                                                         </div>
                                                     </button>
-                                                    <button className={styles.popoverBtn2} onClick={() => {
-                                                        handleApprove(res.id);
-                                                        setActiveActionsDropdownId(null);
-                                                    }}>
-                                                        <div className={styles.popoverCheckWrapper}>
-                                                            <div className={styles.popoverEye}>
-                                                                <div className={styles.popoverEye2}>
-                                                                    <svg className={styles.popoverVectorIcon2} width="13" height="10" viewBox="0 0 13 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                        <path d="M1.5 5L4.5 8L11.5 1.5" stroke="#364153" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                                                    </svg>
+                                                    {res.status === 'PENDING' && (
+                                                        <>
+                                                            <button className={styles.popoverBtn2} onClick={() => {
+                                                                handleApprove(res.id);
+                                                                setActiveActionsDropdownId(null);
+                                                            }}>
+                                                                <div className={styles.popoverCheckWrapper}>
+                                                                    <div className={styles.popoverEye}>
+                                                                        <div className={styles.popoverEye2}>
+                                                                            <svg className={styles.popoverVectorIcon2} width="13" height="10" viewBox="0 0 13 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                                <path d="M1.5 5L4.5 8L11.5 1.5" stroke="#364153" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                                            </svg>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        </div>
-                                                        <div className={styles.popoverTsdiqEt}>Təsdiq et</div>
-                                                    </button>
-                                                    <button className={styles.popoverBtn3} onClick={() => {
-                                                        setSelectedReservationId(res.id);
-                                                        setViewMode('detail');
-                                                        setActiveActionsDropdownId(null);
-                                                        setTimeout(() => {
-                                                            const textarea = document.getElementById('rejectionReasonTextarea');
-                                                            if (textarea) textarea.focus();
-                                                        }, 150);
-                                                    }}>
-                                                        <div className={styles.popoverCheckWrapper}>
-                                                            <div className={styles.popoverEye}>
-                                                                <div className={styles.popoverEye2}>
-                                                                    <svg className={styles.popoverVectorIcon3} width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                        <path d="M1 1L9 9M9 1L1 9" stroke="#364153" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                                                    </svg>
+                                                                <div className={styles.popoverTsdiqEt}>Təsdiq et</div>
+                                                            </button>
+                                                            <button className={styles.popoverBtn3} onClick={() => {
+                                                                setSelectedReservationId(res.id);
+                                                                setViewMode('detail');
+                                                                setActiveActionsDropdownId(null);
+                                                                setTimeout(() => {
+                                                                    const textarea = document.getElementById('rejectionReasonTextarea');
+                                                                    if (textarea) textarea.focus();
+                                                                }, 150);
+                                                            }}>
+                                                                <div className={styles.popoverCheckWrapper}>
+                                                                    <div className={styles.popoverEye}>
+                                                                        <div className={styles.popoverEye2}>
+                                                                            <svg className={styles.popoverVectorIcon3} width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                                <path d="M1 1L9 9M9 1L1 9" stroke="#364153" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                                            </svg>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        </div>
-                                                        <div className={styles.popoverTsdiqEt}>İmtina et</div>
-                                                    </button>
+                                                                <div className={styles.popoverTsdiqEt}>İmtina et</div>
+                                                            </button>
+                                                        </>
+                                                    )}
                                                     <div className={styles.popoverLine} />
                                                 </div>
                                             )}
