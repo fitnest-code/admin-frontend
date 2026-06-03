@@ -177,14 +177,14 @@ const ReservationsTab = () => {
                     setViewMode('list')
                     setModalConfig({
                         isOpen: true,
-                        message: "Rezervasiyadan uğurla imtina edildi",
+                        message: "Rezervasiya uğurla ləğv edildi",
                         type: "success"
                     })
                 },
                 onError: (err: any) => {
                     setModalConfig({
                         isOpen: true,
-                        message: err?.message || "Rezervasiyadan imtina zamanı xəta baş verdi",
+                        message: err?.message || "Rezervasiyanın ləğvi zamanı xəta baş verdi",
                         type: "error"
                     })
                 }
@@ -276,13 +276,13 @@ const ReservationsTab = () => {
                 {detailData.status === 'PENDING' && (
                     <>
                         <div className={styles.imtinaSbbiQeydOlunmaldrParent}>
-                            <div className={styles.as_label}>Imtina səbəbi qeyd olunmalıdır</div>
+                            <div className={styles.as_label}>Ləğv etmə səbəbi qeyd olunmalıdır</div>
                             <div className={styles.frameWrapper5}>
                                 <div className={styles.imtinaSbbiWrapper}>
                                     <textarea
                                         id="rejectionReasonTextarea"
                                         className={styles.imtinaTextarea}
-                                        placeholder="İmtina səbəbini bura qeyd edin..."
+                                        placeholder="Ləğv etmə səbəbini bura qeyd edin..."
                                         value={rejectionReason}
                                         maxLength={100}
                                         onChange={(e) => {
@@ -298,7 +298,7 @@ const ReservationsTab = () => {
                         </div>
                         {rejectionError && (
                             <div className={styles.errorText} style={{ maxWidth: '1068px', width: '100%', paddingLeft: '12px' }}>
-                                Zəhmət olmasa imtina səbəbini qeyd edin
+                                Zəhmət olmasa ləğv etmə səbəbini qeyd edin
                             </div>
                         )}
                     </>
@@ -318,7 +318,7 @@ const ReservationsTab = () => {
                 {/* Action buttons (only in PENDING state) */}
                 {detailData.status === 'PENDING' && (
                     <div className={styles.buttonParent}>
-                        <button className={styles.button3} onClick={handleDetailReject}>
+                        <button className={styles.button4} onClick={handleDetailReject} style={{ backgroundColor: '#c9373a' }}>
                             <div className={styles.statusUp_btn}>
                                 <div className={styles.logout_btn}>
                                     <svg className={styles.vectorIcon5} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -327,17 +327,7 @@ const ReservationsTab = () => {
                                     </svg>
                                 </div>
                             </div>
-                            <span>İmtina</span>
-                        </button>
-                        <button className={styles.button4} onClick={handleDetailApprove}>
-                            <div className={styles.statusUp_btn}>
-                                <div className={styles.logout_btn}>
-                                    <svg className={styles.vectorIcon6} viewBox="0 0 20 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M2 7.5L7.5 13L18 2" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                    </svg>
-                                </div>
-                            </div>
-                            <span>Təsdiq et</span>
+                            <span>Ləğv et</span>
                         </button>
                     </div>
                 )}
@@ -570,7 +560,7 @@ const ReservationsTab = () => {
                                                                             </div>
                                                                         </div>
                                                                     </div>
-                                                                    <div className={styles.popoverTsdiqEt}>İmtina et</div>
+                                                                    <div className={styles.popoverTsdiqEt}>Ləğv et</div>
                                                                 </button>
                                                             </>
                                                         )}
