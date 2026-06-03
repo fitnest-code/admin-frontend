@@ -463,118 +463,134 @@ const ReservationsTab = () => {
                                 <div className="w-full h-[64px] flex items-center justify-center text-[14px] text-slate-400">Yüklənir...</div>
                             ) : reservationsData?.items?.length === 0 ? (
                                 <div className="w-full h-[64px] flex items-center justify-center text-[14px] text-slate-400">Rezervasiya tapılmadı</div>
-                            ) : reservationsData?.items?.map((res: any) => (
-                                <React.Fragment key={res.id}>
-                                    <div className={cn(
-                                        "w-full h-[64px] flex items-center px-[20px] text-[14px] hover:bg-slate-50 transition-colors group",
-                                        activeActionsDropdownId === res.id ? "relative z-30" : "relative z-0"
-                                    )}>
-                                        <div className="flex-1 min-w-[200px] font-bold text-[#101828] group-hover:text-[#00B4CC] transition-colors truncate">
-                                            {res.userFullName}
-                                        </div>
-                                        <div className="w-[140px] shrink-0 text-slate-600 font-medium">
-                                            {res.date}
-                                        </div>
-                                        <div className="w-[140px] shrink-0 text-slate-600 font-medium">
-                                            {formatTo24h(res.timeRange)}
-                                        </div>
-                                        <div className="w-[140px] shrink-0 flex items-center">
-                                            <div className={cn(
-                                                "h-[26px] min-w-[90px] rounded-[20px] flex items-center justify-center gap-1.5 px-3 text-[12px] font-bold text-white shadow-xs",
-                                                res.status === 'PENDING' && "bg-[#ec972f]",
-                                                res.status === 'APPROVED' && "bg-[#166728]",
-                                                res.status === 'CANCELLED' && "bg-[#c9373a]",
-                                                res.status === 'REJECTED' && "bg-[#8a38f5]"
-                                            )}>
-                                                <div className="h-1.5 w-1.5 rounded-full bg-white shadow-sm" />
-                                                <span className="uppercase tracking-tight text-[10px]">{getStatusText(res.status)}</span>
+                            ) : reservationsData?.items?.map((res: any, index: number) => {
+                                const isNearBottom = index >= (reservationsData?.items?.length - 2);
+                                return (
+                                    <React.Fragment key={res.id}>
+                                        <div className={cn(
+                                            "w-full h-[64px] flex items-center px-[20px] text-[14px] hover:bg-slate-50 transition-colors group",
+                                            activeActionsDropdownId === res.id ? "relative z-30" : "relative z-0"
+                                        )}>
+                                            <div className="flex-1 min-w-[200px] font-bold text-[#101828] group-hover:text-[#00B4CC] transition-colors truncate">
+                                                {res.userFullName}
                                             </div>
-                                        </div>
-                                        <div className="flex-1 min-w-[200px] text-slate-600 font-medium truncate">
-                                            {res.trainerName || 'N/A'}
-                                        </div>
-                                        <div className="w-[100px] shrink-0 flex justify-center relative">
-                                            <div className="cursor-pointer p-1.5 hover:bg-slate-100 rounded-md transition-colors" onClick={(e) => {
-                                                e.stopPropagation();
-                                                setActiveActionsDropdownId(activeActionsDropdownId === res.id ? null : res.id);
-                                            }}>
-                                                <Image src="/more.svg" width={20} height={20} alt="More" className="opacity-70 group-hover:opacity-100 transition-opacity" />
+                                            <div className="w-[140px] shrink-0 text-slate-600 font-medium">
+                                                {res.date}
                                             </div>
-                                            {activeActionsDropdownId === res.id && (
-                                                <div ref={dropdownRef} className={styles.popoverMenu} onClick={(e) => e.stopPropagation()} style={{ right: 'auto', left: '50%', transform: 'translateX(-50%)', top: '100%' }}>
-                                                    <button className={styles.popoverBtn} onClick={() => {
-                                                        setSelectedReservationId(res.id);
-                                                        setViewMode('detail');
-                                                        setActiveActionsDropdownId(null);
-                                                    }}>
-                                                        <div className={styles.popoverFrameParent}>
-                                                            <div className={styles.popoverEyeWrapper}>
-                                                                <div className={styles.popoverEye}>
-                                                                    <div className={styles.popoverEye2}>
-                                                                        <svg className={styles.popoverVectorIcon} width="15" height="10" viewBox="0 0 15 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                            <path d="M7.5 0.5C4.0625 0.5 1.15625 2.58125 0 5.5C1.15625 8.41875 4.0625 10.5 7.5 10.5C10.9375 10.5 13.8438 8.41875 15 5.5C13.8438 2.58125 10.9375 0.5 7.5 0.5ZM7.5 8.83333C5.65625 8.83333 4.16667 7.34375 4.16667 5.5C4.16667 3.65625 5.65625 2.16667 7.5 2.16667C9.34375 2.16667 10.8333 3.65625 10.8333 5.5C10.8333 7.34375 9.34375 8.83333 7.5 8.83333ZM7.5 3.5C6.39583 3.5 5.5 4.39583 5.5 5.5C5.5 6.60417 6.39583 7.5 7.5 7.5C8.60417 7.5 9.5 6.60417 9.5 5.5C9.5 4.39583 8.60417 3.5 7.5 3.5Z" fill="#364153"/>
-                                                                        </svg>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div className={styles.popoverBax}>Bax</div>
-                                                        </div>
-                                                    </button>
-                                                    {res.status === 'PENDING' && (
-                                                        <>
-                                                            <button className={styles.popoverBtn2} onClick={() => {
-                                                                handleApprove(res.id);
-                                                                setActiveActionsDropdownId(null);
-                                                            }}>
-                                                                <div className={styles.popoverCheckWrapper}>
-                                                                    <div className={styles.popoverEye}>
-                                                                        <div className={styles.popoverEye2}>
-                                                                            <svg className={styles.popoverVectorIcon2} width="13" height="10" viewBox="0 0 13 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                                <path d="M1.5 5L4.5 8L11.5 1.5" stroke="#364153" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                                                            </svg>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                                <div className={styles.popoverTsdiqEt}>Təsdiq et</div>
-                                                            </button>
-                                                            <button className={styles.popoverBtn3} onClick={() => {
-                                                                setSelectedReservationId(res.id);
-                                                                setViewMode('detail');
-                                                                setActiveActionsDropdownId(null);
-                                                                setTimeout(() => {
-                                                                    const textarea = document.getElementById('rejectionReasonTextarea');
-                                                                    if (textarea) textarea.focus();
-                                                                }, 150);
-                                                            }}>
-                                                                <div className={styles.popoverCheckWrapper}>
-                                                                    <div className={styles.popoverEye}>
-                                                                        <div className={styles.popoverEye2}>
-                                                                            <svg className={styles.popoverVectorIcon3} width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                                <path d="M1 1L9 9M9 1L1 9" stroke="#364153" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                                                            </svg>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                                <div className={styles.popoverTsdiqEt}>İmtina et</div>
-                                                            </button>
-                                                        </>
-                                                    )}
-                                                    <div className={styles.popoverLine} />
+                                            <div className="w-[140px] shrink-0 text-slate-600 font-medium">
+                                                {formatTo24h(res.timeRange)}
+                                            </div>
+                                            <div className="w-[140px] shrink-0 flex items-center">
+                                                <div className={cn(
+                                                    "h-[26px] min-w-[90px] rounded-[20px] flex items-center justify-center gap-1.5 px-3 text-[12px] font-bold text-white shadow-xs",
+                                                    res.status === 'PENDING' && "bg-[#ec972f]",
+                                                    res.status === 'APPROVED' && "bg-[#166728]",
+                                                    res.status === 'CANCELLED' && "bg-[#c9373a]",
+                                                    res.status === 'REJECTED' && "bg-[#8a38f5]"
+                                                )}>
+                                                    <div className="h-1.5 w-1.5 rounded-full bg-white shadow-sm" />
+                                                    <span className="uppercase tracking-tight text-[10px]">{getStatusText(res.status)}</span>
                                                 </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                    {/* Sub row showing cancellation reason */}
-                                    {(res.status === 'REJECTED' || res.status === 'CANCELLED') && res.reason && (
-                                        <div className="w-full bg-[#fafafa] border-t border-[#ececed] px-[20px] py-[10px] text-[13px] text-slate-500">
-                                            <div className="flex gap-2">
-                                                <span className="font-bold text-red-500">Ləğv etmə səbəbi:</span>
-                                                <span>{res.reason}</span>
+                                            </div>
+                                            <div className="flex-1 min-w-[200px] text-slate-600 font-medium truncate">
+                                                {res.trainerName || 'N/A'}
+                                            </div>
+                                            <div className="w-[100px] shrink-0 flex justify-center relative">
+                                                <div className="cursor-pointer p-1.5 hover:bg-slate-100 rounded-md transition-colors" onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setActiveActionsDropdownId(activeActionsDropdownId === res.id ? null : res.id);
+                                                }}>
+                                                    <Image src="/more.svg" width={20} height={20} alt="More" className="opacity-70 group-hover:opacity-100 transition-opacity" />
+                                                </div>
+                                                {activeActionsDropdownId === res.id && (
+                                                    <div 
+                                                        ref={dropdownRef} 
+                                                        className={cn(styles.popoverMenu, res.status !== 'PENDING' && styles.popoverMenuShort)} 
+                                                        onClick={(e) => e.stopPropagation()} 
+                                                        style={{ 
+                                                            right: 'auto', 
+                                                            left: '50%', 
+                                                            transform: 'translateX(-50%)', 
+                                                            top: isNearBottom ? 'auto' : '100%', 
+                                                            bottom: isNearBottom ? '100%' : 'auto',
+                                                            marginBottom: isNearBottom ? '5px' : '0px',
+                                                            marginTop: isNearBottom ? '0px' : '5px'
+                                                        }}
+                                                    >
+                                                        <button className={styles.popoverBtn} onClick={() => {
+                                                            setSelectedReservationId(res.id);
+                                                            setViewMode('detail');
+                                                            setActiveActionsDropdownId(null);
+                                                        }}>
+                                                            <div className={styles.popoverFrameParent}>
+                                                                <div className={styles.popoverEyeWrapper}>
+                                                                    <div className={styles.popoverEye}>
+                                                                        <div className={styles.popoverEye2}>
+                                                                            <svg className={styles.popoverVectorIcon} width="15" height="10" viewBox="0 0 15 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                                <path d="M7.5 0.5C4.0625 0.5 1.15625 2.58125 0 5.5C1.15625 8.41875 4.0625 10.5 7.5 10.5C10.9375 10.5 13.8438 8.41875 15 5.5C13.8438 2.58125 10.9375 0.5 7.5 0.5ZM7.5 8.83333C5.65625 8.83333 4.16667 7.34375 4.16667 5.5C4.16667 3.65625 5.65625 2.16667 7.5 2.16667C9.34375 2.16667 10.8333 3.65625 10.8333 5.5C10.8333 7.34375 9.34375 8.83333 7.5 8.83333ZM7.5 3.5C6.39583 3.5 5.5 4.39583 5.5 5.5C5.5 6.60417 6.39583 7.5 7.5 7.5C8.60417 7.5 9.5 6.60417 9.5 5.5C9.5 4.39583 8.60417 3.5 7.5 3.5Z" fill="#364153"/>
+                                                                            </svg>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div className={styles.popoverBax}>Bax</div>
+                                                            </div>
+                                                        </button>
+                                                        {res.status === 'PENDING' && (
+                                                            <>
+                                                                <button className={styles.popoverBtn2} onClick={() => {
+                                                                    handleApprove(res.id);
+                                                                    setActiveActionsDropdownId(null);
+                                                                }}>
+                                                                    <div className={styles.popoverCheckWrapper}>
+                                                                        <div className={styles.popoverEye}>
+                                                                            <div className={styles.popoverEye2}>
+                                                                                <svg className={styles.popoverVectorIcon2} width="13" height="10" viewBox="0 0 13 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                                    <path d="M1.5 5L4.5 8L11.5 1.5" stroke="#364153" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                                                </svg>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className={styles.popoverTsdiqEt}>Təsdiq et</div>
+                                                                </button>
+                                                                <button className={styles.popoverBtn3} onClick={() => {
+                                                                    setSelectedReservationId(res.id);
+                                                                    setViewMode('detail');
+                                                                    setActiveActionsDropdownId(null);
+                                                                    setTimeout(() => {
+                                                                        const textarea = document.getElementById('rejectionReasonTextarea');
+                                                                        if (textarea) textarea.focus();
+                                                                    }, 150);
+                                                                }}>
+                                                                    <div className={styles.popoverCheckWrapper}>
+                                                                        <div className={styles.popoverEye}>
+                                                                            <div className={styles.popoverEye2}>
+                                                                                <svg className={styles.popoverVectorIcon3} width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                                    <path d="M1 1L9 9M9 1L1 9" stroke="#364153" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                                                </svg>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className={styles.popoverTsdiqEt}>İmtina et</div>
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                        {res.status === 'PENDING' && <div className={styles.popoverLine} />}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
-                                    )}
-                                </React.Fragment>
-                            ))}
+                                        {/* Sub row showing cancellation reason */}
+                                        {(res.status === 'REJECTED' || res.status === 'CANCELLED') && res.reason && (
+                                            <div className="w-full bg-[#fafafa] border-t border-[#ececed] px-[20px] py-[10px] text-[13px] text-slate-500">
+                                                <div className="flex gap-2">
+                                                    <span className="font-bold text-red-500">Ləğv etmə səbəbi:</span>
+                                                    <span>{res.reason}</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </React.Fragment>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>

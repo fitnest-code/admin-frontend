@@ -569,6 +569,9 @@
   	font-family: 'SF Pro', sans-serif;
     z-index: 50;
 }
+.popoverMenuShort {
+  	height: 46px;
+}
 .popoverBtn {
   	position: absolute;
   	top: 4.63px;
