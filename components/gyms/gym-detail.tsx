@@ -281,7 +281,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
         case 'plans':
           return <StepPlans onNext={goToNext} />
         case 'admins':
-          return <StepAdmins onComplete={() => { isCompletedRef.current = true; router.push('/gyms') }} />
+          return <StepAdmins onComplete={() => { isCompletedRef.current = true; }} />
         default:
           return <StepInfo onNext={goToNext} />
       }
