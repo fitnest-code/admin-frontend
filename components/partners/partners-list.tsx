@@ -223,130 +223,126 @@ export function PartnersList() {
           Partnyorlar yüklənir...
         </div>
       ) : sorted.length === 0 ? (
-        <div className="w-full overflow-x-auto">
-          <div className={styles.musteriParent}>
-            <div className={styles.musteri}>
-              <div className={styles.tickSquareParent}>
-                <div className={styles.tickSquare}>
-                  <CustomCheckbox checked={false} onChange={() => {}} disabled />
-                </div>
-                <div className={styles.adsoyad}>Ad/Soyad</div>
+        <div className={styles.musteriParent}>
+          <div className={styles.musteri}>
+            <div className={styles.tickSquareParent}>
+              <div className={styles.tickSquare}>
+                <CustomCheckbox checked={false} onChange={() => {}} disabled />
               </div>
-              <div className={styles.rolWrapper}>
-                <div className={styles.adsoyad}>Rol</div>
-              </div>
-              <div className={styles.rolWrapper}>
-                <div className={styles.adsoyad}>Telefon</div>
-              </div>
-              <div className={styles.zalAdWrapper}>
-                <div className={styles.adsoyad}>Zal adı</div>
-              </div>
-              <div className={styles.traflWrapper}>
-                <div className={styles.adsoyad}>Ətraflı</div>
-              </div>
+              <div className={styles.adsoyad}>Ad/Soyad</div>
             </div>
-            <div className={styles.emptyStateContainer}>
-              <p className="text-base font-semibold text-foreground">Hələ partnyor yoxdur</p>
-              <p className="text-sm text-muted-foreground max-w-xs">
-                Partnyorlar qeydiyyatdan keçdikdən sonra burada avtomatik görünəcək.
-              </p>
+            <div className={styles.rolWrapper}>
+              <div className={styles.adsoyad}>Rol</div>
             </div>
+            <div className={styles.rolWrapper}>
+              <div className={styles.adsoyad}>Telefon</div>
+            </div>
+            <div className={styles.zalAdWrapper}>
+              <div className={styles.adsoyad}>Zal adı</div>
+            </div>
+            <div className={styles.traflWrapper}>
+              <div className={styles.adsoyad}>Ətraflı</div>
+            </div>
+          </div>
+          <div className={styles.emptyStateContainer}>
+            <p className="text-base font-semibold text-foreground">Hələ partnyor yoxdur</p>
+            <p className="text-sm text-muted-foreground max-w-xs">
+              Partnyorlar qeydiyyatdan keçdikdən sonra burada avtomatik görünəcək.
+            </p>
           </div>
         </div>
       ) : (
-        <div className="w-full overflow-x-auto pb-4">
-          <div className={styles.musteriParent}>
-            <div className={styles.musteri}>
-              <div className={styles.tickSquareParent}>
-                <div className={styles.tickSquare}>
-                  <CustomCheckbox checked={allOnPage} onChange={toggleAll} />
-                </div>
-                <div className={styles.adsoyad}>Ad/Soyad</div>
+        <div className={styles.musteriParent}>
+          <div className={styles.musteri}>
+            <div className={styles.tickSquareParent}>
+              <div className={styles.tickSquare}>
+                <CustomCheckbox checked={allOnPage} onChange={toggleAll} />
               </div>
-              <div className={styles.rolWrapper}>
-                <div className={styles.adsoyad}>Rol</div>
-              </div>
-              <div className={styles.rolWrapper}>
-                <div className={styles.adsoyad}>Telefon</div>
-              </div>
-              <div className={styles.zalAdWrapper}>
-                <div className={styles.adsoyad}>Zal adı</div>
-              </div>
-              <div className={styles.traflWrapper}>
-                <div className={styles.adsoyad}>Ətraflı</div>
-              </div>
+              <div className={styles.adsoyad}>Ad/Soyad</div>
             </div>
+            <div className={styles.rolWrapper}>
+              <div className={styles.adsoyad}>Rol</div>
+            </div>
+            <div className={styles.rolWrapper}>
+              <div className={styles.adsoyad}>Telefon</div>
+            </div>
+            <div className={styles.zalAdWrapper}>
+              <div className={styles.adsoyad}>Zal adı</div>
+            </div>
+            <div className={styles.traflWrapper}>
+              <div className={styles.adsoyad}>Ətraflı</div>
+            </div>
+          </div>
 
-            {sorted.map((partner, index) => {
-              const rowClass = index % 2 === 0 ? styles.frameParent : styles.frameGroup
-              const isSuper = partner.role === 'ROLE_GYM_SUPER_ADMIN'
-              const gymName = (partner as any).gymName || (partner as any).gymTitle || 'FİTnest Club'
+          {sorted.map((partner, index) => {
+            const rowClass = index % 2 === 0 ? styles.frameParent : styles.frameGroup
+            const isSuper = partner.role === 'ROLE_GYM_SUPER_ADMIN'
+            const gymName = (partner as any).gymName || (partner as any).gymTitle || 'FİTnest Club'
 
-              return (
-                <div key={partner.id} className={rowClass}>
-                  <div className={styles.tickSquareParent}>
-                    <div className={styles.tickSquare}>
-                      <CustomCheckbox checked={selected.has(partner.id)} onChange={() => toggleOne(partner.id)} />
-                    </div>
-                    <div className={styles.adsoyad} title={partner.fullName || ''}>
-                      {partner.fullName}
-                    </div>
+            return (
+              <div key={partner.id} className={rowClass}>
+                <div className={styles.tickSquareParent}>
+                  <div className={styles.tickSquare}>
+                    <CustomCheckbox checked={selected.has(partner.id)} onChange={() => toggleOne(partner.id)} />
                   </div>
-                  
-                  <div className={styles.adminWrapper}>
-                    <div className={isSuper ? styles.admin : styles.admin2}>
-                      <div className={styles.usergear}>
-                        <div className={styles.usergear2}>
-                          <Image 
-                            src={isSuper ? "/superAdmin.svg" : "/admin.svg"} 
-                            width={isSuper ? 18.1 : 16.3} 
-                            height={isSuper ? 13.8 : 15.6} 
-                            sizes="100vw" 
-                            alt="" 
-                            className={isSuper ? styles.vectorIcon : styles.vectorIcon3}
-                          />
-                        </div>
-                      </div>
-                      <div className={styles.superAdmin}>
-                        {isSuper ? 'Super admin' : 'Admin'}
-                      </div>
-                    </div>
+                  <div className={styles.adsoyad} title={partner.fullName || ''}>
+                    {partner.fullName}
                   </div>
-
-                  <div className={styles.rolWrapper}>
-                    <div className={styles.adsoyad}>
-                      {partner.phoneNumber || '+994 00 000 00 00'}
-                    </div>
-                  </div>
-
-                  <div className={styles.zalAdWrapper}>
-                    <div className={styles.adsoyad} title={gymName}>
-                      {gymName}
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => router.push(`/partners/${partner.id}`)}
-                    className={cn(styles.traflWrapper, "hover:opacity-80 transition-opacity")}
-                    aria-label="Ətraflı bax"
-                  >
-                    <div className={styles.tickSquare}>
+                </div>
+                
+                <div className={styles.adminWrapper}>
+                  <div className={isSuper ? styles.admin : styles.admin2}>
+                    <div className={styles.usergear}>
                       <div className={styles.usergear2}>
                         <Image 
-                          src="/Eye.png" 
-                          width={22.1} 
-                          height={14.6} 
+                          src={isSuper ? "/superAdmin.svg" : "/admin.svg"} 
+                          width={isSuper ? 18.1 : 16.3} 
+                          height={isSuper ? 13.8 : 15.6} 
                           sizes="100vw" 
                           alt="" 
-                          className={styles.vectorIcon2}
+                          className={isSuper ? styles.vectorIcon : styles.vectorIcon3}
                         />
                       </div>
                     </div>
-                  </button>
+                    <div className={styles.superAdmin}>
+                      {isSuper ? 'Super admin' : 'Admin'}
+                    </div>
+                  </div>
                 </div>
-              )
-            })}
-          </div>
+
+                <div className={styles.rolWrapper}>
+                  <div className={styles.adsoyad}>
+                    {partner.phoneNumber || '+994 00 000 00 00'}
+                  </div>
+                </div>
+
+                <div className={styles.zalAdWrapper}>
+                  <div className={styles.adsoyad} title={gymName}>
+                    {gymName}
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => router.push(`/partners/${partner.id}`)}
+                  className={cn(styles.traflWrapper, "hover:opacity-80 transition-opacity")}
+                  aria-label="Ətraflı bax"
+                >
+                  <div className={styles.tickSquare}>
+                    <div className={styles.usergear2}>
+                      <Image 
+                        src="/Eye.png" 
+                        width={22.1} 
+                        height={14.6} 
+                        sizes="100vw" 
+                        alt="" 
+                        className={styles.vectorIcon2}
+                      />
+                    </div>
+                  </div>
+                </button>
+              </div>
+            )
+          })}
         </div>
       )}
 
