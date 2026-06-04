@@ -45,7 +45,7 @@ function CustomCheckbox({
       }}
       disabled={disabled}
       className={cn(
-        'relative flex h-6 w-6 shrink-0 items-center justify-center rounded border transition-all duration-200 outline-none cursor-pointer',
+        'relative flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all duration-200 outline-none cursor-pointer',
         checked 
           ? 'bg-[#00B4CC] border-[#00B4CC]' 
           : 'bg-white border-[#cecfd2] hover:border-[#00B4CC]',
@@ -53,7 +53,7 @@ function CustomCheckbox({
       )}
     >
       {checked && (
-        <Check size={14} className="text-white font-bold animate-in zoom-in-50 duration-100" strokeWidth={3} />
+        <Check size={10} className="text-white font-bold animate-in zoom-in-50 duration-100" strokeWidth={3} />
       )}
     </button>
   )

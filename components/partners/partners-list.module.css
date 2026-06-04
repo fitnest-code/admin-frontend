@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=SF+Pro:ital,wght@0,400;0,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=SF+Pro:ital,wght@0,400;0,500;0,600&display=swap');
 
 .musteriParent {
   	width: 100%;
@@ -7,7 +7,7 @@
   	flex-direction: column;
   	align-items: stretch;
   	text-align: left;
-  	font-size: 16px;
+  	font-size: 14px;
   	color: #000;
   	font-family: 'SF Pro', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
@@ -20,8 +20,8 @@
   	display: grid;
   	grid-template-columns: 2.5fr 2fr 2fr 2.5fr 0.8fr;
   	align-items: center;
-  	padding: 20px 10px;
-  	gap: 15.8px;
+  	padding: 12px 16px;
+  	gap: 16px;
 }
 .tickSquareParent {
   	width: 100%;
@@ -31,29 +31,21 @@
   	overflow: hidden;
 }
 .tickSquare {
-  	height: 24px;
-  	width: 24px;
+  	height: 16px;
+  	width: 16px;
   	position: relative;
   	flex-shrink: 0;
 }
-.vuesaxlineartickSquareIcon {
-  	position: absolute;
-  	height: 100%;
-  	width: 100%;
-  	top: 0%;
-  	right: 0%;
-  	bottom: 0%;
-  	left: 0%;
-  	max-width: 100%;
-  	overflow: hidden;
-  	max-height: 100%;
-}
 .adsoyad {
   	position: relative;
-  	line-height: 24px;
-  	white-space: nowrap;
-  	overflow: hidden;
-  	text-overflow: ellipsis;
+  	line-height: 20px;
+}
+.musteri .adsoyad {
+  	font-size: 12px;
+  	font-weight: 600;
+  	text-transform: uppercase;
+  	letter-spacing: 0.05em;
+  	color: #1a1a1a;
 }
 .rolWrapper {
   	width: 100%;
@@ -71,7 +63,7 @@
 }
 .abunlik {
   	position: relative;
-  	line-height: 24px;
+  	line-height: 20px;
   	display: none;
 }
 .traflWrapper {
@@ -94,8 +86,8 @@
   	display: grid;
   	grid-template-columns: 2.5fr 2fr 2fr 2.5fr 0.8fr;
   	align-items: center;
-  	padding: 20px 10px;
-  	gap: 15.8px;
+  	padding: 14px 16px;
+  	gap: 16px;
 }
 .adminWrapper {
   	width: 100%;
@@ -107,7 +99,7 @@
   	overflow: hidden;
 }
 .admin {
-  	width: 142px;
+  	width: 125px;
   	border-radius: 4px;
   	background-color: #00b4cc;
   	border: 1px solid #ececed;
@@ -115,13 +107,15 @@
   	display: flex;
   	align-items: center;
   	justify-content: center;
-  	padding: 4px 8px;
-  	gap: 8px;
+  	padding: 4px 6px;
+  	gap: 6px;
   	color: #fff;
+  	font-size: 12px;
+  	font-weight: 500;
 }
 .usergear {
-  	height: 20px;
-  	width: 20px;
+  	height: 16px;
+  	width: 16px;
   	position: relative;
   	flex-shrink: 0;
 }
@@ -136,35 +130,23 @@
 }
 .vectorIcon {
   	position: absolute;
-  	height: 69%;
+  	height: 100%;
   	width: 100%;
-  	top: 12.48%;
-  	right: 3.27%;
-  	bottom: 18.52%;
-  	left: 6.23%;
+  	top: 0;
+  	right: 0;
+  	bottom: 0;
+  	left: 0;
   	max-width: 100%;
   	overflow: hidden;
   	max-height: 100%;
 }
 .superAdmin {
   	position: relative;
-  	line-height: 24px;
+  	line-height: 18px;
   	font-weight: 500;
   	white-space: nowrap;
   	overflow: hidden;
   	text-overflow: ellipsis;
-}
-.vectorIcon2 {
-  	position: absolute;
-  	height: 60.83%;
-  	width: 100%;
-  	top: 19.53%;
-  	right: 4.01%;
-  	bottom: 19.64%;
-  	left: 3.91%;
-  	max-width: 100%;
-  	overflow: hidden;
-  	max-height: 100%;
 }
 .frameGroup {
   	width: 100%;
@@ -176,11 +158,11 @@
   	display: grid;
   	grid-template-columns: 2.5fr 2fr 2fr 2.5fr 0.8fr;
   	align-items: center;
-  	padding: 20px 10px;
-  	gap: 15.8px;
+  	padding: 14px 16px;
+  	gap: 16px;
 }
 .admin2 {
-  	width: 142px;
+  	width: 125px;
   	border-radius: 4px;
   	background-color: #00b4cc;
   	border: 1px solid #ececed;
@@ -188,18 +170,20 @@
   	display: flex;
   	align-items: center;
   	justify-content: center;
-  	padding: 4px 8px;
-  	gap: 8px;
+  	padding: 4px 6px;
+  	gap: 6px;
   	color: #fff;
+  	font-size: 12px;
+  	font-weight: 500;
 }
 .vectorIcon3 {
   	position: absolute;
-  	height: 78%;
+  	height: 100%;
   	width: 100%;
-  	top: 9.36%;
-  	right: 9.16%;
-  	bottom: 12.64%;
-  	left: 9.34%;
+  	top: 0;
+  	right: 0;
+  	bottom: 0;
+  	left: 0;
   	max-width: 100%;
   	overflow: hidden;
   	max-height: 100%;
