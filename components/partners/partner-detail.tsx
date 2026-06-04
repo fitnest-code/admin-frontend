@@ -3,12 +3,13 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { ArrowLeft, Ban, Bell, Mail, MessageSquare, Upload, Lock, ShieldCheck } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CustomerProfile } from '@/modules/customers'
-import { blockUser, unblockUser, resetUserPassword } from '@/modules/customers/api/customers.service'
+import { blockUser, unblockUser } from '@/modules/customers/api/customers.service'
 import { getCustomerStatusLabel, normalizeCustomerStatus, type UiCustomerStatus } from '../customers/list/customer-list-utils'
 import { PushModal, SmsModal } from '../customers/list/customer-message-modals'
+import { ResetPasswordModal } from './reset-password-modal'
 
 const STATUS_STYLES = {
   active: 'bg-[#166728] text-white',
@@ -49,30 +50,20 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 function OpsBtn({
-  icon: Icon,
+  src,
   label,
   onClick,
-  danger,
-  disabled,
 }: {
-  icon: React.ElementType
+  src: string
   label: string
   onClick: () => void
-  danger?: boolean
-  disabled?: boolean
 }) {
   return (
     <button
       onClick={onClick}
-      disabled={disabled}
-      className={cn(
-        'flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-sm font-semibold transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed',
-        danger
-          ? 'border-red-200 bg-red-50/40 text-red-600 hover:bg-red-50 hover:border-red-300'
-          : 'border-border bg-white text-foreground hover:border-[#00B4CC] hover:text-[#00B4CC] hover:bg-[#00B4CC]/5 shadow-xs',
-      )}
+      className="flex w-full items-center gap-3 rounded-lg border border-border bg-white px-4 py-3 text-sm font-semibold text-foreground hover:border-[#00B4CC] hover:text-[#00B4CC] hover:bg-[#00B4CC]/5 shadow-xs transition-all duration-200 active:scale-[0.98]"
     >
-      <Icon size={18} className={cn('shrink-0', danger ? 'text-red-500' : 'text-[#00B4CC]')} /> 
+      <Image src={src} width={18} height={18} alt="" className="shrink-0" />
       <span>{label}</span>
     </button>
   )
@@ -83,9 +74,7 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
   const [customer, setCustomer] = useState(initialCustomer)
   const [pushOpen, setPushOpen] = useState(false)
   const [smsOpen, setSmsOpen] = useState(false)
-  const [newPassword, setNewPassword] = useState('')
-  const [pwdLoading, setPwdLoading] = useState(false)
-  const [pwdMsg, setPwdMsg] = useState<{ text: string; isError: boolean } | null>(null)
+  const [resetPwdOpen, setResetPwdOpen] = useState(false)
   const [blockLoading, setBlockLoading] = useState(false)
 
   const status = normalizeCustomerStatus(customer.userStatus)
@@ -94,24 +83,7 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
 
   const isSuper = customer.role === 'ROLE_GYM_SUPER_ADMIN'
   const roleLabel = isSuper ? 'Super admin' : 'Admin'
-
-  async function handleResetPassword(e: React.FormEvent) {
-    e.preventDefault()
-    if (!newPassword.trim()) return
-
-    setPwdLoading(true)
-    setPwdMsg(null)
-    try {
-      await resetUserPassword(customer.id, newPassword.trim())
-      setPwdMsg({ text: 'Şifrə uğurla yeniləndi.', isError: false })
-      setNewPassword('')
-    } catch (err: any) {
-      console.error(err)
-      setPwdMsg({ text: err.message || 'Şifrə yenilənərkən xəta baş verdi.', isError: true })
-    } finally {
-      setPwdLoading(false)
-    }
-  }
+  const roleIcon = isSuper ? '/superAdmin.svg' : '/admin.svg'
 
   async function handleBlockToggle() {
     setBlockLoading(true)
@@ -177,95 +149,73 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
             <span className="text-[10px] font-medium uppercase text-muted-foreground">Qeydiyyat tarixi</span>
             <strong className="text-sm font-medium text-foreground">{formatDateTimeClean(customer.registeredAt)}</strong>
           </div>
-
-          <div className="h-8 w-[1px] bg-border shrink-0 self-center" />
-
-          <div className="flex flex-col gap-0.5 text-left">
-            <span className="text-[10px] font-medium uppercase text-muted-foreground">Platforma</span>
-            <strong className="text-sm font-medium text-foreground">{formatValue(customer.platform) || 'İOS'}</strong>
-          </div>
         </div>
       </div>
 
-      {/* Main Content Areas */}
+      {/* Main Content Layout */}
       <div className="flex flex-col gap-6 lg:flex-row lg:items-stretch lg:gap-6">
-        {/* Left Area: Profile Information Categories */}
+        {/* Left Column: Personal info & Reset Password */}
         <div className="flex flex-1 flex-col gap-6">
-          {/* Personal Data Card */}
+          {/* Personal Info Card */}
           <div className="rounded-xl bg-white border border-border p-5 shadow-xs flex flex-col gap-5">
             <div className="border-b border-border pb-3">
-              <h2 className="text-[16px] font-bold text-foreground tracking-tight">Profil məlumatları</h2>
+              <h2 className="text-[16px] font-bold text-foreground tracking-tight">Şəxsi məlumatlar</h2>
             </div>
             <div className="flex flex-col">
-              <InfoRow label="Rol:" value={roleLabel} />
+              <div className="flex items-center justify-between gap-4 py-2.5 border-b border-border/40">
+                <span className="text-sm font-medium text-muted-foreground shrink-0">Rol:</span>
+                <div className="flex items-center gap-1.5 rounded-full bg-[#00B4CC]/10 px-2.5 py-0.5 text-xs font-semibold text-[#00B4CC]">
+                  <Image src={roleIcon} width={12} height={12} alt="" className="shrink-0" />
+                  <span>{roleLabel}</span>
+                </div>
+              </div>
               <InfoRow label="Telefon nömrəsi:" value={formatValue(customer.phoneNumber)} />
+              <InfoRow label="Zal adı:" value={formatValue((customer as any).gymName || 'Fitnest Club')} />
               <InfoRow label="Email:" value={formatValue(customer.email)} />
             </div>
           </div>
 
-          {/* Password Reset Card */}
-          <div className="rounded-xl bg-white border border-border p-5 shadow-xs flex flex-col gap-5">
+          {/* Reset Password Card */}
+          <div className="rounded-xl bg-white border border-border p-5 shadow-xs flex flex-col gap-4">
             <div className="border-b border-border pb-3">
-              <h2 className="text-[16px] font-bold text-foreground tracking-tight">Şifrəni yenilə</h2>
+              <h2 className="text-[16px] font-bold text-foreground tracking-tight">Şifrə təhlükəsizliyi</h2>
             </div>
-            <form onSubmit={handleResetPassword} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase">Yeni Şifrə</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground size-4" />
-                  <input
-                    type="password"
-                    placeholder="Yeni şifrəni daxil edin"
-                    value={newPassword}
-                    onChange={e => setNewPassword(e.target.value)}
-                    required
-                    className="w-full h-10 pl-10 pr-4 rounded-lg border border-border outline-none focus:border-[#00B4CC] text-sm transition-colors"
-                  />
-                </div>
-              </div>
-              <button
-                type="submit"
-                disabled={pwdLoading || !newPassword.trim()}
-                className="w-fit px-5 h-10 rounded-lg bg-[#00B4CC] hover:bg-[#009fb5] text-white text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                <ShieldCheck size={16} />
-                <span>Şifrəni yenilə</span>
-              </button>
-              {pwdMsg && (
-                <p className={cn("text-xs font-semibold mt-1", pwdMsg.isError ? "text-red-500" : "text-green-600")}>
-                  {pwdMsg.text}
-                </p>
-              )}
-            </form>
+            <button 
+              onClick={() => setResetPwdOpen(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#00B4CC] bg-white px-4 py-2.5 text-sm font-semibold text-[#00B4CC] hover:bg-[#00B4CC]/5 active:scale-[0.98] transition-all duration-200"
+            >
+              <Image src="/resetPassword.svg" width={16} height={16} alt="" />
+              <span>Şifrəni yenilə</span>
+            </button>
           </div>
         </div>
 
-        {/* Right Area: Admin Actions Panel */}
+        {/* Right Column: Operations Panel */}
         <div className="w-full lg:w-[411px] shrink-0">
           <div className="flex flex-col rounded-xl bg-white border border-border p-5 shadow-xs gap-5">
             <div className="border-b border-border pb-3">
               <h2 className="text-[16px] font-bold text-foreground tracking-tight">Əməliyyatlar</h2>
             </div>
             <div className="flex flex-col gap-3">
-              <OpsBtn icon={Bell} label="Push bildiriş göndər" onClick={() => setPushOpen(true)} />
-              <OpsBtn icon={MessageSquare} label="SMS göndər" onClick={() => setSmsOpen(true)} />
-              <OpsBtn icon={Mail} label="Email göndər" onClick={() => {}} />
-              <OpsBtn icon={Upload} label="Export" onClick={() => {}} />
+              <OpsBtn src="/push-notification.svg" label="Push bildiriş göndər" onClick={() => setPushOpen(true)} />
+              <OpsBtn src="/sms-icon.svg" label="SMS göndər" onClick={() => setSmsOpen(true)} />
+              <OpsBtn src="/mail-icon.svg" label="Email göndər" onClick={() => {}} />
+              <OpsBtn src="/export-icon.svg" label="Export" onClick={() => {}} />
               <div className="pt-2 border-t border-border/60">
-                <OpsBtn 
-                  icon={Ban} 
-                  label={status === 'blocked' ? "Bloku aç" : "Block"} 
-                  onClick={handleBlockToggle} 
-                  danger={status !== 'blocked'} 
+                <button
+                  onClick={handleBlockToggle}
                   disabled={blockLoading}
-                />
+                  className="flex w-full items-center justify-center gap-3 rounded-lg border border-red-200 bg-red-50/40 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 hover:border-red-300 transition-all duration-200 disabled:opacity-55"
+                >
+                  <span>{status === 'blocked' ? "Bloku aç" : "Block"}</span>
+                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Render Invoked Modals */}
+      {/* Modals */}
       {pushOpen && (
         <PushModal 
           selectedUsers={[{ id: customer.id, fullName: fullName, email: customer.email, phoneNumber: customer.phoneNumber }]} 
@@ -276,6 +226,12 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
         <SmsModal 
           selectedUsers={[{ id: customer.id, fullName: fullName, email: customer.email, phoneNumber: customer.phoneNumber }]} 
           onClose={() => setSmsOpen(false)} 
+        />
+      )}
+      {resetPwdOpen && (
+        <ResetPasswordModal 
+          userId={customer.id} 
+          onClose={() => setResetPwdOpen(false)} 
         />
       )}
     </div>
