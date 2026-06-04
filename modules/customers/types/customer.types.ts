@@ -9,6 +9,7 @@ export interface CustomerListItem {
   email?: string | null
   userStatus: CustomerStatus
   subscriptionStatus?: string | null
+  role?: string | null
 }
 
 export interface CustomerDetailApiResponse {
@@ -23,6 +24,7 @@ export interface CustomerDetailApiResponse {
   height: number
   weight: number
   bmiIndex: number
+  role?: string | null
 }
 
 export interface CustomerProfile extends CustomerListItem {
@@ -53,6 +55,7 @@ export interface GetCustomersParams {
   packageDuration?: number
   subscriptionStatus?: CustomerSubscriptionType
   sort?: string
+  roles?: string[]
 }
 
 export interface SubscriptionPackageName {

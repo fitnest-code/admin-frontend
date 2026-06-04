@@ -7,6 +7,8 @@ const az = {
     goals: "Hədəflər",
     gyms: "Zallar",
     customers: "Müştərilər",
+    partners: "Partnyorlar",
+    admins: "Adminlər",
     payments: "Ödənişlər",
     reports: "Hesabatlar",
     diet: "Diet",

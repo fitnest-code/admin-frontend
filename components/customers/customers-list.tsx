@@ -45,6 +45,7 @@ export function CustomersList() {
     packageDuration: duration ?? undefined,
     subscriptionStatus: subStatus ?? undefined,
     sort: sortBy ?? undefined,
+    roles: ['ROLE_USER'],
   })
   const packageNamesQuery = useSubscriptionPackageNamesQuery()
   const statisticsQuery = useUserStatisticsQuery()

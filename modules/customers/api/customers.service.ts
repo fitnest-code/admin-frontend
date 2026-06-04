@@ -60,6 +60,7 @@ export async function getCustomerById(id: string): Promise<CustomerProfile> {
     weight: data.weight,
     bmi: data.bmiIndex,
     photoUrl: null,
+    role: data.role || null,
   }
 }
 
@@ -70,3 +71,8 @@ export function blockUser(userId: number) {
 export function unblockUser(userId: number) {
   return apiPost<void>(`/api/v1/admin/users/${userId}/unblock`)
 }
+
+export function resetUserPassword(userId: number, newPassword: string) {
+  return apiPost<void>(`/api/v1/admin/users/${userId}/password/reset`, { newPassword })
+}
+
