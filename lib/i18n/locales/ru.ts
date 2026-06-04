@@ -8,6 +8,8 @@ const ru: TranslationKeys = {
     goals: "Цели",
     gyms: "Залы",
     customers: "Клиенты",
+    partners: "Партнеры",
+    admins: "Администраторы",
     payments: "Платежи",
     reports: "Отчёты",
     diet: "Диета",

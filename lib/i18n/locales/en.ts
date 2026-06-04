@@ -8,6 +8,8 @@ const en: TranslationKeys = {
     goals: "Goals",
     gyms: "Gyms",
     customers: "Customers",
+    partners: "Partners",
+    admins: "Admins",
     payments: "Payments",
     reports: "Reports",
     diet: "Diet",

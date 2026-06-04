@@ -10,6 +10,7 @@ import { PAGE_SIZE } from '../customers/list/customer-list-constants'
 import { CustomerBulkActions, EmailModal, PushModal, SmsModal, BlockModal } from '../customers/list/customer-message-modals'
 import { CustomerPagination } from '../customers/list/customer-list-table'
 import { normalizeCustomerStatus } from '../customers/list/customer-list-utils'
+import styles from './partners-list.module.css'
 
 const PARTNER_SORT_OPTIONS = [
   { value: 'newest', label: 'Yeni əlavə olunanlar' },
@@ -25,6 +26,38 @@ function getRoleLabel(role?: string | null) {
   if (role === 'ROLE_GYM_SUPER_ADMIN') return 'Super admin'
   if (role === 'ROLE_GYM_ADMIN') return 'Admin'
   return role || 'İstifadəçi'
+}
+
+function CustomCheckbox({
+  checked,
+  onChange,
+  disabled = false,
+}: {
+  checked: boolean
+  onChange: () => void
+  disabled?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation()
+        if (!disabled) onChange()
+      }}
+      disabled={disabled}
+      className={cn(
+        'relative flex h-6 w-6 shrink-0 items-center justify-center rounded border transition-all duration-200 outline-none cursor-pointer',
+        checked 
+          ? 'bg-[#00B4CC] border-[#00B4CC]' 
+          : 'bg-white border-[#cecfd2] hover:border-[#00B4CC]',
+        disabled && 'opacity-40 cursor-not-allowed'
+      )}
+    >
+      {checked && (
+        <Check size={14} className="text-white font-bold animate-in zoom-in-50 duration-100" strokeWidth={3} />
+      )}
+    </button>
+  )
 }
 
 function SortDropdown({
@@ -190,92 +223,130 @@ export function PartnersList() {
           Partnyorlar yüklənir...
         </div>
       ) : sorted.length === 0 ? (
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
-          <div className="grid grid-cols-[3rem_3.5rem_1.5fr_1fr_1fr_6rem_7rem_3rem] items-center gap-3 border-b border-border bg-[#00B4CC14] px-4 py-3">
-            <input type="checkbox" disabled className="h-4 w-4 opacity-40" />
-            {['ID', 'Ad / Soyad', 'Telefon', 'Email', 'Profil statusu', 'Rol', 'Ətraflı'].map((header) => (
-              <span key={header} className="text-[11px] font-medium uppercase text-foreground/80">
-                {header}
-              </span>
-            ))}
-          </div>
-          <div className="flex flex-col items-center gap-3 py-20 text-center">
-            <p className="text-base font-semibold text-foreground">Hələ partnyor yoxdur</p>
-            <p className="text-sm text-muted-foreground max-w-xs">
-              Partnyorlar qeydiyyatdan keçdikdən sonra burada avtomatik görünəcək.
-            </p>
+        <div className="w-full overflow-x-auto">
+          <div className={styles.musteriParent}>
+            <div className={styles.musteri}>
+              <div className={styles.tickSquareParent}>
+                <div className={styles.tickSquare}>
+                  <CustomCheckbox checked={false} onChange={() => {}} disabled />
+                </div>
+                <div className={styles.adsoyad}>Ad/Soyad</div>
+              </div>
+              <div className={styles.rolWrapper}>
+                <div className={styles.adsoyad}>Rol</div>
+              </div>
+              <div className={styles.rolWrapper}>
+                <div className={styles.adsoyad}>Telefon</div>
+              </div>
+              <div className={styles.zalAdWrapper}>
+                <div className={styles.adsoyad}>Zal adı</div>
+              </div>
+              <div className={styles.traflWrapper}>
+                <div className={styles.adsoyad}>Ətraflı</div>
+              </div>
+            </div>
+            <div className={styles.emptyStateContainer}>
+              <p className="text-base font-semibold text-foreground">Hələ partnyor yoxdur</p>
+              <p className="text-sm text-muted-foreground max-w-xs">
+                Partnyorlar qeydiyyatdan keçdikdən sonra burada avtomatik görünəcək.
+              </p>
+            </div>
           </div>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-          <div className="grid grid-cols-[3rem_3.5rem_1.5fr_1fr_1fr_6rem_7rem_3rem] items-center gap-3 border-b border-[#cecfd2]/60 dark:border-border bg-[#00B4CC]/[0.15] dark:bg-[#00B4CC]/10 px-4 py-3 rounded-t-lg">
-            <div className="flex justify-center">
-              <input type="checkbox" checked={allOnPage} onChange={toggleAll} className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded" />
-            </div>
-            <span className="text-[11px] font-bold uppercase text-foreground/80">ID</span>
-            <span className="text-[11px] font-bold uppercase text-foreground/80">Ad / Soyad</span>
-            <span className="text-[11px] font-bold uppercase text-foreground/80">Telefon</span>
-            <span className="text-[11px] font-bold uppercase text-foreground/80">Email</span>
-            <span className="text-[11px] font-bold uppercase text-foreground/80 text-center">Status</span>
-            <span className="text-[11px] font-bold uppercase text-foreground/80">Rol</span>
-            <span className="text-[11px] font-bold uppercase text-foreground/80 text-center">Ətraflı</span>
-          </div>
-          {sorted.map((partner) => {
-            const status = normalizeCustomerStatus(partner.userStatus)
-            
-            // Account Status Badge Logic
-            const badgeBg = status === 'active' ? 'bg-[#166728]' : status === 'inactive' ? 'bg-[#94979c]' : 'bg-[#c9373a]'
-            const badgeText = status === 'active' ? 'Aktiv' : status === 'inactive' ? 'Deaktiv' : 'Blok'
-
-            // Role Badge Logic
-            const isSuper = partner.role === 'ROLE_GYM_SUPER_ADMIN'
-            const roleBadgeClass = isSuper 
-              ? 'bg-blue-50 text-blue-700 border border-blue-200' 
-              : 'bg-teal-50 text-teal-700 border border-teal-200'
-
-            return (
-              <div
-                key={partner.id}
-                className={cn(
-                  'grid grid-cols-[3rem_3.5rem_1.5fr_1fr_1fr_6rem_7rem_3rem] items-center gap-3 border-b border-border px-4 py-3 last:border-0 hover:bg-secondary/40 transition-all duration-200 bg-card'
-                )}
-              >
-                <div className="flex justify-center">
-                  <input
-                    type="checkbox"
-                    checked={selected.has(partner.id)}
-                    onChange={() => toggleOne(partner.id)}
-                    onClick={(event) => event.stopPropagation()}
-                    className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded"
-                  />
+        <div className="w-full overflow-x-auto pb-4">
+          <div className={styles.musteriParent}>
+            <div className={styles.musteri}>
+              <div className={styles.tickSquareParent}>
+                <div className={styles.tickSquare}>
+                  <CustomCheckbox checked={allOnPage} onChange={toggleAll} />
                 </div>
-                <span className="text-sm font-normal text-black truncate">{partner.id}</span>
-                <span className="text-sm font-normal text-black truncate">
-                  {partner.fullName}
-                </span>
-                <span className="text-sm font-normal text-black truncate">{partner.phoneNumber}</span>
-                <span className="text-sm font-normal text-black truncate">{partner.email}</span>
-                <div className="flex justify-center">
-                  <div className={cn('inline-flex h-[22px] w-fit items-center justify-center gap-1.5 rounded-full px-3 text-[10px] font-medium uppercase shadow-xs text-white', badgeBg)}>
-                    <div className="w-1 h-1 rounded-full bg-white shrink-0" />
-                    <span>{badgeText}</span>
-                  </div>
-                </div>
-                <div>
-                  <span className={cn('inline-flex items-center justify-center rounded-md px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap', roleBadgeClass)}>
-                    {getRoleLabel(partner.role)}
-                  </span>
-                </div>
-                <button
-                  onClick={() => router.push(`/partners/${partner.id}`)}
-                  className="text-muted-foreground hover:text-[#00B4CC] transition-colors flex justify-center"
-                  aria-label="Ətraflı bax"
-                >
-                  <Eye size={18} />
-                </button>
+                <div className={styles.adsoyad}>Ad/Soyad</div>
               </div>
-            )
-          })}
+              <div className={styles.rolWrapper}>
+                <div className={styles.adsoyad}>Rol</div>
+              </div>
+              <div className={styles.rolWrapper}>
+                <div className={styles.adsoyad}>Telefon</div>
+              </div>
+              <div className={styles.zalAdWrapper}>
+                <div className={styles.adsoyad}>Zal adı</div>
+              </div>
+              <div className={styles.traflWrapper}>
+                <div className={styles.adsoyad}>Ətraflı</div>
+              </div>
+            </div>
+
+            {sorted.map((partner, index) => {
+              const rowClass = index % 2 === 0 ? styles.frameParent : styles.frameGroup
+              const isSuper = partner.role === 'ROLE_GYM_SUPER_ADMIN'
+              const gymName = (partner as any).gymName || (partner as any).gymTitle || 'FİTnest Club'
+
+              return (
+                <div key={partner.id} className={rowClass}>
+                  <div className={styles.tickSquareParent}>
+                    <div className={styles.tickSquare}>
+                      <CustomCheckbox checked={selected.has(partner.id)} onChange={() => toggleOne(partner.id)} />
+                    </div>
+                    <div className={styles.adsoyad} title={partner.fullName || ''}>
+                      {partner.fullName}
+                    </div>
+                  </div>
+                  
+                  <div className={styles.adminWrapper}>
+                    <div className={isSuper ? styles.admin : styles.admin2}>
+                      <div className={styles.usergear}>
+                        <div className={styles.usergear2}>
+                          <Image 
+                            src={isSuper ? "/superAdmin.svg" : "/admin.svg"} 
+                            width={isSuper ? 18.1 : 16.3} 
+                            height={isSuper ? 13.8 : 15.6} 
+                            sizes="100vw" 
+                            alt="" 
+                            className={isSuper ? styles.vectorIcon : styles.vectorIcon3}
+                          />
+                        </div>
+                      </div>
+                      <div className={styles.superAdmin}>
+                        {isSuper ? 'Super admin' : 'Admin'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={styles.rolWrapper}>
+                    <div className={styles.adsoyad}>
+                      {partner.phoneNumber || '+994 00 000 00 00'}
+                    </div>
+                  </div>
+
+                  <div className={styles.zalAdWrapper}>
+                    <div className={styles.adsoyad} title={gymName}>
+                      {gymName}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => router.push(`/partners/${partner.id}`)}
+                    className={cn(styles.traflWrapper, "hover:opacity-80 transition-opacity")}
+                    aria-label="Ətraflı bax"
+                  >
+                    <div className={styles.tickSquare}>
+                      <div className={styles.usergear2}>
+                        <Image 
+                          src="/Eye.png" 
+                          width={22.1} 
+                          height={14.6} 
+                          sizes="100vw" 
+                          alt="" 
+                          className={styles.vectorIcon2}
+                        />
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
 
