@@ -6,6 +6,7 @@ import { Ban, Bell, Check, ChevronDown, Mail, MessageSquare, Upload } from 'luci
 import { QUICK_REPLIES } from '@/lib/customers-data'
 import { cn } from '@/lib/utils'
 import { SuccessAnimationModal } from '@/components/ui/success-animation-modal'
+import { Spinner } from '@/components/ui/spinner'
 
 type SendState = 'form' | 'confirm' | 'success' | 'error'
 
@@ -156,10 +157,12 @@ function ConfirmDialog({
   type,
   onConfirm,
   onCancel,
+  loading = false,
 }: {
   type: 'push' | 'sms'
   onConfirm: () => void
   onCancel: () => void
+  loading?: boolean
 }) {
   return (
     <div className="flex flex-col items-center justify-center py-4 gap-6">
@@ -167,11 +170,26 @@ function ConfirmDialog({
         {type === 'push' ? 'Bildirişi göndərmək istədiyinizə əminsiniz?' : 'SMS göndərmək istədiyinizə əminsiniz?'}
       </p>
       <div className="w-full flex items-center justify-center gap-4 mt-2">
-        <button onClick={onCancel} className="flex-1 h-[40px] max-w-[140px] rounded-[8px] bg-white border border-[#cecfd2] flex items-center justify-center px-4 transition-all hover:bg-slate-50">
+        <button 
+          onClick={onCancel} 
+          disabled={loading}
+          className="flex-1 h-[40px] max-w-[140px] rounded-[8px] bg-white border border-[#cecfd2] flex items-center justify-center px-4 transition-all hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           <span className="text-sm font-medium text-black">Ləğv et</span>
         </button>
-        <button onClick={onConfirm} className="flex-1 h-[40px] max-w-[140px] rounded-[8px] bg-[#00b4cc] flex items-center justify-center px-4 transition-all hover:opacity-90 shadow-sm text-white text-sm font-semibold">
-          Göndər
+        <button 
+          onClick={onConfirm} 
+          disabled={loading}
+          className="flex-1 h-[40px] max-w-[140px] rounded-[8px] bg-[#00b4cc] flex items-center justify-center px-4 transition-all hover:opacity-90 shadow-sm text-white text-sm font-semibold disabled:opacity-80 disabled:cursor-not-allowed gap-2"
+        >
+          {loading ? (
+            <>
+              <Spinner className="size-4 text-white" />
+              <span>Göndərilir...</span>
+            </>
+          ) : (
+            'Göndər'
+          )}
         </button>
       </div>
     </div>
@@ -185,8 +203,10 @@ export function PushModal({ selectedUsers = [], onClose }: { selectedUsers?: any
   const [message, setMessage] = useState('')
   const [state, setState] = useState<SendState>('form')
   const [qOpen, setQOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   async function handleConfirm() {
+    setLoading(true)
     try {
       const token = localStorage.getItem('access_token') || ''
       const userIds = selectedUsers.map(u => u.id).filter(Boolean)
@@ -226,6 +246,8 @@ export function PushModal({ selectedUsers = [], onClose }: { selectedUsers?: any
     } catch (err) {
       console.error('Push send error:', err)
       setState('error')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -273,7 +295,7 @@ export function PushModal({ selectedUsers = [], onClose }: { selectedUsers?: any
           </p>
         </div>
       )}
-      {state === 'confirm' && <ConfirmDialog type="push" onConfirm={handleConfirm} onCancel={() => setState('form')} />}
+      {state === 'confirm' && <ConfirmDialog type="push" onConfirm={handleConfirm} onCancel={() => setState('form')} loading={loading} />}
       <SuccessAnimationModal
         isOpen={state === 'success'}
         onClose={onClose}
@@ -294,10 +316,12 @@ export function SmsModal({ selectedUsers = [], onClose }: { selectedUsers?: any[
   const [message, setMessage] = useState('')
   const [state, setState] = useState<SendState>('form')
   const [qOpen, setQOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   const phoneList = selectedUsers.map(u => u.phoneNumber).filter(Boolean)
 
   async function handleConfirm() {
+    setLoading(true)
     try {
       const token = localStorage.getItem('access_token') || ''
       if (phoneList.length > 0) {
@@ -320,6 +344,8 @@ export function SmsModal({ selectedUsers = [], onClose }: { selectedUsers?: any[
     } catch (err) {
       console.error('SMS send error:', err)
       setState('error')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -366,7 +392,7 @@ export function SmsModal({ selectedUsers = [], onClose }: { selectedUsers?: any[
           </div>
         </div>
       )}
-      {state === 'confirm' && <ConfirmDialog type="sms" onConfirm={handleConfirm} onCancel={() => setState('form')} />}
+      {state === 'confirm' && <ConfirmDialog type="sms" onConfirm={handleConfirm} onCancel={() => setState('form')} loading={loading} />}
       <SuccessAnimationModal
         isOpen={state === 'success'}
         onClose={onClose}
@@ -388,10 +414,12 @@ export function EmailModal({ selectedUsers = [], onClose }: { selectedUsers?: an
   const [message, setMessage] = useState('')
   const [state, setState] = useState<SendState>('form')
   const [qOpen, setQOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   const emailList = selectedUsers.map(u => u.email).filter(Boolean)
 
   async function handleConfirm() {
+    setLoading(true)
     try {
       const token = localStorage.getItem('access_token') || ''
       if (emailList.length > 0) {
@@ -415,6 +443,8 @@ export function EmailModal({ selectedUsers = [], onClose }: { selectedUsers?: an
     } catch (err) {
       console.error('Email send error:', err)
       setState('error')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -469,11 +499,26 @@ export function EmailModal({ selectedUsers = [], onClose }: { selectedUsers?: an
             Emaili göndərmək istədiyinizə əminsiniz?
           </p>
           <div className="w-full flex items-center justify-between gap-5 mt-2">
-            <button onClick={() => setState('form')} className="flex-1 h-[48px] max-w-[250px] rounded-[10px] bg-white border border-[#00b4cc] flex items-center justify-center px-4 transition-all hover:bg-slate-50">
+            <button 
+              onClick={() => setState('form')} 
+              disabled={loading}
+              className="flex-1 h-[48px] max-w-[250px] rounded-[10px] bg-white border border-[#00b4cc] flex items-center justify-center px-4 transition-all hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <span className="text-[16px] font-medium text-black leading-[24px]">Ləğv et</span>
             </button>
-            <button onClick={handleConfirm} className="flex-1 h-[48px] max-w-[250px] rounded-[10px] bg-[#00b4cc] flex items-center justify-center px-4 transition-all hover:opacity-90 shadow-md shadow-cyan-100">
-              <span className="text-[16px] font-medium text-white leading-[24px]">Göndər</span>
+            <button 
+              onClick={handleConfirm} 
+              disabled={loading}
+              className="flex-1 h-[48px] max-w-[250px] rounded-[10px] bg-[#00b4cc] flex items-center justify-center px-4 transition-all hover:opacity-90 shadow-md shadow-cyan-100 disabled:opacity-80 disabled:cursor-not-allowed gap-2"
+            >
+              {loading ? (
+                <>
+                  <Spinner className="size-4 text-white" />
+                  <span className="text-[16px] font-medium text-white leading-[24px]">Göndərilir...</span>
+                </>
+              ) : (
+                <span className="text-[16px] font-medium text-white leading-[24px]">Göndər</span>
+              )}
             </button>
           </div>
         </div>
