@@ -277,7 +277,7 @@ export function PartnersList() {
           {sorted.map((partner, index) => {
             const rowClass = index % 2 === 0 ? styles.frameParent : styles.frameGroup
             const isSuper = partner.role === 'ROLE_GYM_SUPER_ADMIN'
-            const gymName = (partner as any).gymName || (partner as any).gymTitle || 'FİTnest Club'
+            const gymName = partner.gymName || '-'
 
             return (
               <div key={partner.id} className={rowClass}>

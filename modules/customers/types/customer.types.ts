@@ -10,6 +10,7 @@ export interface CustomerListItem {
   userStatus: CustomerStatus
   subscriptionStatus?: string | null
   role?: string | null
+  gymName?: string | null
 }
 
 export interface CustomerDetailApiResponse {

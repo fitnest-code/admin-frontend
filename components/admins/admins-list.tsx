@@ -223,7 +223,7 @@ export function AdminsList() {
         </div>
       ) : sorted.length === 0 ? (
         <div className={styles.musteriParent}>
-          <div className={styles.musteri}>
+          <div className={styles.musteri} style={{ gridTemplateColumns: '2.5fr 2fr 2fr 0.8fr' }}>
             <div className={styles.tickSquareParent}>
               <div className={styles.tickSquare}>
                 <CustomCheckbox checked={false} onChange={() => {}} disabled />
@@ -235,9 +235,6 @@ export function AdminsList() {
             </div>
             <div className={styles.rolWrapper}>
               <div className={styles.adsoyad}>Telefon</div>
-            </div>
-            <div className={styles.zalAdWrapper}>
-              <div className={styles.adsoyad}>Zal adı</div>
             </div>
             <div className={styles.traflWrapper}>
               <div className={styles.adsoyad}>Ətraflı</div>
@@ -252,7 +249,7 @@ export function AdminsList() {
         </div>
       ) : (
         <div className={styles.musteriParent}>
-          <div className={styles.musteri}>
+          <div className={styles.musteri} style={{ gridTemplateColumns: '2.5fr 2fr 2fr 0.8fr' }}>
             <div className={styles.tickSquareParent}>
               <div className={styles.tickSquare}>
                 <CustomCheckbox checked={allOnPage} onChange={toggleAll} />
@@ -265,9 +262,6 @@ export function AdminsList() {
             <div className={styles.rolWrapper}>
               <div className={styles.adsoyad}>Telefon</div>
             </div>
-            <div className={styles.zalAdWrapper}>
-              <div className={styles.adsoyad}>Zal adı</div>
-            </div>
             <div className={styles.traflWrapper}>
               <div className={styles.adsoyad}>Ətraflı</div>
             </div>
@@ -275,10 +269,9 @@ export function AdminsList() {
 
           {sorted.map((admin, index) => {
             const rowClass = index % 2 === 0 ? styles.frameParent : styles.frameGroup
-            const gymName = (admin as any).gymName || (admin as any).gymTitle || 'FİTnest Club'
 
             return (
-              <div key={admin.id} className={rowClass}>
+              <div key={admin.id} className={rowClass} style={{ gridTemplateColumns: '2.5fr 2fr 2fr 0.8fr' }}>
                 <div className={styles.tickSquareParent}>
                   <div className={styles.tickSquare}>
                     <CustomCheckbox checked={selected.has(admin.id)} onChange={() => toggleOne(admin.id)} />
@@ -311,12 +304,6 @@ export function AdminsList() {
                 <div className={styles.rolWrapper}>
                   <div className={styles.adsoyad}>
                     {admin.phoneNumber || '+994 00 000 00 00'}
-                  </div>
-                </div>
-
-                <div className={styles.zalAdWrapper}>
-                  <div className={styles.adsoyad} title={gymName}>
-                    {gymName}
                   </div>
                 </div>
 
