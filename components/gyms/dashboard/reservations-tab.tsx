@@ -435,7 +435,7 @@ const ReservationsTab = () => {
                     </div>
                 </div>
 
-                <div className="w-full overflow-x-auto rounded-[12px] border border-[#cecfd2] bg-white">
+                <div className="w-full overflow-visible rounded-[12px] border border-[#cecfd2] bg-white">
                     <div className="w-full min-w-[1000px] flex flex-col bg-white">
                         {/* Header */}
                         <div className="w-full h-[48px] bg-[rgba(0,180,204,0.15)] flex items-center px-[20px] text-[14px] font-bold text-[#101828] border-b border-[#cecfd2]">
