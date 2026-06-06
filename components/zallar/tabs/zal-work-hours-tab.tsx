@@ -108,6 +108,26 @@ const formatToHHmm = (timeVal: any): string => {
   return timeStr;
 };
 
+const resolveDayKey = (period: string): string => {
+  if (!period) return "";
+  const normalized = period.trim().toLowerCase();
+  
+  if (DAYS_ORDER.includes(normalized)) {
+    return normalized;
+  }
+  
+  for (const lang of Object.keys(LOCAL_TRANSLATIONS)) {
+    const translations = LOCAL_TRANSLATIONS[lang];
+    for (const key of DAYS_ORDER) {
+      if (translations[key] && translations[key].toLowerCase() === normalized) {
+        return key;
+      }
+    }
+  }
+  
+  return normalized;
+};
+
 interface ZalWorkHoursTabProps {
   gymId: string | number;
 }
@@ -174,19 +194,19 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
     if (gymWorkHours) {
       setSlots({
         generalWorkHours: (gymWorkHours.generalWorkHours || []).map((s: any) => ({
-          day: s.period.toLowerCase(),
+          day: resolveDayKey(s.period),
           startTime: formatToHHmm(s.from),
           endTime: formatToHHmm(s.to),
           id: Math.random().toString()
         })),
         workHoursMan: (gymWorkHours.workHoursMan || []).map((s: any) => ({
-          day: s.period.toLowerCase(),
+          day: resolveDayKey(s.period),
           startTime: formatToHHmm(s.from),
           endTime: formatToHHmm(s.to),
           id: Math.random().toString()
         })),
         workHoursWoman: (gymWorkHours.workHoursWoman || []).map((s: any) => ({
-          day: s.period.toLowerCase(),
+          day: resolveDayKey(s.period),
           startTime: formatToHHmm(s.from),
           endTime: formatToHHmm(s.to),
           id: Math.random().toString()

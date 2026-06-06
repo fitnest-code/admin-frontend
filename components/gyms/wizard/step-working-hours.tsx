@@ -80,6 +80,23 @@ const formatDayGroup = (days: string[]) => {
   return sorted.map(d => DAY_FULL_LABELS[d]).join(", ");
 };
 
+const resolveDayKey = (period: string): string => {
+  if (!period) return "";
+  const normalized = period.trim().toLowerCase();
+  
+  if (DAYS_ORDER.includes(normalized)) {
+    return normalized;
+  }
+  
+  for (const key of DAYS_ORDER) {
+    if (DAY_FULL_LABELS[key] && DAY_FULL_LABELS[key].toLowerCase() === normalized) {
+      return key;
+    }
+  }
+  
+  return normalized;
+};
+
 export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
   const { gymId, step3Data, setStep3Data } = useGymStore();
   const [mounted, setMounted] = useState(false);
@@ -89,9 +106,9 @@ export function StepWorkingHours({ onNext }: { onNext?: () => void }) {
 
   // Map backend data back to frontend structure if exists
   const initialSlots = step3Data ? {
-    generalWorkHours: step3Data.generalWorkHours.map((s: any) => ({ ...s, day: s.period.toLowerCase(), startTime: formatToHHmm(s.from), endTime: formatToHHmm(s.to), id: Math.random().toString() })),
-    workHoursMan: step3Data.workHoursMan.map((s: any) => ({ ...s, day: s.period.toLowerCase(), startTime: formatToHHmm(s.from), endTime: formatToHHmm(s.to), id: Math.random().toString() })),
-    workHoursWoman: step3Data.workHoursWoman.map((s: any) => ({ ...s, day: s.period.toLowerCase(), startTime: formatToHHmm(s.from), endTime: formatToHHmm(s.to), id: Math.random().toString() })),
+    generalWorkHours: step3Data.generalWorkHours.map((s: any) => ({ ...s, day: resolveDayKey(s.period), startTime: formatToHHmm(s.from), endTime: formatToHHmm(s.to), id: Math.random().toString() })),
+    workHoursMan: step3Data.workHoursMan.map((s: any) => ({ ...s, day: resolveDayKey(s.period), startTime: formatToHHmm(s.from), endTime: formatToHHmm(s.to), id: Math.random().toString() })),
+    workHoursWoman: step3Data.workHoursWoman.map((s: any) => ({ ...s, day: resolveDayKey(s.period), startTime: formatToHHmm(s.from), endTime: formatToHHmm(s.to), id: Math.random().toString() })),
   } : {
     generalWorkHours: [],
     workHoursMan: [],
