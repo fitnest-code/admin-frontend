@@ -8,7 +8,7 @@ import { useContactDetails, useCreateContactDetails, useUpdateContactDetails } f
 import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 import { useT } from "@/lib/i18n";
 
-export function ContactDetailsPage() {
+export function ContactDetailsPage({ isTab = false }: { isTab?: boolean }) {
   const t = useT();
   const { data: contactDetails, isLoading, refetch } = useContactDetails();
   const { mutate: createContact, isPending: isCreating } = useCreateContactDetails();
@@ -142,8 +142,8 @@ export function ContactDetailsPage() {
     );
   }
 
-  return (
-    <div className="flex flex-col gap-8 w-full font-sans p-4 sm:p-6 lg:p-8">
+  const content = (
+    <>
       {/* Main Content Form Card */}
       <div className="w-full rounded-2xl bg-white border border-[#ececed] flex flex-col p-6 sm:p-8 gap-8 text-left shadow-sm transition-all duration-300 hover:shadow-md">
         <div className="flex flex-col gap-6">
@@ -224,6 +224,14 @@ export function ContactDetailsPage() {
         onClose={() => setShowSuccessModal(false)}
         message={t.contactDetails.successMsg}
       />
+    </>
+  );
+
+  if (isTab) return content;
+
+  return (
+    <div className="flex flex-col gap-8 w-full font-sans p-4 sm:p-6 lg:p-8">
+      {content}
     </div>
   );
 }

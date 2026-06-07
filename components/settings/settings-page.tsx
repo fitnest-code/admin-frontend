@@ -1,25 +1,28 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import {
-  User, Bell, CreditCard, Shield, Building2,
+  Bell, CreditCard, Shield, Building2,
   Eye, EyeOff, Plus, Trash2, ChevronDown, Check,
-  Camera, Upload, Globe, GripVertical, Film, CalendarCheck, Pencil, Loader2, X
+  Camera, Upload, Globe, GripVertical, Film, CalendarCheck, Pencil, Loader2, X,
+  Scale, PhoneCall, Ban
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useCancellationReasons, CancelReason } from '@/lib/query/use-cancellation-reasons'
 import { ConfirmDeleteModal } from '../gyms/modals/confirm-delete-modal'
 import { SuccessAnimationModal } from '../ui/success-animation-modal'
 
+import { LegalDocumentsTab } from '../legal/legal-documents-tab'
+import { ContactDetailsPage } from '../contact-details/contact-details-page'
+import CancellationReasonsMain from '../cancellation-reasons/cancellation-reasons-main'
+
 // ─── Tab config ───────────────────────────────────────────────────────────────
 
 const TABS = [
-  { key: 'profile',       label: 'Profil',            icon: User       },
-  { key: 'website',       label: 'Sayt məzmunu',       icon: Globe      },
-  { key: 'company',       label: 'Şirkət məlumatları', icon: Building2  },
-  { key: 'notifications', label: 'Bildirişlər',        icon: Bell       },
-  { key: 'payment',       label: 'Ödəniş',             icon: CreditCard },
-  { key: 'roles',         label: 'Rollar',             icon: Shield     },
+  { key: 'legal',         label: 'Hüquqi sənədlər',    icon: Scale        },
+  { key: 'contact',       label: 'Əlaqə məlumatları',  icon: PhoneCall    },
+  { key: 'cancellation',  label: 'Ləğv səbəbləri',     icon: Ban          },
 ] as const
 
 type TabKey = typeof TABS[number]['key']
@@ -51,15 +54,38 @@ interface Role { id: string; name: string; perms: Set<PermName> }
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<TabKey>('profile')
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+  const tabParam = searchParams.get('tab')
+
+  const [activeTab, setActiveTabState] = useState<TabKey>(
+    (tabParam as TabKey) || 'legal'
+  )
+
+  useEffect(() => {
+    if (tabParam && tabParam !== activeTab && TABS.some(t => t.key === tabParam)) {
+      setActiveTabState(tabParam as TabKey)
+    }
+  }, [tabParam, activeTab])
+
+  const setActiveTab = (tabKey: TabKey) => {
+    setActiveTabState(tabKey)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('tab', tabKey)
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }
 
   return (
-    <div className="flex flex-col gap-5 pb-10">
-      <h1 className="text-xl font-bold text-foreground">Tənzimləmələr</h1>
+    <div className="flex flex-col gap-6 pb-10 font-sans w-full">
+      {/* Title */}
+      <div className="w-full flex items-center justify-between border-b border-[#ececed] pb-3">
+        <h1 className="text-[20px] font-bold text-[#101828] tracking-tight">Tənzimləmələr</h1>
+      </div>
 
-      <div className="flex gap-6">
-        {/* Left tab list */}
-        <nav className="flex w-52 shrink-0 flex-col gap-1" aria-label="Tənzimləmələr bölmələri">
+      {/* STRETCHED TABS */}
+      <div className="w-full border-b border-[#ececed]">
+        <nav className="-mb-px flex w-full overflow-x-auto no-scrollbar" aria-label="Tənzimləmələr bölmələri">
           {TABS.map((tab) => {
             const Icon = tab.icon
             const active = activeTab === tab.key
@@ -68,29 +94,26 @@ export function SettingsPage() {
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={cn(
-                  'flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-left transition-colors',
+                  'flex-1 min-w-[130px] border-b-[3px] pb-3 text-[13px] font-bold transition-all duration-200 whitespace-nowrap tracking-wide text-center flex items-center justify-center gap-2',
                   active
-                    ? 'bg-[#00B4CC] text-white shadow-sm'
-                    : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
+                    ? 'border-[#00B4CC] text-[#101828]'
+                    : 'border-transparent text-slate-400 hover:text-slate-600 hover:border-slate-200',
                 )}
                 aria-current={active ? 'page' : undefined}
               >
-                <Icon size={16} className="shrink-0" aria-hidden="true" />
+                <Icon size={14} className="shrink-0" />
                 {tab.label}
               </button>
             )
           })}
         </nav>
+      </div>
 
-        {/* Right content */}
-        <div className="flex-1 min-w-0">
-          {activeTab === 'profile'       && <ProfileTab />}
-          {activeTab === 'website'       && <WebsiteTab />}
-          {activeTab === 'company'       && <CompanyTab />}
-          {activeTab === 'notifications' && <NotificationsTab />}
-          {activeTab === 'payment'       && <PaymentTab />}
-          {activeTab === 'roles'         && <RolesTab />}
-        </div>
+      {/* Tab Content Box */}
+      <div className="w-full min-h-[500px]">
+        {activeTab === 'legal'         && <LegalDocumentsTab />}
+        {activeTab === 'contact'       && <ContactDetailsPage isTab={true} />}
+        {activeTab === 'cancellation'  && <CancellationReasonsMain isTab={true} />}
       </div>
     </div>
   )

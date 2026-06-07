@@ -41,7 +41,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   )
 }
 
-export default function CancellationReasonsMain() {
+export default function CancellationReasonsMain({ isTab = false }: { isTab?: boolean }) {
   const t = useT()
   const { reasons, isLoading, createReason, updateReason, deleteReason } = useCancellationReasons()
   const [showFormModal, setShowFormModal] = useState(false)
@@ -139,8 +139,8 @@ export default function CancellationReasonsMain() {
     }
   }
 
-  return (
-    <div className="w-full p-4 font-sans">
+  const content = (
+    <>
       <div className="w-full rounded-[12px] bg-white border border-[#ececed] flex flex-col items-start px-5 py-4">
         
         {/* Header toolbar */}
@@ -310,6 +310,14 @@ export default function CancellationReasonsMain() {
         message={modalConfig.message}
         type={modalConfig.type}
       />
+    </>
+  );
+
+  if (isTab) return content;
+
+  return (
+    <div className="w-full p-4 font-sans">
+      {content}
     </div>
-  )
+  );
 }

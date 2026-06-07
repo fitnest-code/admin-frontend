@@ -177,12 +177,18 @@ export function Header() {
             <Menu size={22} />
           </button>
         )}
-        <div className="w-10 h-10 rounded-full bg-white border border-[#ececed] flex items-center justify-center text-[14px] font-medium text-black">
-          {initials}
-        </div>
-        <div className="text-[14px] leading-[20px] text-black font-medium">
-          {user?.name || (user?.role === 'SUPER_ADMIN' ? 'Owner' : 'Admin')}
-        </div>
+        <Link 
+          href="/profile"
+          className="flex items-center gap-3 hover:opacity-80 active:scale-98 transition-all cursor-pointer"
+          title="Profil"
+        >
+          <div className="w-10 h-10 rounded-full bg-white border border-[#ececed] flex items-center justify-center text-[14px] font-medium text-black">
+            {initials}
+          </div>
+          <div className="text-[14px] leading-[20px] text-black font-medium">
+            {user?.name || (user?.role === 'SUPER_ADMIN' ? 'Owner' : 'Admin')}
+          </div>
+        </Link>
       </div>
 
       {/* Right: Language Dropdown & Exit Action */}

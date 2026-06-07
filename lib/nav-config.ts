@@ -86,24 +86,6 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/faq"
   },
   {
-    key: "legal",
-    labelKey: "legal", // Will need to update i18n
-    icon: Scale, // We need to import Scale from lucide-react
-    href: "/legal",
-  },
-  {
-    key: "contact-details",
-    labelKey: "contactDetails",
-    icon: PhoneCall,
-    href: "/contact-details",
-  },
-  {
-    key: "cancellation-reasons",
-    labelKey: "cancellationReasons",
-    icon: Ban,
-    href: "/cancellation-reasons",
-  },
-  {
     key: "tenzimlemeler",
     labelKey: "settings",
     icon: Settings,

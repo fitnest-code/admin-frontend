@@ -1,13 +1,5 @@
-import CancellationReasonsMain from '@/components/cancellation-reasons/cancellation-reasons-main'
-import { AdminLayout } from '@/components/layout/admin-layout'
-import React from 'react'
+import { redirect } from 'next/navigation';
 
-const page = () => {
-  return (
-    <AdminLayout>
-      <CancellationReasonsMain />
-    </AdminLayout>
-  )
+export default function CancellationReasonsRoute() {
+  redirect('/settings?tab=cancellation');
 }
-
-export default page

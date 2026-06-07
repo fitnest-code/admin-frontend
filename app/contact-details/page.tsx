@@ -1,10 +1,6 @@
-import { AdminLayout } from "@/components/layout/admin-layout";
-import { ContactDetailsPage } from "@/components/contact-details/contact-details-page";
+import { redirect } from 'next/navigation';
 
 export default function ContactDetailsRoute() {
-  return (
-    <AdminLayout>
-      <ContactDetailsPage />
-    </AdminLayout>
-  );
+  redirect('/settings?tab=contact');
 }
+
