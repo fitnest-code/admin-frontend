@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Upload, Trash2, ChevronDown, Pencil, Loader2, Copy } from "lucide-react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { 
   useGymDetailsAdmin, 
@@ -17,6 +18,7 @@ import LocationPickerMap from "@/components/ui/location-picker-map";
 import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 import { useI18nStore } from "@/lib/i18n";
 import { toast } from "sonner";
+import styles from "./info-tab.module.css";
 
 interface InfoTabProps {
   gymId?: number | string
@@ -145,8 +147,23 @@ export function InfoTab({ gymId }: InfoTabProps) {
   const locale = useI18nStore((s) => s.locale);
   const lt = LOCAL_TRANSLATIONS[locale] || LOCAL_TRANSLATIONS.AZ;
 
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const [formData, setFormData] = useState({
-    categoryId: 0,
+    categoryIds: [] as number[],
     name: "",
     description: "",
     phone: "",
@@ -225,7 +242,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
   };
 
   const initialDataStr = gymInfo ? JSON.stringify({
-    categoryId: gymInfo.categoryId || 0,
+    categoryIds: gymInfo.categories?.map(c => c.id) || [],
     name: gymInfo.name || "",
     description: gymInfo.description || "",
     phone: gymInfo.phone || "",
@@ -245,7 +262,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
   useEffect(() => {
     if (gymInfo) {
       setFormData({
-        categoryId: gymInfo.categoryId || 0,
+        categoryIds: gymInfo.categories?.map(c => c.id) || [],
         name: gymInfo.name || "",
         description: gymInfo.description || "",
         phone: gymInfo.phone || "",
@@ -391,6 +408,16 @@ export function InfoTab({ gymId }: InfoTabProps) {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const toggleCategory = (id: number) => {
+    setFormData(prev => {
+      const isSelected = prev.categoryIds.includes(id);
+      const categoryIds = isSelected
+        ? prev.categoryIds.filter(x => x !== id)
+        : [...prev.categoryIds, id];
+      return { ...prev, categoryIds };
+    });
+  };
+
   const handleSave = async () => {
     if (!gymId) return;
 
@@ -417,7 +444,6 @@ export function InfoTab({ gymId }: InfoTabProps) {
           id: Number(gymId),
           payload: {
             ...formData,
-            categoryId: Number(formData.categoryId),
             latitude: Number(formData.latitude),
             longitude: Number(formData.longitude),
             email: formData.email.trim()
@@ -463,29 +489,115 @@ export function InfoTab({ gymId }: InfoTabProps) {
         <div className="self-stretch flex flex-col items-start gap-5">
           
           {/* Kateqoriya */}
-          <div className="self-stretch flex flex-col items-start gap-3">
-            <div className="self-stretch relative leading-[24px]">{lt.category}</div>
-            <div className={cn(
-              "self-stretch h-[44px] rounded-lg border flex items-center justify-between p-[0px_12px] text-sm transition-colors",
-              isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
-            )}>
-              {isEditing ? (
-                <select 
-                  name="categoryId"
-                  value={formData.categoryId}
-                  onChange={handleChange}
-                  className="bg-transparent text-foreground outline-none w-full appearance-none h-full"
+          <div className={styles.kateqoriyaParent} ref={dropdownRef}>
+            <div className={styles.kateqoriya}>{lt.category}</div>
+            
+            {isEditing ? (
+              <>
+                <div 
+                  className={styles.frameWrapper}
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 >
-                  <option value={0} disabled>{lt.select}</option>
-                  {categoriesData?.items?.map(cat => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                  ))}
-                </select>
-              ) : (
-                <span className="text-foreground">{gymInfo.categoryName || lt.notSpecified}</span>
-              )}
-              {isEditing && <ChevronDown size={20} className="text-foreground pointer-events-none" />}
-            </div>
+                  <div className={styles.frameParent}>
+                    <div className={styles.frameGroup}>
+                      {formData.categoryIds.length === 0 ? (
+                        <span className={styles.placeholder}>{lt.select}</span>
+                      ) : (
+                        categoriesData?.items?.filter(c => formData.categoryIds.includes(c.id)).map((cat) => (
+                          <div key={cat.id} className={styles.frameContainer}>
+                            <div className={styles.yogaWrapper}>
+                              <div className={styles.yoga}>{cat.name}</div>
+                            </div>
+                            <div 
+                              className={styles.x}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleCategory(cat.id);
+                              }}
+                            >
+                              <div className={styles.x2}>
+                                <Image 
+                                  className={styles.vectorIcon} 
+                                  width={15} 
+                                  height={15} 
+                                  sizes="100vw" 
+                                  alt="Remove"
+                                  src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGxpbmUgeDE9IjE4IiB5MT0iNiIgeDI9IjYiIHkyPSIxOCI+PC9saW5lPjxsaW5lIHgxPSI2IiB5MT0iNiIgeDI9IjE4IiB5Mj0iMTgiPjwvbGluZT48L3N2Zz4="
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    <div className={styles.x}>
+                      <Image 
+                        className={styles.vuesaxlineararrowDownIcon} 
+                        width={24} 
+                        height={24} 
+                        sizes="100vw" 
+                        alt="Open"
+                        src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMTAxODI4IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTUgOGw3IDcgNy03Ii8+PC9zdmc+"
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                {isDropdownOpen && (
+                  <div className={styles.dropdownMenu}>
+                    {categoriesData?.items && categoriesData.items.length > 0 ? (
+                      categoriesData.items.map((cat) => {
+                        const isSelected = formData.categoryIds.includes(cat.id);
+                        return (
+                          <div
+                            key={cat.id}
+                            onClick={() => toggleCategory(cat.id)}
+                            className={cn(
+                              styles.dropdownItem,
+                              isSelected && styles.dropdownItemActive
+                            )}
+                          >
+                            <span>{cat.name}</span>
+                            <div className={cn(
+                              styles.checkbox,
+                              isSelected && styles.checkboxActive
+                            )}>
+                              {isSelected && (
+                                <svg className={styles.checkboxIcon} viewBox="0 0 24 24">
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="p-4 text-center text-sm text-black/40">
+                        {lt.notSpecified}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className={styles.frameWrapper}>
+                <div className={styles.frameParent}>
+                  <div className={styles.frameGroup}>
+                    {gymInfo.categories && gymInfo.categories.length > 0 ? (
+                      gymInfo.categories.map((cat) => (
+                        <div key={cat.id} className={styles.frameContainer}>
+                          <div className={styles.yogaWrapper}>
+                            <div className={styles.yoga}>{cat.name}</div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <span className={styles.placeholder}>{lt.notSpecified}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Zal adı */}
@@ -847,7 +959,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
                 setIsEditing(false);
                 if (gymInfo) {
                   setFormData({
-                    categoryId: gymInfo.categoryId || 0,
+                    categoryIds: gymInfo.categories?.map(c => c.id) || [],
                     name: gymInfo.name || "",
                     description: gymInfo.description || "",
                     phone: gymInfo.phone || "",

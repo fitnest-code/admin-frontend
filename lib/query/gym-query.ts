@@ -3,19 +3,19 @@ import { apiGet, apiPost, apiDelete, apiPut } from "@/lib/api/client"
 import { useI18nStore } from '@/lib/i18n' 
 import { 
   CategoriesResponse, 
-  GymStep1Payload, 
+  GymStep1PayloadV2, 
   GymStep1Response,
   SupportedServiceResponse,
   SupportedServiceRequest,
-  GymCreateStep6Request,
+  GymCreateStep6RequestV2,
   GymCreateStep7Request,
-  GymInfoAdminResponse,
-  GymInfoUpdateRequest,
+  GymInfoAdminResponseV2,
+  GymInfoUpdateRequestV2,
   ITrainer,
   IProfession,
   PaginatedResponse,
   TrainerRequest,
-  GymSubscriptionsAdminResponse,
+  GymSubscriptionsAdminResponseV2,
   GymAnalyticsResponse
 } from '../types/gym'
 import { useGymStore } from '../store/gym-store'
@@ -38,8 +38,8 @@ export function useCreateGymStep1() {
   const setGymId = useGymStore((state) => state.setGymId);
 
   return useMutation({
-    mutationFn: (payload: GymStep1Payload) =>
-      apiPost<GymStep1Response>('/admin/gyms/step1', payload),
+    mutationFn: (payload: GymStep1PayloadV2) =>
+      apiPost<GymStep1Response>('/api/v2/admin/gyms/step1', payload),
     
     onSuccess: (data) => {
       if (data?.gymId) {
@@ -57,8 +57,8 @@ export function useCreateGymStep1() {
 // 2.1 Validation Hooks
 export function useValidateGymStep1() {
   return useMutation({
-    mutationFn: (payload: GymStep1Payload) =>
-      apiPost('/admin/gyms/validate/step1', payload),
+    mutationFn: (payload: GymStep1PayloadV2) =>
+      apiPost('/api/v2/admin/gyms/validate/step1', payload),
   });
 }
 
@@ -86,13 +86,13 @@ export function useValidateGymStep4() {
 export function useValidateGymStep5() {
   return useMutation({
     mutationFn: (formData: FormData) =>
-      apiPost('/admin/gyms/validate/step5', formData),
+      apiPost('/api/v2/admin/gyms/validate/step5', formData),
   });
 }
 
 export function useValidateGymStep6() {
   return useMutation({
-    mutationFn: ({ payload, serviceIcons }: { payload: GymCreateStep6Request, serviceIcons?: File[] }) => {
+    mutationFn: ({ payload, serviceIcons }: { payload: GymCreateStep6RequestV2, serviceIcons?: File[] }) => {
       const formData = new FormData();
       formData.append("data", new Blob([JSON.stringify(payload)], { type: "application/json" }));
       if (serviceIcons && serviceIcons.length > 0) {
@@ -100,7 +100,7 @@ export function useValidateGymStep6() {
           formData.append("serviceIcons", file);
         });
       }
-      return apiPost('/admin/gyms/validate/step6', formData);
+      return apiPost('/api/v2/admin/gyms/validate/step6', formData);
     }
   });
 }
@@ -180,7 +180,7 @@ export function useDeleteSupportedService() {
 // 6. Step 6: Abunəlik və xidmətləri aktivləşdirin
 export function useCreateGymStep6() {
   return useMutation({
-    mutationFn: ({ id, payload, serviceIcons }: { id: number, payload: GymCreateStep6Request, serviceIcons?: File[] }) => {
+    mutationFn: ({ id, payload, serviceIcons }: { id: number, payload: GymCreateStep6RequestV2, serviceIcons?: File[] }) => {
       const formData = new FormData();
       formData.append("data", new Blob([JSON.stringify(payload)], { type: "application/json" }));
       if (serviceIcons && serviceIcons.length > 0) {
@@ -188,7 +188,7 @@ export function useCreateGymStep6() {
           formData.append("serviceIcons", file);
         });
       }
-      return apiPost(`/admin/gyms/${id}/step6`, formData);
+      return apiPost(`/api/v2/admin/gyms/${id}/step6`, formData);
     }
   });
 }
@@ -196,8 +196,8 @@ export function useCreateGymStep6() {
 // 6.1 Abunəlikləri yeniləyin (DRAFT statusunda olmayan zallar üçün)
 export function useUpdateGymSubscriptions() {
   return useMutation({
-    mutationFn: ({ id, payload }: { id: number, payload: GymCreateStep6Request }) =>
-      apiPut(`/admin/gyms/${id}/subscriptions`, payload),
+    mutationFn: ({ id, payload }: { id: number, payload: GymCreateStep6RequestV2 }) =>
+      apiPut(`/api/v2/admin/gyms/${id}/subscriptions`, payload),
   });
 }
 
@@ -215,12 +215,12 @@ export function useCreateGymComplete() {
 
   return useMutation({
     mutationFn: async (data: {
-      step1: GymStep1Payload;
+      step1: GymStep1PayloadV2;
       step2: any; // LocalTrainer[]
       step3: any; // Step3Data
       step4: any; // Step4Data
       step5: any; // Step5Photos
-      step6: GymCreateStep6Request;
+      step6: GymCreateStep6RequestV2;
       step7: GymCreateStep7Request;
     }) => {
       const formData = new FormData();
@@ -228,7 +228,7 @@ export function useCreateGymComplete() {
       // Build combined JSON payload
       const jsonPayload = {
         // Step 1
-        categoryId: data.step1.categoryId,
+        categoryIds: data.step1.categoryIds,
         name: data.step1.name,
         phone: data.step1.phone,
         description: data.step1.description,
@@ -251,8 +251,9 @@ export function useCreateGymComplete() {
         // Step 4
         latitude: data.step4.lat,
         longitude: data.step4.lng,
-        // Step 5 - room names only (files are separate)
+        // Step 5 - room names and category IDs (files are separate)
         roomNames: data.step5.rooms.map((r: any) => r.name),
+        roomCategoryIds: data.step5.rooms.map((r: any) => r.categoryId),
         // Step 6
         subscriptions: data.step6.subscriptions,
         // Step 7
@@ -283,7 +284,7 @@ export function useCreateGymComplete() {
         });
       }
 
-      const res = await apiPost<GymStep1Response>('/admin/gyms/create-complete', formData);
+      const res = await apiPost<GymStep1Response>('/api/v2/admin/gyms/create-complete', formData);
       return res.gymId;
     },
     onSuccess: () => {
@@ -323,7 +324,7 @@ export function useGymDetailsAdmin(gymId: number | string | null | undefined) {
     queryKey: ['gym-details', gymId ? Number(gymId) : null, locale],
     queryFn: () => {
       if (!gymId) return Promise.resolve(null)
-      return apiGet<GymInfoAdminResponse>(`/admin/gyms/${gymId}/details`)
+      return apiGet<GymInfoAdminResponseV2>(`/api/v2/admin/gyms/${gymId}/details`)
     },
     enabled: !!gymId,
     staleTime: 60 * 1000,
@@ -337,7 +338,7 @@ export function useGymSubscriptionsAdmin(gymId: number | string | null | undefin
     queryKey: ['gym-subscriptions-admin', gymId ? Number(gymId) : null, locale],
     queryFn: () => {
       if (!gymId) return Promise.resolve(null)
-      return apiGet<GymSubscriptionsAdminResponse>(`/admin/gyms/${gymId}/subscriptions`)
+      return apiGet<GymSubscriptionsAdminResponseV2>(`/api/v2/admin/gyms/${gymId}/subscriptions`)
     },
     enabled: !!gymId,
     staleTime: 60 * 1000,
@@ -349,8 +350,8 @@ export function useUpdateGymDetails() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, payload }: { id: number, payload: GymInfoUpdateRequest }) =>
-      apiPut(`/admin/gyms/${id}/details`, payload),
+    mutationFn: ({ id, payload }: { id: number, payload: GymInfoUpdateRequestV2 }) =>
+      apiPut(`/api/v2/admin/gyms/${id}/details`, payload),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['gym-details', variables.id] });
     },

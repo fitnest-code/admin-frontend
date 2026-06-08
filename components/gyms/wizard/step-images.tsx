@@ -1,20 +1,21 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Loader2, Upload, X, ImageIcon } from "lucide-react";
+import { Loader2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { useGymStore } from "@/lib/store/gym-store";
-import { useValidateGymStep5 } from "@/lib/query/gym-query";
+import { useValidateGymStep5, useCategories } from "@/lib/query/gym-query";
 
 interface RoomPhotoState {
   id: string;
   photo: File | null;
   name: string;
   previewUrl: string | null;
+  categoryId: number | null;
 }
 
 export function StepImages({ onNext }: { onNext?: () => void }) {
-  const { step5Photos, setStep5Photos } = useGymStore();
+  const { step5Photos, setStep5Photos, step1Data } = useGymStore();
   const [mounted, setMounted] = useState(false);
 
   const [coverPhoto, setCoverPhoto] = useState<File | null>(step5Photos?.cover || null);
@@ -23,9 +24,9 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
   const initialRoomPhotos = step5Photos 
     ? Array.from({ length: 9 }).map((_, i) => {
         const p = step5Photos.rooms[i];
-        return p ? { id: `rp-${i}`, photo: p.file, name: p.name, previewUrl: URL.createObjectURL(p.file) } : { id: `rp-${i}`, photo: null, name: "", previewUrl: null };
+        return p ? { id: `rp-${i}`, photo: p.file, name: p.name, previewUrl: URL.createObjectURL(p.file), categoryId: p.categoryId || null } : { id: `rp-${i}`, photo: null, name: "", previewUrl: null, categoryId: null };
       })
-    : Array.from({ length: 9 }).map((_, i) => ({ id: `rp-${i}`, photo: null, name: "", previewUrl: null }));
+    : Array.from({ length: 9 }).map((_, i) => ({ id: `rp-${i}`, photo: null, name: "", previewUrl: null, categoryId: null }));
 
   const [roomPhotos, setRoomPhotos] = useState<RoomPhotoState[]>(initialRoomPhotos);
 
@@ -33,6 +34,12 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
   const roomInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const validateStep5 = useValidateGymStep5();
+  const { data: categoriesData } = useCategories();
+
+  // Filter categories to only display those selected in Step 1
+  const selectedCategories = categoriesData?.items?.filter((c) => 
+    step1Data?.categoryIds?.includes(c.id)
+  ) || [];
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -57,16 +64,13 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
           return;
         }
         
-        // If converting PNG with transparent background to JPEG, fill with white background first
         ctx.fillStyle = "#FFFFFF";
         ctx.fillRect(0, 0, width, height);
         ctx.drawImage(img, 0, 0, width, height);
         
-        // Always encode as image/jpeg to ensure quality reduction is applied lossily
         canvas.toBlob(
           (blob) => {
             if (blob) {
-              // Replace extension with .jpg if needed
               const newName = file.name.replace(/\.[^/.]+$/, ".jpg");
               const compressedFile = new File([blob], newName, {
                 type: "image/jpeg",
@@ -89,7 +93,6 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 50 * 1024 * 1024) return toast.error("Şəkil ölçüsü max 50MB ola bilər");
-      // Aggressively compress cover images to guarantee sub-1MB multi-file payload submission
       const compressed = await compressImage(file, 1200, 800, 0.72);
       setCoverPhoto(compressed);
       setCoverPreview(URL.createObjectURL(compressed));
@@ -100,11 +103,16 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 50 * 1024 * 1024) return toast.error("Şəkil ölçüsü max 50MB ola bilər");
-      // Optimize room images to compact resolution ensuring fast uploads and compliance with remote gateway buffers
       const compressed = await compressImage(file, 800, 600, 0.65);
       setRoomPhotos(prev => {
         const newPhotos = [...prev];
-        newPhotos[index] = { ...newPhotos[index], photo: compressed, previewUrl: URL.createObjectURL(compressed) };
+        newPhotos[index] = { 
+          ...newPhotos[index], 
+          photo: compressed, 
+          previewUrl: URL.createObjectURL(compressed),
+          // Auto-select the first category from step 1 categories list to make it easier for user
+          categoryId: newPhotos[index].categoryId || selectedCategories[0]?.id || null 
+        };
         return newPhotos;
       });
     }
@@ -118,11 +126,19 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
     });
   };
 
+  const handleRoomCategoryChange = (index: number, catId: number | null) => {
+    setRoomPhotos(prev => {
+      const newPhotos = [...prev];
+      newPhotos[index] = { ...newPhotos[index], categoryId: catId };
+      return newPhotos;
+    });
+  };
+
   const handleRemoveRoomPhoto = (index: number) => {
     setRoomPhotos(prev => {
       const newPhotos = [...prev];
       if (newPhotos[index].previewUrl) URL.revokeObjectURL(newPhotos[index].previewUrl!);
-      newPhotos[index] = { ...newPhotos[index], photo: null, previewUrl: null };
+      newPhotos[index] = { ...newPhotos[index], photo: null, previewUrl: null, categoryId: null };
       return newPhotos;
     });
   };
@@ -134,10 +150,14 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
 
     const validRoomPhotos = roomPhotos.filter(p => p.photo !== null);
 
-    // Check if any uploaded photo is missing a name
     const missingNames = validRoomPhotos.some(p => !p.name.trim());
     if (missingNames) {
       return toast.error("Yüklənmiş şəkillərin adlarını qeyd edin");
+    }
+
+    const missingCategories = validRoomPhotos.some(p => !p.categoryId);
+    if (missingCategories) {
+      return toast.error("Yüklənmiş şəkillərin kateqoriyalarını seçin");
     }
 
     try {
@@ -146,13 +166,14 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
       validRoomPhotos.forEach(p => {
         formData.append("roomPhotos", p.photo!);
         formData.append("roomNames", p.name.trim());
+        formData.append("roomCategoryIds", String(p.categoryId));
       });
 
       await validateStep5.mutateAsync(formData);
       
       setStep5Photos({
         cover: coverPhoto,
-        rooms: validRoomPhotos.map(p => ({ name: p.name.trim(), file: p.photo! }))
+        rooms: validRoomPhotos.map(p => ({ name: p.name.trim(), file: p.photo!, categoryId: p.categoryId }))
       });
 
       onNext?.();
@@ -204,7 +225,7 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
 
           <div className="grid grid-cols-3 gap-4">
             {roomPhotos.map((room, index) => (
-              <div key={room.id} className="flex flex-col gap-2">
+              <div key={room.id} className="flex flex-col gap-2 bg-[#FAFBFB] p-2 rounded-xl border border-[#ECECED]">
                 <div
                   onClick={() => !room.previewUrl && roomInputRefs.current[index]?.click()}
                   className={`relative w-full aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-colors overflow-hidden ${room.previewUrl ? 'border-[#ECECED] cursor-default' : 'border-[#D1D5DB] bg-[#F9FAFB] cursor-pointer hover:bg-gray-50'
@@ -246,13 +267,26 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
                   )}
                 </div>
 
-                <input
-                  type="text"
-                  placeholder="Ad (məs: SPA)"
-                  value={room.name}
-                  onChange={(e) => handleRoomNameChange(index, e.target.value)}
-                  className="w-full bg-[#F9FAFB] border border-[#ECECED] rounded-lg px-3 py-2 text-xs font-semibold text-[#1F2937] outline-none focus:border-[#00B4D8]"
-                />
+                <div className="flex flex-col gap-1.5 mt-1">
+                  <input
+                    type="text"
+                    placeholder="Ad (məs: SPA)"
+                    value={room.name}
+                    onChange={(e) => handleRoomNameChange(index, e.target.value)}
+                    className="w-full bg-white border border-[#ECECED] rounded-lg px-3 py-2 text-xs font-semibold text-[#1F2937] outline-none focus:border-[#00B4D8]"
+                  />
+                  
+                  <select
+                    value={room.categoryId || ""}
+                    onChange={(e) => handleRoomCategoryChange(index, e.target.value ? Number(e.target.value) : null)}
+                    className="w-full bg-white border border-[#ECECED] rounded-lg px-3 py-2 text-xs font-semibold text-[#1F2937] outline-none focus:border-[#00B4D8] cursor-pointer"
+                  >
+                    <option value="" disabled>Kateqoriya seçin</option>
+                    {selectedCategories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             ))}
           </div>
@@ -267,7 +301,7 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
               resetStep5Photos();
               setCoverPhoto(null);
               setCoverPreview(null);
-              setRoomPhotos(Array.from({ length: 9 }).map((_, i) => ({ id: `rp-${i}`, photo: null, name: "", previewUrl: null })));
+              setRoomPhotos(Array.from({ length: 9 }).map((_, i) => ({ id: `rp-${i}`, photo: null, name: "", previewUrl: null, categoryId: null })));
             }}
             className="h-[40px] px-8 rounded-lg border border-[#ececed] text-[#101828] text-[14px] font-medium hover:bg-slate-50 transition-colors"
           >

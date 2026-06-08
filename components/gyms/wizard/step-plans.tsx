@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Plus, Check, Loader2, Trash2, X } from "lucide-react";
+import { Plus, Check, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGymStore } from "@/lib/store/gym-store";
-import { useSupportedServices, useValidateGymStep6, useCreateSupportedService, useDeleteSupportedService } from "@/lib/query/gym-query";
+import { useSupportedServices, useValidateGymStep6, useCreateSupportedService, useDeleteSupportedService, useCategories } from "@/lib/query/gym-query";
 import { useSubscriptionPackages } from "@/lib/query/use-subscription-packages";
-import { GymCreateStep6Request } from "@/lib/types/gym";
+import { GymCreateStep6RequestV2 } from "@/lib/types/gym";
 import { toast } from "sonner";
 import Image from "next/image";
 import { ErrorToastModal } from "../../categories/modals/error-toast-modal";
@@ -25,9 +25,13 @@ const getImageUrl = (urlOrFsId: string | undefined | null) => {
 };
 
 export function StepPlans({ onNext }: { onNext: () => void }) {
-  const { step6Data, setStep6Data, gymId } = useGymStore();
+  const { step6Data, setStep6Data, gymId, step1Data } = useGymStore();
   const { data: allPackageNames, isLoading: packagesLoading } = useSubscriptionPackages();
-  
+  const { data: categoriesData } = useCategories();
+
+  const selectedCategoryIds = useMemo(() => step1Data?.categoryIds || [], [step1Data]);
+  const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
+
   const PACKAGES = useMemo(() => allPackageNames?.map(p => p.name) || [], [allPackageNames]);
 
   const [selectedPackages, setSelectedPackages] = useState<Set<string>>(new Set());
@@ -55,7 +59,14 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
     return [...apiServices, ...filteredLocal];
   }, [allServices, customServicesList]);
 
-  // Robust State Synchronization
+  // Set default active category
+  useEffect(() => {
+    if (selectedCategoryIds.length > 0 && activeCategoryId === null) {
+      setActiveCategoryId(selectedCategoryIds[0]);
+    }
+  }, [selectedCategoryIds, activeCategoryId]);
+
+  // Robust State Synchronization (supporting V2 categoryId)
   useEffect(() => {
     if (!allPackageNames || allPackageNames.length === 0 || hasSynced) return;
 
@@ -65,15 +76,15 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
       const pkgs = new Set<string>();
       const prcs: Record<string, string> = {};
       const svcs: Record<string, string[]> = {};
-      PACKAGES.forEach(p => { svcs[p] = []; });
       
       const localCustoms = new Set<string>();
 
       step6Data.subscriptions.forEach(s => {
         const found = allPackageNames.find(p => p.id === s.packageId);
         if (found) {
-          pkgs.add(found.name);
-          prcs[found.name] = s.dailyPrice.toString();
+          const key = `${s.categoryId}_${found.name}`;
+          pkgs.add(key);
+          prcs[key] = s.dailyPrice.toString();
           const names: string[] = [];
           if (s.supportedServicesId && allServices) {
             const resolvedNames = s.supportedServicesId
@@ -85,12 +96,22 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
             names.push(...s.customServices);
             s.customServices.forEach((cs: string) => localCustoms.add(cs));
           }
-          svcs[found.name] = names;
+          svcs[key] = names;
         }
       });
 
       setSelectedPackages(pkgs);
-      setActivePackage(pkgs.size > 0 ? Array.from(pkgs)[0] : allPackageNames[0].name);
+      const firstActiveKey = pkgs.size > 0 ? Array.from(pkgs)[0] : "";
+      if (firstActiveKey) {
+        const index = firstActiveKey.indexOf('_');
+        const firstActiveCat = Number(firstActiveKey.substring(0, index));
+        const firstActivePkg = firstActiveKey.substring(index + 1);
+        setActiveCategoryId(firstActiveCat);
+        setActivePackage(firstActivePkg);
+      } else {
+        if (selectedCategoryIds.length > 0) setActiveCategoryId(selectedCategoryIds[0]);
+        setActivePackage(allPackageNames[0].name);
+      }
       setPrices(prcs);
       setPackageServices(svcs);
       if (localCustoms.size > 0) {
@@ -98,25 +119,30 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
       }
       setHasSynced(true);
     } else {
-      setSelectedPackages(new Set([allPackageNames[0].name]));
-      setActivePackage(allPackageNames[0].name);
+      if (selectedCategoryIds.length > 0) {
+        const firstCatId = selectedCategoryIds[0];
+        setActiveCategoryId(firstCatId);
+        const firstPkg = allPackageNames[0].name;
+        setSelectedPackages(new Set([`${firstCatId}_${firstPkg}`]));
+        setActivePackage(firstPkg);
+      }
       setPrices({});
-      const svcs: Record<string, string[]> = {};
-      PACKAGES.forEach(p => { svcs[p] = []; });
-      setPackageServices(svcs);
+      setPackageServices({});
       setHasSynced(true);
     }
-  }, [allPackageNames, allServices, step6Data, hasSynced, PACKAGES]);
+  }, [allPackageNames, allServices, step6Data, hasSynced, PACKAGES, selectedCategoryIds]);
   
   const [pendingService, setPendingService] = useState<string | null>(null);
   const createServiceMutation = useCreateSupportedService();
   const validateStep6 = useValidateGymStep6();
 
   const togglePackage = (pkg: string) => {
+    if (activeCategoryId === null) return;
+    const key = `${activeCategoryId}_${pkg}`;
     setSelectedPackages((prev) => {
       const next = new Set(prev);
-      if (next.has(pkg)) next.delete(pkg);
-      else next.add(pkg);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   };
@@ -142,11 +168,12 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
       if (pendingIcon) {
         setCustomIcons(prev => ({ ...prev, [trimmedName]: pendingIcon }));
       }
-      if (activePackage) {
+      if (activePackage && activeCategoryId !== null) {
+        const key = `${activeCategoryId}_${activePackage}`;
         setPackageServices(prev => {
-          const current = prev[activePackage] || [];
+          const current = prev[key] || [];
           if (!current.includes(trimmedName)) {
-            return { ...prev, [activePackage]: [...current, trimmedName] };
+            return { ...prev, [key]: [...current, trimmedName] };
           }
           return prev;
         });
@@ -166,11 +193,12 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
         });
         
         const createdName = res?.name || trimmedName;
-        if (activePackage) {
+        if (activePackage && activeCategoryId !== null) {
+          const key = `${activeCategoryId}_${activePackage}`;
           setPackageServices(prev => {
-            const current = prev[activePackage] || [];
+            const current = prev[key] || [];
             if (!current.includes(createdName)) {
-              return { ...prev, [activePackage]: [...current, createdName] };
+              return { ...prev, [key]: [...current, createdName] };
             }
             return prev;
           });
@@ -187,14 +215,15 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
   };
 
   const toggleServiceSelection = (svcName: string) => {
-    if (!activePackage) return;
+    if (!activePackage || activeCategoryId === null) return;
+    const key = `${activeCategoryId}_${activePackage}`;
     setPackageServices(prev => {
-      const current = prev[activePackage] || [];
+      const current = prev[key] || [];
       const isSelected = current.includes(svcName);
       if (isSelected) {
-        return { ...prev, [activePackage]: current.filter(s => s !== svcName) };
+        return { ...prev, [key]: current.filter(s => s !== svcName) };
       } else {
-        return { ...prev, [activePackage]: [...current, svcName] };
+        return { ...prev, [key]: [...current, svcName] };
       }
     });
   };
@@ -207,8 +236,8 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
       setCustomServicesList(prev => prev.filter(name => name !== svcName));
       setPackageServices(prev => {
         const updated: Record<string, string[]> = {};
-        Object.keys(prev).forEach(pkg => {
-          updated[pkg] = prev[pkg].filter(name => name !== svcName);
+        Object.keys(prev).forEach(key => {
+          updated[key] = prev[key].filter(name => name !== svcName);
         });
         return updated;
       });
@@ -227,18 +256,23 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
     if (!allPackageNames) return;
 
     const serviceIcons: File[] = [];
-    const processedPackages = new Set<number>();
+    const processedPackages = new Set<string>(); // unique key is packageId_categoryId to keep them separate
 
-    const subscriptions = Array.from(selectedPackages).map(pkgName => {
+    const subscriptions = Array.from(selectedPackages).map(key => {
+      const index = key.indexOf('_');
+      const catId = Number(key.substring(0, index));
+      const pkgName = key.substring(index + 1);
+
       const pkgInfo = allPackageNames.find(p => p.name === pkgName);
-      const serviceNames = packageServices[pkgName] || [];
+      const serviceNames = packageServices[key] || [];
       const serviceIds: number[] = [];
       const customServices: string[] = [];
 
       const pkgId = pkgInfo?.id || 0;
-      const isNewPackage = !processedPackages.has(pkgId);
+      const uniqKey = `${pkgId}_${catId}`;
+      const isNewPackage = !processedPackages.has(uniqKey);
       if (isNewPackage) {
-        processedPackages.add(pkgId);
+        processedPackages.add(uniqKey);
       }
 
       serviceNames.forEach(name => {
@@ -261,7 +295,8 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
 
       return {
         packageId: pkgId,
-        dailyPrice: Number(prices[pkgName]) || 0,
+        categoryId: catId,
+        dailyPrice: Number(prices[key]) || 0,
         supportedServicesId: serviceIds,
         customServices: customServices
       };
@@ -274,7 +309,7 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
     }
 
     try {
-      const payload = { subscriptions };
+      const payload: GymCreateStep6RequestV2 = { subscriptions };
       await validateStep6.mutateAsync({ payload, serviceIcons });
       setStep6Data({ ...payload, serviceIcons });
       onNext();
@@ -303,10 +338,44 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
       );
   }
 
+  const activePriceKey = activeCategoryId !== null ? `${activeCategoryId}_${activePackage}` : "";
 
   return (
     <div className="w-full flex flex-col gap-9 font-sans text-black animate-in fade-in duration-500">
       
+      {/* Category Selection Tabs */}
+      {selectedCategoryIds.length > 1 && (
+        <div className="bg-white rounded-[12px] border border-[#ececed] p-5 flex flex-col gap-3 shadow-sm">
+          <label className="text-[14px] text-black/60 font-medium">Qiymət və xidmətləri hansı kateqoriya üçün tənzimləyirsiniz?</label>
+          <div className="flex flex-wrap items-center gap-3 border-b border-[#ececed] pb-2">
+            {selectedCategoryIds.map((catId) => {
+              const catName = categoriesData?.items?.find(c => c.id === catId)?.name || `Kateqoriya ${catId}`;
+              const isActive = activeCategoryId === catId;
+              return (
+                <button
+                  key={catId}
+                  type="button"
+                  onClick={() => {
+                    setActiveCategoryId(catId);
+                    if (PACKAGES.length > 0 && !activePackage) {
+                      setActivePackage(PACKAGES[0]);
+                    }
+                  }}
+                  className={cn(
+                    "px-5 py-2 rounded-[32px] text-sm font-semibold transition-all border",
+                    isActive
+                      ? "bg-[#00B4CC] text-white border-[#00B4CC] shadow-sm"
+                      : "bg-[#fafafa] text-slate-600 border-[#ececed] hover:bg-slate-50"
+                  )}
+                >
+                  {catName}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* 1. Package Selector Section */}
       <div className="bg-white rounded-[12px] border border-[#ececed] p-5 flex flex-col gap-5 shadow-sm">
         <div className="border-b border-[#ececed] pb-2">
@@ -315,7 +384,8 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {PACKAGES.map((pkg) => {
-            const isSelected = selectedPackages.has(pkg);
+            const key = activeCategoryId !== null ? `${activeCategoryId}_${pkg}` : "";
+            const isSelected = selectedPackages.has(key);
             const isActive = activePackage === pkg;
 
             return (
@@ -369,8 +439,12 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
           <div className="h-[44px] w-full max-w-[320px] bg-[#fafafa] border border-[#ececed] rounded-lg flex items-center px-4">
             <input
               type="number"
-              value={prices[activePackage] || ""}
-              onChange={(e) => setPrices(prev => ({ ...prev, [activePackage]: e.target.value }))}
+              value={activePriceKey ? (prices[activePriceKey] || "") : ""}
+              onChange={(e) => {
+                if (activePriceKey) {
+                  setPrices(prev => ({ ...prev, [activePriceKey]: e.target.value }));
+                }
+              }}
               className="bg-transparent w-full h-full outline-none text-[15px] font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               placeholder="0.00"
             />
@@ -459,7 +533,8 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
         <div className="flex flex-col gap-5">
           <div className="flex flex-wrap gap-4">
             {servicesToRender.map((svc: any) => {
-              const isSelected = packageServices[activePackage]?.includes(svc.name);
+              const activeSvcKey = activePriceKey;
+              const isSelected = activeSvcKey ? (packageServices[activeSvcKey]?.includes(svc.name)) : false;
               let iconUrl = svc.iconImageUrl || svc.iconUrl;
               if (!iconUrl && customIcons[svc.name]) {
                 iconUrl = URL.createObjectURL(customIcons[svc.name]);
@@ -514,6 +589,7 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
             setPackageServices({});
             setCustomIcons({});
             setPendingIcon(null);
+            if (selectedCategoryIds.length > 0) setActiveCategoryId(selectedCategoryIds[0]);
           }}
           className="h-[40px] px-8 rounded-lg border border-[#ececed] text-[#101828] text-[14px] font-medium hover:bg-slate-50 transition-colors"
         >

@@ -223,3 +223,84 @@ export interface GymInfoUpdateRequest {
   latitude: number
   longitude: number
 }
+
+// V2 Interfaces
+export interface GymStep1DataV2 {
+  categoryIds: number[]
+  name: string
+  description: string
+  phone: string
+  email: string | null
+}
+
+export interface GymStep1PayloadV2 {
+  categoryIds: number[]
+  name: string
+  description: string
+  phone: string
+  email: string | null
+  lessonTypeIds: number[]
+}
+
+export interface RoomImageDtoV2 {
+  id: number
+  name: string
+  imageUrl: string
+  categoryId: number | null
+}
+
+export interface GymInfoAdminResponseV2 {
+  id: number
+  categories: Category[]
+  name: string
+  description: string
+  coverImageUrl: string
+  rooms: RoomImageDtoV2[]
+  phone: string
+  email: string
+  city: string
+  address: string
+  latitude: number
+  longitude: number
+  status?: string
+  createdAt: string
+  lessonTypes?: { id: number; name: string }[]
+}
+
+export interface GymCreateStep6SubscriptionRequestV2 {
+  packageId: number
+  categoryId: number
+  dailyPrice: number
+  supportedServicesId: number[]
+  customServices?: string[]
+}
+
+export interface GymCreateStep6RequestV2 {
+  subscriptions: GymCreateStep6SubscriptionRequestV2[]
+  serviceIcons?: File[]
+}
+
+export interface GymPlanItemAdminResponseV2 {
+  packageId: number
+  packageName: string
+  categoryId: number
+  dailyPrice: number
+  benefits: GymPlanBenefitAdminResponse[]
+}
+
+export interface GymSubscriptionsAdminResponseV2 {
+  gymId: number
+  subscriptions: GymPlanItemAdminResponseV2[]
+}
+
+export interface GymInfoUpdateRequestV2 {
+  categoryIds: number[]
+  name: string
+  description: string
+  phone: string
+  email: string
+  city: string
+  address: string
+  latitude: number
+  longitude: number
+}
