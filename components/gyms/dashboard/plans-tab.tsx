@@ -246,8 +246,6 @@ export function PlansTab({ gym }: { gym?: any }) {
       payload: { subscriptions }
     }, {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['gym-subscriptions-admin', Number(gymId)] });
-        queryClient.invalidateQueries({ queryKey: ['gym-details', Number(gymId)] });
         setHasSynced(false);
         setShowSuccessModal(true);
       },

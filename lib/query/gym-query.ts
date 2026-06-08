@@ -195,9 +195,15 @@ export function useCreateGymStep6() {
 
 // 6.1 Abunəlikləri yeniləyin (DRAFT statusunda olmayan zallar üçün)
 export function useUpdateGymSubscriptions() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, payload }: { id: number, payload: GymCreateStep6RequestV2 }) =>
       apiPut(`/api/v2/admin/gyms/${id}/subscriptions`, payload),
+    onSuccess: (_, variables) => {
+      // Invalidate with partial key so all locale variants are refreshed
+      queryClient.invalidateQueries({ queryKey: ['gym-subscriptions-admin', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['gym-details', variables.id] });
+    },
   });
 }
 
