@@ -3,11 +3,12 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { ArrowLeft, Ban, Bell, Mail, MessageSquare, Upload } from 'lucide-react'
+import { ArrowLeft, Ban, Bell, Mail, MessageSquare, Upload, UserCog } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CustomerProfile } from '@/modules/customers'
 import { getCustomerStatusLabel, normalizeCustomerStatus, type UiCustomerStatus } from './list/customer-list-utils'
 import { PushModal, SmsModal } from './list/customer-message-modals'
+import { ChangeRoleModal } from './modals/change-role-modal'
 import { SubscriptionTab } from './tabs/subscription-tab'
 import { PaymentsTab } from './tabs/payments-tab'
 import { AccessTab } from './tabs/access-tab'
@@ -84,11 +85,13 @@ function OpsBtn({
   )
 }
 
-export function CustomerDetail({ customer }: { customer: CustomerProfile }) {
+export function CustomerDetail({ customer: initialCustomer }: { customer: CustomerProfile }) {
   const router = useRouter()
+  const [customer, setCustomer] = useState(initialCustomer)
   const [tab, setTab] = useState('profile')
   const [pushOpen, setPushOpen] = useState(false)
   const [smsOpen, setSmsOpen] = useState(false)
+  const [roleOpen, setRoleOpen] = useState(false)
 
   const status = normalizeCustomerStatus(customer.userStatus)
   const initials = `${customer.name?.[0] ?? ''}${customer.surname?.[0] ?? ''}`.toUpperCase()
@@ -225,6 +228,7 @@ export function CustomerDetail({ customer }: { customer: CustomerProfile }) {
                 <OpsBtn icon={MessageSquare} label="SMS göndər" onClick={() => setSmsOpen(true)} />
                 <OpsBtn icon={Mail} label="Email göndər" onClick={() => {}} />
                 <OpsBtn icon={Upload} label="Export" onClick={() => {}} />
+                <OpsBtn icon={UserCog} label="Rolunu dəyiş" onClick={() => setRoleOpen(true)} />
                 <div className="pt-2 border-t border-border/60">
                   <OpsBtn icon={Ban} label="Block" onClick={() => {}} danger />
                 </div>
@@ -241,6 +245,14 @@ export function CustomerDetail({ customer }: { customer: CustomerProfile }) {
       {/* Render Invoked Modals */}
       {pushOpen && <PushModal onClose={() => setPushOpen(false)} />}
       {smsOpen && <SmsModal onClose={() => setSmsOpen(false)} />}
+      {roleOpen && (
+        <ChangeRoleModal
+          userId={customer.id}
+          currentRole={customer.role}
+          onClose={() => setRoleOpen(false)}
+          onSuccess={(newRole) => setCustomer(prev => ({ ...prev, role: newRole }))}
+        />
+      )}
     </div>
   )
 }

@@ -271,7 +271,7 @@ export function AdminsList() {
             const rowClass = index % 2 === 0 ? styles.frameParent : styles.frameGroup
 
             return (
-              <div key={admin.id} className={rowClass} style={{ gridTemplateColumns: '2.5fr 2fr 2fr 0.8fr' }}>
+              <div key={admin.id} className={rowClass} style={{ gridTemplateColumns: '2.5fr 2fr 2fr 0.8fr', cursor: 'pointer' }} onClick={() => router.push(`/admins/${admin.id}`)}>
                 <div className={styles.tickSquareParent}>
                   <div className={styles.tickSquare}>
                     <CustomCheckbox checked={selected.has(admin.id)} onChange={() => toggleOne(admin.id)} />

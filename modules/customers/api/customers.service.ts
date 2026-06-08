@@ -76,3 +76,16 @@ export function resetUserPassword(userId: number, newPassword: string) {
   return apiPost<void>(`/api/v1/admin/users/${userId}/password/reset`, { newPassword })
 }
 
+export interface UserRoleDto {
+  id: string
+  name: string
+}
+
+export function getAllRoles() {
+  return apiGet<UserRoleDto[]>('/api/v1/admin/roles')
+}
+
+export function changeUserRole(userId: number, role: string) {
+  return apiPost<void>(`/api/v1/admin/users/${userId}/change-role`, { role })
+}
+

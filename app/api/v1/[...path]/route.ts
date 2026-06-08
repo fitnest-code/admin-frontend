@@ -109,10 +109,28 @@ async function forward(request: NextRequest, context: RouteContext) {
     const { path } = await context.params
     const targetPath = buildTargetPath(path)
 
+    // ── Mock interceptors (temporary until backend implements these) ──
+    const method = request.method.toUpperCase()
+
+    // GET /api/v1/admin/roles → return hardcoded role list
+    if (method === 'GET' && targetPath === '/api/v1/admin/roles') {
+      return NextResponse.json([
+        { id: 'ROLE_ADMIN', name: 'Sistem admini' },
+        { id: 'ROLE_FITNEST_STAFF', name: 'Fitnest Komandası' },
+        { id: 'ROLE_GYM_SUPER_ADMIN', name: 'Zal Super Admini' },
+        { id: 'ROLE_GYM_ADMIN', name: 'Zal Admini' },
+        { id: 'ROLE_USER', name: 'Müştəri' },
+      ])
+    }
+
+    // POST /api/v1/admin/users/{id}/change-role → mock success
+    if (method === 'POST' && /^\/api\/v1\/admin\/users\/\d+\/change-role$/.test(targetPath)) {
+      return NextResponse.json({ success: true, message: 'Role updated successfully' })
+    }
+    // ── End mock interceptors ──
+
     const targetUrl = new URL(buildBackendUrl(targetPath))
     targetUrl.search = request.nextUrl.search
-
-    const method = request.method.toUpperCase()
     const rawContentType = request.headers.get('content-type') ?? ''
     const isMultipart = rawContentType.toLowerCase().includes('multipart/form-data')
 

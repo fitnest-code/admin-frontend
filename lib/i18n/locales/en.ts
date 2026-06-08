@@ -10,6 +10,7 @@ const en: TranslationKeys = {
     customers: "Customers",
     partners: "Partners",
     admins: "Admins",
+    fitnestStaff: "Fitnest Staff",
     payments: "Payments",
     reports: "Reports",
     diet: "Diet",

@@ -9,6 +9,7 @@ const az = {
     customers: "Müştərilər",
     partners: "Partnyorlar",
     admins: "Adminlər",
+    fitnestStaff: "Fitnest Komandası",
     payments: "Ödənişlər",
     reports: "Hesabatlar",
     diet: "Diet",

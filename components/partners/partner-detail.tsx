@@ -3,12 +3,13 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, UserCog } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CustomerProfile } from '@/modules/customers'
 import { blockUser, unblockUser } from '@/modules/customers/api/customers.service'
 import { getCustomerStatusLabel, normalizeCustomerStatus, type UiCustomerStatus } from '../customers/list/customer-list-utils'
 import { PushModal, SmsModal } from '../customers/list/customer-message-modals'
+import { ChangeRoleModal } from '../customers/modals/change-role-modal'
 import { ResetPasswordModal } from './reset-password-modal'
 
 const STATUS_STYLES = {
@@ -75,6 +76,7 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
   const [pushOpen, setPushOpen] = useState(false)
   const [smsOpen, setSmsOpen] = useState(false)
   const [resetPwdOpen, setResetPwdOpen] = useState(false)
+  const [roleOpen, setRoleOpen] = useState(false)
   const [blockLoading, setBlockLoading] = useState(false)
 
   const status = normalizeCustomerStatus(customer.userStatus)
@@ -201,6 +203,13 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
               <OpsBtn src="/sms-icon.svg" label="SMS göndər" onClick={() => setSmsOpen(true)} />
               <OpsBtn src="/mail-icon.svg" label="Email göndər" onClick={() => {}} />
               <OpsBtn src="/export-icon.svg" label="Export" onClick={() => {}} />
+              <button
+                onClick={() => setRoleOpen(true)}
+                className="flex w-full items-center gap-3 rounded-lg border border-border bg-white px-4 py-3 text-sm font-semibold text-foreground hover:border-[#00B4CC] hover:text-[#00B4CC] hover:bg-[#00B4CC]/5 shadow-xs transition-all duration-200 active:scale-[0.98]"
+              >
+                <UserCog size={18} className="shrink-0 text-[#00B4CC]" />
+                <span>Rolunu dəyiş</span>
+              </button>
               <div className="pt-2 border-t border-border/60">
                 <button
                   onClick={handleBlockToggle}
@@ -232,6 +241,14 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
         <ResetPasswordModal 
           userId={customer.id} 
           onClose={() => setResetPwdOpen(false)} 
+        />
+      )}
+      {roleOpen && (
+        <ChangeRoleModal
+          userId={customer.id}
+          currentRole={customer.role}
+          onClose={() => setRoleOpen(false)}
+          onSuccess={(newRole) => setCustomer(prev => ({ ...prev, role: newRole }))}
         />
       )}
     </div>

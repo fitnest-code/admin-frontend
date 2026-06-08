@@ -139,8 +139,9 @@ export function CustomerTable({
         return (
           <div
             key={customer.id}
+            onClick={() => onView(customer.id)}
             className={cn(
-              'grid grid-cols-[3rem_3.5rem_1.5fr_1fr_1fr_6rem_7rem_3rem] items-center gap-3 border-b border-border px-4 py-3 last:border-0 hover:bg-secondary/40 transition-all duration-200',
+              'grid grid-cols-[3rem_3.5rem_1.5fr_1fr_1fr_6rem_7rem_3rem] items-center gap-3 border-b border-border px-4 py-3 last:border-0 hover:bg-secondary/40 transition-all duration-200 cursor-pointer',
               subscriptionStatus === 'changed' ? 'bg-[#f0fdff]' : 'bg-card',
             )}
           >

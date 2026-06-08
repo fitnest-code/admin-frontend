@@ -53,6 +53,7 @@ export const NAV_ITEMS: NavItem[] = [
   },
   { key: "gyms", labelKey: "gyms", icon: Handshake, href: "/gyms", iconPath: "/Sidebar/Sidebar/zallar.svg" },
   { key: "musteriler", labelKey: "customers", icon: Users, href: "/customers", iconPath: "/Sidebar/Sidebar/musteriler.svg" },
+  { key: "fitnest-staff", labelKey: "fitnestStaff", icon: Users, href: "/fitnest-staff", iconPath: "/Sidebar/Sidebar/admins.svg" },
   { key: "partners", labelKey: "partners", icon: Users, href: "/partners", iconPath: "/partners.svg" },
   { key: "admins", labelKey: "admins", icon: Users, href: "/admins", iconPath: "/Sidebar/Sidebar/admins.svg" },
   {
