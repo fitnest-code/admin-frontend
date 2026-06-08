@@ -221,8 +221,17 @@ export function PlansTab({ gym }: { gym?: any }) {
         return found ? found.id : null;
       }).filter((id): id is number => id !== null);
 
+      // Resolve categoryId: use existing subscription's categoryId, or fall back to gym's first category
+      const existingSub = adminSubs?.subscriptions?.find((s: any) => s.packageName === pkg);
+      const categoryId: number =
+        existingSub?.categoryId ??
+        gym?.categories?.[0]?.id ??
+        gym?.categoryId ??
+        null;
+
       return {
         packageId: PACKAGE_IDS[pkg],
+        categoryId,
         dailyPrice: Number(prices[pkg]) || 0,
         supportedServicesId: serviceIds
       };
