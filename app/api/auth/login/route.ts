@@ -12,10 +12,13 @@ export async function POST(request: NextRequest) {
     assertAuthEnv()
     const credentials = await request.json()
 
-    const backendResponse = await fetch(buildBackendUrl('/api/v1/auth/login'), {
+    const backendResponse = await fetch(buildBackendUrl('/api/v2/auth/login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify(credentials),
+      body: JSON.stringify({
+        ...credentials,
+        device_type: 'Web',
+      }),
       cache: 'no-store',
     })
 
