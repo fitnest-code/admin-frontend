@@ -85,10 +85,12 @@ export const useSubscriptions = () => {
         benefits: input.services.map((s) => ({ description: s })),
         options: input.priceTiers.map((t) => {
           const durationMonths = parseInt(t.duration) || 1;
+          const price = Number(t.price) || 0;
+          const discount = Number(t.discountPrice) || 0;
           return {
             durationMonths,
-            priceStandard: t.price,
-            priceDiscounted: t.discountPrice || t.price,
+            priceStandard: price,
+            priceDiscounted: discount ? discount : null,
             entryLimit: Number(t.entryLimit) || 12,
             isActive: true,
           };
@@ -125,10 +127,12 @@ export const useSubscriptions = () => {
         benefits: input.services.map((s) => ({ description: s })),
         options: input.priceTiers.map((t) => {
           const durationMonths = parseInt(t.duration) || 1;
+          const price = Number(t.price) || 0;
+          const discount = Number(t.discountPrice) || 0;
           return {
             durationMonths,
-            priceStandard: t.price,
-            priceDiscounted: t.discountPrice || t.price,
+            priceStandard: price,
+            priceDiscounted: discount ? discount : null,
             entryLimit: Number(t.entryLimit) || 12,
             isActive: true,
           };

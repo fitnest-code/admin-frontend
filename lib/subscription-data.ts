@@ -3,8 +3,8 @@ export type SubStatus = 'active' | 'inactive'
 
 export interface PriceTier {
   duration: string
-  price: number
-  discountPrice: number
+  price: number | string
+  discountPrice: number | string
   entryLimit?: number
 }
 

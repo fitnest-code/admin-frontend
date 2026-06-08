@@ -338,16 +338,24 @@ function PackageFormModal({
                         className="h-[38px] rounded-[8px] border border-gray-300 bg-white px-2 text-[13px] outline-none focus:border-[#00b4cc] w-full"
                       />
                       <input
-                        type="number"
-                        value={tier.price || ''}
-                        onChange={(e) => updateTier(i, 'price', Number(e.target.value))}
+                        type="text"
+                        inputMode="decimal"
+                        value={tier.price ?? ''}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (v === '' || /^\d*\.?\d*$/.test(v)) updateTier(i, 'price', v);
+                        }}
                         placeholder="0"
                         className="h-[38px] rounded-[8px] border border-gray-300 bg-white px-2 text-[13px] outline-none focus:border-[#00b4cc] w-full"
                       />
                       <input
-                        type="number"
-                        value={tier.discountPrice || ''}
-                        onChange={(e) => updateTier(i, 'discountPrice', Number(e.target.value))}
+                        type="text"
+                        inputMode="decimal"
+                        value={tier.discountPrice ?? ''}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (v === '' || /^\d*\.?\d*$/.test(v)) updateTier(i, 'discountPrice', v);
+                        }}
                         placeholder="0"
                         className="h-[38px] rounded-[8px] border border-gray-300 bg-white px-2 text-[13px] outline-none focus:border-[#00b4cc] w-full"
                       />
