@@ -212,7 +212,22 @@ export function PushModal({ selectedUsers = [], onClose }: { selectedUsers?: any
       const userIds = selectedUsers.map(u => u.id).filter(Boolean)
       
       let res
-      if (userIds.length > 0) {
+      if (userIds.length === 1) {
+        // For single user, use the single-user endpoint
+        res = await fetch('/api/v1/admin/notifications/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({
+            userId: userIds[0],
+            title: title.trim() || 'Fitnest Bildiriş',
+            body: message
+          })
+        })
+      } else if (userIds.length > 1) {
+        // For multiple users, use bulk endpoint
         res = await fetch('/api/v1/admin/notifications/bulk', {
           method: 'POST',
           headers: {
@@ -226,6 +241,7 @@ export function PushModal({ selectedUsers = [], onClose }: { selectedUsers?: any
           })
         })
       } else {
+        // For no users (broadcast), use broadcast endpoint
         res = await fetch('/api/v1/admin/notifications/broadcast', {
           method: 'POST',
           headers: {

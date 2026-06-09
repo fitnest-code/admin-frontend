@@ -242,17 +242,17 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
       {tab === 'payments' && <PaymentsTab userId={String(customer.id)} />}
       {tab === 'access' && <AccessTab userId={String(customer.id)} />}
 
-      {/* Render Invoked Modals */}
-      {pushOpen && <PushModal onClose={() => setPushOpen(false)} />}
-      {smsOpen && <SmsModal onClose={() => setSmsOpen(false)} />}
-      {roleOpen && (
-        <ChangeRoleModal
-          userId={customer.id}
-          currentRole={customer.role}
-          onClose={() => setRoleOpen(false)}
-          onSuccess={(newRole) => setCustomer(prev => ({ ...prev, role: newRole }))}
-        />
-      )}
+       {/* Render Invoked Modals */}
+       {pushOpen && <PushModal selectedUsers={[{ id: customer.id, fullName: fullName, email: customer.email, phoneNumber: customer.phoneNumber }]} onClose={() => setPushOpen(false)} />}
+       {smsOpen && <SmsModal selectedUsers={[{ id: customer.id, fullName: fullName, email: customer.email, phoneNumber: customer.phoneNumber }]} onClose={() => setSmsOpen(false)} />}
+       {roleOpen && (
+         <ChangeRoleModal
+           userId={customer.id}
+           currentRole={customer.role || null}
+           onClose={() => setRoleOpen(false)}
+           onSuccess={(newRole) => setCustomer(prev => ({ ...prev, role: newRole }))}
+         />
+       )}
     </div>
   )
 }
