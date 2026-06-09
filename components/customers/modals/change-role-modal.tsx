@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { getAllRoles, changeUserRole, type UserRoleDto } from '@/modules/customers/api/customers.service'
+import { SuccessAnimationModal } from '@/components/ui/success-animation-modal'
 
 interface ChangeRoleModalProps {
   userId: number
@@ -17,8 +18,7 @@ export function ChangeRoleModal({ userId, currentRole, onClose, onSuccess }: Cha
   const [selectedRole, setSelectedRole] = useState(currentRole || 'ROLE_USER')
   const [loading, setLoading] = useState(false)
   const [loadingRoles, setLoadingRoles] = useState(true)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const [successMsg, setSuccessMsg] = useState<string | null>(null)
+  const [modalConfig, setModalConfig] = useState<{isOpen: boolean, message: string, type: 'success'|'error'}>({ isOpen: false, message: '', type: 'success' })
 
   useEffect(() => {
     setMounted(true)
@@ -52,20 +52,18 @@ export function ChangeRoleModal({ userId, currentRole, onClose, onSuccess }: Cha
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
-    setErrorMsg(null)
-    setSuccessMsg(null)
 
     setLoading(true)
     try {
       await changeUserRole(userId, selectedRole)
-      setSuccessMsg('İstifadəçi rolu uğurla dəyişdirildi.')
+      setModalConfig({ isOpen: true, message: 'İstifadəçi rolu uğurla dəyişdirildi.', type: 'success' })
       setTimeout(() => {
         onSuccess(selectedRole)
         onClose()
-      }, 1500)
+      }, 1000)
     } catch (err: any) {
       console.error(err)
-      setErrorMsg(err.message || 'Rol dəyişdirilərkən xəta baş verdi.')
+      setModalConfig({ isOpen: true, message: err.message || 'Rol dəyişdirilərkən xəta baş verdi.', type: 'error' })
     } finally {
       setLoading(false)
     }
@@ -108,17 +106,6 @@ export function ChangeRoleModal({ userId, currentRole, onClose, onSuccess }: Cha
             )}
           </div>
 
-          {errorMsg && (
-            <div className="rounded-lg bg-red-50 p-3 text-xs font-medium text-red-600 border border-red-100">
-              {errorMsg}
-            </div>
-          )}
-          {successMsg && (
-            <div className="rounded-lg bg-green-50 p-3 text-xs font-medium text-green-600 border border-green-100">
-              {successMsg}
-            </div>
-          )}
-
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
             <button
               type="button"
@@ -138,6 +125,13 @@ export function ChangeRoleModal({ userId, currentRole, onClose, onSuccess }: Cha
           </div>
         </form>
       </div>
+
+      <SuccessAnimationModal
+        isOpen={modalConfig.isOpen}
+        onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
+        message={modalConfig.message}
+        type={modalConfig.type}
+      />
     </div>
   )
 
