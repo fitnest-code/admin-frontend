@@ -82,8 +82,8 @@ export function TrainerDetailsModal({ trainer, onClose }: TrainerDetailsModalPro
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!data.name || !data.surname || !data.professionId) {
-      return toast.error("Zəhmət olmasa Ad, Soyad və İxtisas sahələrini doldurun.")
+    if (!data.name || !data.surname) {
+      return toast.error("Zəhmət olmasa Ad və Soyad sahələrini doldurun.")
     }
 
     updateTrainer(
@@ -92,7 +92,7 @@ export function TrainerDetailsModal({ trainer, onClose }: TrainerDetailsModalPro
         data: {
           name: data.name,
           surname: data.surname,
-          professionId: Number(data.professionId),
+          professionId: data.professionId ? Number(data.professionId) : undefined,
           phone: data.phone,
           email: data.email,
           ...(selectedFile && { photo: selectedFile }),
