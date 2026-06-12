@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from '@/lib/api/client'
+import { apiGet, apiPost, apiDelete } from '@/lib/api/client'
 import type {
   CustomerCurrentSubscription,
   CustomerDetailApiResponse,
@@ -87,5 +87,9 @@ export function getAllRoles() {
 
 export function changeUserRole(userId: number, role: string) {
   return apiPost<void>(`/api/v1/admin/users/${userId}/change-role`, { role })
+}
+
+export function deleteUserSubscriptions(userId: string | number) {
+  return apiDelete<void>(`/api/v1/admin/subscriptions/users/${userId}/all`)
 }
 

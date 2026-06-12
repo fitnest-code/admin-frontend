@@ -10,6 +10,7 @@ import { blockUser, unblockUser } from '@/modules/customers/api/customers.servic
 import { getCustomerStatusLabel, normalizeCustomerStatus, type UiCustomerStatus } from '../customers/list/customer-list-utils'
 import { PushModal, SmsModal } from '../customers/list/customer-message-modals'
 import { ChangeRoleModal } from '../customers/modals/change-role-modal'
+import { ConfirmDeleteSubscriptionModal } from '../customers/modals/confirm-delete-subscription-modal'
 import { ResetPasswordModal } from '../partners/reset-password-modal'
 
 const STATUS_STYLES = {
@@ -77,6 +78,7 @@ export function AdminDetail({ customer: initialCustomer }: { customer: CustomerP
   const [smsOpen, setSmsOpen] = useState(false)
   const [resetPwdOpen, setResetPwdOpen] = useState(false)
   const [roleOpen, setRoleOpen] = useState(false)
+  const [deleteSubOpen, setDeleteSubOpen] = useState(false)
   const [blockLoading, setBlockLoading] = useState(false)
 
   const status = normalizeCustomerStatus(customer.userStatus)
@@ -209,7 +211,13 @@ export function AdminDetail({ customer: initialCustomer }: { customer: CustomerP
                 <UserCog size={18} className="shrink-0 text-[#00B4CC]" />
                 <span>Rolunu dəyiş</span>
               </button>
-              <div className="pt-2 border-t border-border/60">
+              <div className="pt-2 border-t border-border/60 flex flex-col gap-3">
+                <button
+                  onClick={() => setDeleteSubOpen(true)}
+                  className="flex w-full items-center justify-center gap-3 rounded-lg border border-red-200 bg-red-50/40 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 hover:border-red-300 transition-all duration-200"
+                >
+                  <span>Abunəliyi sil</span>
+                </button>
                 <button
                   onClick={handleBlockToggle}
                   disabled={blockLoading}
@@ -248,6 +256,15 @@ export function AdminDetail({ customer: initialCustomer }: { customer: CustomerP
           currentRole={customer.role}
           onClose={() => setRoleOpen(false)}
           onSuccess={(newRole) => setCustomer(prev => ({ ...prev, role: newRole }))}
+        />
+      )}
+      {deleteSubOpen && (
+        <ConfirmDeleteSubscriptionModal
+          userId={customer.id}
+          onClose={() => setDeleteSubOpen(false)}
+          onSuccess={() => {
+            window.location.reload()
+          }}
         />
       )}
     </div>

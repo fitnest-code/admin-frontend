@@ -3,12 +3,13 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { ArrowLeft, Ban, Bell, Mail, MessageSquare, Upload, UserCog } from 'lucide-react'
+import { ArrowLeft, Ban, Bell, Mail, MessageSquare, Upload, UserCog, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CustomerProfile } from '@/modules/customers'
 import { getCustomerStatusLabel, normalizeCustomerStatus, type UiCustomerStatus } from './list/customer-list-utils'
 import { PushModal, SmsModal } from './list/customer-message-modals'
 import { ChangeRoleModal } from './modals/change-role-modal'
+import { ConfirmDeleteSubscriptionModal } from './modals/confirm-delete-subscription-modal'
 import { SubscriptionTab } from './tabs/subscription-tab'
 import { PaymentsTab } from './tabs/payments-tab'
 import { AccessTab } from './tabs/access-tab'
@@ -92,6 +93,7 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
   const [pushOpen, setPushOpen] = useState(false)
   const [smsOpen, setSmsOpen] = useState(false)
   const [roleOpen, setRoleOpen] = useState(false)
+  const [deleteSubOpen, setDeleteSubOpen] = useState(false)
 
   const status = normalizeCustomerStatus(customer.userStatus)
   const initials = `${customer.name?.[0] ?? ''}${customer.surname?.[0] ?? ''}`.toUpperCase()
@@ -229,7 +231,8 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
                 <OpsBtn icon={Mail} label="Email göndər" onClick={() => {}} />
                 <OpsBtn icon={Upload} label="Export" onClick={() => {}} />
                 <OpsBtn icon={UserCog} label="Rolunu dəyiş" onClick={() => setRoleOpen(true)} />
-                <div className="pt-2 border-t border-border/60">
+                <div className="pt-2 border-t border-border/60 flex flex-col gap-3">
+                  <OpsBtn icon={Trash2} label="Abunəliyi sil" onClick={() => setDeleteSubOpen(true)} danger />
                   <OpsBtn icon={Ban} label="Block" onClick={() => {}} danger />
                 </div>
               </div>
@@ -251,6 +254,15 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
            currentRole={customer.role || null}
            onClose={() => setRoleOpen(false)}
            onSuccess={(newRole) => setCustomer(prev => ({ ...prev, role: newRole }))}
+         />
+       )}
+       {deleteSubOpen && (
+         <ConfirmDeleteSubscriptionModal
+           userId={customer.id}
+           onClose={() => setDeleteSubOpen(false)}
+           onSuccess={() => {
+             window.location.reload()
+           }}
          />
        )}
     </div>
