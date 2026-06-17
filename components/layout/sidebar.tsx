@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { NAV_ITEMS } from '@/lib/nav-config'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, ChevronDown, ChevronUp } from 'lucide-react'
 import Image from 'next/image'
 import { useGymStore } from '@/lib/store/gym-store'
 import { useUIStore } from '@/lib/store/ui-store'
@@ -27,21 +27,48 @@ export function Sidebar({ className }: SidebarProps) {
   } = useUIStore()
   const [showExitConfirm, setShowExitConfirm] = useState(false)
   const [pendingHref, setPendingHref] = useState<string | null>(null)
+  
+  const pathname = usePathname()
+
+  // Track expanded state for nested submenus
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>(() => {
+    // Pre-expand menus where the current active path resides
+    const initial: Record<string, boolean> = {}
+    NAV_ITEMS.forEach(item => {
+      if (item.children && pathname.startsWith(item.href)) {
+        initial[item.key] = true
+      }
+    })
+    return initial
+  })
 
   const { gymId, resetGym } = useGymStore()
   const router = useRouter()
-  const pathname = usePathname()
+
+  // Keep expanded menus up to date when pathname changes
+  useEffect(() => {
+    NAV_ITEMS.forEach(item => {
+      if (item.children && pathname.startsWith(item.href)) {
+        setExpandedMenus(prev => ({ ...prev, [item.key]: true }))
+      }
+    })
+  }, [pathname])
 
   function handleCollapseToggle() {
     toggleSidebar()
   }
 
-  const handleLinkClick = (e: React.MouseEvent, href: string) => {
+  const handleLinkClick = (e: React.MouseEvent, href: string, isParent = false, itemKey = '') => {
     if (pathname === '/gyms/new' && gymId && href !== '/gyms/new') {
       e.preventDefault()
       setPendingHref(href)
       setShowExitConfirm(true)
       return
+    }
+
+    if (isParent && !collapsed) {
+      e.preventDefault()
+      setExpandedMenus(prev => ({ ...prev, [itemKey]: !prev[itemKey] }))
     }
   }
 
@@ -112,41 +139,96 @@ export function Sidebar({ className }: SidebarProps) {
             )} role="list">
               {NAV_ITEMS.map((item) => {
                 const Icon = item.icon
+                const hasChildren = !!item.children
+                const isExpanded = !!expandedMenus[item.key]
+                
+                // Parent item is highlighted if any of its children are active or if the parent itself is active
                 const isActive =
                   item.href === '/'
                     ? pathname === '/'
-                    : pathname === item.href || pathname.startsWith(item.href + '/')
+                    : hasChildren
+                      ? pathname.startsWith(item.href)
+                      : pathname === item.href || pathname.startsWith(item.href + '/')
 
                 return (
-                  <li key={item.key} className="w-full flex justify-center">
+                  <li key={item.key} className="w-full flex flex-col items-center">
                     <Link
-                      href={item.href}
-                      onClick={(e) => handleLinkClick(e, item.href)}
+                      href={hasChildren && collapsed ? item.children![0].href : item.href}
+                      onClick={(e) => handleLinkClick(e, hasChildren && collapsed ? item.children![0].href : item.href, hasChildren, item.key)}
                       className={cn(
                         'group flex items-center rounded-lg transition-all duration-300 relative',
-                        isActive
+                        // If it has children and is expanded, we don't highlight the parent button unless a child is selected
+                        isActive && (!hasChildren || collapsed)
                           ? 'bg-white border border-[#00b4cc] text-black shadow-sm'
                           : 'text-black hover:bg-slate-50',
                         collapsed 
                           ? 'w-[44px] h-[40px] justify-center px-0' 
-                          : 'w-full h-[40px] px-4 gap-3',
+                          : 'w-full h-[40px] px-4 justify-between gap-3',
                       )}
-                      aria-current={isActive ? 'page' : undefined}
+                      aria-current={isActive && (!hasChildren || collapsed) ? 'page' : undefined}
                     >
-                      <div className="shrink-0 transition-all duration-300 text-black w-[20px] h-[20px] relative">
-                      {item.iconPath ? (
-                        <Image src={item.iconPath} fill alt={t.nav[item.labelKey]} className="object-contain" />
-                      ) : (
-                        <Icon size={20} strokeWidth={2} />
-                      )}
-                    </div>
-                      
-                      {!collapsed && (
-                        <span className="text-[14px] leading-[22px] font-medium transition-all duration-300 whitespace-nowrap overflow-hidden">
-                          {t.nav[item.labelKey]}
-                        </span>
+                      <div className="flex items-center gap-3">
+                        <div className="shrink-0 transition-all duration-300 text-black w-[20px] h-[20px] relative">
+                          {item.iconPath ? (
+                            <Image src={item.iconPath} fill alt={t.nav[item.labelKey]} className="object-contain" />
+                          ) : (
+                            <Icon size={20} strokeWidth={2} />
+                          )}
+                        </div>
+                        
+                        {!collapsed && (
+                          <span className="text-[14px] leading-[22px] font-medium transition-all duration-300 whitespace-nowrap overflow-hidden">
+                            {t.nav[item.labelKey]}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Expand/Collapse Chevron Indicator */}
+                      {hasChildren && !collapsed && (
+                        <div className="shrink-0 text-gray-500 hover:text-black">
+                          {isExpanded ? (
+                            <ChevronUp size={16} strokeWidth={2} />
+                          ) : (
+                            <ChevronDown size={16} strokeWidth={2} />
+                          )}
+                        </div>
                       )}
                     </Link>
+
+                    {/* Sub-menu rendering */}
+                    {hasChildren && isExpanded && !collapsed && (
+                      <ul className="w-full flex flex-col gap-2 mt-2 pl-4 transition-all duration-300">
+                        {item.children!.map((child) => {
+                          const isChildActive = pathname === child.href
+
+                          return (
+                            <li key={child.key} className="w-full flex justify-center">
+                              <Link
+                                href={child.href}
+                                onClick={(e) => handleLinkClick(e, child.href)}
+                                className={cn(
+                                  'group flex items-center rounded-lg transition-all duration-300 w-[144px] h-[36px] px-3 gap-3.5',
+                                  isChildActive
+                                    ? 'bg-[#00b4cc]/10 text-[#00b4cc]'
+                                    : 'text-black hover:bg-slate-50',
+                                )}
+                              >
+                                {/* Active/Inactive bullet dot indicator */}
+                                <span 
+                                  className={cn(
+                                    "w-1.5 h-1.5 rounded-full shrink-0 transition-colors",
+                                    isChildActive ? "bg-[#00b4cc]" : "bg-[#cecfd2] group-hover:bg-gray-500"
+                                  )} 
+                                />
+                                <span className="text-[13px] leading-[20px] font-medium whitespace-nowrap overflow-hidden">
+                                  {t.nav[child.labelKey]}
+                                </span>
+                              </Link>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    )}
                   </li>
                 )
               })}

@@ -9,6 +9,8 @@ const az = {
     customers: "Müştərilər",
     payments: "Ödənişlər",
     reports: "Hesabatlar",
+    reportsGymPayments: "Zallar üzrə ödəniş",
+    reportsGeneral: "Ümumi hesabatlar",
     diet: "Diet",
     training: "Məşq",
     omnichannel: "Omnichannel",

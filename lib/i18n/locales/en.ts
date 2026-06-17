@@ -10,6 +10,8 @@ const en: TranslationKeys = {
     customers: "Customers",
     payments: "Payments",
     reports: "Reports",
+    reportsGymPayments: "Gym payments",
+    reportsGeneral: "General reports",
     diet: "Diet",
     training: "Training",
     omnichannel: "Omnichannel",
