@@ -244,13 +244,19 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
                               isSelected && styles.dropdownItemActive
                             )}
                           >
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => {}}
-                              className="mr-2 h-4 w-4 rounded border-gray-300 text-[#00B4CC] focus:ring-[#00B4CC]"
-                            />
-                            <span>{cat.name}</span>
+                                <div className="flex items-center gap-3">
+                                  <div className={cn(
+                                    styles.checkbox,
+                                    isSelected && styles.checkboxActive
+                                  )}>
+                                    {isSelected && (
+                                      <svg className={styles.checkboxIcon} viewBox="0 0 24 24">
+                                        <polyline points="20 6 9 17 4 12" />
+                                      </svg>
+                                    )}
+                                  </div>
+                                  <span>{cat.name}</span>
+                                </div>
                           </div>
                         );
                       })
@@ -369,13 +375,19 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
                                 isSelected && styles.dropdownItemActive
                               )}
                             >
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={() => {}}
-                                className="mr-2 h-4 w-4 rounded border-gray-300 text-[#00B4CC] focus:ring-[#00B4CC]"
-                              />
-                              <span>{cat.name}</span>
+                                <div className="flex items-center gap-3">
+                                  <div className={cn(
+                                    styles.checkbox,
+                                    isSelected && styles.checkboxActive
+                                  )}>
+                                    {isSelected && (
+                                      <svg className={styles.checkboxIcon} viewBox="0 0 24 24">
+                                        <polyline points="20 6 9 17 4 12" />
+                                      </svg>
+                                    )}
+                                  </div>
+                                  <span>{cat.name}</span>
+                                </div>
                             </div>
                           );
                         })}
