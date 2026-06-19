@@ -176,8 +176,10 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
                         return selectedCats.length > 0 ? (
                           <div className="flex flex-wrap gap-1.5 max-w-full overflow-hidden">
                             {selectedCats.map(cat => (
-                              <div key={cat.id} className={styles.yogaWrapper}>
-                                <span className={styles.yoga}>{cat.name}</span>
+                              <div key={cat.id} className={styles.frameContainer}>
+                                <div className={styles.yogaWrapper}>
+                                  <span className={styles.yoga}>{cat.name}</span>
+                                </div>
                                 <div 
                                   className={styles.x}
                                   onClick={(e) => {
@@ -286,8 +288,10 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
                         return selectedCats.length > 0 ? (
                           <div className="flex flex-wrap gap-1.5 max-w-full overflow-hidden">
                             {selectedCats.map(cat => (
-                              <div key={cat.id} className={styles.yogaWrapper}>
-                                <span className={styles.yoga}>{cat.name}</span>
+                              <div key={cat.id} className={styles.frameContainer}>
+                                <div className={styles.yogaWrapper}>
+                                  <span className={styles.yoga}>{cat.name}</span>
+                                </div>
                                 <div 
                                   className={styles.x}
                                   onClick={(e) => {

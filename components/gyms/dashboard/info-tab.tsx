@@ -548,8 +548,28 @@ export function InfoTab({ gymId }: InfoTabProps) {
                             return selectedCats.length > 0 ? (
                               <div className="flex flex-wrap gap-1.5 max-w-full overflow-hidden">
                                 {selectedCats.map(cat => (
-                                  <div key={cat.id} className={styles.yogaWrapper}>
-                                    <span className={styles.yoga}>{cat.name}</span>
+                                  <div key={cat.id} className={styles.frameContainer}>
+                                    <div className={styles.yogaWrapper}>
+                                      <span className={styles.yoga}>{cat.name}</span>
+                                    </div>
+                                    <div 
+                                      className={styles.x}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        selectMainCategory(cat.id);
+                                      }}
+                                    >
+                                      <div className={styles.x2}>
+                                        <Image 
+                                          className={styles.vectorIcon} 
+                                          width={15} 
+                                          height={15} 
+                                          sizes="100vw" 
+                                          alt="Remove"
+                                          src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGxpbmUgeDE9IjE4IiB5MT0iNiIgeDI9IjYiIHkyPSIxOCI+PC9saW5lPjxsaW5lIHgxPSI2IiB5MT0iNiIgeDI9IjE4IiB5Mj0iMTgiPjwvbGluZT48L3N2Zz4="
+                                        />
+                                      </div>
+                                    </div>
                                   </div>
                                 ))}
                               </div>
@@ -661,8 +681,10 @@ export function InfoTab({ gymId }: InfoTabProps) {
                             return selectedCats.length > 0 ? (
                               <div className="flex flex-wrap gap-1.5 max-w-full overflow-hidden">
                                 {selectedCats.map(cat => (
-                                  <div key={cat.id} className={styles.yogaWrapper}>
-                                    <span className={styles.yoga}>{cat.name}</span>
+                                  <div key={cat.id} className={styles.frameContainer}>
+                                    <div className={styles.yogaWrapper}>
+                                      <span className={styles.yoga}>{cat.name}</span>
+                                    </div>
                                     <div 
                                       className={styles.x}
                                       onClick={(e) => {
