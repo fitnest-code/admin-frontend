@@ -29,7 +29,12 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
   const { data: allPackageNames, isLoading: packagesLoading } = useSubscriptionPackages();
   const { data: categoriesData } = useCategories();
 
-  const selectedCategoryIds = useMemo(() => step1Data?.categoryIds || [], [step1Data]);
+  const selectedCategoryIds = useMemo(() => {
+    const ids: number[] = [];
+    if (step1Data?.mainCategoryId) ids.push(step1Data.mainCategoryId);
+    if (step1Data?.subCategoryId) ids.push(step1Data.subCategoryId);
+    return ids;
+  }, [step1Data]);
   const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
 
   const PACKAGES = useMemo(() => allPackageNames?.map(p => p.name) || [], [allPackageNames]);
@@ -348,7 +353,7 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
         <div className="bg-white rounded-[12px] border border-[#ececed] p-5 flex flex-col gap-3 shadow-sm">
           <label className="text-[14px] text-black/60 font-medium">Qiymət və xidmətləri hansı kateqoriya üçün tənzimləyirsiniz?</label>
           <div className="flex flex-wrap items-center gap-3 border-b border-[#ececed] pb-2">
-            {selectedCategoryIds.map((catId) => {
+            {selectedCategoryIds.map((catId: number) => {
               const catName = categoriesData?.items?.find(c => c.id === catId)?.name || `Kateqoriya ${catId}`;
               const isActive = activeCategoryId === catId;
               return (

@@ -39,9 +39,10 @@ export function TrainerDetailsModal({ trainer, onClose }: TrainerDetailsModalPro
   const { mutate: updateTrainer, isPending } = useUpdateTrainer(gymId || 1) // Using 1 as fallback or get from store
   const { data: categoriesData } = useCategories()
   const { data: gymDetails } = useGymDetailsAdmin(gymId)
-
-  const activeCategoryId = gymDetails?.categoryId
-  const selectedCategory = categoriesData?.items?.find((c: any) => c.id === activeCategoryId)
+  const activeCategoryIds = gymDetails?.categories?.map(c => c.id) || []
+  const availableLessonTypes = categoriesData?.items
+    ?.filter((c: any) => activeCategoryIds.includes(c.id))
+    ?.flatMap((c: any) => c.lessonTypes || []) || []
 
   const toggleLessonType = (ltId: number) => {
     setSelectedLessonTypeIds((prev) => {
@@ -213,12 +214,11 @@ export function TrainerDetailsModal({ trainer, onClose }: TrainerDetailsModalPro
             </div>
           </div>
 
-          {/* Lesson Types Grid (Növlər) */}
-          {selectedCategory?.lessonTypes && selectedCategory.lessonTypes.length > 0 && (
+          {availableLessonTypes.length > 0 && (
             <div className="flex flex-col items-start gap-3 w-full animate-in fade-in duration-300">
               <label className="text-[16px] leading-[24px] font-semibold text-black">Dərs növləri</label>
               <div className="w-full flex flex-wrap items-center justify-start gap-3">
-                {selectedCategory.lessonTypes.map((lt: any) => {
+                {availableLessonTypes.map((lt: any) => {
                   const isSelected = selectedLessonTypeIds.has(lt.id);
                   return (
                     <div

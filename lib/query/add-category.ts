@@ -26,7 +26,9 @@ export const useCategories = (lang: string = "AZ", page: number = 1, pageSize: n
       if (data.icon) {
         formData.append("icon", data.icon);
       }
-      const params: Record<string, any> = { name: data.name };
+      const params: Record<string, any> = { 
+        name: data.name
+      };
       if (data.lessonTypeIds && data.lessonTypeIds.length > 0) {
         params.lessonTypeIds = data.lessonTypeIds.join(",");
       }
@@ -45,7 +47,9 @@ export const useCategories = (lang: string = "AZ", page: number = 1, pageSize: n
   // 3. PUT (Update)
   const updateCategory = useMutation({
     mutationFn: async (data: { id: number; name: string; photo: File | null; icon: File | null; lessonTypeIds?: number[] }) => {
-      const params: Record<string, any> = { name: data.name };
+      const params: Record<string, any> = { 
+        name: data.name
+      };
       if (data.lessonTypeIds && data.lessonTypeIds.length > 0) {
         params.lessonTypeIds = data.lessonTypeIds.join(",");
       }

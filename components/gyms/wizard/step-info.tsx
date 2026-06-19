@@ -13,7 +13,8 @@ import styles from "./step-info.module.css";
 export function StepInfo({ onNext }: { onNext: () => void }) {
   const { step1Data, setStep1Data } = useGymStore();
 
-  const [categoryIds, setCategoryIds] = useState<number[]>(step1Data?.categoryIds || []);
+  const [mainCategoryId, setMainCategoryId] = useState<number | null>(step1Data?.mainCategoryId || null);
+  const [subCategoryId, setSubCategoryId] = useState<number | null>(step1Data?.subCategoryId || null);
   const [name, setName] = useState(step1Data?.name || "");
   const [about, setAbout] = useState(step1Data?.description || "");
   const [phone, setPhone] = useState(step1Data?.phone || "");
@@ -21,14 +22,19 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
 
   const [selectedLessonTypeIds, setSelectedLessonTypeIds] = useState<Set<number>>(new Set(step1Data?.lessonTypeIds || []));
 
-  const [errors, setErrors] = useState<{ categoryId?: string, name?: string, phone?: string }>({});
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [errors, setErrors] = useState<{ mainCategoryId?: string, name?: string, phone?: string }>({});
+  const [isMainDropdownOpen, setIsMainDropdownOpen] = useState(false);
+  const [isSubDropdownOpen, setIsSubDropdownOpen] = useState(false);
+  const mainDropdownRef = useRef<HTMLDivElement>(null);
+  const subDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
+      if (mainDropdownRef.current && !mainDropdownRef.current.contains(event.target as Node)) {
+        setIsMainDropdownOpen(false);
+      }
+      if (subDropdownRef.current && !subDropdownRef.current.contains(event.target as Node)) {
+        setIsSubDropdownOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -41,7 +47,10 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
   const validateStep1 = useValidateGymStep1();
 
   // Aggregate union of lesson types for all selected categories
-  const selectedCategories = categoriesData?.items?.filter((c) => categoryIds.includes(c.id)) || [];
+  const selectedCategories = categoriesData?.items?.filter((c) => c.id === mainCategoryId || c.id === subCategoryId) || [];
+  const mainCategory = categoriesData?.items?.find((c) => c.id === mainCategoryId);
+  const subCategory = categoriesData?.items?.find((c) => c.id === subCategoryId);
+
   const allLessonTypes = selectedCategories.reduce((acc, cat) => {
     if (cat.lessonTypes) {
       cat.lessonTypes.forEach((lt) => {
@@ -56,7 +65,7 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
   // Synchronize selected lesson types when categories change
   useEffect(() => {
     if (!categoriesData?.items) return;
-    const activeCategories = categoriesData.items.filter(c => categoryIds.includes(c.id));
+    const activeCategories = categoriesData.items.filter(c => c.id === mainCategoryId || c.id === subCategoryId);
     const activeLessonTypeIds = new Set(
       activeCategories.flatMap(c => c.lessonTypes || []).map(lt => lt.id)
     );
@@ -71,17 +80,17 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
       }
       return changed ? next : prev;
     });
-  }, [categoryIds, categoriesData]);
+  }, [mainCategoryId, subCategoryId, categoriesData]);
 
-  const toggleCategory = (id: number) => {
-    if (errors.categoryId) setErrors(p => ({ ...p, categoryId: undefined }));
-    setCategoryIds((prev) => {
-      if (prev.includes(id)) {
-        return prev.filter((item) => item !== id);
-      } else {
-        return [...prev, id];
-      }
-    });
+  const selectMainCategory = (id: number) => {
+    if (errors.mainCategoryId) setErrors(p => ({ ...p, mainCategoryId: undefined }));
+    setMainCategoryId(id);
+    setIsMainDropdownOpen(false);
+  };
+
+  const selectSubCategory = (id: number) => {
+    setSubCategoryId(id);
+    setIsSubDropdownOpen(false);
   };
 
   const toggleLessonType = (id: number) => {
@@ -94,7 +103,8 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
   };
 
   const buildPayload = (): GymStep1PayloadV2 => ({
-    categoryIds,
+    mainCategoryId: mainCategoryId!,
+    subCategoryId: subCategoryId,
     name,
     description: about,
     phone: normalizePhoneNumber(phone),
@@ -104,7 +114,7 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
 
   const validateLocal = () => {
     const newErrors: typeof errors = {};
-    if (!categoryIds || categoryIds.length === 0) newErrors.categoryId = "Kateqoriya seçilməlidir";
+    if (!mainCategoryId) newErrors.mainCategoryId = "Əsas kateqoriya seçilməlidir";
     if (!name) newErrors.name = "Zal adı daxil edilməlidir";
     if (!phone) newErrors.phone = "Telefon nömrəsi daxil edilməlidir";
     
@@ -140,31 +150,108 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
         </div>
 
         <div className="flex flex-col gap-4">
-          {/* Category Dropdown Multi-Select */}
-          <div className={styles.kateqoriyaParent} ref={dropdownRef}>
-            <div className={styles.kateqoriya}>
-              Kateqoriya seçimi <span className="text-red-500">*</span>
-            </div>
-            
-            <div 
-              className={styles.frameWrapper}
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            >
-              <div className={styles.frameParent}>
-                <div className={styles.frameGroup}>
-                  {selectedCategories.length === 0 ? (
-                    <span className={styles.placeholder}>Kateqoriya seçin</span>
-                  ) : (
-                    selectedCategories.map((cat) => (
-                      <div key={cat.id} className={styles.frameContainer}>
+          <div className="flex flex-col md:flex-row gap-4 w-full">
+            {/* Main Category Dropdown */}
+            <div className={cn(styles.kateqoriyaParent, "flex-1")} ref={mainDropdownRef}>
+              <div className={styles.kateqoriya}>
+                Əsas kateqoriya seçimi <span className="text-red-500">*</span>
+              </div>
+              
+              <div 
+                className={styles.frameWrapper}
+                onClick={() => {
+                  setIsMainDropdownOpen(!isMainDropdownOpen);
+                  setIsSubDropdownOpen(false);
+                }}
+              >
+                <div className={styles.frameParent}>
+                  <div className={styles.frameGroup}>
+                    {!mainCategory ? (
+                      <span className={styles.placeholder}>Kateqoriya seçin</span>
+                    ) : (
+                      <div className={styles.frameContainer}>
                         <div className={styles.yogaWrapper}>
-                          <div className={styles.yoga}>{cat.name}</div>
+                          <div className={styles.yoga}>{mainCategory.name}</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className={styles.x}>
+                    <Image 
+                      className={styles.vuesaxlineararrowDownIcon} 
+                      width={24} 
+                      height={24} 
+                      sizes="100vw" 
+                      alt="Aç"
+                      src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMTAxODI4IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTUgOGw3IDcgNy03Ii8+PC9zdmc+"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              {isMainDropdownOpen && (
+                <div className={styles.dropdownMenu}>
+                  {categoriesLoading ? (
+                    <div className="flex items-center justify-center p-4 gap-2 text-sm text-black/50">
+                      <Loader2 className="h-4 w-4 animate-spin text-[#00b4cc]" />
+                      Kateqoriyalar yüklənir...
+                    </div>
+                  ) : categoriesData?.items ? (
+                    categoriesData.items
+                      .filter(cat => cat.id !== subCategoryId)
+                      .map((cat) => {
+                        const isSelected = mainCategoryId === cat.id;
+                        return (
+                          <div
+                            key={cat.id}
+                            onClick={() => selectMainCategory(cat.id)}
+                            className={cn(
+                              styles.dropdownItem,
+                              isSelected && styles.dropdownItemActive
+                            )}
+                          >
+                            <span>{cat.name}</span>
+                          </div>
+                        );
+                      })
+                  ) : (
+                    <div className="p-4 text-center text-sm text-black/40">
+                      Kateqoriya tapılmadı
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {errors.mainCategoryId && <span className="text-red-500 text-xs font-medium">{errors.mainCategoryId}</span>}
+            </div>
+
+            {/* Sub Category Dropdown */}
+            <div className={cn(styles.kateqoriyaParent, "flex-1")} ref={subDropdownRef}>
+              <div className={styles.kateqoriya}>
+                Alt kateqoriya seçimi (İstəyə bağlı)
+              </div>
+              
+              <div 
+                className={styles.frameWrapper}
+                onClick={() => {
+                  setIsSubDropdownOpen(!isSubDropdownOpen);
+                  setIsMainDropdownOpen(false);
+                }}
+              >
+                <div className={styles.frameParent}>
+                  <div className={styles.frameGroup}>
+                    {!subCategory ? (
+                      <span className={styles.placeholder}>Alt kateqoriya seçin</span>
+                    ) : (
+                      <div className={styles.frameContainer}>
+                        <div className={styles.yogaWrapper}>
+                          <div className={styles.yoga}>{subCategory.name}</div>
                         </div>
                         <div 
                           className={styles.x}
                           onClick={(e) => {
                             e.stopPropagation();
-                            toggleCategory(cat.id);
+                            setSubCategoryId(null);
                           }}
                         >
                           <div className={styles.x2}>
@@ -179,64 +266,67 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
                           </div>
                         </div>
                       </div>
-                    ))
+                    )}
+                  </div>
+                  <div className={styles.x}>
+                    <Image 
+                      className={styles.vuesaxlineararrowDownIcon} 
+                      width={24} 
+                      height={24} 
+                      sizes="100vw" 
+                      alt="Aç"
+                      src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMTAxODI4IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTUgOGw3IDcgNy03Ii8+PC9zdmc+"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              {isSubDropdownOpen && (
+                <div className={styles.dropdownMenu}>
+                  {categoriesLoading ? (
+                    <div className="flex items-center justify-center p-4 gap-2 text-sm text-black/50">
+                      <Loader2 className="h-4 w-4 animate-spin text-[#00b4cc]" />
+                      Kateqoriyalar yüklənir...
+                    </div>
+                  ) : categoriesData?.items ? (
+                    <>
+                      {subCategoryId && (
+                        <div
+                          onClick={() => {
+                            setSubCategoryId(null);
+                            setIsSubDropdownOpen(false);
+                          }}
+                          className="p-3 text-red-500 font-medium cursor-pointer hover:bg-red-50 text-sm"
+                        >
+                          Seçimi təmizlə
+                        </div>
+                      )}
+                      {categoriesData.items
+                        .filter(cat => cat.id !== mainCategoryId)
+                        .map((cat) => {
+                          const isSelected = subCategoryId === cat.id;
+                          return (
+                            <div
+                              key={cat.id}
+                              onClick={() => selectSubCategory(cat.id)}
+                              className={cn(
+                                styles.dropdownItem,
+                                isSelected && styles.dropdownItemActive
+                              )}
+                            >
+                              <span>{cat.name}</span>
+                            </div>
+                          );
+                        })}
+                    </>
+                  ) : (
+                    <div className="p-4 text-center text-sm text-black/40">
+                      Kateqoriya tapılmadı
+                    </div>
                   )}
                 </div>
-                <div className={styles.x}>
-                  <Image 
-                    className={styles.vuesaxlineararrowDownIcon} 
-                    width={24} 
-                    height={24} 
-                    sizes="100vw" 
-                    alt="Aç"
-                    src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMTAxODI4IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTUgOGw3IDcgNy03Ii8+PC9zdmc+"
-                  />
-                </div>
-              </div>
+              )}
             </div>
-            
-            {isDropdownOpen && (
-              <div className={styles.dropdownMenu}>
-                {categoriesLoading ? (
-                  <div className="flex items-center justify-center p-4 gap-2 text-sm text-black/50">
-                    <Loader2 className="h-4 w-4 animate-spin text-[#00b4cc]" />
-                    Kateqoriyalar yüklənir...
-                  </div>
-                ) : categoriesData?.items && categoriesData.items.length > 0 ? (
-                  categoriesData.items.map((cat) => {
-                    const isSelected = categoryIds.includes(cat.id);
-                    return (
-                      <div
-                        key={cat.id}
-                        onClick={() => toggleCategory(cat.id)}
-                        className={cn(
-                          styles.dropdownItem,
-                          isSelected && styles.dropdownItemActive
-                        )}
-                      >
-                        <span>{cat.name}</span>
-                        <div className={cn(
-                          styles.checkbox,
-                          isSelected && styles.checkboxActive
-                        )}>
-                          {isSelected && (
-                            <svg className={styles.checkboxIcon} viewBox="0 0 24 24">
-                              <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="p-4 text-center text-sm text-black/40">
-                    Kateqoriya tapılmadı
-                  </div>
-                )}
-              </div>
-            )}
-            
-            {errors.categoryId && <span className="text-red-500 text-xs font-medium">{errors.categoryId}</span>}
           </div>
 
           {/* Lesson Types Grid (Növlər) */}
@@ -340,7 +430,8 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
           onClick={() => {
             const { resetStep1Data } = useGymStore.getState();
             resetStep1Data();
-            setCategoryIds([]);
+            setMainCategoryId(null);
+            setSubCategoryId(null);
             setName("");
             setAbout("");
             setPhone("");

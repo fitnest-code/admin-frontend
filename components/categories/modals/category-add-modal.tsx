@@ -180,6 +180,8 @@ export default function CategoryModal({
             />
           </div>
 
+
+
           {/* Kateqoriya Icon */}
           <div className="w-full flex flex-col items-start gap-2">
             <label className="text-[12px] sm:text-[13px] leading-[20px] font-medium text-black/60">Kateqoriya Icon</label>

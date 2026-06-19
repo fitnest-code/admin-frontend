@@ -440,13 +440,22 @@ export function InfoTab({ gymId }: InfoTabProps) {
 
       const infoHasChanges = JSON.stringify(formData) !== initialDataStr;
       if (infoHasChanges) {
+        const mainCategoryId = formData.categoryIds[0] || 0;
+        const subCategoryId = formData.categoryIds.length > 1 ? formData.categoryIds[1] : null;
         updateGymInfo({
           id: Number(gymId),
           payload: {
-            ...formData,
+            mainCategoryId,
+            subCategoryId,
+            name: formData.name,
+            description: formData.description,
+            phone: formData.phone,
+            email: formData.email.trim() === "" ? null : formData.email.trim(),
+            city: formData.city,
+            address: formData.address,
             latitude: Number(formData.latitude),
             longitude: Number(formData.longitude),
-            email: formData.email.trim()
+            altitude: (gymInfo as any).altitude || null
           }
         }, {
           onSuccess: () => {

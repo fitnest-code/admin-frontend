@@ -137,7 +137,12 @@ export default function CategoriesPage() {
           if (!open) setEditTarget(null);
         }}
         onSave={handleSave}
-        initialData={editTarget ? { name: editTarget.name, image: editTarget.photoUrl, iconUrl: editTarget.iconUrl, lessonTypes: editTarget.lessonTypes } : undefined}
+        initialData={editTarget ? { 
+          name: editTarget.name, 
+          image: editTarget.photoUrl, 
+          iconUrl: editTarget.iconUrl, 
+          lessonTypes: editTarget.lessonTypes 
+        } : undefined}
         mode={editTarget ? "edit" : "create"}
       />
 

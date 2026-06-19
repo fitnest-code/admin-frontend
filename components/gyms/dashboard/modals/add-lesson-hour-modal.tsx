@@ -37,9 +37,10 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
     // Fetch gym details & categories to extract all lesson types belonging to the gym's category
     const { data: gymDetails } = useGymDetailsAdmin(gymId)
     const { data: categoriesData } = useCategories()
-    const activeCategoryId = gymDetails?.categoryId
-    const selectedCategory = categoriesData?.items?.find((c: any) => c.id === activeCategoryId)
-    const availableLessonTypes = selectedCategory?.lessonTypes || []
+    const activeCategoryIds = gymDetails?.categories?.map(c => c.id) || []
+    const availableLessonTypes = categoriesData?.items
+        ?.filter((c: any) => activeCategoryIds.includes(c.id))
+        ?.flatMap((c: any) => c.lessonTypes || []) || []
 
     // Fetch all trainers without strict pagination to filter properly client-side
     const { data: trainersData, isLoading: trainersLoading } = useGymTrainers(gymId, { 
