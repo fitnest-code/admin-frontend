@@ -38,7 +38,7 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
 
   // Filter categories to only display those selected in Step 1
   const selectedCategories = categoriesData?.items?.filter((c) => 
-    c.id === step1Data?.mainCategoryId || c.id === step1Data?.subCategoryId
+    (step1Data?.mainCategoryIds || []).includes(c.id) || (step1Data?.subCategoryIds || []).includes(c.id)
   ) || [];
 
   useEffect(() => { setMounted(true); }, []);

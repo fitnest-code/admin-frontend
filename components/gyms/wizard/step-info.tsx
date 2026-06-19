@@ -13,8 +13,8 @@ import styles from "./step-info.module.css";
 export function StepInfo({ onNext }: { onNext: () => void }) {
   const { step1Data, setStep1Data } = useGymStore();
 
-  const [mainCategoryId, setMainCategoryId] = useState<number | null>(step1Data?.mainCategoryId || null);
-  const [subCategoryId, setSubCategoryId] = useState<number | null>(step1Data?.subCategoryId || null);
+  const [mainCategoryIds, setMainCategoryIds] = useState<number[]>(step1Data?.mainCategoryIds || []);
+  const [subCategoryIds, setSubCategoryIds] = useState<number[]>(step1Data?.subCategoryIds || []);
   const [name, setName] = useState(step1Data?.name || "");
   const [about, setAbout] = useState(step1Data?.description || "");
   const [phone, setPhone] = useState(step1Data?.phone || "");
@@ -47,9 +47,7 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
   const validateStep1 = useValidateGymStep1();
 
   // Aggregate union of lesson types for all selected categories
-  const selectedCategories = categoriesData?.items?.filter((c) => c.id === mainCategoryId || c.id === subCategoryId) || [];
-  const mainCategory = categoriesData?.items?.find((c) => c.id === mainCategoryId);
-  const subCategory = categoriesData?.items?.find((c) => c.id === subCategoryId);
+  const selectedCategories = categoriesData?.items?.filter((c) => mainCategoryIds.includes(c.id) || subCategoryIds.includes(c.id)) || [];
 
   const allLessonTypes = selectedCategories.reduce((acc, cat) => {
     if (cat.lessonTypes) {
@@ -65,7 +63,7 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
   // Synchronize selected lesson types when categories change
   useEffect(() => {
     if (!categoriesData?.items) return;
-    const activeCategories = categoriesData.items.filter(c => c.id === mainCategoryId || c.id === subCategoryId);
+    const activeCategories = categoriesData.items.filter(c => mainCategoryIds.includes(c.id) || subCategoryIds.includes(c.id));
     const activeLessonTypeIds = new Set(
       activeCategories.flatMap(c => c.lessonTypes || []).map(lt => lt.id)
     );
@@ -80,17 +78,21 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
       }
       return changed ? next : prev;
     });
-  }, [mainCategoryId, subCategoryId, categoriesData]);
+  }, [mainCategoryIds, subCategoryIds, categoriesData]);
 
   const selectMainCategory = (id: number) => {
     if (errors.mainCategoryId) setErrors(p => ({ ...p, mainCategoryId: undefined }));
-    setMainCategoryId(id);
-    setIsMainDropdownOpen(false);
+    setMainCategoryIds(prev => {
+      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
+      return next;
+    });
   };
 
   const selectSubCategory = (id: number) => {
-    setSubCategoryId(id);
-    setIsSubDropdownOpen(false);
+    setSubCategoryIds(prev => {
+      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
+      return next;
+    });
   };
 
   const toggleLessonType = (id: number) => {
@@ -103,8 +105,8 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
   };
 
   const buildPayload = (): GymStep1PayloadV2 => ({
-    mainCategoryId: mainCategoryId!,
-    subCategoryId: subCategoryId,
+    mainCategoryIds,
+    subCategoryIds,
     name,
     description: about,
     phone: normalizePhoneNumber(phone),
@@ -114,7 +116,7 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
 
   const validateLocal = () => {
     const newErrors: typeof errors = {};
-    if (!mainCategoryId) newErrors.mainCategoryId = "Əsas kateqoriya seçilməlidir";
+    if (mainCategoryIds.length === 0) newErrors.mainCategoryId = "Əsas kateqoriya seçilməlidir";
     if (!name) newErrors.name = "Zal adı daxil edilməlidir";
     if (!phone) newErrors.phone = "Telefon nömrəsi daxil edilməlidir";
     
@@ -166,14 +168,41 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
               >
                 <div className={styles.frameParent}>
                   <div className={styles.frameGroup}>
-                    {!mainCategory ? (
+                    {mainCategoryIds.length === 0 ? (
                       <span className={styles.placeholder}>Kateqoriya seçin</span>
                     ) : (
-                      <div className={styles.frameContainer}>
-                        <div className={styles.yogaWrapper}>
-                          <div className={styles.yoga}>{mainCategory.name}</div>
-                        </div>
-                      </div>
+                      (() => {
+                        const selectedCats = categoriesData?.items?.filter(c => mainCategoryIds.includes(c.id)) || [];
+                        return selectedCats.length > 0 ? (
+                          <div className="flex flex-wrap gap-1.5 max-w-full overflow-hidden">
+                            {selectedCats.map(cat => (
+                              <div key={cat.id} className={styles.yogaWrapper}>
+                                <span className={styles.yoga}>{cat.name}</span>
+                                <div 
+                                  className={styles.x}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    selectMainCategory(cat.id);
+                                  }}
+                                >
+                                  <div className={styles.x2}>
+                                    <Image 
+                                      className={styles.vectorIcon} 
+                                      width={15} 
+                                      height={15} 
+                                      sizes="100vw" 
+                                      alt="Remove"
+                                      src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGxpbmUgeDE9IjE4IiB5MT0iNiIgeDI9IjYiIHkyPSIxOCI+PC9saW5lPjxsaW5lIHgxPSI2IiB5MT0iNiIgeDI9IjE4IiB5Mj0iMTgiPjwvbGluZT48L3N2Zz4="
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className={styles.placeholder}>Yüklənir...</span>
+                        );
+                      })()
                     )}
                   </div>
                   <div className={styles.x}>
@@ -198,18 +227,27 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
                     </div>
                   ) : categoriesData?.items ? (
                     categoriesData.items
-                      .filter(cat => cat.id !== subCategoryId)
+                      .filter(cat => !subCategoryIds.includes(cat.id))
                       .map((cat) => {
-                        const isSelected = mainCategoryId === cat.id;
+                        const isSelected = mainCategoryIds.includes(cat.id);
                         return (
                           <div
                             key={cat.id}
-                            onClick={() => selectMainCategory(cat.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              selectMainCategory(cat.id);
+                            }}
                             className={cn(
                               styles.dropdownItem,
                               isSelected && styles.dropdownItemActive
                             )}
                           >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {}}
+                              className="mr-2 h-4 w-4 rounded border-gray-300 text-[#00B4CC] focus:ring-[#00B4CC]"
+                            />
                             <span>{cat.name}</span>
                           </div>
                         );
@@ -240,32 +278,41 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
               >
                 <div className={styles.frameParent}>
                   <div className={styles.frameGroup}>
-                    {!subCategory ? (
+                    {subCategoryIds.length === 0 ? (
                       <span className={styles.placeholder}>Alt kateqoriya seçin</span>
                     ) : (
-                      <div className={styles.frameContainer}>
-                        <div className={styles.yogaWrapper}>
-                          <div className={styles.yoga}>{subCategory.name}</div>
-                        </div>
-                        <div 
-                          className={styles.x}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSubCategoryId(null);
-                          }}
-                        >
-                          <div className={styles.x2}>
-                            <Image 
-                              className={styles.vectorIcon} 
-                              width={15} 
-                              height={15} 
-                              sizes="100vw" 
-                              alt="Sil"
-                              src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGxpbmUgeDE9IjE4IiB5MT0iNiIgeDI9IjYiIHkyPSIxOCI+PC9saW5lPjxsaW5lIHgxPSI2IiB5MT0iNiIgeDI9IjE4IiB5Mj0iMTgiPjwvbGluZT48L3N2Zz4="
-                            />
+                      (() => {
+                        const selectedCats = categoriesData?.items?.filter(c => subCategoryIds.includes(c.id)) || [];
+                        return selectedCats.length > 0 ? (
+                          <div className="flex flex-wrap gap-1.5 max-w-full overflow-hidden">
+                            {selectedCats.map(cat => (
+                              <div key={cat.id} className={styles.yogaWrapper}>
+                                <span className={styles.yoga}>{cat.name}</span>
+                                <div 
+                                  className={styles.x}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    selectSubCategory(cat.id);
+                                  }}
+                                >
+                                  <div className={styles.x2}>
+                                    <Image 
+                                      className={styles.vectorIcon} 
+                                      width={15} 
+                                      height={15} 
+                                      sizes="100vw" 
+                                      alt="Remove"
+                                      src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGxpbmUgeDE9IjE4IiB5MT0iNiIgeDI9IjYiIHkyPSIxOCI+PC9saW5lPjxsaW5lIHgxPSI2IiB5MT0iNiIgeDI9IjE4IiB5Mj0iMTgiPjwvbGluZT48L3N2Zz4="
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        </div>
-                      </div>
+                        ) : (
+                          <span className={styles.placeholder}>Yüklənir...</span>
+                        );
+                      })()
                     )}
                   </div>
                   <div className={styles.x}>
@@ -290,10 +337,11 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
                     </div>
                   ) : categoriesData?.items ? (
                     <>
-                      {subCategoryId && (
+                      {subCategoryIds.length > 0 && (
                         <div
-                          onClick={() => {
-                            setSubCategoryId(null);
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSubCategoryIds([]);
                             setIsSubDropdownOpen(false);
                           }}
                           className="p-3 text-red-500 font-medium cursor-pointer hover:bg-red-50 text-sm"
@@ -302,18 +350,27 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
                         </div>
                       )}
                       {categoriesData.items
-                        .filter(cat => cat.id !== mainCategoryId)
+                        .filter(cat => !mainCategoryIds.includes(cat.id))
                         .map((cat) => {
-                          const isSelected = subCategoryId === cat.id;
+                          const isSelected = subCategoryIds.includes(cat.id);
                           return (
                             <div
                               key={cat.id}
-                              onClick={() => selectSubCategory(cat.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                selectSubCategory(cat.id);
+                              }}
                               className={cn(
                                 styles.dropdownItem,
                                 isSelected && styles.dropdownItemActive
                               )}
                             >
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => {}}
+                                className="mr-2 h-4 w-4 rounded border-gray-300 text-[#00B4CC] focus:ring-[#00B4CC]"
+                              />
                               <span>{cat.name}</span>
                             </div>
                           );
@@ -430,8 +487,8 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
           onClick={() => {
             const { resetStep1Data } = useGymStore.getState();
             resetStep1Data();
-            setMainCategoryId(null);
-            setSubCategoryId(null);
+            setMainCategoryIds([]);
+            setSubCategoryIds([]);
             setName("");
             setAbout("");
             setPhone("");

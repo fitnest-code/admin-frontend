@@ -23,8 +23,8 @@ export interface LocalAdmin {
 }
 
 export interface Step1Data {
-  mainCategoryId: number | null;
-  subCategoryId: number | null;
+  mainCategoryIds: number[];
+  subCategoryIds: number[];
   name: string;
   description: string;
   phone: string;

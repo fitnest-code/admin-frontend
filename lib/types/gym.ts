@@ -226,8 +226,8 @@ export interface GymInfoUpdateRequest {
 
 // V2 Interfaces
 export interface GymStep1DataV2 {
-  mainCategoryId: number | null
-  subCategoryId: number | null
+  mainCategoryIds: number[]
+  subCategoryIds: number[]
   name: string
   description: string
   phone: string
@@ -235,8 +235,8 @@ export interface GymStep1DataV2 {
 }
 
 export interface GymStep1PayloadV2 {
-  mainCategoryId: number
-  subCategoryId: number | null
+  mainCategoryIds: number[]
+  subCategoryIds: number[]
   name: string
   description: string
   phone: string
@@ -254,6 +254,8 @@ export interface RoomImageDtoV2 {
 export interface GymInfoAdminResponseV2 {
   id: number
   categories: Category[]
+  mainCategories?: Category[]
+  subCategories?: Category[]
   category?: Category | null
   subCategory?: Category | null
   name: string
@@ -298,8 +300,8 @@ export interface GymSubscriptionsAdminResponseV2 {
 }
 
 export interface GymInfoUpdateRequestV2 {
-  mainCategoryId: number
-  subCategoryId: number | null
+  mainCategoryIds: number[]
+  subCategoryIds: number[]
   name: string
   description: string
   phone: string

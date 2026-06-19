@@ -113,10 +113,7 @@ export function StepAdmins({ onComplete }: { onComplete?: () => void }) {
 
       // 2. Final Sequential Creation
       await createComplete.mutateAsync({
-        step1: {
-          ...step1Data!,
-          mainCategoryId: step1Data!.mainCategoryId!,
-        },
+        step1: step1Data!,
         step2: step2Trainers,
         step3: step3Data!,
         step4: step4Data!,

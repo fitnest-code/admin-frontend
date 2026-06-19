@@ -30,10 +30,10 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
   const { data: categoriesData } = useCategories();
 
   const selectedCategoryIds = useMemo(() => {
-    const ids: number[] = [];
-    if (step1Data?.mainCategoryId) ids.push(step1Data.mainCategoryId);
-    if (step1Data?.subCategoryId) ids.push(step1Data.subCategoryId);
-    return ids;
+    return [
+      ...(step1Data?.mainCategoryIds || []),
+      ...(step1Data?.subCategoryIds || [])
+    ];
   }, [step1Data]);
   const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
 

@@ -168,8 +168,8 @@ export function InfoTab({ gymId }: InfoTabProps) {
   }, []);
 
   const [formData, setFormData] = useState({
-    mainCategoryId: null as number | null,
-    subCategoryId: null as number | null,
+    mainCategoryIds: [] as number[],
+    subCategoryIds: [] as number[],
     name: "",
     description: "",
     phone: "",
@@ -248,8 +248,8 @@ export function InfoTab({ gymId }: InfoTabProps) {
   };
 
   const initialDataStr = gymInfo ? JSON.stringify({
-    mainCategoryId: gymInfo.category?.id || gymInfo.categories?.[0]?.id || null,
-    subCategoryId: gymInfo.subCategory?.id || (gymInfo.categories && gymInfo.categories.length > 1 ? gymInfo.categories[1].id : null),
+    mainCategoryIds: gymInfo.mainCategories?.map((c: any) => c.id) || (gymInfo.category ? [gymInfo.category.id] : []),
+    subCategoryIds: gymInfo.subCategories?.map((c: any) => c.id) || (gymInfo.subCategory ? [gymInfo.subCategory.id] : []),
     name: gymInfo.name || "",
     description: gymInfo.description || "",
     phone: gymInfo.phone || "",
@@ -269,8 +269,8 @@ export function InfoTab({ gymId }: InfoTabProps) {
   useEffect(() => {
     if (gymInfo) {
       setFormData({
-        mainCategoryId: gymInfo.category?.id || gymInfo.categories?.[0]?.id || null,
-        subCategoryId: gymInfo.subCategory?.id || (gymInfo.categories && gymInfo.categories.length > 1 ? gymInfo.categories[1].id : null),
+        mainCategoryIds: gymInfo.mainCategories?.map((c: any) => c.id) || (gymInfo.category ? [gymInfo.category.id] : []),
+        subCategoryIds: gymInfo.subCategories?.map((c: any) => c.id) || (gymInfo.subCategory ? [gymInfo.subCategory.id] : []),
         name: gymInfo.name || "",
         description: gymInfo.description || "",
         phone: gymInfo.phone || "",
@@ -417,20 +417,33 @@ export function InfoTab({ gymId }: InfoTabProps) {
   };
 
   const selectMainCategory = (id: number) => {
-    setFormData(prev => ({
-      ...prev,
-      mainCategoryId: id,
-      subCategoryId: id === prev.subCategoryId ? null : prev.subCategoryId
-    }));
-    setIsMainDropdownOpen(false);
+    setFormData(prev => {
+      const exists = prev.mainCategoryIds.includes(id);
+      const newMain = exists
+        ? prev.mainCategoryIds.filter(x => x !== id)
+        : [...prev.mainCategoryIds, id];
+      const newSub = prev.subCategoryIds.filter(x => !newMain.includes(x));
+      return {
+        ...prev,
+        mainCategoryIds: newMain,
+        subCategoryIds: newSub
+      };
+    });
   };
 
-  const selectSubCategory = (id: number | null) => {
-    setFormData(prev => ({
-      ...prev,
-      subCategoryId: id
-    }));
-    setIsSubDropdownOpen(false);
+  const selectSubCategory = (id: number) => {
+    setFormData(prev => {
+      const exists = prev.subCategoryIds.includes(id);
+      const newSub = exists
+        ? prev.subCategoryIds.filter(x => x !== id)
+        : [...prev.subCategoryIds, id];
+      const newMain = prev.mainCategoryIds.filter(x => !newSub.includes(x));
+      return {
+        ...prev,
+        mainCategoryIds: newMain,
+        subCategoryIds: newSub
+      };
+    });
   };
 
   const handleSave = async () => {
@@ -458,8 +471,8 @@ export function InfoTab({ gymId }: InfoTabProps) {
         updateGymInfo({
           id: Number(gymId),
           payload: {
-            mainCategoryId: formData.mainCategoryId || 0,
-            subCategoryId: formData.subCategoryId,
+            mainCategoryIds: formData.mainCategoryIds,
+            subCategoryIds: formData.subCategoryIds,
             name: formData.name,
             description: formData.description,
             phone: formData.phone,
@@ -527,16 +540,18 @@ export function InfoTab({ gymId }: InfoTabProps) {
                   >
                     <div className={styles.frameParent}>
                       <div className={styles.frameGroup}>
-                        {!formData.mainCategoryId ? (
+                        {formData.mainCategoryIds.length === 0 ? (
                           <span className={styles.placeholder}>{lt.select}</span>
                         ) : (
                           (() => {
-                            const cat = categoriesData?.items?.find(c => c.id === formData.mainCategoryId);
-                            return cat ? (
-                              <div className={styles.frameContainer}>
-                                <div className={styles.yogaWrapper}>
-                                  <div className={styles.yoga}>{cat.name}</div>
-                                </div>
+                            const selectedCats = categoriesData?.items?.filter(c => formData.mainCategoryIds.includes(c.id)) || [];
+                            return selectedCats.length > 0 ? (
+                              <div className="flex flex-wrap gap-1.5 max-w-full overflow-hidden">
+                                {selectedCats.map(cat => (
+                                  <div key={cat.id} className={styles.yogaWrapper}>
+                                    <span className={styles.yoga}>{cat.name}</span>
+                                  </div>
+                                ))}
                               </div>
                             ) : (
                               <span className={styles.placeholder}>{lt.loading}</span>
@@ -561,18 +576,27 @@ export function InfoTab({ gymId }: InfoTabProps) {
                     <div className={styles.dropdownMenu}>
                       {categoriesData?.items && categoriesData.items.length > 0 ? (
                         categoriesData.items
-                          .filter(cat => cat.id !== formData.subCategoryId)
+                          .filter(cat => !formData.subCategoryIds.includes(cat.id))
                           .map((cat) => {
-                            const isSelected = formData.mainCategoryId === cat.id;
+                            const isSelected = formData.mainCategoryIds.includes(cat.id);
                             return (
                               <div
                                 key={cat.id}
-                                onClick={() => selectMainCategory(cat.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  selectMainCategory(cat.id);
+                                }}
                                 className={cn(
                                   styles.dropdownItem,
                                   isSelected && styles.dropdownItemActive
                                 )}
                               >
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => {}}
+                                  className="mr-2 h-4 w-4 rounded border-gray-300 text-[#00B4CC] focus:ring-[#00B4CC]"
+                                />
                                 <span>{cat.name}</span>
                               </div>
                             );
@@ -590,13 +614,17 @@ export function InfoTab({ gymId }: InfoTabProps) {
                   <div className={styles.frameParent}>
                     <div className={styles.frameGroup}>
                       {(() => {
-                        const mainId = gymInfo.category?.id || gymInfo.categories?.[0]?.id;
-                        const cat = categoriesData?.items?.find(c => c.id === mainId) || gymInfo.category || gymInfo.categories?.[0];
-                        return cat ? (
-                          <div className={styles.frameContainer}>
-                            <div className={styles.yogaWrapper}>
-                              <div className={styles.yoga}>{cat.name}</div>
-                            </div>
+                        const mainIds = gymInfo.mainCategories?.map((c: any) => c.id) || (gymInfo.category ? [gymInfo.category.id] : []);
+                        const selectedCats = categoriesData?.items?.filter(c => mainIds.includes(c.id)) || gymInfo.mainCategories || (gymInfo.category ? [gymInfo.category] : []);
+                        return selectedCats && selectedCats.length > 0 ? (
+                          <div className="flex flex-wrap gap-1.5">
+                            {selectedCats.map((cat: any) => (
+                              <div key={cat.id} className={styles.frameContainer}>
+                                <div className={styles.yogaWrapper}>
+                                  <div className={styles.yoga}>{cat.name}</div>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         ) : (
                           <span className={styles.placeholder}>{lt.notSpecified}</span>
@@ -625,34 +653,36 @@ export function InfoTab({ gymId }: InfoTabProps) {
                   >
                     <div className={styles.frameParent}>
                       <div className={styles.frameGroup}>
-                        {!formData.subCategoryId ? (
+                        {formData.subCategoryIds.length === 0 ? (
                           <span className={styles.placeholder}>{lt.select}</span>
                         ) : (
                           (() => {
-                            const cat = categoriesData?.items?.find(c => c.id === formData.subCategoryId);
-                            return cat ? (
-                              <div className={styles.frameContainer}>
-                                <div className={styles.yogaWrapper}>
-                                  <div className={styles.yoga}>{cat.name}</div>
-                                </div>
-                                <div 
-                                  className={styles.x}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    selectSubCategory(null);
-                                  }}
-                                >
-                                  <div className={styles.x2}>
-                                    <Image 
-                                      className={styles.vectorIcon} 
-                                      width={15} 
-                                      height={15} 
-                                      sizes="100vw" 
-                                      alt="Remove"
-                                      src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGxpbmUgeDE9IjE4IiB5MT0iNiIgeDI9IjYiIHkyPSIxOCI+PC9saW5lPjxsaW5lIHgxPSI2IiB5MT0iNiIgeDI9IjE4IiB5Mj0iMTgiPjwvbGluZT48L3N2Zz4="
-                                    />
+                            const selectedCats = categoriesData?.items?.filter(c => formData.subCategoryIds.includes(c.id)) || [];
+                            return selectedCats.length > 0 ? (
+                              <div className="flex flex-wrap gap-1.5 max-w-full overflow-hidden">
+                                {selectedCats.map(cat => (
+                                  <div key={cat.id} className={styles.yogaWrapper}>
+                                    <span className={styles.yoga}>{cat.name}</span>
+                                    <div 
+                                      className={styles.x}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        selectSubCategory(cat.id);
+                                      }}
+                                    >
+                                      <div className={styles.x2}>
+                                        <Image 
+                                          className={styles.vectorIcon} 
+                                          width={15} 
+                                          height={15} 
+                                          sizes="100vw" 
+                                          alt="Remove"
+                                          src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGxpbmUgeDE9IjE4IiB5MT0iNiIgeDI9IjYiIHkyPSIxOCI+PC9saW5lPjxsaW5lIHgxPSI2IiB5MT0iNiIgeDI9IjE4IiB5Mj0iMTgiPjwvbGluZT48L3N2Zz4="
+                                        />
+                                      </div>
+                                    </div>
                                   </div>
-                                </div>
+                                ))}
                               </div>
                             ) : (
                               <span className={styles.placeholder}>{lt.loading}</span>
@@ -677,18 +707,27 @@ export function InfoTab({ gymId }: InfoTabProps) {
                     <div className={styles.dropdownMenu}>
                       {categoriesData?.items && categoriesData.items.length > 0 ? (
                         categoriesData.items
-                          .filter(cat => cat.id !== formData.mainCategoryId)
+                          .filter(cat => !formData.mainCategoryIds.includes(cat.id))
                           .map((cat) => {
-                            const isSelected = formData.subCategoryId === cat.id;
+                            const isSelected = formData.subCategoryIds.includes(cat.id);
                             return (
                               <div
                                 key={cat.id}
-                                onClick={() => selectSubCategory(cat.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  selectSubCategory(cat.id);
+                                }}
                                 className={cn(
                                   styles.dropdownItem,
                                   isSelected && styles.dropdownItemActive
                                 )}
                               >
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => {}}
+                                  className="mr-2 h-4 w-4 rounded border-gray-300 text-[#00B4CC] focus:ring-[#00B4CC]"
+                                />
                                 <span>{cat.name}</span>
                               </div>
                             );
@@ -706,13 +745,17 @@ export function InfoTab({ gymId }: InfoTabProps) {
                   <div className={styles.frameParent}>
                     <div className={styles.frameGroup}>
                       {(() => {
-                        const subId = gymInfo.subCategory?.id || (gymInfo.categories && gymInfo.categories.length > 1 ? gymInfo.categories[1].id : null);
-                        const cat = categoriesData?.items?.find(c => c.id === subId) || gymInfo.subCategory || (gymInfo.categories && gymInfo.categories.length > 1 ? gymInfo.categories[1] : null);
-                        return cat ? (
-                          <div className={styles.frameContainer}>
-                            <div className={styles.yogaWrapper}>
-                              <div className={styles.yoga}>{cat.name}</div>
-                            </div>
+                        const subIds = gymInfo.subCategories?.map((c: any) => c.id) || (gymInfo.subCategory ? [gymInfo.subCategory.id] : []);
+                        const selectedCats = categoriesData?.items?.filter(c => subIds.includes(c.id)) || gymInfo.subCategories || (gymInfo.subCategory ? [gymInfo.subCategory] : []);
+                        return selectedCats && selectedCats.length > 0 ? (
+                          <div className="flex flex-wrap gap-1.5">
+                            {selectedCats.map((cat: any) => (
+                              <div key={cat.id} className={styles.frameContainer}>
+                                <div className={styles.yogaWrapper}>
+                                  <div className={styles.yoga}>{cat.name}</div>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         ) : (
                           <span className={styles.placeholder}>{lt.notSpecified}</span>
@@ -1084,8 +1127,8 @@ export function InfoTab({ gymId }: InfoTabProps) {
                 setIsEditing(false);
                 if (gymInfo) {
                   setFormData({
-                    mainCategoryId: gymInfo.category?.id || gymInfo.categories?.[0]?.id || null,
-                    subCategoryId: gymInfo.subCategory?.id || (gymInfo.categories && gymInfo.categories.length > 1 ? gymInfo.categories[1].id : null),
+                    mainCategoryIds: gymInfo.mainCategories?.map((c: any) => c.id) || (gymInfo.category ? [gymInfo.category.id] : []),
+                    subCategoryIds: gymInfo.subCategories?.map((c: any) => c.id) || (gymInfo.subCategory ? [gymInfo.subCategory.id] : []),
                     name: gymInfo.name || "",
                     description: gymInfo.description || "",
                     phone: gymInfo.phone || "",
