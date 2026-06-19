@@ -254,6 +254,8 @@ export interface RoomImageDtoV2 {
 export interface GymInfoAdminResponseV2 {
   id: number
   categories: Category[]
+  category?: Category | null
+  subCategory?: Category | null
   name: string
   description: string
   coverImageUrl: string
