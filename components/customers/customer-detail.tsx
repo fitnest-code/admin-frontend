@@ -8,6 +8,7 @@ import { resetDeviceLimit } from '@/modules/customers/api/customers.service'
 import { cn } from '@/lib/utils'
 import type { CustomerProfile } from '@/modules/customers'
 import { getCustomerStatusLabel, normalizeCustomerStatus, type UiCustomerStatus } from './list/customer-list-utils'
+import { useT } from '@/lib/i18n'
 import { PushModal, SmsModal } from './list/customer-message-modals'
 import { ChangeRoleModal } from './modals/change-role-modal'
 import { ConfirmDeleteSubscriptionModal } from './modals/confirm-delete-subscription-modal'
@@ -17,11 +18,11 @@ import { PaymentsTab } from './tabs/payments-tab'
 import { AccessTab } from './tabs/access-tab'
 
 const CUSTOMER_TABS = [
-  { key: 'profile', label: 'Profil məlumatları' },
-  { key: 'subscription', label: 'Abunəlik məlumatları' },
-  { key: 'payments', label: 'Ödəniş məlumatları' },
-  { key: 'access', label: 'Giriş / QR scan tarixi' },
-]
+  { key: 'profile', labelKey: 'tabProfile' },
+  { key: 'subscription', labelKey: 'tabSubscription' },
+  { key: 'payments', labelKey: 'tabPayments' },
+  { key: 'access', labelKey: 'tabAccess' },
+] as const
 
 const STATUS_STYLES = {
   active: 'bg-[#166728] text-white',
@@ -29,13 +30,13 @@ const STATUS_STYLES = {
   blocked: 'bg-red-600 text-white',
 } satisfies Record<UiCustomerStatus, string>
 
-function formatValue(value: string | number | null | undefined, suffix?: string) {
-  if (value === null || value === undefined || value === '') return 'Məlumat yoxdur'
+function formatValue(value: string | number | null | undefined, fallback: string, suffix?: string) {
+  if (value === null || value === undefined || value === '') return fallback
   return suffix ? `${value} ${suffix}` : String(value)
 }
 
-function formatDateTimeClean(val?: string | null) {
-  if (!val) return 'Məlumat yoxdur'
+function formatDateTimeClean(val: string | null | undefined, fallback: string) {
+  if (!val) return fallback
   try {
     const d = new Date(val)
     if (isNaN(d.getTime())) {
@@ -90,6 +91,7 @@ function OpsBtn({
 
 export function CustomerDetail({ customer: initialCustomer }: { customer: CustomerProfile }) {
   const router = useRouter()
+  const t = useT()
   const [customer, setCustomer] = useState(initialCustomer)
   const [tab, setTab] = useState('profile')
   const [pushOpen, setPushOpen] = useState(false)
@@ -114,7 +116,7 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
           onClick={() => router.push('/customers')}
           className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors group"
         >
-          <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-0.5" /> Geri qayıt
+          <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-0.5" /> {t.details.goBack}
         </button>
       </div>
 
@@ -132,7 +134,7 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
                   : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border/60',
               )}
             >
-              {item.label}
+              {t.details[item.labelKey]}
             </button>
           ))}
         </nav>
@@ -161,12 +163,18 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
               </h1>
               <div className={cn('flex items-center gap-1.5 rounded-full px-3 py-0.5 text-[10px] font-bold uppercase shadow-2xs', STATUS_STYLES[status])}>
                 <span className="h-1 w-1 rounded-full bg-white animate-pulse" />
-                <span>{getCustomerStatusLabel(status)}</span>
+                <span>
+                  {status === 'active' 
+                    ? t.details.activeStatus 
+                    : status === 'inactive' 
+                      ? t.details.inactiveStatus 
+                      : t.details.blockedStatus}
+                </span>
               </div>
             </div>
             {customer.subscriptionStatus && (
               <span className="text-xs font-medium text-muted-foreground">
-                Abunəlik: <span className="text-[#00B4CC] font-medium">{customer.subscriptionStatus}</span>
+                {t.details.subscription}: <span className="text-[#00B4CC] font-medium">{customer.subscriptionStatus}</span>
               </span>
             )}
           </div>
@@ -175,22 +183,22 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
         {/* Right Metadata Flex Grid */}
         <div className="flex flex-wrap sm:flex-nowrap items-center gap-5 bg-[#FAFAFA] px-5 py-3 rounded-lg border border-border/60 shadow-2xs shrink-0">
           <div className="flex flex-col gap-0.5 text-left">
-            <span className="text-[10px] font-medium uppercase text-muted-foreground">User ID</span>
+            <span className="text-[10px] font-medium uppercase text-muted-foreground">{t.details.userId}</span>
             <strong className="text-sm font-medium text-foreground">{customer.id}</strong>
           </div>
 
           <div className="h-8 w-[1px] bg-border shrink-0 self-center" />
 
           <div className="flex flex-col gap-0.5 text-left">
-            <span className="text-[10px] font-medium uppercase text-muted-foreground">Qeydiyyat tarixi</span>
-            <strong className="text-sm font-medium text-foreground">{formatDateTimeClean(customer.registeredAt)}</strong>
+            <span className="text-[10px] font-medium uppercase text-muted-foreground">{t.details.registrationDate}</span>
+            <strong className="text-sm font-medium text-foreground">{formatDateTimeClean(customer.registeredAt, t.details.noData)}</strong>
           </div>
 
           <div className="h-8 w-[1px] bg-border shrink-0 self-center" />
 
           <div className="flex flex-col gap-0.5 text-left">
-            <span className="text-[10px] font-medium uppercase text-muted-foreground">Platforma</span>
-            <strong className="text-sm font-medium text-foreground">{formatValue(customer.platform) || 'İOS'}</strong>
+            <span className="text-[10px] font-medium uppercase text-muted-foreground">{t.details.platform}</span>
+            <strong className="text-sm font-medium text-foreground">{formatValue(customer.platform, t.details.noData) || 'iOS'}</strong>
           </div>
         </div>
       </div>
@@ -203,25 +211,25 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
             {/* Personal Data Card */}
             <div className="rounded-xl bg-white border border-border p-5 shadow-xs flex flex-col gap-5">
               <div className="border-b border-border pb-3">
-                <h2 className="text-[16px] font-bold text-foreground tracking-tight">Şəxsi məlumatlar</h2>
+                <h2 className="text-[16px] font-bold text-foreground tracking-tight">{t.details.personalInfo}</h2>
               </div>
               <div className="flex flex-col">
-                <InfoRow label="Telefon nömrəsi:" value={formatValue(customer.phoneNumber)} />
-                <InfoRow label="Email:" value={formatValue(customer.email)} />
-                <InfoRow label="Doğum tarixi:" value={formatValue(customer.birthDate)} />
-                <InfoRow label="Hədəf:" value={formatValue(customer.goal)} />
+                <InfoRow label={t.details.phoneNumber} value={formatValue(customer.phoneNumber, t.details.noData)} />
+                <InfoRow label={t.details.email} value={formatValue(customer.email, t.details.noData)} />
+                <InfoRow label={t.details.birthDate} value={formatValue(customer.birthDate, t.details.noData)} />
+                <InfoRow label={t.details.goal} value={formatValue(customer.goal, t.details.noData)} />
               </div>
             </div>
 
             {/* Physical Metrics Card */}
             <div className="rounded-xl bg-white border border-border p-5 shadow-xs flex flex-col gap-5">
               <div className="border-b border-border pb-3">
-                <h2 className="text-[16px] font-bold text-foreground tracking-tight">Bədən göstəriciləri</h2>
+                <h2 className="text-[16px] font-bold text-foreground tracking-tight">{t.details.bodyMetrics}</h2>
               </div>
               <div className="flex flex-col">
-                <InfoRow label="Boy:" value={formatValue(customer.height, 'cm')} />
-                <InfoRow label="Çəki:" value={formatValue(customer.weight, 'kg')} />
-                <InfoRow label="BMI indeksi:" value={formatValue(customer.bmi)} />
+                <InfoRow label={t.details.height} value={formatValue(customer.height, t.details.noData, 'cm')} />
+                <InfoRow label={t.details.weight} value={formatValue(customer.weight, t.details.noData, 'kg')} />
+                <InfoRow label={t.details.bmi} value={formatValue(customer.bmi, t.details.noData)} />
               </div>
             </div>
           </div>
@@ -230,18 +238,18 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
           <div className="w-full lg:w-[411px] shrink-0">
             <div className="flex flex-col rounded-xl bg-white border border-border p-5 shadow-xs gap-5">
               <div className="border-b border-border pb-3">
-                <h2 className="text-[16px] font-bold text-foreground tracking-tight">Əməliyyatlar</h2>
+                <h2 className="text-[16px] font-bold text-foreground tracking-tight">{t.details.operations}</h2>
               </div>
               <div className="flex flex-col gap-3">
-                <OpsBtn icon={Bell} label="Push bildiriş göndər" onClick={() => setPushOpen(true)} />
-                <OpsBtn icon={MessageSquare} label="SMS göndər" onClick={() => setSmsOpen(true)} />
-                <OpsBtn icon={Mail} label="Email göndər" onClick={() => {}} />
-                <OpsBtn icon={Upload} label="Export" onClick={() => {}} />
-                <OpsBtn icon={UserCog} label="Rolunu dəyiş" onClick={() => setRoleOpen(true)} />
-                <OpsBtn icon={RefreshCw} label="Cihaz limitini sıfırla" onClick={handleResetDeviceLimit} />
+                <OpsBtn icon={Bell} label={t.details.sendPush} onClick={() => setPushOpen(true)} />
+                <OpsBtn icon={MessageSquare} label={t.details.sendSms} onClick={() => setSmsOpen(true)} />
+                <OpsBtn icon={Mail} label={t.details.sendEmail} onClick={() => {}} />
+                <OpsBtn icon={Upload} label={t.details.export} onClick={() => {}} />
+                <OpsBtn icon={UserCog} label={t.details.changeRole} onClick={() => setRoleOpen(true)} />
+                <OpsBtn icon={RefreshCw} label={t.details.resetDeviceLimit} onClick={handleResetDeviceLimit} />
                 <div className="pt-2 border-t border-border/60 flex flex-col gap-3">
-                  <OpsBtn icon={Trash2} label="Abunəliyi sil" onClick={() => setDeleteSubOpen(true)} danger />
-                  <OpsBtn icon={Ban} label="Block" onClick={() => {}} danger />
+                  <OpsBtn icon={Trash2} label={t.details.deleteSubscription} onClick={() => setDeleteSubOpen(true)} danger />
+                  <OpsBtn icon={Ban} label={t.details.block} onClick={() => {}} danger />
                 </div>
               </div>
             </div>
