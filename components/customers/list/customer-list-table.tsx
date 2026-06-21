@@ -16,9 +16,9 @@ import {
 function EmptyState() {
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card">
-      <div className="grid grid-cols-[2rem_4rem_1fr_1fr_1fr_5rem_6rem_2.5rem] items-center gap-3 border-b border-border bg-[#00B4CC14] px-4 py-3">
+      <div className="grid grid-cols-[2rem_4rem_1fr_1fr_1fr_5rem_6rem] items-center gap-3 border-b border-border bg-[#00B4CC14] px-4 py-3">
         <input type="checkbox" disabled className="h-4 w-4 opacity-40" />
-        {['ID', 'Ad / Soyad', 'Telefon', 'Email', 'Profil statusu', 'Abunəlik', 'Ətraflı'].map((header) => (
+        {['ID', 'Ad / Soyad', 'Telefon', 'Email', 'Profil statusu', 'Abunəlik'].map((header) => (
           <span key={header} className="text-[11px] font-medium uppercase text-foreground/80">
             {header}
           </span>
@@ -116,7 +116,7 @@ export function CustomerTable({
 
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-      <div className="grid grid-cols-[3rem_3.5rem_1.5fr_1fr_1fr_6rem_7rem_3rem] items-center gap-3 border-b border-[#cecfd2]/60 dark:border-border bg-[#00B4CC]/[0.15] dark:bg-[#00B4CC]/10 px-4 py-3 rounded-t-lg">
+      <div className="grid grid-cols-[3rem_3.5rem_1.5fr_1fr_1fr_6rem_7rem] items-center gap-3 border-b border-[#cecfd2]/60 dark:border-border bg-[#00B4CC]/[0.15] dark:bg-[#00B4CC]/10 px-4 py-3 rounded-t-lg">
         <div className="flex justify-center">
           <input type="checkbox" checked={allOnPage} onChange={onToggleAll} className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded" />
         </div>
@@ -126,7 +126,6 @@ export function CustomerTable({
         <span className="text-[11px] font-bold uppercase text-foreground/80">Email</span>
         <span className="text-[11px] font-bold uppercase text-foreground/80 text-center">Status</span>
         <span className="text-[11px] font-bold uppercase text-foreground/80">Abunəlik</span>
-        <span className="text-[11px] font-bold uppercase text-foreground/80 text-center">Ətraflı</span>
       </div>
       {customers.map((customer) => {
         const customerStatus = normalizeCustomerStatus(customer.userStatus)
@@ -141,7 +140,7 @@ export function CustomerTable({
             key={customer.id}
             onClick={() => onView(customer.id)}
             className={cn(
-              'grid grid-cols-[3rem_3.5rem_1.5fr_1fr_1fr_6rem_7rem_3rem] items-center gap-3 border-b border-border px-4 py-3 last:border-0 hover:bg-secondary/40 transition-all duration-200 cursor-pointer',
+              'grid grid-cols-[3rem_3.5rem_1.5fr_1fr_1fr_6rem_7rem] items-center gap-3 border-b border-border px-4 py-3 last:border-0 hover:bg-secondary/40 transition-all duration-200 cursor-pointer',
               subscriptionStatus === 'changed' ? 'bg-[#f0fdff]' : 'bg-card',
             )}
           >
@@ -182,13 +181,6 @@ export function CustomerTable({
                 {getSubscriptionStatusLabel(subscriptionStatus)}
               </span>
             </div>
-            <button
-              onClick={() => onView(customer.id)}
-              className="text-muted-foreground hover:text-[#00B4CC] transition-colors flex justify-center"
-              aria-label="Ətraflı bax"
-            >
-              <Eye size={18} />
-            </button>
           </div>
         )
       })}

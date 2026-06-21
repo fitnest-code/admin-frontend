@@ -93,3 +93,7 @@ export function deleteUserSubscriptions(userId: string | number) {
   return apiDelete<void>(`/api/v1/admin/subscriptions/users/${userId}/all`)
 }
 
+export function resetDeviceLimit(userId: number) {
+  return apiPost<void>(`/api/v1/admin/users/${userId}/device-limit/reset`)
+}
+

@@ -3,10 +3,10 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { ArrowLeft, UserCog } from 'lucide-react'
+import { ArrowLeft, UserCog, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CustomerProfile } from '@/modules/customers'
-import { blockUser, unblockUser } from '@/modules/customers/api/customers.service'
+import { blockUser, unblockUser, resetDeviceLimit } from '@/modules/customers/api/customers.service'
 import { getCustomerStatusLabel, normalizeCustomerStatus, type UiCustomerStatus } from '../customers/list/customer-list-utils'
 import { PushModal, SmsModal } from '../customers/list/customer-message-modals'
 import { ChangeRoleModal } from '../customers/modals/change-role-modal'
@@ -80,6 +80,19 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
   const [roleOpen, setRoleOpen] = useState(false)
   const [deleteSubOpen, setDeleteSubOpen] = useState(false)
   const [blockLoading, setBlockLoading] = useState(false)
+
+  async function handleResetDeviceLimit() {
+    if (!window.confirm("Cihaz limitini sıfırlamaq istədiyinizdən əminsiniz?")) {
+      return
+    }
+    try {
+      await resetDeviceLimit(customer.id)
+      alert("Cihaz limiti uğurla sıfırlandı.")
+    } catch (err) {
+      console.error("Cihaz limiti sıfırlanmadı:", err)
+      alert(err instanceof Error ? err.message : "Cihaz limiti sıfırlanmadı.")
+    }
+  }
 
   const status = normalizeCustomerStatus(customer.userStatus)
   const initials = `${customer.name?.[0] ?? ''}${customer.surname?.[0] ?? ''}`.toUpperCase()
@@ -212,6 +225,13 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
                 <UserCog size={18} className="shrink-0 text-[#00B4CC]" />
                 <span>Rolunu dəyiş</span>
               </button>
+              <button
+                onClick={handleResetDeviceLimit}
+                className="flex w-full items-center gap-3 rounded-lg border border-border bg-white px-4 py-3 text-sm font-semibold text-foreground hover:border-[#00B4CC] hover:text-[#00B4CC] hover:bg-[#00B4CC]/5 shadow-xs transition-all duration-200 active:scale-[0.98]"
+              >
+                <RefreshCw size={18} className="shrink-0 text-[#00B4CC]" />
+                <span>Cihaz limitini sıfırla</span>
+              </button>
               <div className="pt-2 border-t border-border/60 flex flex-col gap-3">
                 <button
                   onClick={() => setDeleteSubOpen(true)}
@@ -254,7 +274,7 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
       {roleOpen && (
         <ChangeRoleModal
           userId={customer.id}
-          currentRole={customer.role}
+          currentRole={customer.role ?? null}
           onClose={() => setRoleOpen(false)}
           onSuccess={(newRole) => setCustomer(prev => ({ ...prev, role: newRole }))}
         />

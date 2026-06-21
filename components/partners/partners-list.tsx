@@ -223,28 +223,18 @@ export function PartnersList() {
           Partnyorlar yüklənir...
         </div>
       ) : sorted.length === 0 ? (
-        <div className={styles.musteriParent}>
-          <div className={styles.musteri}>
-            <div className={styles.tickSquareParent}>
-              <div className={styles.tickSquare}>
-                <CustomCheckbox checked={false} onChange={() => {}} disabled />
-              </div>
-              <div className={styles.adsoyad}>Ad/Soyad</div>
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
+          <div className="grid grid-cols-[3rem_3.5rem_1.5fr_1fr_1.2fr_1.5fr] items-center gap-3 border-b border-border bg-[#00B4CC14] px-4 py-3">
+            <div className="flex justify-center">
+              <input type="checkbox" disabled className="h-4 w-4 opacity-40" />
             </div>
-            <div className={styles.rolWrapper}>
-              <div className={styles.adsoyad}>Rol</div>
-            </div>
-            <div className={styles.rolWrapper}>
-              <div className={styles.adsoyad}>Telefon</div>
-            </div>
-            <div className={styles.zalAdWrapper}>
-              <div className={styles.adsoyad}>Zal adı</div>
-            </div>
-            <div className={styles.traflWrapper}>
-              <div className={styles.adsoyad}>Ətraflı</div>
-            </div>
+            {['ID', 'Ad / Soyad', 'Rol', 'Telefon', 'Zal adı'].map((header) => (
+              <span key={header} className="text-[11px] font-medium uppercase text-foreground/80">
+                {header}
+              </span>
+            ))}
           </div>
-          <div className={styles.emptyStateContainer}>
+          <div className="flex flex-col items-center gap-3 py-20 text-center">
             <p className="text-base font-semibold text-foreground">Hələ partnyor yoxdur</p>
             <p className="text-sm text-muted-foreground max-w-xs">
               Partnyorlar qeydiyyatdan keçdikdən sonra burada avtomatik görünəcək.
@@ -252,99 +242,62 @@ export function PartnersList() {
           </div>
         </div>
       ) : (
-        <div className={styles.musteriParent}>
-          <div className={styles.musteri}>
-            <div className={styles.tickSquareParent}>
-              <div className={styles.tickSquare}>
-                <CustomCheckbox checked={allOnPage} onChange={toggleAll} />
-              </div>
-              <div className={styles.adsoyad}>Ad/Soyad</div>
+        <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+          <div className="grid grid-cols-[3rem_3.5rem_1.5fr_1fr_1.2fr_1.5fr] items-center gap-3 border-b border-[#cecfd2]/60 dark:border-border bg-[#00B4CC]/[0.15] dark:bg-[#00B4CC]/10 px-4 py-3 rounded-t-lg">
+            <div className="flex justify-center">
+              <input type="checkbox" checked={allOnPage} onChange={toggleAll} className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded" />
             </div>
-            <div className={styles.rolWrapper}>
-              <div className={styles.adsoyad}>Rol</div>
-            </div>
-            <div className={styles.rolWrapper}>
-              <div className={styles.adsoyad}>Telefon</div>
-            </div>
-            <div className={styles.zalAdWrapper}>
-              <div className={styles.adsoyad}>Zal adı</div>
-            </div>
-            <div className={styles.traflWrapper}>
-              <div className={styles.adsoyad}>Ətraflı</div>
-            </div>
+            <span className="text-[11px] font-bold uppercase text-foreground/80">ID</span>
+            <span className="text-[11px] font-bold uppercase text-foreground/80">Ad / Soyad</span>
+            <span className="text-[11px] font-bold uppercase text-foreground/80">Rol</span>
+            <span className="text-[11px] font-bold uppercase text-foreground/80">Telefon</span>
+            <span className="text-[11px] font-bold uppercase text-foreground/80">Zal adı</span>
           </div>
 
-          {sorted.map((partner, index) => {
-            const rowClass = index % 2 === 0 ? styles.frameParent : styles.frameGroup
+          {sorted.map((partner) => {
             const isSuper = partner.role === 'ROLE_GYM_SUPER_ADMIN'
             const gymName = partner.gymName || '-'
 
             return (
               <div
                 key={partner.id}
-                className={rowClass}
-                style={{ cursor: 'pointer' }}
+                className="grid grid-cols-[3rem_3.5rem_1.5fr_1fr_1.2fr_1.5fr] items-center gap-3 border-b border-border px-4 py-3 last:border-0 hover:bg-secondary/40 transition-all duration-200 bg-card cursor-pointer"
                 onClick={() => router.push(`/partners/${partner.id}`)}
               >
-                <div className={styles.tickSquareParent}>
-                  <div className={styles.tickSquare}>
-                    <CustomCheckbox checked={selected.has(partner.id)} onChange={() => toggleOne(partner.id)} />
-                  </div>
-                  <div className={styles.adsoyad} title={partner.fullName || ''}>
-                    {partner.fullName}
-                  </div>
+                <div className="flex justify-center">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(partner.id)}
+                    onChange={() => toggleOne(partner.id)}
+                    onClick={(event) => event.stopPropagation()}
+                    className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded"
+                  />
                 </div>
+                <span className="text-sm font-normal text-black truncate">{partner.id}</span>
+                <span className="text-sm font-normal text-black truncate" title={partner.fullName || ''}>
+                  {partner.fullName}
+                </span>
                 
-                <div className={styles.adminWrapper}>
-                  <div className={isSuper ? styles.admin : styles.admin2}>
-                    <div className={styles.usergear}>
-                      <div className={styles.usergear2}>
-                        <Image 
-                          src={isSuper ? "/superAdmin.svg" : "/admin.svg"} 
-                          width={isSuper ? 18.1 : 16.3} 
-                          height={isSuper ? 13.8 : 15.6} 
-                          sizes="100vw" 
-                          alt="" 
-                          className={isSuper ? styles.vectorIcon : styles.vectorIcon3}
-                        />
-                      </div>
-                    </div>
-                    <div className={styles.superAdmin}>
-                      {isSuper ? 'Super admin' : 'Admin'}
-                    </div>
+                <div className="flex items-center">
+                  <div className={cn("flex h-[22px] w-fit items-center justify-center gap-1.5 rounded-full px-3 text-[10px] font-medium uppercase text-white shadow-xs", isSuper ? "bg-[#00B4CC]" : "bg-[#00B4CC]/80")}>
+                    <Image 
+                      src={isSuper ? "/superAdmin.svg" : "/admin.svg"} 
+                      width={isSuper ? 12 : 11} 
+                      height={isSuper ? 9 : 10} 
+                      alt="" 
+                      className="shrink-0 invert"
+                    />
+                    <span>{isSuper ? 'Super admin' : 'Admin'}</span>
                   </div>
                 </div>
 
-                <div className={styles.rolWrapper}>
-                  <div className={styles.adsoyad}>
-                    {partner.phoneNumber || '+994 00 000 00 00'}
-                  </div>
-                </div>
+                <span className="text-sm font-normal text-black truncate">
+                  {partner.phoneNumber || '+994 00 000 00 00'}
+                </span>
 
-                <div className={styles.zalAdWrapper}>
-                  <div className={styles.adsoyad} title={gymName}>
-                    {gymName}
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => router.push(`/partners/${partner.id}`)}
-                  className={cn(styles.traflWrapper, "hover:opacity-80 transition-opacity")}
-                  aria-label="Ətraflı bax"
-                >
-                  <div className={styles.tickSquare}>
-                    <div className={styles.usergear2}>
-                      <Image 
-                        src="/Eye.png" 
-                        width={22.1} 
-                        height={14.6} 
-                        sizes="100vw" 
-                        alt="" 
-                        className={styles.vectorIcon2}
-                      />
-                    </div>
-                  </div>
-                </button>
+                <span className="text-sm font-normal text-black truncate" title={gymName}>
+                  {gymName}
+                </span>
               </div>
             )
           })}

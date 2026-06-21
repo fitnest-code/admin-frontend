@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { ArrowLeft, Ban, Bell, Mail, MessageSquare, Upload, UserCog, Trash2 } from 'lucide-react'
+import { ArrowLeft, Ban, Bell, Mail, MessageSquare, Upload, UserCog, Trash2, RefreshCw } from 'lucide-react'
+import { resetDeviceLimit } from '@/modules/customers/api/customers.service'
 import { cn } from '@/lib/utils'
 import type { CustomerProfile } from '@/modules/customers'
 import { getCustomerStatusLabel, normalizeCustomerStatus, type UiCustomerStatus } from './list/customer-list-utils'
@@ -94,6 +95,19 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
   const [smsOpen, setSmsOpen] = useState(false)
   const [roleOpen, setRoleOpen] = useState(false)
   const [deleteSubOpen, setDeleteSubOpen] = useState(false)
+
+  async function handleResetDeviceLimit() {
+    if (!window.confirm("Cihaz limitini sıfırlamaq istədiyinizdən əminsiniz?")) {
+      return
+    }
+    try {
+      await resetDeviceLimit(customer.id)
+      alert("Cihaz limiti uğurla sıfırlandı.")
+    } catch (err) {
+      console.error("Cihaz limiti sıfırlanmadı:", err)
+      alert(err instanceof Error ? err.message : "Cihaz limiti sıfırlanmadı.")
+    }
+  }
 
   const status = normalizeCustomerStatus(customer.userStatus)
   const initials = `${customer.name?.[0] ?? ''}${customer.surname?.[0] ?? ''}`.toUpperCase()
@@ -231,6 +245,7 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
                 <OpsBtn icon={Mail} label="Email göndər" onClick={() => {}} />
                 <OpsBtn icon={Upload} label="Export" onClick={() => {}} />
                 <OpsBtn icon={UserCog} label="Rolunu dəyiş" onClick={() => setRoleOpen(true)} />
+                <OpsBtn icon={RefreshCw} label="Cihaz limitini sıfırla" onClick={handleResetDeviceLimit} />
                 <div className="pt-2 border-t border-border/60 flex flex-col gap-3">
                   <OpsBtn icon={Trash2} label="Abunəliyi sil" onClick={() => setDeleteSubOpen(true)} danger />
                   <OpsBtn icon={Ban} label="Block" onClick={() => {}} danger />

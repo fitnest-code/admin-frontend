@@ -222,25 +222,18 @@ export function AdminsList() {
           Adminlər yüklənir...
         </div>
       ) : sorted.length === 0 ? (
-        <div className={styles.musteriParent}>
-          <div className={styles.musteri} style={{ gridTemplateColumns: '2.5fr 2fr 2fr 0.8fr' }}>
-            <div className={styles.tickSquareParent}>
-              <div className={styles.tickSquare}>
-                <CustomCheckbox checked={false} onChange={() => {}} disabled />
-              </div>
-              <div className={styles.adsoyad}>Ad/Soyad</div>
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
+          <div className="grid grid-cols-[3rem_3.5rem_1.5fr_1.2fr_1.5fr] items-center gap-3 border-b border-border bg-[#00B4CC14] px-4 py-3">
+            <div className="flex justify-center">
+              <input type="checkbox" disabled className="h-4 w-4 opacity-40" />
             </div>
-            <div className={styles.rolWrapper}>
-              <div className={styles.adsoyad}>Rol</div>
-            </div>
-            <div className={styles.rolWrapper}>
-              <div className={styles.adsoyad}>Telefon</div>
-            </div>
-            <div className={styles.traflWrapper}>
-              <div className={styles.adsoyad}>Ətraflı</div>
-            </div>
+            {['ID', 'Ad / Soyad', 'Rol', 'Telefon'].map((header) => (
+              <span key={header} className="text-[11px] font-medium uppercase text-foreground/80">
+                {header}
+              </span>
+            ))}
           </div>
-          <div className={styles.emptyStateContainer}>
+          <div className="flex flex-col items-center gap-3 py-20 text-center">
             <p className="text-base font-semibold text-foreground">Hələ admin yoxdur</p>
             <p className="text-sm text-muted-foreground max-w-xs">
               Adminlər qeydiyyatdan keçdikdən sonra burada avtomatik görünəcək.
@@ -248,83 +241,50 @@ export function AdminsList() {
           </div>
         </div>
       ) : (
-        <div className={styles.musteriParent}>
-          <div className={styles.musteri} style={{ gridTemplateColumns: '2.5fr 2fr 2fr 0.8fr' }}>
-            <div className={styles.tickSquareParent}>
-              <div className={styles.tickSquare}>
-                <CustomCheckbox checked={allOnPage} onChange={toggleAll} />
-              </div>
-              <div className={styles.adsoyad}>Ad/Soyad</div>
+        <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+          <div className="grid grid-cols-[3rem_3.5rem_1.5fr_1.2fr_1.5fr] items-center gap-3 border-b border-[#cecfd2]/60 dark:border-border bg-[#00B4CC]/[0.15] dark:bg-[#00B4CC]/10 px-4 py-3 rounded-t-lg">
+            <div className="flex justify-center">
+              <input type="checkbox" checked={allOnPage} onChange={toggleAll} className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded" />
             </div>
-            <div className={styles.rolWrapper}>
-              <div className={styles.adsoyad}>Rol</div>
-            </div>
-            <div className={styles.rolWrapper}>
-              <div className={styles.adsoyad}>Telefon</div>
-            </div>
-            <div className={styles.traflWrapper}>
-              <div className={styles.adsoyad}>Ətraflı</div>
-            </div>
+            <span className="text-[11px] font-bold uppercase text-foreground/80">ID</span>
+            <span className="text-[11px] font-bold uppercase text-foreground/80">Ad / Soyad</span>
+            <span className="text-[11px] font-bold uppercase text-foreground/80">Rol</span>
+            <span className="text-[11px] font-bold uppercase text-foreground/80">Telefon</span>
           </div>
 
-          {sorted.map((admin, index) => {
-            const rowClass = index % 2 === 0 ? styles.frameParent : styles.frameGroup
-
+          {sorted.map((admin) => {
             return (
-              <div key={admin.id} className={rowClass} style={{ gridTemplateColumns: '2.5fr 2fr 2fr 0.8fr', cursor: 'pointer' }} onClick={() => router.push(`/admins/${admin.id}`)}>
-                <div className={styles.tickSquareParent}>
-                  <div className={styles.tickSquare}>
-                    <CustomCheckbox checked={selected.has(admin.id)} onChange={() => toggleOne(admin.id)} />
-                  </div>
-                  <div className={styles.adsoyad} title={admin.fullName || ''}>
-                    {admin.fullName}
-                  </div>
+              <div key={admin.id} className="grid grid-cols-[3rem_3.5rem_1.5fr_1.2fr_1.5fr] items-center gap-3 border-b border-border px-4 py-3 last:border-0 hover:bg-secondary/40 transition-all duration-200 bg-card cursor-pointer" onClick={() => router.push(`/admins/${admin.id}`)}>
+                <div className="flex justify-center">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(admin.id)}
+                    onChange={() => toggleOne(admin.id)}
+                    onClick={(event) => event.stopPropagation()}
+                    className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded"
+                  />
                 </div>
+                <span className="text-sm font-normal text-black truncate">{admin.id}</span>
+                <span className="text-sm font-normal text-black truncate" title={admin.fullName || ''}>
+                  {admin.fullName}
+                </span>
                 
-                <div className={styles.adminWrapper}>
-                  <div className={styles.admin2}>
-                    <div className={styles.usergear}>
-                      <div className={styles.usergear2}>
-                        <Image 
-                          src="/admin.svg" 
-                          width={16.3} 
-                          height={15.6} 
-                          sizes="100vw" 
-                          alt="" 
-                          className={styles.vectorIcon3}
-                        />
-                      </div>
-                    </div>
-                    <div className={styles.superAdmin}>
-                      {getRoleLabel(admin.role)}
-                    </div>
+                <div className="flex items-center">
+                  <div className="flex h-[22px] w-fit items-center justify-center gap-1.5 rounded-full bg-[#00B4CC]/10 px-3 text-[10px] font-medium uppercase text-[#00B4CC]">
+                    <Image 
+                      src="/admin.svg" 
+                      width={12} 
+                      height={12} 
+                      alt="" 
+                      className="shrink-0"
+                    />
+                    <span>{getRoleLabel(admin.role)}</span>
                   </div>
                 </div>
 
-                <div className={styles.rolWrapper}>
-                  <div className={styles.adsoyad}>
-                    {admin.phoneNumber || '+994 00 000 00 00'}
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => router.push(`/admins/${admin.id}`)}
-                  className={cn(styles.traflWrapper, "hover:opacity-80 transition-opacity")}
-                  aria-label="Ətraflı bax"
-                >
-                  <div className={styles.tickSquare}>
-                    <div className={styles.usergear2}>
-                      <Image 
-                        src="/Eye.png" 
-                        width={22.1} 
-                        height={14.6} 
-                        sizes="100vw" 
-                        alt="" 
-                        className={styles.vectorIcon2}
-                      />
-                    </div>
-                  </div>
-                </button>
+                <span className="text-sm font-normal text-black truncate">
+                  {admin.phoneNumber || '+994 00 000 00 00'}
+                </span>
               </div>
             )
           })}
