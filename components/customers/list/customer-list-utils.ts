@@ -33,10 +33,10 @@ export function normalizeCustomerStatus(status: CustomerStatus): UiCustomerStatu
   return 'blocked'
 }
 
-export function getCustomerStatusLabel(status: UiCustomerStatus) {
-  if (status === 'active') return 'Aktiv'
-  if (status === 'inactive') return 'Deaktiv'
-  return 'Blok'
+export function getCustomerStatusLabel(status: UiCustomerStatus, t: { statusActive: string; statusInactive: string; statusBlocked: string }) {
+  if (status === 'active') return t.statusActive
+  if (status === 'inactive') return t.statusInactive
+  return t.statusBlocked
 }
 
 export function normalizeSubscriptionStatus(status?: string | null): UiSubscriptionStatus {
@@ -54,13 +54,16 @@ export function normalizeSubscriptionStatus(status?: string | null): UiSubscript
   return 'none'
 }
 
-export function getSubscriptionStatusLabel(status: UiSubscriptionStatus) {
-  if (status === 'active') return 'Aktiv'
-  if (status === 'expired') return 'Bitmiş'
-  if (status === 'changed') return 'Dəyişdirilmiş'
-  if (status === 'last7days') return 'Son 7 gün'
-  if (status === 'frozen') return 'Dondurulmuş'
-  return 'Yoxdur'
+export function getSubscriptionStatusLabel(
+  status: UiSubscriptionStatus,
+  t: { subActive: string; subExpired: string; subChanged: string; subLast7: string; subFrozen: string; subNone: string }
+) {
+  if (status === 'active') return t.subActive
+  if (status === 'expired') return t.subExpired
+  if (status === 'changed') return t.subChanged
+  if (status === 'last7days') return t.subLast7
+  if (status === 'frozen') return t.subFrozen
+  return t.subNone
 }
 
 export function sortCustomers(customers: CustomerListItem[], sortBy: CustomerSortValue | null) {

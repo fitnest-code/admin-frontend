@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import { Check, Eye } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useT } from '@/lib/i18n'
 import type { CustomerListItem } from '@/modules/customers'
 import {
   CUSTOMER_STATUS_STYLES,
@@ -14,20 +15,21 @@ import {
 } from './customer-list-utils'
 
 function EmptyState() {
+  const t = useT()
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card">
       <div className="grid grid-cols-[2rem_4rem_1fr_1fr_1fr_5rem_6rem] items-center gap-3 border-b border-border bg-[#00B4CC14] px-4 py-3">
         <input type="checkbox" disabled className="h-4 w-4 opacity-40" />
-        {['ID', 'Ad / Soyad', 'Telefon', 'Email', 'Profil statusu', 'Abunəlik'].map((header) => (
+        {[t.lists.colId, t.lists.colName, t.lists.colPhone, t.lists.colEmail, t.lists.colStatus, t.lists.colSubscription].map((header) => (
           <span key={header} className="text-[11px] font-medium uppercase text-foreground/80">
             {header}
           </span>
         ))}
       </div>
       <div className="flex flex-col items-center gap-3 py-20 text-center">
-        <p className="text-base font-semibold text-foreground">Hələ istifadəçi yoxdur</p>
+        <p className="text-base font-semibold text-foreground">{t.lists.customersEmpty}</p>
         <p className="text-sm text-muted-foreground max-w-xs">
-          İstifadəçilər qeydiyyatdan keçdikdən sonra burada avtomatik görünəcək.
+          {t.lists.customersEmptyDesc}
         </p>
       </div>
     </div>
@@ -100,12 +102,13 @@ export function CustomerTable({
   onToggleOne: (id: number) => void
   onView: (id: number) => void
 }) {
+  const t = useT()
   const allOnPage = customers.length > 0 && customers.every((customer) => selected.has(customer.id))
 
   if (isLoading) {
     return (
       <div className="overflow-hidden rounded-xl border border-border bg-card px-4 py-16 text-center text-sm text-muted-foreground">
-        Müştərilər yüklənir...
+        {t.lists.customersLoading}
       </div>
     )
   }
@@ -120,12 +123,12 @@ export function CustomerTable({
         <div className="flex justify-center">
           <input type="checkbox" checked={allOnPage} onChange={onToggleAll} className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded" />
         </div>
-        <span className="text-[11px] font-bold uppercase text-foreground/80">ID</span>
-        <span className="text-[11px] font-bold uppercase text-foreground/80">Ad / Soyad</span>
-        <span className="text-[11px] font-bold uppercase text-foreground/80">Telefon</span>
-        <span className="text-[11px] font-bold uppercase text-foreground/80">Email</span>
-        <span className="text-[11px] font-bold uppercase text-foreground/80 text-center">Status</span>
-        <span className="text-[11px] font-bold uppercase text-foreground/80">Abunəlik</span>
+        <span className="text-[11px] font-bold uppercase text-foreground/80">{t.lists.colId}</span>
+        <span className="text-[11px] font-bold uppercase text-foreground/80">{t.lists.colName}</span>
+        <span className="text-[11px] font-bold uppercase text-foreground/80">{t.lists.colPhone}</span>
+        <span className="text-[11px] font-bold uppercase text-foreground/80">{t.lists.colEmail}</span>
+        <span className="text-[11px] font-bold uppercase text-foreground/80 text-center">{t.lists.colStatus}</span>
+        <span className="text-[11px] font-bold uppercase text-foreground/80">{t.lists.colSubscription}</span>
       </div>
       {customers.map((customer) => {
         const customerStatus = normalizeCustomerStatus(customer.userStatus)
@@ -133,7 +136,7 @@ export function CustomerTable({
 
         // Account Status Badge Logic
         const badgeBg = customerStatus === 'active' ? 'bg-[#166728]' : customerStatus === 'inactive' ? 'bg-[#94979c]' : 'bg-[#c9373a]'
-        const badgeText = customerStatus === 'active' ? 'Aktiv' : customerStatus === 'inactive' ? 'Deaktiv' : 'Blok'
+        const badgeText = customerStatus === 'active' ? t.lists.statusActive : customerStatus === 'inactive' ? t.lists.statusInactive : t.lists.statusBlocked
 
         return (
           <div
@@ -178,7 +181,7 @@ export function CustomerTable({
                 </div>
               ) : null}
               <span className="text-xs font-normal text-black truncate">
-                {getSubscriptionStatusLabel(subscriptionStatus)}
+                {getSubscriptionStatusLabel(subscriptionStatus, t.lists)}
               </span>
             </div>
           </div>

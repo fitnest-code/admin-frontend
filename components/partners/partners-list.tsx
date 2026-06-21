@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Check, Eye, Search, ChevronDown, Bell, MessageSquare, Mail, Upload, Ban } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useT } from '@/lib/i18n'
 import { useCustomersQuery, type CustomerListItem } from '@/modules/customers'
 import { PAGE_SIZE } from '../customers/list/customer-list-constants'
 import { CustomerBulkActions, EmailModal, PushModal, SmsModal, BlockModal } from '../customers/list/customer-message-modals'
@@ -116,6 +117,7 @@ function SortDropdown({
 
 export function PartnersList() {
   const router = useRouter()
+  const t = useT()
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [sortBy, setSortBy] = useState<PartnerSortValue | null>(null)
@@ -184,7 +186,7 @@ export function PartnersList() {
 
   return (
     <div className="flex flex-col gap-5 font-sans">
-      <h1 className="text-xl font-bold text-foreground">Partnyorlar</h1>
+      <h1 className="text-xl font-bold text-foreground">{t.lists.partnersTitle}</h1>
 
       {/* Search and Sort */}
       <div className="flex flex-wrap items-center justify-between gap-4 w-full">
@@ -220,7 +222,7 @@ export function PartnersList() {
       {/* Table */}
       {partnersQuery.isLoading ? (
         <div className="overflow-hidden rounded-xl border border-border bg-card px-4 py-16 text-center text-sm text-muted-foreground animate-pulse">
-          Partnyorlar yüklənir...
+          {t.lists.partnersLoading}
         </div>
       ) : sorted.length === 0 ? (
         <div className="overflow-hidden rounded-xl border border-border bg-card">
@@ -235,9 +237,9 @@ export function PartnersList() {
             ))}
           </div>
           <div className="flex flex-col items-center gap-3 py-20 text-center">
-            <p className="text-base font-semibold text-foreground">Hələ partnyor yoxdur</p>
+            <p className="text-base font-semibold text-foreground">{t.lists.partnersEmpty}</p>
             <p className="text-sm text-muted-foreground max-w-xs">
-              Partnyorlar qeydiyyatdan keçdikdən sonra burada avtomatik görünəcək.
+              {t.lists.partnersEmptyDesc}
             </p>
           </div>
         </div>
@@ -305,7 +307,7 @@ export function PartnersList() {
       )}
 
       {partnersQuery.isError && (
-        <p className="text-sm text-red-500">Partnyor siyahısı yüklənmədi. Zəhmət olmasa yenidən cəhd edin.</p>
+        <p className="text-sm text-red-500">{t.lists.partnersError}</p>
       )}
 
       <CustomerPagination total={total} page={page} perPage={PAGE_SIZE} onChange={setPage} />

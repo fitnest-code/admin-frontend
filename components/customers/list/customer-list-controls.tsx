@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { Check, ChevronDown, Search, Timer, UserCheck, UserX, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useT } from '@/lib/i18n'
 import type { CustomerSubscriptionType, SubscriptionPackageName } from '@/modules/customers'
-import { DURATION_OPTIONS, SORT_OPTIONS, SUBSCRIPTION_STATUS_OPTIONS } from './customer-list-constants'
+import { getDurationOptions, getSortOptions, getSubscriptionStatusOptions } from './customer-list-constants'
 import type { CustomerSortValue } from './customer-list-utils'
 
 function StatCard({
@@ -61,6 +62,7 @@ function FilterDropdown<T extends string | number>({
 }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const t = useT()
 
   useEffect(() => {
     function handleMouseDown(event: MouseEvent) {
@@ -95,7 +97,7 @@ function FilterDropdown<T extends string | number>({
             )}
           >
             <Check size={13} className={cn('shrink-0', selected === null ? 'opacity-100 text-[#00B4CC]' : 'opacity-0')} />
-            Bütün {label.toLowerCase()}
+            {t.lists.allOf.replace('{label}', label)}
           </button>
           {options.map((option) => (
             <button
@@ -131,6 +133,7 @@ function SortDropdown({
 }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const t = useT()
 
   useEffect(() => {
     function handleMouseDown(event: MouseEvent) {
@@ -141,7 +144,8 @@ function SortDropdown({
     return () => document.removeEventListener('mousedown', handleMouseDown)
   }, [])
 
-  const current = SORT_OPTIONS.find((option) => option.value === value)
+  const sortOptions = getSortOptions(t.lists)
+  const current = sortOptions.find((option) => option.value === value)
 
   return (
     <div className="relative" ref={ref}>
@@ -149,13 +153,13 @@ function SortDropdown({
         onClick={() => setOpen((prev) => !prev)}
         className="flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-3 text-xs font-medium text-foreground hover:border-[#00B4CC] transition-all duration-200 shadow-sm"
       >
-        {current ? current.label : 'Sırala'}
+        {current ? current.label : t.lists.sortLabel}
         <ChevronDown size={14} className={cn('transition-transform text-muted-foreground', open && 'rotate-180')} />
       </button>
       {open && (
         <div className="absolute right-0 top-full z-30 mt-1 w-72 rounded-xl border border-border bg-card shadow-xl overflow-hidden">
-          <p className="px-4 py-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border">Sırala</p>
-          {SORT_OPTIONS.map((option) => (
+          <p className="px-4 py-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border">{t.lists.sortLabel}</p>
+          {sortOptions.map((option) => (
             <button
               key={option.value}
               onClick={() => {
@@ -192,12 +196,13 @@ export function CustomerStats({
   selectedStatus?: Exclude<CustomerSubscriptionType, 'ALL'> | null
   onStatusClick?: (status: Exclude<CustomerSubscriptionType, 'ALL'> | null) => void
 }) {
+  const t = useT()
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 w-full">
       <StatCard
         iconSrc="/vuesax/linear/People.svg"
         icon={Users}
-        label="Ümumi Müştərilər"
+        label={t.lists.statTotalCustomers}
         value={total}
         active={selectedStatus === null || selectedStatus === undefined}
         onClick={() => onStatusClick?.(null)}
@@ -205,7 +210,7 @@ export function CustomerStats({
       <StatCard
         iconSrc="/abunelikde-7-gun.svg"
         icon={Timer}
-        label="Abunəlikdə son 7 gün"
+        label={t.lists.statLast7Days}
         value={last7}
         active={selectedStatus === 'LAST_7_DAYS'}
         onClick={() => onStatusClick?.('LAST_7_DAYS')}
@@ -213,7 +218,7 @@ export function CustomerStats({
       <StatCard
         iconSrc="/bitmis-status.svg"
         icon={UserX}
-        label="Bitmiş Status"
+        label={t.lists.statExpired}
         value={expired}
         active={selectedStatus === 'FINISHED'}
         onClick={() => onStatusClick?.('FINISHED')}
@@ -221,8 +226,8 @@ export function CustomerStats({
       <StatCard
         iconSrc="/dondurulmus-status.svg"
         icon={UserCheck}
-        label="Dondurulmuş Status"
-        value="YAXINDA"
+        label={t.lists.statActive}
+        value={active}
         active={selectedStatus === 'FROZEN'}
         onClick={() => onStatusClick?.('FROZEN')}
       />
@@ -255,6 +260,7 @@ export function CustomerFilters({
   sortBy: CustomerSortValue | null
   onSortChange: (value: CustomerSortValue | null) => void
 }) {
+  const t = useT()
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 w-full">
       <div className="relative flex-1 min-w-[280px]">
@@ -262,26 +268,26 @@ export function CustomerFilters({
         <input
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
-          placeholder="ID, Ad/Soyad , Email , Telefon üzrə axtarış....."
+          placeholder={t.lists.searchPlaceholder}
           className="h-[40px] w-full rounded-lg border border-border bg-card pl-11 pr-4 text-sm font-medium outline-none focus:border-[#00B4CC] transition-all duration-200 shadow-sm"
         />
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <FilterDropdown
-          label="Paketlər"
+          label={t.lists.filterPackages}
           options={packageOptions.map((option) => ({ value: option.id, label: option.name }))}
           selected={selectedPackageId}
           onChange={(value) => onPackageChange(value as number | null)}
         />
         <FilterDropdown
-          label="Müddət"
-          options={DURATION_OPTIONS}
+          label={t.lists.filterDuration}
+          options={getDurationOptions(t.lists)}
           selected={duration}
           onChange={(value) => onDurationChange(value as number | null)}
         />
         <FilterDropdown
-          label="Abunəlik"
-          options={SUBSCRIPTION_STATUS_OPTIONS}
+          label={t.lists.filterSubscription}
+          options={getSubscriptionStatusOptions(t.lists)}
           selected={subscriptionStatus}
           onChange={(value) => onSubscriptionStatusChange(value as Exclude<CustomerSubscriptionType, 'ALL'> | null)}
         />

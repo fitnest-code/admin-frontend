@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Check, Eye, Search, ChevronDown, Bell, MessageSquare, Mail, Upload, Ban } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useT } from '@/lib/i18n'
 import { useCustomersQuery, type CustomerListItem } from '@/modules/customers'
 import { PAGE_SIZE } from '../customers/list/customer-list-constants'
 import { CustomerBulkActions, EmailModal, PushModal, SmsModal, BlockModal } from '../customers/list/customer-message-modals'
@@ -115,6 +116,7 @@ function SortDropdown({
 
 export function AdminsList() {
   const router = useRouter()
+  const t = useT()
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [sortBy, setSortBy] = useState<AdminSortValue | null>(null)
@@ -183,7 +185,7 @@ export function AdminsList() {
 
   return (
     <div className="flex flex-col gap-5 font-sans">
-      <h1 className="text-xl font-bold text-foreground">Adminlər</h1>
+      <h1 className="text-xl font-bold text-foreground">{t.lists.adminsTitle}</h1>
 
       {/* Search and Sort */}
       <div className="flex flex-wrap items-center justify-between gap-4 w-full">
@@ -219,7 +221,7 @@ export function AdminsList() {
       {/* Table */}
       {adminsQuery.isLoading ? (
         <div className="overflow-hidden rounded-xl border border-border bg-card px-4 py-16 text-center text-sm text-muted-foreground animate-pulse">
-          Adminlər yüklənir...
+          {t.lists.adminsLoading}
         </div>
       ) : sorted.length === 0 ? (
         <div className="overflow-hidden rounded-xl border border-border bg-card">
@@ -234,9 +236,9 @@ export function AdminsList() {
             ))}
           </div>
           <div className="flex flex-col items-center gap-3 py-20 text-center">
-            <p className="text-base font-semibold text-foreground">Hələ admin yoxdur</p>
+            <p className="text-base font-semibold text-foreground">{t.lists.adminsEmpty}</p>
             <p className="text-sm text-muted-foreground max-w-xs">
-              Adminlər qeydiyyatdan keçdikdən sonra burada avtomatik görünəcək.
+              {t.lists.adminsEmptyDesc}
             </p>
           </div>
         </div>
@@ -292,7 +294,7 @@ export function AdminsList() {
       )}
 
       {adminsQuery.isError && (
-        <p className="text-sm text-red-500">Admin siyahısı yüklənmədi. Zəhmət olmasa yenidən cəhd edin.</p>
+        <p className="text-sm text-red-500">{t.lists.adminsError}</p>
       )}
 
       <CustomerPagination total={total} page={page} perPage={PAGE_SIZE} onChange={setPage} />

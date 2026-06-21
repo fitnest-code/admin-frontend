@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Check, Eye, Search, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useT } from '@/lib/i18n'
 import { useCustomersQuery, type CustomerListItem } from '@/modules/customers'
 import { PAGE_SIZE } from '../customers/list/customer-list-constants'
 import { CustomerPagination } from '../customers/list/customer-list-table'
@@ -107,6 +108,7 @@ function SortDropdown({
 
 export function FitnestStaffList() {
   const router = useRouter()
+  const t = useT()
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [sortBy, setSortBy] = useState<StaffSortValue | null>(null)
@@ -168,7 +170,7 @@ export function FitnestStaffList() {
 
   return (
     <div className="flex flex-col gap-5 font-sans">
-      <h1 className="text-xl font-bold text-foreground">Fitnest Komandası</h1>
+      <h1 className="text-xl font-bold text-foreground">{t.lists.staffTitle}</h1>
 
       {/* Search and Sort */}
       <div className="flex flex-wrap items-center justify-between gap-4 w-full">
@@ -180,7 +182,7 @@ export function FitnestStaffList() {
               setSearch(event.target.value)
               setPage(1)
             }}
-            placeholder="ID, Ad/Soyad, Email, Telefon üzrə axtarış....."
+            placeholder={t.lists.searchPlaceholder}
             className="h-[40px] w-full rounded-lg border border-border bg-card pl-11 pr-4 text-sm font-medium outline-none focus:border-[#00B4CC] transition-all duration-200 shadow-sm"
           />
         </div>
@@ -190,7 +192,7 @@ export function FitnestStaffList() {
       {/* Table */}
       {staffQuery.isLoading ? (
         <div className="overflow-hidden rounded-xl border border-border bg-card px-4 py-16 text-center text-sm text-muted-foreground">
-          Komanda üzvləri yüklənir...
+          {t.lists.staffLoading}
         </div>
       ) : sorted.length === 0 ? (
         <div className="overflow-hidden rounded-xl border border-border bg-card">
@@ -205,9 +207,9 @@ export function FitnestStaffList() {
             ))}
           </div>
           <div className="flex flex-col items-center gap-3 py-20 text-center">
-            <p className="text-base font-semibold text-foreground">Hələ komanda üzvü yoxdur</p>
+            <p className="text-base font-semibold text-foreground">{t.lists.staffEmpty}</p>
             <p className="text-sm text-muted-foreground max-w-xs">
-              Komanda üzvləri əlavə edildikdən sonra burada görünəcək.
+              {t.lists.staffEmptyDesc}
             </p>
           </div>
         </div>
@@ -217,10 +219,10 @@ export function FitnestStaffList() {
             <div className="flex justify-center">
               <input type="checkbox" checked={allOnPage} onChange={toggleAll} className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded" />
             </div>
-            <span className="text-[11px] font-bold uppercase text-foreground/80">ID</span>
-            <span className="text-[11px] font-bold uppercase text-foreground/80">Ad / Soyad</span>
-            <span className="text-[11px] font-bold uppercase text-foreground/80">Rol</span>
-            <span className="text-[11px] font-bold uppercase text-foreground/80">Telefon</span>
+            <span className="text-[11px] font-bold uppercase text-foreground/80">{t.lists.colId}</span>
+            <span className="text-[11px] font-bold uppercase text-foreground/80">{t.lists.colName}</span>
+            <span className="text-[11px] font-bold uppercase text-foreground/80">{t.lists.colRole}</span>
+            <span className="text-[11px] font-bold uppercase text-foreground/80">{t.lists.colPhone}</span>
           </div>
 
           {sorted.map((member) => {
@@ -253,7 +255,7 @@ export function FitnestStaffList() {
                       alt="" 
                       className="shrink-0"
                     />
-                    <span>Fitnest Staff</span>
+                    <span>{t.lists.staffRoleLabel}</span>
                   </div>
                 </div>
 
@@ -267,7 +269,7 @@ export function FitnestStaffList() {
       )}
 
       {staffQuery.isError && (
-        <p className="text-sm text-red-500">Komanda siyahısı yüklənmədi. Zəhmət olmasa yenidən cəhd edin.</p>
+        <p className="text-sm text-red-500">{t.lists.staffError}</p>
       )}
 
       <CustomerPagination total={total} page={page} perPage={PAGE_SIZE} onChange={setPage} />

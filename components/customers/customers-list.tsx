@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useT } from '@/lib/i18n'
 import {
   useCustomersQuery,
   useSubscriptionPackageNamesQuery,
@@ -16,6 +17,7 @@ import { sortCustomers, type CustomerSortValue } from './list/customer-list-util
 
 export function CustomersList() {
   const router = useRouter()
+  const t = useT()
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [sortBy, setSortBy] = useState<CustomerSortValue | null>(null)
@@ -88,7 +90,7 @@ export function CustomersList() {
 
   return (
     <div className="flex flex-col gap-5">
-      <h1 className="text-xl font-bold text-foreground">Müştərilər</h1>
+      <h1 className="text-xl font-bold text-foreground">{t.lists.customersTitle}</h1>
 
       <CustomerStats
         total={stats.total}
@@ -146,13 +148,13 @@ export function CustomersList() {
       />
 
       {customersQuery.isError && (
-        <p className="text-sm text-red-500">Müştəri siyahısı yüklənmədi. Zəhmət olmasa yenidən cəhd edin.</p>
+        <p className="text-sm text-red-500">{t.lists.customersError}</p>
       )}
       {packageNamesQuery.isError && (
-        <p className="text-sm text-red-500">Paket adları yüklənmədi. Paket filteri müvəqqəti boş ola bilər.</p>
+        <p className="text-sm text-red-500">{t.lists.packagesError}</p>
       )}
       {packageNamesQuery.isLoading && (
-        <p className="text-xs text-muted-foreground">Paket adları yüklənir...</p>
+        <p className="text-xs text-muted-foreground">{t.lists.packagesLoading}</p>
       )}
 
       <CustomerPagination total={total} page={page} perPage={PAGE_SIZE} onChange={setPage} />
