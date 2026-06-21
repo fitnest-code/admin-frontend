@@ -4,12 +4,12 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { ArrowLeft, Ban, Bell, Mail, MessageSquare, Upload, UserCog, Trash2, RefreshCw } from 'lucide-react'
-import { resetDeviceLimit } from '@/modules/customers/api/customers.service'
+import { resetDeviceLimit, blockUser, unblockUser } from '@/modules/customers/api/customers.service'
 import { cn } from '@/lib/utils'
 import type { CustomerProfile } from '@/modules/customers'
 import { getCustomerStatusLabel, normalizeCustomerStatus, type UiCustomerStatus } from './list/customer-list-utils'
 import { useT } from '@/lib/i18n'
-import { PushModal, SmsModal } from './list/customer-message-modals'
+import { PushModal, SmsModal, EmailModal } from './list/customer-message-modals'
 import { ChangeRoleModal } from './modals/change-role-modal'
 import { ConfirmDeleteSubscriptionModal } from './modals/confirm-delete-subscription-modal'
 import { ResetDeviceLimitModal } from './modals/reset-device-limit-modal'
@@ -67,20 +67,24 @@ function OpsBtn({
   label,
   onClick,
   danger,
+  disabled,
 }: {
   icon: React.ElementType
   label: string
   onClick: () => void
   danger?: boolean
+  disabled?: boolean
 }) {
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
       className={cn(
         'flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-sm font-semibold transition-all duration-200 active:scale-[0.98]',
         danger
           ? 'border-red-200 bg-red-50/40 text-red-600 hover:bg-red-50 hover:border-red-300'
           : 'border-border bg-white text-foreground hover:border-[#00B4CC] hover:text-[#00B4CC] hover:bg-[#00B4CC]/5 shadow-xs',
+        disabled && 'opacity-55 cursor-not-allowed active:scale-100',
       )}
     >
       <Icon size={18} className={cn('shrink-0', danger ? 'text-red-500' : 'text-[#00B4CC]')} /> 
@@ -96,12 +100,31 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
   const [tab, setTab] = useState('profile')
   const [pushOpen, setPushOpen] = useState(false)
   const [smsOpen, setSmsOpen] = useState(false)
+  const [emailOpen, setEmailOpen] = useState(false)
   const [roleOpen, setRoleOpen] = useState(false)
   const [deleteSubOpen, setDeleteSubOpen] = useState(false)
   const [resetDeviceLimitOpen, setResetDeviceLimitOpen] = useState(false)
+  const [blockLoading, setBlockLoading] = useState(false)
 
   function handleResetDeviceLimit() {
     setResetDeviceLimitOpen(true)
+  }
+
+  async function handleBlockToggle() {
+    setBlockLoading(true)
+    try {
+      if (status === 'blocked') {
+        await unblockUser(customer.id)
+        setCustomer(prev => ({ ...prev, userStatus: 'ACTIVE' }))
+      } else {
+        await blockUser(customer.id)
+        setCustomer(prev => ({ ...prev, userStatus: 'DELETED' }))
+      }
+    } catch (err) {
+      console.error('Failed to toggle block status:', err)
+    } finally {
+      setBlockLoading(false)
+    }
   }
 
   const status = normalizeCustomerStatus(customer.userStatus)
@@ -243,13 +266,19 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
               <div className="flex flex-col gap-3">
                 <OpsBtn icon={Bell} label={t.details.sendPush} onClick={() => setPushOpen(true)} />
                 <OpsBtn icon={MessageSquare} label={t.details.sendSms} onClick={() => setSmsOpen(true)} />
-                <OpsBtn icon={Mail} label={t.details.sendEmail} onClick={() => {}} />
+                <OpsBtn icon={Mail} label={t.details.sendEmail} onClick={() => setEmailOpen(true)} />
                 <OpsBtn icon={Upload} label={t.details.export} onClick={() => {}} />
                 <OpsBtn icon={UserCog} label={t.details.changeRole} onClick={() => setRoleOpen(true)} />
                 <OpsBtn icon={RefreshCw} label={t.details.resetDeviceLimit} onClick={handleResetDeviceLimit} />
                 <div className="pt-2 border-t border-border/60 flex flex-col gap-3">
                   <OpsBtn icon={Trash2} label={t.details.deleteSubscription} onClick={() => setDeleteSubOpen(true)} danger />
-                  <OpsBtn icon={Ban} label={t.details.block} onClick={() => {}} danger />
+                  <OpsBtn 
+                    icon={Ban} 
+                    label={status === 'blocked' ? t.details.unblock : t.details.block} 
+                    onClick={handleBlockToggle} 
+                    disabled={blockLoading} 
+                    danger 
+                  />
                 </div>
               </div>
             </div>
@@ -264,6 +293,7 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
        {/* Render Invoked Modals */}
        {pushOpen && <PushModal selectedUsers={[{ id: customer.id, fullName: fullName, email: customer.email, phoneNumber: customer.phoneNumber }]} onClose={() => setPushOpen(false)} />}
        {smsOpen && <SmsModal selectedUsers={[{ id: customer.id, fullName: fullName, email: customer.email, phoneNumber: customer.phoneNumber }]} onClose={() => setSmsOpen(false)} />}
+       {emailOpen && <EmailModal selectedUsers={[{ id: customer.id, fullName: fullName, email: customer.email, phoneNumber: customer.phoneNumber }]} onClose={() => setEmailOpen(false)} />}
        {roleOpen && (
          <ChangeRoleModal
            userId={customer.id}

@@ -25,7 +25,7 @@ export function ContactDetailsTab() {
     if (contactDetails) {
       setFormData({
         email: contactDetails.email || "",
-        mobileNumber: contactDetails.mobileNumber || "",
+        mobileNumber: contactDetails.mobile_number || "",
       });
     }
   }, [contactDetails]);
@@ -43,7 +43,7 @@ export function ContactDetailsTab() {
 
     const payload = {
       email: formData.email.trim(),
-      mobileNumber: formData.mobileNumber.trim(),
+      mobile_number: formData.mobileNumber.trim(),
     };
 
     if (contactDetails) {

@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 import type { CustomerProfile } from '@/modules/customers'
 import { blockUser, unblockUser, resetDeviceLimit } from '@/modules/customers/api/customers.service'
 import { getCustomerStatusLabel, normalizeCustomerStatus, type UiCustomerStatus } from '../customers/list/customer-list-utils'
-import { PushModal, SmsModal } from '../customers/list/customer-message-modals'
+import { PushModal, SmsModal, EmailModal } from '../customers/list/customer-message-modals'
 import { ChangeRoleModal } from '../customers/modals/change-role-modal'
 import { ConfirmDeleteSubscriptionModal } from '../customers/modals/confirm-delete-subscription-modal'
 import { ResetPasswordModal } from './reset-password-modal'
@@ -79,6 +79,7 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
   const [customer, setCustomer] = useState(initialCustomer)
   const [pushOpen, setPushOpen] = useState(false)
   const [smsOpen, setSmsOpen] = useState(false)
+  const [emailOpen, setEmailOpen] = useState(false)
   const [resetPwdOpen, setResetPwdOpen] = useState(false)
   const [roleOpen, setRoleOpen] = useState(false)
   const [deleteSubOpen, setDeleteSubOpen] = useState(false)
@@ -217,7 +218,7 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
             <div className="flex flex-col gap-3">
               <OpsBtn src="/push-notification.svg" label={t.details.sendPush} onClick={() => setPushOpen(true)} />
               <OpsBtn src="/sms-icon.svg" label={t.details.sendSms} onClick={() => setSmsOpen(true)} />
-              <OpsBtn src="/mail-icon.svg" label={t.details.sendEmail} onClick={() => {}} />
+              <OpsBtn src="/mail-icon.svg" label={t.details.sendEmail} onClick={() => setEmailOpen(true)} />
               <OpsBtn src="/export-icon.svg" label={t.details.export} onClick={() => {}} />
               <button
                 onClick={() => setRoleOpen(true)}
@@ -264,6 +265,12 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
         <SmsModal 
           selectedUsers={[{ id: customer.id, fullName: fullName, email: customer.email, phoneNumber: customer.phoneNumber }]} 
           onClose={() => setSmsOpen(false)} 
+        />
+      )}
+      {emailOpen && (
+        <EmailModal 
+          selectedUsers={[{ id: customer.id, fullName: fullName, email: customer.email, phoneNumber: customer.phoneNumber }]} 
+          onClose={() => setEmailOpen(false)} 
         />
       )}
       {resetPwdOpen && (

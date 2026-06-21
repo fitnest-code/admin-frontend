@@ -8,6 +8,7 @@ import { QUICK_REPLIES } from '@/lib/customers-data'
 import { cn } from '@/lib/utils'
 import { SuccessAnimationModal } from '@/components/ui/success-animation-modal'
 import { Spinner } from '@/components/ui/spinner'
+import { useT } from '@/lib/i18n'
 
 type SendState = 'form' | 'confirm' | 'success' | 'error'
 
@@ -24,17 +25,18 @@ export function CustomerBulkActions({
   onOpenEmail?: () => void
   onOpenBlock?: () => void
 }) {
+  const t = useT()
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 w-full transition-all duration-300 animate-in fade-in-50 bg-white/50 p-2 rounded-lg border border-dashed border-[#00B4CC]/20">
       <div className="flex items-center px-2">
-        <span className="text-[14px] font-medium text-foreground">{selectedCount} müştəri seçildi</span>
+        <span className="text-[14px] font-medium text-foreground">{t.modals.selectedCount.replace('{count}', String(selectedCount))}</span>
       </div>
       <div className="flex flex-wrap items-center gap-[13.4px]">
         <ActionBtn iconSrc="/push-notification.svg" icon={Bell} label="Push" onClick={onOpenPush} variant="cyan-outline" />
         <ActionBtn iconSrc="/sms-icon.svg" icon={MessageSquare} label="SMS" onClick={onOpenSms} variant="cyan-outline" />
         <ActionBtn iconSrc="/mail-icon.svg" icon={Mail} label="Email " onClick={() => onOpenEmail?.()} variant="cyan-outline" />
         <ActionBtn iconSrc="/export-icon.svg" icon={Upload} label="Export" onClick={() => {}} variant="cyan-outline" />
-        <ActionBtn icon={Ban} label="Blokla" onClick={() => onOpenBlock?.()} variant="danger-outline" />
+        <ActionBtn icon={Ban} label={t.modals.blockButton} onClick={() => onOpenBlock?.()} variant="danger-outline" />
       </div>
     </div>
   )
@@ -126,6 +128,7 @@ function QuickRepliesDropdown({
   onSelect: (v: string) => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
+  const t = useT()
 
   useEffect(() => {
     function handleMouseDown(event: MouseEvent) {
@@ -142,12 +145,12 @@ function QuickRepliesDropdown({
         onClick={() => setOpen(!open)}
         className="h-[28px] rounded-[6px] bg-[#eef8ff] border border-[#d9d9d9] flex items-center justify-center px-3 py-1 gap-1.5 text-[12px] text-[#0b86fe] font-medium hover:bg-[#e0f2ff] transition-colors"
       >
-        <span>Cavab seçimləri</span>
+        <span>{t.modals.quickReplies}</span>
         <ChevronDown size={14} className={cn('transition-transform', open && 'rotate-180')} />
       </button>
       {open && (
         <div className="absolute right-0 top-full z-40 mt-2 w-[280px] rounded-[12px] border border-[#d9d9d9] bg-white shadow-xl overflow-hidden p-2 flex flex-col gap-1">
-          <p className="px-3 py-1.5 text-[12px] font-semibold text-muted-foreground uppercase border-b border-[#ececed]">Şablon Mesajlar</p>
+          <p className="px-3 py-1.5 text-[12px] font-semibold text-muted-foreground uppercase border-b border-[#ececed]">{t.modals.quickRepliesHeader}</p>
           {QUICK_REPLIES.map((reply) => (
             <button
               key={reply.id}
@@ -178,10 +181,11 @@ function ConfirmDialog({
   onCancel: () => void
   loading?: boolean
 }) {
+  const t = useT()
   return (
     <div className="flex flex-col items-center justify-center py-4 gap-6">
       <p className="text-xl font-semibold text-black text-center max-w-xs leading-relaxed">
-        {type === 'push' ? 'Bildirişi göndərmək istədiyinizə əminsiniz?' : 'SMS göndərmək istədiyinizə əminsiniz?'}
+        {type === 'push' ? t.modals.confirmPushTitle : t.modals.confirmSmsTitle}
       </p>
       <div className="w-full flex items-center justify-center gap-4 mt-2">
         <button 
@@ -189,7 +193,7 @@ function ConfirmDialog({
           disabled={loading}
           className="flex-1 h-[40px] max-w-[140px] rounded-[8px] bg-white border border-[#cecfd2] flex items-center justify-center px-4 transition-all hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <span className="text-sm font-medium text-black">Ləğv et</span>
+          <span className="text-sm font-medium text-black">{t.modals.cancel}</span>
         </button>
         <button 
           onClick={onConfirm} 
@@ -199,10 +203,10 @@ function ConfirmDialog({
           {loading ? (
             <>
               <Spinner className="size-4 text-white" />
-              <span>Göndərilir...</span>
+              <span>{t.modals.sendingButton}</span>
             </>
           ) : (
-            'Göndər'
+            t.modals.sendButton
           )}
         </button>
       </div>
@@ -218,6 +222,7 @@ export function PushModal({ selectedUsers = [], onClose }: { selectedUsers?: any
   const [state, setState] = useState<SendState>('form')
   const [qOpen, setQOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const t = useT()
 
   async function handleConfirm() {
     setLoading(true)
@@ -281,25 +286,35 @@ export function PushModal({ selectedUsers = [], onClose }: { selectedUsers?: any
     }
   }
 
+  const getPushHelpText = () => {
+    if (selectedUsers.length > 1) {
+      return t.modals.pushMultipleHelp.replace('{count}', String(selectedUsers.length))
+    }
+    if (selectedUsers.length === 1) {
+      return t.modals.pushSingleHelp
+    }
+    return t.modals.pushBroadcastHelp
+  }
+
   return (
     <ModalBase onClose={onClose}>
       {state === 'form' && (
         <div className="flex flex-col gap-6 font-sans">
           <div className="w-full border-b border-[#ececed] pb-3 flex items-center justify-between">
-            <h2 className="text-[20px] font-semibold text-black leading-[30px]">Push bildiriş göndər</h2>
+            <h2 className="text-[20px] font-semibold text-black leading-[30px]">{t.modals.sendPushTitle}</h2>
           </div>
           
-          <Field label="Başlıq" placeholder="Başlıq" value={title} onChange={setTitle} />
+          <Field label={t.modals.titleLabel} placeholder={t.modals.titleLabel} value={title} onChange={setTitle} />
           
           <div className="flex flex-col gap-2 w-full">
             <div className="flex items-center justify-between w-full">
-              <label className="text-[16px] font-medium text-black leading-[24px]">Mesaj</label>
+              <label className="text-[16px] font-medium text-black leading-[24px]">{t.modals.messageLabel}</label>
               <QuickRepliesDropdown open={qOpen} setOpen={setQOpen} onSelect={setMessage} />
             </div>
             <textarea
               value={message}
               onChange={(event) => setMessage(event.target.value)}
-              placeholder="Mesaj"
+              placeholder={t.modals.messagePushPlaceholder}
               rows={4}
               className="w-full min-h-[100px] resize-none rounded-[4px] border border-[#ececed] bg-white px-4 py-3 text-[18px] text-black outline-none focus:border-[#00B4CC] transition-colors placeholder:text-muted-foreground/60"
             />
@@ -307,21 +322,19 @@ export function PushModal({ selectedUsers = [], onClose }: { selectedUsers?: any
           
           <div className="w-full flex items-center justify-end gap-3 mt-2">
             <button onClick={onClose} className="h-[40px] px-5 rounded-[8px] bg-white border border-[#cecfd2] flex items-center justify-center transition-all hover:bg-slate-50">
-              <span className="text-sm font-medium text-black">Ləğv et</span>
+              <span className="text-sm font-medium text-black">{t.modals.cancel}</span>
             </button>
             <button
               onClick={() => setState('confirm')}
               disabled={!title.trim() || !message.trim()}
               className="h-[40px] px-6 rounded-[8px] bg-[#00b4cc] flex items-center justify-center transition-all hover:opacity-90 shadow-sm text-white font-semibold text-sm disabled:bg-[#c1c1cc] disabled:shadow-none disabled:cursor-not-allowed"
             >
-              Göndər
+              {t.modals.sendButton}
             </button>
           </div>
           
           <p className="text-center text-[14px] font-medium text-[#717182]">
-            {selectedUsers.length > 0 
-              ? `Bu bildiriş yalnız seçilmiş ${selectedUsers.length} müştəriyə göndəriləcək` 
-              : 'Bu bildiriş yalnız bu müştəriyə göndəriləcək'}
+            {getPushHelpText()}
           </p>
         </div>
       )}
@@ -330,13 +343,13 @@ export function PushModal({ selectedUsers = [], onClose }: { selectedUsers?: any
         isOpen={state === 'success'}
         onClose={onClose}
         type="success"
-        message="Bildiriş uğurla göndərildi"
+        message={t.modals.pushSuccess}
       />
       <SuccessAnimationModal
         isOpen={state === 'error'}
         onClose={() => setState('form')}
         type="error"
-        message="Bildiriş göndərilmədi. Yenidən cəhd edin."
+        message={t.modals.pushError}
       />
     </ModalBase>
   )
@@ -347,6 +360,7 @@ export function SmsModal({ selectedUsers = [], onClose }: { selectedUsers?: any[
   const [state, setState] = useState<SendState>('form')
   const [qOpen, setQOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const t = useT()
 
   const phoneList = selectedUsers.map(u => u.phoneNumber).filter(Boolean)
 
@@ -384,11 +398,11 @@ export function SmsModal({ selectedUsers = [], onClose }: { selectedUsers?: any[
       {state === 'form' && (
         <div className="flex flex-col gap-6 font-sans">
           <div className="w-full border-b border-[#ececed] pb-3 flex items-center justify-between">
-            <h2 className="text-[20px] font-semibold text-black leading-[30px]">SMS göndər</h2>
+            <h2 className="text-[20px] font-semibold text-black leading-[30px]">{t.modals.sendSmsTitle}</h2>
           </div>
           
           <div className="flex flex-col gap-2 w-full max-h-24 overflow-y-auto">
-            <span className="text-[16px] font-medium text-black leading-[24px]">Telefon nömrəsi</span>
+            <span className="text-[16px] font-medium text-black leading-[24px]">{t.modals.phoneLabel}</span>
             <span className="text-[18px] font-semibold text-black leading-[28px]">
               {phoneList.length > 0 ? phoneList.join(', ') : '+994 00 000 00 00'}
             </span>
@@ -396,13 +410,13 @@ export function SmsModal({ selectedUsers = [], onClose }: { selectedUsers?: any[
           
           <div className="flex flex-col gap-2 w-full">
             <div className="flex items-center justify-between w-full">
-              <label className="text-[16px] font-medium text-black leading-[24px]">Mesaj</label>
+              <label className="text-[16px] font-medium text-black leading-[24px]">{t.modals.messageLabel}</label>
               <QuickRepliesDropdown open={qOpen} setOpen={setQOpen} onSelect={setMessage} />
             </div>
             <textarea
               value={message}
               onChange={(event) => setMessage(event.target.value)}
-              placeholder="Mesaj"
+              placeholder={t.modals.messageSmsPlaceholder}
               rows={4}
               className="w-full min-h-[100px] resize-none rounded-[8px] border border-[#ececed] bg-[#fafafa] px-3 py-2 text-sm text-black outline-none focus:border-[#00B4CC] transition-colors placeholder:text-muted-foreground/50"
             />
@@ -410,14 +424,14 @@ export function SmsModal({ selectedUsers = [], onClose }: { selectedUsers?: any[
           
           <div className="w-full flex items-center justify-between gap-5 mt-2">
             <button onClick={onClose} className="flex-1 h-[48px] max-w-[280px] rounded-[10px] bg-white border border-[#00b4cc] flex items-center justify-center px-4 transition-all hover:bg-slate-50">
-              <span className="text-[16px] font-medium text-black leading-[24px]">Ləğv et</span>
+              <span className="text-[16px] font-medium text-black leading-[24px]">{t.modals.cancel}</span>
             </button>
             <button
               onClick={() => setState('confirm')}
               disabled={!message || phoneList.length === 0}
               className="flex-1 h-[48px] max-w-[280px] rounded-[10px] bg-[#00b4cc] flex items-center justify-center px-4 transition-all hover:opacity-90 shadow-md shadow-cyan-100 text-white font-medium text-[16px] disabled:bg-[#c1c1cc] disabled:shadow-none disabled:cursor-not-allowed"
             >
-              Göndər
+              {t.modals.sendButton}
             </button>
           </div>
         </div>
@@ -427,13 +441,13 @@ export function SmsModal({ selectedUsers = [], onClose }: { selectedUsers?: any[
         isOpen={state === 'success'}
         onClose={onClose}
         type="success"
-        message="SMS uğurla göndərildi"
+        message={t.modals.smsSuccess}
       />
       <SuccessAnimationModal
         isOpen={state === 'error'}
         onClose={() => setState('form')}
         type="error"
-        message="SMS göndərilmədi. Yenidən cəhd edin."
+        message={t.modals.smsError}
       />
     </ModalBase>
   )
@@ -445,6 +459,7 @@ export function EmailModal({ selectedUsers = [], onClose }: { selectedUsers?: an
   const [state, setState] = useState<SendState>('form')
   const [qOpen, setQOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const t = useT()
 
   const emailList = selectedUsers.map(u => u.email).filter(Boolean)
 
@@ -483,27 +498,27 @@ export function EmailModal({ selectedUsers = [], onClose }: { selectedUsers?: an
       {state === 'form' && (
         <div className="flex flex-col gap-6 font-sans">
           <div className="w-full border-b border-[#ececed] pb-3 flex items-center justify-between">
-            <h2 className="text-[20px] font-semibold text-black leading-[30px]">Email göndər</h2>
+            <h2 className="text-[20px] font-semibold text-black leading-[30px]">{t.modals.sendEmailTitle}</h2>
           </div>
           
           <div className="flex flex-col gap-2 w-full max-h-24 overflow-y-auto">
-            <span className="text-[16px] font-medium text-black leading-[24px]">Alıcılar ({emailList.length})</span>
+            <span className="text-[16px] font-medium text-black leading-[24px]">{t.modals.recipients} ({emailList.length})</span>
             <span className="text-[18px] font-semibold text-black leading-[28px]">
-              {emailList.length > 0 ? emailList.join(', ') : 'Hədəf email seçilməyib'}
+              {emailList.length > 0 ? emailList.join(', ') : t.modals.noEmailSelected}
             </span>
           </div>
 
-          <Field label="Mövzu" placeholder="Mövzu başlığı" value={subject} onChange={setSubject} />
+          <Field label={t.modals.subjectLabel} placeholder={t.modals.subjectPlaceholder} value={subject} onChange={setSubject} />
           
           <div className="flex flex-col gap-2 w-full">
             <div className="flex items-center justify-between w-full">
-              <label className="text-[16px] font-medium text-black leading-[24px]">Mesaj</label>
+              <label className="text-[16px] font-medium text-black leading-[24px]">{t.modals.messageLabel}</label>
               <QuickRepliesDropdown open={qOpen} setOpen={setQOpen} onSelect={setMessage} />
             </div>
             <textarea
               value={message}
               onChange={(event) => setMessage(event.target.value)}
-              placeholder="Mesaj məzmunu"
+              placeholder={t.modals.messagePlaceholder}
               rows={5}
               className="w-full min-h-[120px] resize-none rounded-[8px] border border-[#ececed] bg-[#fafafa] px-3 py-2 text-sm text-black outline-none focus:border-[#00B4CC] transition-colors placeholder:text-muted-foreground/50"
             />
@@ -511,14 +526,14 @@ export function EmailModal({ selectedUsers = [], onClose }: { selectedUsers?: an
           
           <div className="w-full flex items-center justify-between gap-5 mt-2">
             <button onClick={onClose} className="flex-1 h-[48px] max-w-[280px] rounded-[10px] bg-white border border-[#00b4cc] flex items-center justify-center px-4 transition-all hover:bg-slate-50">
-              <span className="text-[16px] font-medium text-black leading-[24px]">Ləğv et</span>
+              <span className="text-[16px] font-medium text-black leading-[24px]">{t.modals.cancel}</span>
             </button>
             <button
               onClick={() => setState('confirm')}
               disabled={!subject.trim() || !message.trim() || emailList.length === 0}
               className="flex-1 h-[48px] max-w-[280px] rounded-[10px] bg-[#00b4cc] flex items-center justify-center px-4 transition-all hover:opacity-90 shadow-md shadow-cyan-100 text-white font-medium text-[16px] disabled:bg-[#c1c1cc] disabled:shadow-none disabled:cursor-not-allowed"
             >
-              Göndər
+              {t.modals.sendButton}
             </button>
           </div>
         </div>
@@ -526,7 +541,7 @@ export function EmailModal({ selectedUsers = [], onClose }: { selectedUsers?: an
       {state === 'confirm' && (
         <div className="flex flex-col items-center justify-center py-6 gap-7">
           <p className="text-[26px] font-medium text-[#131212] leading-[40px] text-center max-w-md">
-            Emaili göndərmək istədiyinizə əminsiniz?
+            {t.modals.confirmEmailTitle}
           </p>
           <div className="w-full flex items-center justify-between gap-5 mt-2">
             <button 
@@ -534,7 +549,7 @@ export function EmailModal({ selectedUsers = [], onClose }: { selectedUsers?: an
               disabled={loading}
               className="flex-1 h-[48px] max-w-[250px] rounded-[10px] bg-white border border-[#00b4cc] flex items-center justify-center px-4 transition-all hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span className="text-[16px] font-medium text-black leading-[24px]">Ləğv et</span>
+              <span className="text-[16px] font-medium text-black leading-[24px]">{t.modals.cancel}</span>
             </button>
             <button 
               onClick={handleConfirm} 
@@ -544,10 +559,10 @@ export function EmailModal({ selectedUsers = [], onClose }: { selectedUsers?: an
               {loading ? (
                 <>
                   <Spinner className="size-4 text-white" />
-                  <span className="text-[16px] font-medium text-white leading-[24px]">Göndərilir...</span>
+                  <span className="text-[16px] font-medium text-white leading-[24px]">{t.modals.sendingButton}</span>
                 </>
               ) : (
-                <span className="text-[16px] font-medium text-white leading-[24px]">Göndər</span>
+                <span className="text-[16px] font-medium text-white leading-[24px]">{t.modals.sendButton}</span>
               )}
             </button>
           </div>
@@ -557,13 +572,13 @@ export function EmailModal({ selectedUsers = [], onClose }: { selectedUsers?: an
         isOpen={state === 'success'}
         onClose={onClose}
         type="success"
-        message="Email uğurla göndərildi"
+        message={t.modals.emailSuccess}
       />
       <SuccessAnimationModal
         isOpen={state === 'error'}
         onClose={() => setState('form')}
         type="error"
-        message="Email göndərilmədi. Yenidən cəhd edin."
+        message={t.modals.emailError}
       />
     </ModalBase>
   )
@@ -574,6 +589,7 @@ import { blockUser } from '@/modules/customers/api/customers.service'
 export function BlockModal({ selectedUsers = [], onClose, onSuccess }: { selectedUsers?: any[]; onClose: () => void; onSuccess?: () => void }) {
   const [state, setState] = useState<SendState>('form')
   const [loading, setLoading] = useState(false)
+  const t = useT()
 
   async function handleConfirm() {
     setLoading(true)
@@ -602,18 +618,18 @@ export function BlockModal({ selectedUsers = [], onClose, onSuccess }: { selecte
           </div>
           <div className="flex flex-col gap-2 text-center">
             <p className="text-xl font-semibold text-black leading-tight">
-              İstifadəçiləri bloklamaq istədiyinizə əminsiniz?
+              {t.modals.confirmBlockTitle}
             </p>
             <p className="text-sm text-muted-foreground px-4">
-              Seçilmiş {selectedUsers.length} istifadəçi sistemə daxil ola bilməyəcək və bütün sessiyaları sonlandırılacaq.
+              {t.modals.blockSubtitle.replace('{count}', String(selectedUsers.length))}
             </p>
           </div>
           <div className="w-full flex items-center justify-center gap-4 mt-2">
             <button onClick={onClose} disabled={loading} className="flex-1 h-[40px] max-w-[140px] rounded-[8px] bg-white border border-[#cecfd2] flex items-center justify-center px-4 transition-all hover:bg-slate-50 disabled:opacity-50">
-              <span className="text-sm font-medium text-black">Ləğv et</span>
+              <span className="text-sm font-medium text-black">{t.modals.cancel}</span>
             </button>
             <button onClick={handleConfirm} disabled={loading} className="flex-1 h-[40px] max-w-[140px] rounded-[8px] bg-red-500 flex items-center justify-center px-4 transition-all hover:bg-red-600 shadow-sm text-white text-sm font-semibold disabled:opacity-50">
-              {loading ? 'Gözləyin...' : 'Blokla'}
+              {loading ? t.modals.pleaseWait : t.modals.blockButton}
             </button>
           </div>
         </div>
@@ -622,13 +638,13 @@ export function BlockModal({ selectedUsers = [], onClose, onSuccess }: { selecte
         isOpen={state === 'success'}
         onClose={onClose}
         type="success"
-        message="İstifadəçilər uğurla bloklandı"
+        message={t.modals.blockSuccess}
       />
       <SuccessAnimationModal
         isOpen={state === 'error'}
         onClose={() => setState('form')}
         type="error"
-        message="Bloklama zamanı xəta baş verdi"
+        message={t.modals.blockError}
       />
     </ModalBase>
   )

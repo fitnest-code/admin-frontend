@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { X, Upload, Loader2 } from "lucide-react";
-import az from "@/lib/i18n/locales/az";
+import az, { type TranslationKeys } from "@/lib/i18n/locales/az";
 
 export interface GoalFormData {
   code: string;
@@ -18,7 +18,7 @@ interface GoalModalProps {
   onSave: (data: GoalFormData) => void;
   initialData?: { code: string; title: string; subtitle?: string; imageUrl?: string };
   mode?: "create" | "edit";
-  t: typeof az;
+  t: TranslationKeys;
   isLoading?: boolean;
 }
 

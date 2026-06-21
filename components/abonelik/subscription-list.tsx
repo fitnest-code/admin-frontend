@@ -459,7 +459,7 @@ function PackageCard({
                     {tier.duration || 'Müddət'}
                   </span>
                   <div className="flex items-baseline justify-center gap-1 text-center whitespace-nowrap shrink-0">
-                    {tier.discountPrice > 0 && tier.discountPrice !== tier.price ? (
+                    {Number(tier.discountPrice) > 0 && Number(tier.discountPrice) !== Number(tier.price) ? (
                       <div className="flex items-baseline gap-1 whitespace-nowrap">
                         <span className="text-[16px] leading-[24px] font-medium text-red-500 line-through whitespace-nowrap">
                           {tier.price} AZN
