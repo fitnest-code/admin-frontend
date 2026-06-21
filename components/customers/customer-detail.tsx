@@ -11,6 +11,7 @@ import { getCustomerStatusLabel, normalizeCustomerStatus, type UiCustomerStatus 
 import { PushModal, SmsModal } from './list/customer-message-modals'
 import { ChangeRoleModal } from './modals/change-role-modal'
 import { ConfirmDeleteSubscriptionModal } from './modals/confirm-delete-subscription-modal'
+import { ResetDeviceLimitModal } from './modals/reset-device-limit-modal'
 import { SubscriptionTab } from './tabs/subscription-tab'
 import { PaymentsTab } from './tabs/payments-tab'
 import { AccessTab } from './tabs/access-tab'
@@ -95,18 +96,10 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
   const [smsOpen, setSmsOpen] = useState(false)
   const [roleOpen, setRoleOpen] = useState(false)
   const [deleteSubOpen, setDeleteSubOpen] = useState(false)
+  const [resetDeviceLimitOpen, setResetDeviceLimitOpen] = useState(false)
 
-  async function handleResetDeviceLimit() {
-    if (!window.confirm("Cihaz limitini sıfırlamaq istədiyinizdən əminsiniz?")) {
-      return
-    }
-    try {
-      await resetDeviceLimit(customer.id)
-      alert("Cihaz limiti uğurla sıfırlandı.")
-    } catch (err) {
-      console.error("Cihaz limiti sıfırlanmadı:", err)
-      alert(err instanceof Error ? err.message : "Cihaz limiti sıfırlanmadı.")
-    }
+  function handleResetDeviceLimit() {
+    setResetDeviceLimitOpen(true)
   }
 
   const status = normalizeCustomerStatus(customer.userStatus)
@@ -278,6 +271,13 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
            onSuccess={() => {
              window.location.reload()
            }}
+         />
+       )}
+       {resetDeviceLimitOpen && (
+         <ResetDeviceLimitModal
+           userId={customer.id}
+           onClose={() => setResetDeviceLimitOpen(false)}
+           onSuccess={() => router.refresh()}
          />
        )}
     </div>
