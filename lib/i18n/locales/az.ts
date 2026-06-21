@@ -12,6 +12,8 @@ const az = {
     fitnestStaff: "Fitnest Komandası",
     payments: "Ödənişlər",
     reports: "Hesabatlar",
+    reportsGymPayments: "Zallar üzrə ödəniş",
+    reportsGeneral: "Ümumi hesabatlar",
     diet: "Diet",
     training: "Məşq",
     omnichannel: "Omnichannel",

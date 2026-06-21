@@ -13,6 +13,8 @@ const ru: TranslationKeys = {
     fitnestStaff: "Команда Fitnest",
     payments: "Платежи",
     reports: "Отчёты",
+    reportsGymPayments: "Платежи по залам",
+    reportsGeneral: "Общие отчёты",
     diet: "Диета",
     training: "Тренировка",
     omnichannel: "Омниканал",

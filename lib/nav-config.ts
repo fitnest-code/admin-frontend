@@ -26,6 +26,11 @@ export interface NavItem {
   icon: LucideIcon;
   href: string;
   iconPath?: string;
+  children?: {
+    key: string;
+    labelKey: keyof typeof import("@/lib/i18n/locales/az").default.nav;
+    href: string;
+  }[];
 }
 
 export const NAV_ITEMS: NavItem[] = [
@@ -68,7 +73,19 @@ export const NAV_ITEMS: NavItem[] = [
     labelKey: "reports",
     icon: BarChart2,
     href: "/hesabatlar",
-    iconPath: "/Sidebar/Sidebar/hesabatlar.svg"
+    iconPath: "/Sidebar/Sidebar/hesabatlar.svg",
+    children: [
+      {
+        key: "zallar-uzre-odenis",
+        labelKey: "reportsGymPayments",
+        href: "/hesabatlar/zallar-uzre-odenis",
+      },
+      {
+        key: "umumi-hesabatlar",
+        labelKey: "reportsGeneral",
+        href: "/hesabatlar/umumi-hesabatlar",
+      }
+    ]
   },
   { key: "diet", labelKey: "diet", icon: Salad, href: "/diet", iconPath: "/Sidebar/Sidebar/diet.svg" },
   { key: "mesq", labelKey: "training", icon: Dumbbell, href: "/mesq", iconPath: "/Sidebar/Sidebar/mesq.svg" },
