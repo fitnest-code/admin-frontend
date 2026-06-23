@@ -228,8 +228,8 @@ export function CustomerStats({
         icon={UserCheck}
         label={t.lists.statActive}
         value={active}
-        active={selectedStatus === 'FROZEN'}
-        onClick={() => onStatusClick?.('FROZEN')}
+        active={selectedStatus === 'ACTIVE'}
+        onClick={() => onStatusClick?.('ACTIVE')}
       />
     </div>
   )
