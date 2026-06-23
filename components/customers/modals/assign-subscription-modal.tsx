@@ -151,16 +151,13 @@ export function AssignSubscriptionModal({ userId, onClose, onSuccess }: AssignSu
                         type="button"
                         onClick={() => pkg.package_id && handlePlanChange(pkg.package_id)}
                         className={cn(
-                          'flex flex-col items-start p-3 rounded-lg border text-left transition-all duration-200 outline-none cursor-pointer',
+                          'flex items-center justify-center p-4 rounded-lg border text-center transition-all duration-200 outline-none cursor-pointer',
                           isSelected
                             ? 'border-[#00B4CC] bg-[#00B4CC]/5 text-[#00B4CC] font-semibold'
                             : 'border-[#cecfd2]/60 bg-white text-foreground hover:bg-slate-50'
                         )}
                       >
                         <span className="text-sm font-bold">{pkg.name}</span>
-                        <span className="text-[10px] text-muted-foreground mt-1">
-                          Limit: {pkg.entry_limit === 0 ? 'Limitsiz' : `${pkg.entry_limit} giriş`}
-                        </span>
                       </button>
                     )
                   })}
@@ -176,32 +173,19 @@ export function AssignSubscriptionModal({ userId, onClose, onSuccess }: AssignSu
                   <div className="flex flex-col gap-2 max-h-[200px] overflow-y-auto pr-1">
                     {activeOptions.map((opt) => {
                       const isSelected = selectedOptionId === opt.option_id
-                      const hasDiscount = opt.price_discounted !== null && opt.price_discounted !== undefined && Number(opt.price_discounted) < Number(opt.price_standard)
                       return (
                         <button
                           key={opt.option_id}
                           type="button"
                           onClick={() => opt.option_id && setSelectedOptionId(opt.option_id)}
                           className={cn(
-                            'w-full flex items-center justify-between px-4 py-3 rounded-lg border text-left transition-all duration-200 outline-none cursor-pointer',
+                            'w-full flex items-center justify-between px-4 py-3.5 rounded-lg border text-left transition-all duration-200 outline-none cursor-pointer',
                             isSelected
                               ? 'border-[#00B4CC] bg-[#00B4CC]/5 text-[#00B4CC] font-semibold'
                               : 'border-[#cecfd2]/60 bg-white text-foreground hover:bg-slate-50'
                           )}
                         >
-                          <div className="flex flex-col">
-                            <span className="text-sm font-medium">{opt.duration_months} ay</span>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              {hasDiscount ? (
-                                <>
-                                  <span className="text-sm font-bold text-foreground">{opt.price_discounted} AZN</span>
-                                  <span className="text-xs text-muted-foreground line-through">{opt.price_standard} AZN</span>
-                                </>
-                              ) : (
-                                <span className="text-sm font-bold text-foreground">{opt.price_standard} AZN</span>
-                              )}
-                            </div>
-                          </div>
+                          <span className="text-sm font-medium">{opt.duration_months} ay</span>
                           <div
                             className={cn(
                               'h-4 w-4 rounded-full border flex items-center justify-center transition-all',
@@ -214,34 +198,6 @@ export function AssignSubscriptionModal({ userId, onClose, onSuccess }: AssignSu
                       )
                     })}
                   </div>
-                </div>
-              )}
-
-              {/* Auto Payment Toggle */}
-              {showAutoPayment && (
-                <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-lg border border-[#cecfd2]/40 mt-1">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#00B4CC]/10 text-[#00B4CC]">
-                      <CreditCard size={16} />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-xs font-semibold text-foreground">
-                        {t.modals.autoPayment || 'Avtomatik ödəniş aktiv edilsin'}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground">
-                        Hər ay kartdan avtomatik çıxılacaq
-                      </span>
-                    </div>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={autoPaymentEnabled}
-                      onChange={(e) => setAutoPaymentEnabled(e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#00B4CC]"></div>
-                  </label>
                 </div>
               )}
             </div>
