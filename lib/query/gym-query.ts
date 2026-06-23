@@ -617,7 +617,8 @@ export function useGymReservationStats(gymId: number | string | null | undefined
 // 26. Dərs saatlarını çəkmək üçün
 export function useGymLessonHours(
   gymId: number | string | null | undefined,
-  params?: { page?: number; pageSize?: number; startDate?: string; endDate?: string }
+  params?: { page?: number; pageSize?: number; startDate?: string; endDate?: string },
+  options?: { enabled?: boolean }
 ) {
   const normalizedParams = {
     page: params?.page || 1,
@@ -634,7 +635,30 @@ export function useGymLessonHours(
       if (!normalizedGymId) return Promise.resolve({ items: [], total: 0, page: 1, pageSize: 10 })
       return apiGet<any>(`/admin/gyms/${normalizedGymId}/lesson-hours`, { params: normalizedParams })
     },
-    enabled: !!gymId,
+    enabled: options?.enabled !== false && !!gymId,
+  })
+}
+
+// 26.1 Arxiv dərs saatlarını çəkmək üçün
+export function useGymLessonHoursArchive(
+  gymId: number | string | null | undefined,
+  params?: { page?: number; pageSize?: number },
+  options?: { enabled?: boolean }
+) {
+  const normalizedParams = {
+    page: params?.page || 1,
+    pageSize: params?.pageSize || 10
+  };
+
+  const normalizedGymId = gymId ? Number(gymId) : null;
+
+  return useQuery({
+    queryKey: ['gym-lesson-hours-archive', normalizedGymId, normalizedParams],
+    queryFn: () => {
+      if (!normalizedGymId) return Promise.resolve({ items: [], total: 0, page: 1, pageSize: 10 })
+      return apiGet<any>(`/admin/gyms/${normalizedGymId}/lesson-hours/archive`, { params: normalizedParams })
+    },
+    enabled: options?.enabled !== false && !!gymId,
   })
 }
 

@@ -5,6 +5,7 @@ import Image from 'next/image'
 import styles from './lesson-hours-tab.module.css'
 import { 
     useGymLessonHours, 
+    useGymLessonHoursArchive,
     useDeleteLessonHour,
     useGymTrainers,
     useGymLessonTypes
@@ -90,12 +91,22 @@ const LessonHoursTab = () => {
         }
     }
 
-    const { data: apiData, isLoading } = useGymLessonHours(gymId as string, { 
+    const [viewMode, setViewMode] = useState<'active' | 'archive'>('active')
+
+    const { data: activeData, isLoading: isActiveLoading } = useGymLessonHours(gymId as string, { 
         page: currentPage, 
         pageSize,
         startDate: startDate || undefined,
         endDate: endDate || undefined
-    })
+    }, { enabled: viewMode === 'active' })
+
+    const { data: archiveData, isLoading: isArchiveLoading } = useGymLessonHoursArchive(gymId as string, { 
+        page: currentPage, 
+        pageSize,
+    }, { enabled: viewMode === 'archive' })
+
+    const apiData = viewMode === 'active' ? activeData : archiveData
+    const isLoading = viewMode === 'active' ? isActiveLoading : isArchiveLoading
     const deleteMutation = useDeleteLessonHour()
 
     const lessonHours = apiData?.items || []
@@ -133,8 +144,41 @@ const LessonHoursTab = () => {
                 </div>
             </div>
 
+            {/* Active / Archive Switcher */}
+            <div className="flex items-center gap-2 mb-6 border-b border-[#ececed] pb-3 font-sans">
+                <button
+                    onClick={() => {
+                        setViewMode('active')
+                        setCurrentPage(1)
+                    }}
+                    className={cn(
+                        "px-4 py-2 text-sm font-semibold rounded-lg transition-all",
+                        viewMode === 'active'
+                            ? "bg-[#00B4CC] text-white shadow-sm"
+                            : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                    )}
+                >
+                    Aktiv
+                </button>
+                <button
+                    onClick={() => {
+                        setViewMode('archive')
+                        setCurrentPage(1)
+                    }}
+                    className={cn(
+                        "px-4 py-2 text-sm font-semibold rounded-lg transition-all",
+                        viewMode === 'archive'
+                            ? "bg-[#00B4CC] text-white shadow-sm"
+                            : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                    )}
+                >
+                    Arxiv
+                </button>
+            </div>
+
             {/* Date range filter dropdown */}
-            <div className="w-full flex items-center justify-start mb-6 font-sans">
+            {viewMode === 'active' && (
+                <div className="w-full flex items-center justify-start mb-6 font-sans">
                 <div className="relative">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -266,6 +310,7 @@ const LessonHoursTab = () => {
                     </DialogContent>
                 </Dialog>
             </div>
+            )}
 
             {isLoading ? (
                 <div className={styles.loading}>{t.lessonHours.loading}</div>
@@ -305,9 +350,11 @@ const LessonHoursTab = () => {
                                             </span>
                                         </td>
                                         <td className={styles.actions}>
-                                            <button className={styles.deleteBtn} onClick={() => setDeleteLessonId(hour.id)}>
-                                                <Image src="/trash.png" width={20} height={20} alt="Delete" />
-                                            </button>
+                                            {viewMode === 'active' && (
+                                                <button className={styles.deleteBtn} onClick={() => setDeleteLessonId(hour.id)}>
+                                                    <Image src="/trash.png" width={20} height={20} alt="Delete" />
+                                                </button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
