@@ -220,3 +220,42 @@ export const useSubscriptions = () => {
     updatePackageStatus: updatePackageStatus.mutateAsync,
   };
 };
+
+export function useRawSubscriptionPackages() {
+  const locale = useI18nStore((s) => s.locale);
+  return useQuery<BackendPackageResponse[]>({
+    queryKey: ["raw-subscription-packages", locale],
+    queryFn: () =>
+      apiRequest<BackendPackageResponse[]>("/admin/subscription-packages", {
+        headers: {
+          "Accept-Language": locale,
+        },
+      }),
+  });
+}
+
+export function useAdminAssignSubscription() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: {
+      userId: number;
+      planId: number;
+      optionId: number;
+      autoPaymentEnabled?: boolean;
+    }) => {
+      return apiRequest("/admin/subscriptions/assign", {
+        method: "POST",
+        body: {
+          user_id: payload.userId,
+          plan_id: payload.planId,
+          option_id: payload.optionId,
+          auto_payment_enabled: payload.autoPaymentEnabled ?? false,
+        },
+      });
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["customers", String(variables.userId)] });
+      queryClient.invalidateQueries({ queryKey: ["customers", String(variables.userId), "subscription"] });
+    },
+  });
+}

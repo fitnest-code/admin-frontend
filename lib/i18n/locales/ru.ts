@@ -436,6 +436,12 @@ const ru: TranslationKeys = {
     loading: "Загрузка...",
     roleUpdateSuccess: "Роль пользователя успешно изменена.",
     roleUpdateError: "Произошла ошибка при изменении роли.",
+    assignSubscriptionTitle: "Назначить подписку",
+    selectPackage: "Выберите пакет",
+    selectOption: "Выберите вариант",
+    autoPayment: "Включить автоплатеж",
+    assignSuccess: "Подписка успешно назначена.",
+    assignError: "Ошибка при назначении подписки.",
     
     sendPushTitle: "Отправить push-уведомление",
     sendSmsTitle: "Отправить SMS",

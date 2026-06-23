@@ -11,6 +11,7 @@ import { getCustomerStatusLabel, normalizeCustomerStatus, type UiCustomerStatus 
 import { PushModal, SmsModal, EmailModal } from '../customers/list/customer-message-modals'
 import { ChangeRoleModal } from '../customers/modals/change-role-modal'
 import { ConfirmDeleteSubscriptionModal } from '../customers/modals/confirm-delete-subscription-modal'
+import { AssignSubscriptionModal } from '../customers/modals/assign-subscription-modal'
 import { ResetPasswordModal } from './reset-password-modal'
 import { ResetDeviceLimitModal } from '../customers/modals/reset-device-limit-modal'
 import { useT } from '@/lib/i18n'
@@ -83,6 +84,7 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
   const [resetPwdOpen, setResetPwdOpen] = useState(false)
   const [roleOpen, setRoleOpen] = useState(false)
   const [deleteSubOpen, setDeleteSubOpen] = useState(false)
+  const [assignSubOpen, setAssignSubOpen] = useState(false)
   const [blockLoading, setBlockLoading] = useState(false)
   const [resetDeviceLimitOpen, setResetDeviceLimitOpen] = useState(false)
 
@@ -236,6 +238,12 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
               </button>
               <div className="pt-2 border-t border-border/60 flex flex-col gap-3">
                 <button
+                  onClick={() => setAssignSubOpen(true)}
+                  className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-white px-4 py-3 text-sm font-semibold text-foreground hover:border-[#00B4CC] hover:text-[#00B4CC] hover:bg-[#00B4CC]/5 transition-all duration-200 active:scale-[0.98] shadow-xs"
+                >
+                  <span>{t.modals.assignSubscriptionTitle || 'Abunəlik təyin et'}</span>
+                </button>
+                <button
                   onClick={() => setDeleteSubOpen(true)}
                   className="flex w-full items-center justify-center gap-3 rounded-lg border border-red-200 bg-red-50/40 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 hover:border-red-300 transition-all duration-200"
                 >
@@ -291,6 +299,15 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
         <ConfirmDeleteSubscriptionModal
           userId={customer.id}
           onClose={() => setDeleteSubOpen(false)}
+          onSuccess={() => {
+            window.location.reload()
+          }}
+        />
+      )}
+      {assignSubOpen && (
+        <AssignSubscriptionModal
+          userId={customer.id}
+          onClose={() => setAssignSubOpen(false)}
           onSuccess={() => {
             window.location.reload()
           }}

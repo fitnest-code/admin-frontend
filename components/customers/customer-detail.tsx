@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { ArrowLeft, Ban, Bell, Mail, MessageSquare, Upload, UserCog, Trash2, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Ban, Bell, Mail, MessageSquare, Upload, UserCog, Trash2, RefreshCw, ShieldCheck } from 'lucide-react'
 import { resetDeviceLimit, blockUser, unblockUser } from '@/modules/customers/api/customers.service'
 import { cn } from '@/lib/utils'
 import type { CustomerProfile } from '@/modules/customers'
@@ -12,6 +12,7 @@ import { useT } from '@/lib/i18n'
 import { PushModal, SmsModal, EmailModal } from './list/customer-message-modals'
 import { ChangeRoleModal } from './modals/change-role-modal'
 import { ConfirmDeleteSubscriptionModal } from './modals/confirm-delete-subscription-modal'
+import { AssignSubscriptionModal } from './modals/assign-subscription-modal'
 import { ResetDeviceLimitModal } from './modals/reset-device-limit-modal'
 import { SubscriptionTab } from './tabs/subscription-tab'
 import { PaymentsTab } from './tabs/payments-tab'
@@ -103,6 +104,7 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
   const [emailOpen, setEmailOpen] = useState(false)
   const [roleOpen, setRoleOpen] = useState(false)
   const [deleteSubOpen, setDeleteSubOpen] = useState(false)
+  const [assignSubOpen, setAssignSubOpen] = useState(false)
   const [resetDeviceLimitOpen, setResetDeviceLimitOpen] = useState(false)
   const [blockLoading, setBlockLoading] = useState(false)
 
@@ -271,6 +273,7 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
                 <OpsBtn icon={UserCog} label={t.details.changeRole} onClick={() => setRoleOpen(true)} />
                 <OpsBtn icon={RefreshCw} label={t.details.resetDeviceLimit} onClick={handleResetDeviceLimit} />
                 <div className="pt-2 border-t border-border/60 flex flex-col gap-3">
+                  <OpsBtn icon={ShieldCheck} label={t.modals.assignSubscriptionTitle || 'Abunəlik təyin et'} onClick={() => setAssignSubOpen(true)} />
                   <OpsBtn icon={Trash2} label={t.details.deleteSubscription} onClick={() => setDeleteSubOpen(true)} danger />
                   <OpsBtn 
                     icon={Ban} 
@@ -306,6 +309,15 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
          <ConfirmDeleteSubscriptionModal
            userId={customer.id}
            onClose={() => setDeleteSubOpen(false)}
+           onSuccess={() => {
+             window.location.reload()
+           }}
+         />
+       )}
+       {assignSubOpen && (
+         <AssignSubscriptionModal
+           userId={customer.id}
+           onClose={() => setAssignSubOpen(false)}
            onSuccess={() => {
              window.location.reload()
            }}

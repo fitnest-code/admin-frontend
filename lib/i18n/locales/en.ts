@@ -436,6 +436,12 @@ const en: TranslationKeys = {
     loading: "Loading...",
     roleUpdateSuccess: "User role changed successfully.",
     roleUpdateError: "An error occurred while changing the role.",
+    assignSubscriptionTitle: "Assign subscription",
+    selectPackage: "Select package",
+    selectOption: "Select option",
+    autoPayment: "Enable auto payment",
+    assignSuccess: "Subscription assigned successfully.",
+    assignError: "Failed to assign subscription.",
     
     sendPushTitle: "Send push notification",
     sendSmsTitle: "Send SMS",

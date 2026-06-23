@@ -445,6 +445,12 @@ const az = {
     loading: "Yüklənir...",
     roleUpdateSuccess: "İstifadəçi rolu uğurla dəyişdirildi.",
     roleUpdateError: "Rol dəyişdirilərkən xəta baş verdi.",
+    assignSubscriptionTitle: "Abunəlik təyin et",
+    selectPackage: "Paket seçin",
+    selectOption: "Variant seçin",
+    autoPayment: "Avtomatik ödəniş aktiv edilsin",
+    assignSuccess: "Abunəlik uğurla təyin edildi.",
+    assignError: "Abunəlik təyin edilərkən xəta baş verdi.",
     
     sendPushTitle: "Push bildiriş göndər",
     sendSmsTitle: "SMS göndər",
