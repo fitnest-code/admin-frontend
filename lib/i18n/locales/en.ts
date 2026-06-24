@@ -550,6 +550,44 @@ const en: TranslationKeys = {
     partnerRoleSuper: "Super admin",
     partnerRoleAdmin: "Admin",
   },
+  reports: {
+    generalTitle: "General",
+    gymPaymentsTitle: "Gym payment obligations",
+    gymPaymentsSubtitle: "Amount FitNest will pay to gyms",
+    today: "Today",
+    last7Days: "Last 7 days",
+    last30Days: "Last month",
+    lastMonth: "Last month",
+    custom: "Custom",
+    dateRange: "Date range",
+    back: "Back",
+    clear: "Clear",
+    confirm: "Confirm",
+    export: "Export",
+    subscribers: "subscribers",
+    growth: "growth",
+    growthComparedToLastMonth: "growth (compared to last month)",
+    customerCount: "Customer count",
+    newCustomer: "New customer",
+    activeCustomer: "Active customer",
+    incomeTrend: "Income Trend",
+    userGrowth: "User growth",
+    gymName: "Gym name",
+    qrCount: "QR entrance count",
+    gymSubscription: "Gym Subscription",
+    amount: "Amount",
+    months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    fullMonths: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+    cards: {
+      totalIncome: "Total Income",
+      activeUsers: "Active User",
+      qrScans: "Total QR Entry",
+      newRegistrations: "New Registrations",
+      activeSubscriptions: "Active Subscriptions",
+      endingSubscriptions: "Expiring Subscriptions",
+      renewingSubscriptions: "Renewing Subscriptions"
+    }
+  }
 } as const;
 
 export default en;

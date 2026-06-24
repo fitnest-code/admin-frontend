@@ -567,6 +567,44 @@ const az = {
     partnerRoleSuper: "Super admin",
     partnerRoleAdmin: "Admin",
   },
+  reports: {
+    generalTitle: "Ümumi",
+    gymPaymentsTitle: "Zallar üzrə ödəniş öhdəliyi",
+    gymPaymentsSubtitle: "FitNestin zallara ödəyəcəyi məbləğ",
+    today: "Bu gün",
+    last7Days: "Son 7 gün",
+    last30Days: "Son 1 ay",
+    lastMonth: "Keçən ay",
+    custom: "Custom",
+    dateRange: "Tarix aralığı",
+    back: "Geri",
+    clear: "Təmizlə",
+    confirm: "Təsdiq et",
+    export: "Export",
+    subscribers: "abunə",
+    growth: "artım",
+    growthComparedToLastMonth: "artım (keçən aya nisbətən)",
+    customerCount: "Müştəri sayı",
+    newCustomer: "Yeni müştəri",
+    activeCustomer: "Aktiv müştəri",
+    incomeTrend: "Gelir Trendi",
+    userGrowth: "İstifadəçi artımı",
+    gymName: "Zal adı",
+    qrCount: "QR giriş sayı",
+    gymSubscription: "Zalın Abunəliyi",
+    amount: "Məbləğ",
+    months: ["Yan", "Fev", "Mar", "Apr", "May", "İyun", "İyul", "Avq", "Sen", "Okt", "Noy", "Dek"],
+    fullMonths: ["Yanvar", "Fevral", "Mart", "Aprel", "May", "İyun", "İyul", "Avqust", "Sentyabr", "Oktyabr", "Noyabr", "Dekabr"],
+    cards: {
+      totalIncome: "Ümumi Gəlir",
+      activeUsers: "Aktiv istifadəçi",
+      qrScans: "Ümumi QR giriş",
+      newRegistrations: "Yeni Qeydiyyatlar",
+      activeSubscriptions: "Aktiv Abunəliklər",
+      endingSubscriptions: "Bitən Abunəliklər",
+      renewingSubscriptions: "Yenilənən Abunəliklər"
+    }
+  }
 } as const;
 
 export default az;

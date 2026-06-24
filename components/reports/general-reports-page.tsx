@@ -6,10 +6,7 @@ import {
   ChevronDown, 
   ChevronLeft, 
   ChevronRight,
-  ArrowLeft,
-  Calendar as CalendarIcon,
-  TrendingUp,
-  Download
+  ArrowLeft
 } from 'lucide-react'
 import { 
   addMonths, 
@@ -18,7 +15,6 @@ import {
   getYear, 
   setMonth, 
   setYear,
-  differenceInDays,
   subDays,
   subMonths,
   startOfMonth,
@@ -41,22 +37,21 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar as DatePicker } from '@/components/ui/calendar'
 import { cn } from '@/lib/utils'
-
-const MONTHS = ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'İyun', 'İyul', 'Avq', 'Sen', 'Okt', 'Noy', 'Dek']
+import { useT } from '@/lib/i18n'
+import { apiGet } from '@/lib/api/client'
 
 type PresetKey = 'today' | 'last7' | 'last30' | 'lastMonth' | 'custom'
 
 interface DatePreset {
   key: PresetKey
-  label: string
 }
 
 const DATE_PRESETS: DatePreset[] = [
-  { key: 'today', label: 'Bu gün' },
-  { key: 'last7', label: 'Son 7 gün' },
-  { key: 'last30', label: 'Son 1 ay' },
-  { key: 'lastMonth', label: 'Keçən ay' },
-  { key: 'custom', label: 'Custom' },
+  { key: 'today' },
+  { key: 'last7' },
+  { key: 'last30' },
+  { key: 'lastMonth' },
+  { key: 'custom' },
 ]
 
 const getPresetRange = (preset: PresetKey): DateRange | undefined => {
@@ -80,6 +75,17 @@ const getPresetRange = (preset: PresetKey): DateRange | undefined => {
   }
 }
 
+const formatISO = (date: Date, isStart: boolean) => {
+  const d = new Date(date)
+  if (isStart) {
+    d.setHours(0, 0, 0, 0)
+  } else {
+    d.setHours(23, 59, 59, 999)
+  }
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+}
+
 // Reusable Date Range Selector Component
 interface DateRangeSelectorProps {
   selectedPreset: PresetKey | null
@@ -100,6 +106,7 @@ function DateRangeSelector({
   size = 'md',
   variant = 'default'
 }: DateRangeSelectorProps) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date())
   const [view, setView] = useState<'presets' | 'calendar'>('presets')
@@ -128,15 +135,25 @@ function DateRangeSelector({
     setSelectedPreset('custom')
   }
 
+  const getPresetLabel = (key: PresetKey) => {
+    switch (key) {
+      case 'today': return t.reports.today
+      case 'last7': return t.reports.last7Days
+      case 'last30': return t.reports.last30Days
+      case 'lastMonth': return t.reports.lastMonth
+      case 'custom': return t.reports.custom
+      default: return ''
+    }
+  }
+
   const getDisplayLabel = () => {
-    if (!selectedPreset) return 'Tarix aralığı'
+    if (!selectedPreset) return t.reports.dateRange
     if (selectedPreset === 'custom') {
-      if (!periodRange?.from) return 'Tarix aralığı'
+      if (!periodRange?.from) return t.reports.dateRange
       if (!periodRange.to) return format(periodRange.from, 'dd.MM.yyyy')
       return `${format(periodRange.from, 'dd.MM.yyyy')} - ${format(periodRange.to, 'dd.MM.yyyy')}`
     }
-    const preset = DATE_PRESETS.find(p => p.key === selectedPreset)
-    return preset ? preset.label : 'Tarix aralığı'
+    return getPresetLabel(selectedPreset)
   }
 
   return (
@@ -181,7 +198,7 @@ function DateRangeSelector({
                       isPresetActive ? 'text-[#00b4cc] font-bold' : 'text-black'
                     )}
                   >
-                    {preset.label}
+                    {getPresetLabel(preset.key)}
                   </button>
                   {isLastPresetBeforeCustom && <div className="w-full h-[1px] bg-[#ececed]" />}
                 </div>
@@ -197,7 +214,7 @@ function DateRangeSelector({
                 onClick={() => setView('presets')}
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-black transition-colors cursor-pointer"
               >
-                <ArrowLeft size={14} /> Geri
+                <ArrowLeft size={14} /> {t.reports.back}
               </button>
             </div>
             <div className="mb-2 flex items-center justify-between gap-2 px-2 pt-1">
@@ -214,7 +231,7 @@ function DateRangeSelector({
                   onChange={(e) => setCalendarMonth(setMonth(calendarMonth, Number(e.target.value)))}
                   className="h-8 rounded-[8px] border border-[#ececed] bg-white px-2 text-[13px] font-medium outline-none focus:border-[#00b4cc]"
                 >
-                  {MONTHS.map((m, idx) => (
+                  {t.reports.months.map((m: string, idx: number) => (
                     <option key={m} value={idx}>{m}</option>
                   ))}
                 </select>
@@ -273,14 +290,14 @@ function DateRangeSelector({
                 }}
                 className="text-xs font-semibold text-gray-500 hover:text-black transition-colors"
               >
-                Təmizlə
+                {t.reports.clear}
               </button>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
                 className="text-xs font-semibold text-[#00b4cc] hover:opacity-85"
               >
-                Təsdiq et
+                {t.reports.confirm}
               </button>
             </div>
           </div>
@@ -290,49 +307,23 @@ function DateRangeSelector({
   )
 }
 
-// Subscription Tiers config for Gelir Trendi
 type TierKey = 'bronze' | 'silver' | 'gold' | 'platinum'
 
 interface TierConfig {
   label: string
   color: string
-  subscribers: number
-  growth: number
-  dataValues: number[]
 }
 
 const TIER_CONFIGS: Record<TierKey, TierConfig> = {
-  bronze: {
-    label: 'Bronze',
-    color: '#B97A3C',
-    subscribers: 500,
-    growth: 12,
-    dataValues: [100, 310, 310, 330, 300, 380, 230, 360, 360, 500, 450, 450, 220, 485, 520],
-  },
-  silver: {
-    label: 'Silver',
-    color: '#9BAAC7',
-    subscribers: 420,
-    growth: 9,
-    dataValues: [120, 280, 290, 350, 320, 360, 250, 380, 390, 480, 460, 440, 260, 450, 500],
-  },
-  gold: {
-    label: 'Gold',
-    color: '#F8D57E',
-    subscribers: 680,
-    growth: 15,
-    dataValues: [140, 340, 350, 380, 340, 420, 270, 410, 420, 520, 490, 480, 280, 510, 560],
-  },
-  platinum: {
-    label: 'Platinum',
-    color: '#515254',
-    subscribers: 240,
-    growth: 18,
-    dataValues: [160, 390, 380, 410, 390, 460, 300, 440, 460, 560, 530, 510, 320, 550, 610],
-  },
+  bronze: { label: 'Bronze', color: '#B97A3C' },
+  silver: { label: 'Silver', color: '#9BAAC7' },
+  gold: { label: 'Gold', color: '#F8D57E' },
+  platinum: { label: 'Platinum', color: '#515254' },
 }
 
 export function GeneralReportsPage() {
+  const t = useT()
+
   // Main Date filter states
   const [mainPreset, setMainPreset] = useState<PresetKey | null>('last7')
   const [mainRange, setMainRange] = useState<DateRange | undefined>(() => getPresetRange('last7'))
@@ -400,41 +391,231 @@ export function GeneralReportsPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Base metrics mock data
-  const baseCardStats = [
-    { id: 'income', title: 'Ümumi Gəlir', value: 234500, type: 'currency', trend: '+ 4.2 %', icon: '/Hesabatlar/total_income.svg' },
-    { id: 'active_users', title: 'Aktiv istifadəçi', value: 32, type: 'number', trend: '+ 2', icon: '/Hesabatlar/active_user.svg' },
-    { id: 'qr_scans', title: 'Ümumi QR giriş', value: 1000, type: 'number', trend: '+ 12 %', icon: '/Hesabatlar/generalQR_code entry.svg' },
-    { id: 'new_reg', title: 'Yeni Qeydiyyatlar', value: 85, type: 'number', trend: '+ 1 %', icon: '/Hesabatlar/new_registrations.svg' },
-    { id: 'active_sub', title: 'Aktiv Abunəliklər', value: 85, type: 'number', trend: '+ 1 %', icon: '/Hesabatlar/active_subscriptions.svg' },
-    { id: 'ending_sub', title: 'Bitən Abunəliklər', value: 85, type: 'number', trend: '+ 1 %', icon: '/Hesabatlar/expiring_subscriptions.svg' },
-    { id: 'renew_sub', title: 'Yenilənən Abunəliklər', value: 85, type: 'number', trend: '+ 1 %', icon: '/Hesabatlar/renewing_subscriptions.svg' },
-  ]
+  // Dynamic Card Data State
+  const [cardData, setCardData] = useState<Record<string, { value: number; trend: string }>>({
+    income: { value: 0, trend: '+ 0 %' },
+    active_users: { value: 0, trend: '+ 0 %' },
+    qr_scans: { value: 0, trend: '+ 0 %' },
+    new_reg: { value: 0, trend: '+ 0 %' },
+    active_sub: { value: 0, trend: '+ 0 %' },
+    ending_sub: { value: 0, trend: '+ 0 %' },
+    renew_sub: { value: 0, trend: '+ 0 %' },
+  })
 
-  const getDynamicCardStats = () => {
-    return baseCardStats.map((stat, index) => {
-      const range = cardRanges[index]
-      if (!range?.from) {
-        return stat
+  // Dynamic Chart 1 (Income Trend) data state
+  const [incomeTrend, setIncomeTrend] = useState<any[]>([])
+  
+  // Dynamic Chart 2 (User Growth) data state
+  const [userGrowthTrend, setUserGrowthTrend] = useState<any[]>([])
+  const [growthPercentage, setGrowthPercentage] = useState<number>(12)
+
+  // Card 0 (Income)
+  useEffect(() => {
+    const range = cardRanges[0]
+    if (!range?.from) return
+    const fromVal = range.from
+    const toVal = range.to || range.from
+    async function fetchIncome() {
+      try {
+        const fromStr = formatISO(fromVal, true)
+        const toStr = formatISO(toVal, false)
+        const data = await apiGet<any>('/admin/reports/income', {
+          params: { startDate: fromStr, endDate: toStr }
+        })
+        setCardData(prev => ({
+          ...prev,
+          income: {
+            value: data.totalIncome,
+            trend: `${data.isPositiveTrend ? '+' : '-'} ${Math.abs(data.percentageChange).toFixed(1)} %`
+          }
+        }))
+      } catch (e) {
+        console.error(e)
       }
-      const from = range.from
-      const to = range.to || from
-      const days = Math.max(1, differenceInDays(to, from) + 1)
-      
-      const scaleFactor = Math.max(0.08, (days * 3.3) / 100)
-      let dynamicVal = Math.round(stat.value * scaleFactor)
-      
-      if (stat.id === 'active_users' && dynamicVal < 3) dynamicVal = 5
-      if (dynamicVal < 1) dynamicVal = 1
-      
-      return {
-        ...stat,
-        value: dynamicVal
+    }
+    fetchIncome()
+  }, [cardRanges[0]])
+
+  // Card 1 (Active Users)
+  useEffect(() => {
+    const range = cardRanges[1]
+    if (!range?.from) return
+    const fromVal = range.from
+    const toVal = range.to || range.from
+    async function fetchActiveUsers() {
+      try {
+        const fromStr = formatISO(fromVal, true)
+        const toStr = formatISO(toVal, false)
+        const data = await apiGet<any>('/admin/reports/users', {
+          params: { startDate: fromStr, endDate: toStr }
+        })
+        setCardData(prev => ({
+          ...prev,
+          active_users: {
+            value: data.activeUsers,
+            trend: '+ 0 %'
+          }
+        }))
+      } catch (e) {
+        console.error(e)
       }
-    })
+    }
+    fetchActiveUsers()
+  }, [cardRanges[1]])
+
+  // Card 2 (QR Scans)
+  useEffect(() => {
+    const range = cardRanges[2]
+    if (!range?.from) return
+    const fromVal = range.from
+    const toVal = range.to || range.from
+    async function fetchQrScans() {
+      try {
+        const fromStr = formatISO(fromVal, true)
+        const toStr = formatISO(toVal, false)
+        const data = await apiGet<any>('/admin/reports/qr-scans', {
+          params: { startDate: fromStr, endDate: toStr }
+        })
+        setCardData(prev => ({
+          ...prev,
+          qr_scans: {
+            value: data.count,
+            trend: '+ 0 %'
+          }
+        }))
+      } catch (e) {
+        console.error(e)
+      }
+    }
+    fetchQrScans()
+  }, [cardRanges[2]])
+
+  // Card 3 (New Registrations)
+  useEffect(() => {
+    const range = cardRanges[3]
+    if (!range?.from) return
+    const fromVal = range.from
+    const toVal = range.to || range.from
+    async function fetchNewReg() {
+      try {
+        const fromStr = formatISO(fromVal, true)
+        const toStr = formatISO(toVal, false)
+        const data = await apiGet<any>('/admin/reports/users', {
+          params: { startDate: fromStr, endDate: toStr }
+        })
+        setCardData(prev => ({
+          ...prev,
+          new_reg: {
+            value: data.newRegistrations,
+            trend: '+ 0 %'
+          }
+        }))
+      } catch (e) {
+        console.error(e)
+      }
+    }
+    fetchNewReg()
+  }, [cardRanges[3]])
+
+  // Cards 4, 5, 6 (Subscriptions)
+  const fetchSubscriptionsForCard = async (range: DateRange | undefined, cardKey: string) => {
+    if (!range?.from) return
+    const fromVal = range.from
+    const toVal = range.to || range.from
+    try {
+      const fromStr = formatISO(fromVal, true)
+      const toStr = formatISO(toVal, false)
+      const data = await apiGet<any>('/admin/reports/subscriptions', {
+        params: { startDate: fromStr, endDate: toStr }
+      })
+      let metricVal = 0
+      if (cardKey === 'active_sub') metricVal = data.activeSubscriptions
+      else if (cardKey === 'ending_sub') metricVal = data.endingSubscriptions
+      else if (cardKey === 'renew_sub') metricVal = data.renewingSubscriptions
+
+      setCardData(prev => ({
+        ...prev,
+        [cardKey]: {
+          value: metricVal,
+          trend: '+ 0 %'
+        }
+      }))
+    } catch (e) {
+      console.error(e)
+    }
   }
 
-  const cardStats = getDynamicCardStats()
+  useEffect(() => {
+    fetchSubscriptionsForCard(cardRanges[4], 'active_sub')
+  }, [cardRanges[4]])
+
+  useEffect(() => {
+    fetchSubscriptionsForCard(cardRanges[5], 'ending_sub')
+  }, [cardRanges[5]])
+
+  useEffect(() => {
+    fetchSubscriptionsForCard(cardRanges[6], 'renew_sub')
+  }, [cardRanges[6]])
+
+  // Fetch Chart 1 (Income Trend)
+  useEffect(() => {
+    if (!chart1Range?.from) return
+    const fromVal = chart1Range.from
+    const toVal = chart1Range.to || chart1Range.from
+    async function fetchChart1Data() {
+      try {
+        const fromStr = formatISO(fromVal, true)
+        const toStr = formatISO(toVal, false)
+        const data = await apiGet<any>('/admin/reports/income', {
+          params: { startDate: fromStr, endDate: toStr }
+        })
+        setIncomeTrend(data.trend || [])
+      } catch (e) {
+        console.error(e)
+      }
+    }
+    fetchChart1Data()
+  }, [chart1Range])
+
+  // Fetch Chart 2 (User Growth)
+  useEffect(() => {
+    if (!chart2Range?.from) return
+    const fromVal = chart2Range.from
+    const toVal = chart2Range.to || chart2Range.from
+    async function fetchChart2Data() {
+      try {
+        const fromStr = formatISO(fromVal, true)
+        const toStr = formatISO(toVal, false)
+        const data = await apiGet<any>('/admin/reports/users', {
+          params: { startDate: fromStr, endDate: toStr }
+        })
+        setUserGrowthTrend(data.growthTrend || [])
+        
+        if (data.growthTrend && data.growthTrend.length >= 2) {
+          const len = data.growthTrend.length
+          const prev = data.growthTrend[len - 2].newCustomers
+          const curr = data.growthTrend[len - 1].newCustomers
+          if (prev > 0) {
+            const diff = ((curr - prev) / prev) * 100
+            setGrowthPercentage(Math.round(diff))
+          }
+        }
+      } catch (e) {
+        console.error(e)
+      }
+    }
+    fetchChart2Data()
+  }, [chart2Range])
+
+  const baseCardStats = [
+    { id: 'income', title: t.reports.cards.totalIncome, value: cardData.income.value, type: 'currency', trend: cardData.income.trend, icon: '/Hesabatlar/total_income.svg' },
+    { id: 'active_users', title: t.reports.cards.activeUsers, value: cardData.active_users.value, type: 'number', trend: cardData.active_users.trend, icon: '/Hesabatlar/active_user.svg' },
+    { id: 'qr_scans', title: t.reports.cards.qrScans, value: cardData.qr_scans.value, type: 'number', trend: cardData.qr_scans.trend, icon: '/Hesabatlar/generalQR_code entry.svg' },
+    { id: 'new_reg', title: t.reports.cards.newRegistrations, value: cardData.new_reg.value, type: 'number', trend: cardData.new_reg.trend, icon: '/Hesabatlar/new_registrations.svg' },
+    { id: 'active_sub', title: t.reports.cards.activeSubscriptions, value: cardData.active_sub.value, type: 'number', trend: cardData.active_sub.trend, icon: '/Hesabatlar/active_subscriptions.svg' },
+    { id: 'ending_sub', title: t.reports.cards.endingSubscriptions, value: cardData.ending_sub.value, type: 'number', trend: cardData.ending_sub.trend, icon: '/Hesabatlar/expiring_subscriptions.svg' },
+    { id: 'renew_sub', title: t.reports.cards.renewingSubscriptions, value: cardData.renew_sub.value, type: 'number', trend: cardData.renew_sub.trend, icon: '/Hesabatlar/renewing_subscriptions.svg' },
+  ]
 
   const formatCardValue = (val: number, type: string) => {
     if (type === 'currency') {
@@ -445,57 +626,23 @@ export function GeneralReportsPage() {
 
   // Gelir Trendi Line Chart Data
   const currentTierMeta = TIER_CONFIGS[selectedTier]
-  const monthsList = [
-    { name: 'Yanvar', index: 0 },
-    { name: 'Jan-2', index: 1 },
-    { name: 'Jan-3', index: 2 },
-    { name: 'Fevral', index: 3 },
-    { name: 'Feb-2', index: 4 },
-    { name: 'Feb-3', index: 5 },
-    { name: 'Mart', index: 6 },
-    { name: 'Mar-2', index: 7 },
-    { name: 'Mar-3', index: 8 },
-    { name: 'Aprel', index: 9 },
-    { name: 'Apr-2', index: 10 },
-    { name: 'Apr-3', index: 11 },
-    { name: 'May', index: 12 },
-    { name: 'May-2', index: 13 },
-    { name: 'May-3', index: 14 },
-  ]
 
   const getLineChartData = () => {
-    const scaleFactor = chart1Range?.from ? Math.max(0.2, (differenceInDays(chart1Range.to || chart1Range.from, chart1Range.from) + 1) / 30) : 1
-    
-    return monthsList.map(month => ({
-      name: month.name,
-      value: Math.round(currentTierMeta.dataValues[month.index] * scaleFactor),
-      showLabel: month.name === 'Yanvar' || month.name === 'Fevral' || month.name === 'Mart' || month.name === 'Aprel' || month.name === 'May'
+    return incomeTrend.map(point => ({
+      name: point.periodLabel,
+      value: point.tierValues[selectedTier] || 0,
+      showLabel: true
     }))
   }
 
   const lineChartData = getLineChartData()
 
   // User growth grouped Bar Chart Data
-  const baseBarChartData = [
-    { name: 'Jan', yeni: 1200, aktiv: 2600 },
-    { name: 'Feb', yeni: 1600, aktiv: 2500 },
-    { name: 'Mar', yeni: 3200, aktiv: 3800 },
-    { name: 'Apr', yeni: 2800, aktiv: 2900 },
-    { name: 'May', yeni: 4200, aktiv: 4800 },
-    { name: 'Jun', yeni: 2600, aktiv: 4100 },
-  ]
-
   const getBarChartData = () => {
-    if (!chart2Range?.from) {
-      return baseBarChartData
-    }
-    const days = Math.max(1, differenceInDays(chart2Range.to || chart2Range.from, chart2Range.from) + 1)
-    const scaleFactor = Math.max(0.1, (days * 3.3) / 100)
-    
-    return baseBarChartData.map(d => ({
-      name: d.name,
-      yeni: Math.round(d.yeni * scaleFactor),
-      aktiv: Math.round(d.aktiv * scaleFactor),
+    return userGrowthTrend.map(point => ({
+      name: point.periodLabel,
+      yeni: point.newCustomers,
+      aktiv: point.activeCustomers
     }))
   }
 
@@ -506,8 +653,7 @@ export function GeneralReportsPage() {
     if (active && payload && payload.length) {
       return (
         <div className="rounded-[10px] bg-[#00B4CC] px-3.5 py-1.5 text-center shadow-lg relative -top-12 border-0">
-          <p className="text-[11px] font-medium text-white/90">Aprel</p>
-          <p className="text-[15px] font-bold text-white leading-tight">{payload[0].value}</p>
+          <p className="text-[15px] font-bold text-white leading-tight">{payload[0].value} ₼</p>
           <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[5px] border-t-[#00B4CC]" />
         </div>
       )
@@ -520,7 +666,7 @@ export function GeneralReportsPage() {
       {/* Title & Toolbar block */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-[24px] font-bold leading-[32px] text-black">Ümumi</h1>
+          <h1 className="text-[24px] font-bold leading-[32px] text-black">{t.reports.generalTitle}</h1>
         </div>
         <div className="flex items-center gap-3">
           {/* Main Date selector */}
@@ -539,7 +685,7 @@ export function GeneralReportsPage() {
             className="flex h-[42px] items-center gap-2 rounded-[12px] border border-[#ececed] bg-white px-5 text-[14px] font-medium leading-none text-black hover:border-gray-300 transition-colors shadow-3xs cursor-pointer"
           >
             <Image src="/export-icon.svg" width={16} height={16} alt="Export" className="shrink-0" />
-            <span>Export</span>
+            <span>{t.reports.export}</span>
           </button>
         </div>
       </div>
@@ -548,7 +694,7 @@ export function GeneralReportsPage() {
       <div className="flex flex-col gap-4">
         {/* Top row: 4 cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {cardStats.slice(0, 4).map((card, idx) => {
+          {baseCardStats.slice(0, 4).map((card, idx) => {
             const globalIdx = idx
             return (
               <div 
@@ -585,7 +731,7 @@ export function GeneralReportsPage() {
 
         {/* Bottom row: 3 cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {cardStats.slice(4, 7).map((card, idx) => {
+          {baseCardStats.slice(4, 7).map((card, idx) => {
             const globalIdx = idx + 4
             return (
               <div 
@@ -628,7 +774,7 @@ export function GeneralReportsPage() {
         <div className="flex flex-col gap-4 rounded-[16px] border border-[#ececed] bg-white p-5 shadow-3xs">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-[16px] font-bold text-black leading-tight">Gelir Trendi</h2>
+              <h2 className="text-[16px] font-bold text-black leading-tight">{t.reports.incomeTrend}</h2>
               <div className="mt-2.5 flex items-center gap-2 text-[14px]">
                 {/* Custom subscription filter selector dropdown */}
                 <div className="relative" ref={tierDropdownRef}>
@@ -664,16 +810,6 @@ export function GeneralReportsPage() {
                     </ul>
                   )}
                 </div>
-
-                <div className="flex items-center gap-1.5 text-gray-500 font-semibold text-[13px] ml-1">
-                  <span className="text-black font-bold">{currentTierMeta.subscribers}</span>
-                  <span>abunə</span>
-                  <span className="text-gray-300 font-light">/</span>
-                  <div className="flex items-center gap-1 text-[#059669]">
-                    <Image src="/High-Low.svg" width={11} height={11} alt="Up" />
-                    <span>+{currentTierMeta.growth}% artım</span>
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -690,48 +826,44 @@ export function GeneralReportsPage() {
 
           {/* Line Chart */}
           <div className="h-56 mt-2 relative">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={lineChartData} margin={{ top: 30, right: 10, left: -25, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F1F3F5" vertical={false} />
-                <XAxis 
-                  dataKey="name" 
-                  tickFormatter={(val, index) => {
-                    const item = lineChartData[index]
-                    return item && item.showLabel ? item.name : ''
-                  }}
-                  tick={{ fontSize: 12, fill: '#6B7280', fontWeight: 500 }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis 
-                  tick={{ fontSize: 12, fill: '#6B7280', fontWeight: 500 }}
-                  axisLine={false}
-                  tickLine={false}
-                  domain={[100, 'auto']}
-                />
-                <Tooltip 
-                  content={<CustomLineTooltip />}
-                  trigger="hover"
-                  cursor={false}
-                />
-                <ReferenceLine 
-                  x="Aprel" 
-                  stroke="#8B5CF6" 
-                  strokeDasharray="3 3" 
-                  strokeWidth={1}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="#6366F1" 
-                  strokeWidth={2}
-                  dot={false}
-                  activeDot={
-                    <Dot r={5} fill="#6366F1" stroke="#fff" strokeWidth={2} />
-                  }
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            {lineChartData.length === 0 ? (
+              <div className="w-full h-full flex items-center justify-center text-[14px] text-gray-500 font-medium">
+                {t.common.noData}
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={lineChartData} margin={{ top: 30, right: 10, left: -25, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F1F3F5" vertical={false} />
+                  <XAxis 
+                    dataKey="name" 
+                    tick={{ fontSize: 12, fill: '#6B7280', fontWeight: 500 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12, fill: '#6B7280', fontWeight: 500 }}
+                    axisLine={false}
+                    tickLine={false}
+                    domain={[0, 'auto']}
+                  />
+                  <Tooltip 
+                    content={<CustomLineTooltip />}
+                    trigger="hover"
+                    cursor={false}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="value" 
+                    stroke="#6366F1" 
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={
+                      <Dot r={5} fill="#6366F1" stroke="#fff" strokeWidth={2} />
+                    }
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
@@ -739,10 +871,10 @@ export function GeneralReportsPage() {
         <div className="flex flex-col gap-4 rounded-[16px] border border-[#ececed] bg-white p-5 shadow-3xs">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-[16px] font-bold text-black leading-tight">İstifadəçi artımı</h2>
+              <h2 className="text-[16px] font-bold text-black leading-tight">{t.reports.userGrowth}</h2>
               <div className="mt-2.5 flex items-center gap-1.5 text-[13px] font-semibold text-[#059669]">
                 <Image src="/High-Low.svg" width={12} height={12} alt="Up" />
-                <span>+12% artım (keçən aya nisbətən)</span>
+                <span>{growthPercentage >= 0 ? `+${growthPercentage}` : growthPercentage}% {t.reports.growthComparedToLastMonth}</span>
               </div>
             </div>
             {/* Custom Date Range Picker for Istifadeci artimi */}
@@ -756,54 +888,60 @@ export function GeneralReportsPage() {
             />
           </div>
 
-          <p className="text-[12px] font-medium text-gray-400 mt-1">Müştəri sayı</p>
+          <p className="text-[12px] font-medium text-gray-400 mt-1">{t.reports.customerCount}</p>
 
           {/* Grouped Bar Chart */}
           <div className="h-56 mt-1">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={barChartData}
-                margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
-                barCategoryGap="35%"
-                barGap={3}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#F1F3F5" vertical={false} />
-                <XAxis 
-                  dataKey="name" 
-                  tick={{ fontSize: 12, fill: '#6B7280', fontWeight: 500 }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis 
-                  tick={{ fontSize: 12, fill: '#6B7280', fontWeight: 500 }}
-                  axisLine={false}
-                  tickLine={false}
-                  domain={[0, 'auto']}
-                  tickFormatter={(val) => val === 0 ? '0' : val >= 1000 ? `${val / 1000}k` : val}
-                />
-                <Tooltip 
-                  cursor={{ fill: '#F8FAFC', opacity: 0.5 }}
-                  contentStyle={{ 
-                    borderRadius: '10px', 
-                    border: '1px solid #ececed', 
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' 
-                  }}
-                />
-                <Bar dataKey="yeni" fill="#00B4CC" radius={[4, 4, 0, 0]} name="Yeni müştəri" />
-                <Bar dataKey="aktiv" fill="#0A7D8C" radius={[4, 4, 0, 0]} name="Aktiv müştəri" />
-              </BarChart>
-            </ResponsiveContainer>
+            {barChartData.length === 0 ? (
+              <div className="w-full h-full flex items-center justify-center text-[14px] text-gray-500 font-medium">
+                {t.common.noData}
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={barChartData}
+                  margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
+                  barCategoryGap="35%"
+                  barGap={3}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F1F3F5" vertical={false} />
+                  <XAxis 
+                    dataKey="name" 
+                    tick={{ fontSize: 12, fill: '#6B7280', fontWeight: 500 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12, fill: '#6B7280', fontWeight: 500 }}
+                    axisLine={false}
+                    tickLine={false}
+                    domain={[0, 'auto']}
+                    tickFormatter={(val) => val === 0 ? '0' : val >= 1000 ? `${val / 1000}k` : val}
+                  />
+                  <Tooltip 
+                    cursor={{ fill: '#F8FAFC', opacity: 0.5 }}
+                    contentStyle={{ 
+                      borderRadius: '10px', 
+                      border: '1px solid #ececed', 
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' 
+                    }}
+                  />
+                  <Bar dataKey="yeni" fill="#00B4CC" radius={[4, 4, 0, 0]} name={t.reports.newCustomer} />
+                  <Bar dataKey="aktiv" fill="#0A7D8C" radius={[4, 4, 0, 0]} name={t.reports.activeCustomer} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
 
           {/* Legend */}
           <div className="flex items-center justify-center gap-5 mt-2 text-[12px] font-semibold text-gray-500">
             <div className="flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-sm bg-[#00B4CC]" />
-              <span>Yeni müştəri</span>
+              <span>{t.reports.newCustomer}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-sm bg-[#0A7D8C]" />
-              <span>Aktiv müştəri</span>
+              <span>{t.reports.activeCustomer}</span>
               <span className="text-gray-400 font-normal ml-0.5 cursor-pointer hover:text-black">ⓘ</span>
             </div>
           </div>

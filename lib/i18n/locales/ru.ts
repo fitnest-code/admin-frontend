@@ -550,6 +550,44 @@ const ru: TranslationKeys = {
     partnerRoleSuper: "Супер-администратор",
     partnerRoleAdmin: "Администратор",
   },
+  reports: {
+    generalTitle: "Общий",
+    gymPaymentsTitle: "Обязательства по выплате залам",
+    gymPaymentsSubtitle: "Сумма к выплате залам от FitNest",
+    today: "Сегодня",
+    last7Days: "Последние 7 дней",
+    last30Days: "Последний 1 месяц",
+    lastMonth: "Прошлый месяц",
+    custom: "Custom",
+    dateRange: "Период времени",
+    back: "Назад",
+    clear: "Очистить",
+    confirm: "Подтвердить",
+    export: "Экспорт",
+    subscribers: "подписчиков",
+    growth: "прирост",
+    growthComparedToLastMonth: "прирост (по сравнению с прошлым месяцем)",
+    customerCount: "Количество клиентов",
+    newCustomer: "Новый клиент",
+    activeCustomer: "Активный клиент",
+    incomeTrend: "Тренд доходов",
+    userGrowth: "Рост пользователей",
+    gymName: "Название зала",
+    qrCount: "Количество QR входов",
+    gymSubscription: "Подписка зала",
+    amount: "Сумма",
+    months: ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"],
+    fullMonths: ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"],
+    cards: {
+      totalIncome: "Общий Доход",
+      activeUsers: "Активный пользователь",
+      qrScans: "Всего QR входов",
+      newRegistrations: "Новые Регистрации",
+      activeSubscriptions: "Активные Подписки",
+      endingSubscriptions: "Истекающие Подписки",
+      renewingSubscriptions: "Продлеваемые Подписки"
+    }
+  }
 } as const;
 
 export default ru;
