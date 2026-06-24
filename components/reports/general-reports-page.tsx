@@ -29,7 +29,6 @@ import {
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer, 
-  ReferenceLine, 
   Dot,
   BarChart,
   Bar
@@ -37,10 +36,11 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar as DatePicker } from '@/components/ui/calendar'
 import { cn } from '@/lib/utils'
-import { useT } from '@/lib/i18n'
+import { useT, useI18nStore } from '@/lib/i18n'
+import { az, enUS, ru } from 'date-fns/locale'
 import { apiGet } from '@/lib/api/client'
 
-type PresetKey = 'today' | 'last7' | 'last30' | 'lastMonth' | 'custom'
+type PresetKey = 'today' | 'last7' | 'lastMonth' | 'allTime' | 'custom'
 
 interface DatePreset {
   key: PresetKey
@@ -49,8 +49,8 @@ interface DatePreset {
 const DATE_PRESETS: DatePreset[] = [
   { key: 'today' },
   { key: 'last7' },
-  { key: 'last30' },
   { key: 'lastMonth' },
+  { key: 'allTime' },
   { key: 'custom' },
 ]
 
@@ -61,8 +61,6 @@ const getPresetRange = (preset: PresetKey): DateRange | undefined => {
       return { from: today, to: today }
     case 'last7':
       return { from: subDays(today, 6), to: today }
-    case 'last30':
-      return { from: subDays(today, 29), to: today }
     case 'lastMonth': {
       const lastMonthDate = subMonths(today, 1)
       return {
@@ -70,6 +68,8 @@ const getPresetRange = (preset: PresetKey): DateRange | undefined => {
         to: endOfMonth(lastMonthDate),
       }
     }
+    case 'allTime':
+      return { from: new Date(2020, 0, 1), to: today }
     default:
       return undefined
   }
@@ -107,6 +107,9 @@ function DateRangeSelector({
   variant = 'default'
 }: DateRangeSelectorProps) {
   const t = useT()
+  const activeLocale = useI18nStore((s) => s.locale)
+  const dateFnsLocale = activeLocale === 'EN' ? enUS : activeLocale === 'RU' ? ru : az
+
   const [open, setOpen] = useState(false)
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date())
   const [view, setView] = useState<'presets' | 'calendar'>('presets')
@@ -139,8 +142,8 @@ function DateRangeSelector({
     switch (key) {
       case 'today': return t.reports.today
       case 'last7': return t.reports.last7Days
-      case 'last30': return t.reports.last30Days
       case 'lastMonth': return t.reports.lastMonth
+      case 'allTime': return t.reports.allTime
       case 'custom': return t.reports.custom
       default: return ''
     }
@@ -181,12 +184,12 @@ function DateRangeSelector({
           />
         </button>
       </PopoverTrigger>
-      <PopoverContent align={align} sideOffset={8} className="w-[240px] rounded-[16px] border-[#ececed] p-0 shadow-xl bg-white z-50 overflow-hidden">
+      <PopoverContent align={align} sideOffset={8} className="w-[280px] rounded-[16px] border-[#ececed] p-0 shadow-xl bg-white z-50 overflow-hidden">
         {view === 'presets' && (
           <div className="flex flex-col bg-white">
             {DATE_PRESETS.map((preset) => {
               const isPresetActive = selectedPreset === preset.key
-              const isLastPresetBeforeCustom = preset.key === 'lastMonth'
+              const isLastPresetBeforeCustom = preset.key === 'allTime'
               
               return (
                 <div key={preset.key} className="w-full">
@@ -259,26 +262,8 @@ function DateRangeSelector({
               onMonthChange={setCalendarMonth}
               selected={periodRange}
               onSelect={handleCustomDateSelect}
+              locale={dateFnsLocale}
               className="bg-white p-1"
-              classNames={{
-                months: 'flex flex-col',
-                month: 'gap-3',
-                month_caption: 'hidden',
-                nav: 'hidden',
-                weekdays: 'mt-1',
-                weekday: 'text-xs font-normal text-gray-400 w-9 text-center',
-                week: 'mt-1 flex justify-center',
-                day: 'aspect-square p-0 w-9 h-9 flex items-center justify-center',
-                day_button: cn(
-                  'h-8 w-8 rounded-[8px] text-[14px] font-medium text-gray-800 hover:bg-gray-100 flex items-center justify-center transition-colors',
-                  'data-[selected-single=true]:bg-[#00b4cc] data-[selected-single=true]:text-white',
-                  'data-[range-start=true]:bg-[#00b4cc] data-[range-start=true]:text-white',
-                  'data-[range-end=true]:bg-[#00b4cc] data-[range-end=true]:text-white',
-                  'data-[range-middle=true]:bg-[#00b4cc]/10 data-[range-middle=true]:text-[#00b4cc]'
-                ),
-                outside: 'text-gray-300',
-                today: 'border border-[#00b4cc] text-[#00b4cc] font-bold bg-transparent',
-              }}
             />
             <div className="pt-2 pb-1 flex items-center justify-between border-t border-gray-100 mt-2 px-1">
               <button
@@ -329,19 +314,19 @@ export function GeneralReportsPage() {
   const [mainRange, setMainRange] = useState<DateRange | undefined>(() => getPresetRange('last7'))
 
   // Chart 1 (Gəlir Trendi) date states
-  const [chart1Preset, setChart1Preset] = useState<PresetKey | null>('last30')
-  const [chart1Range, setChart1Range] = useState<DateRange | undefined>(() => getPresetRange('last30'))
+  const [chart1Preset, setChart1Preset] = useState<PresetKey | null>('lastMonth')
+  const [chart1Range, setChart1Range] = useState<DateRange | undefined>(() => getPresetRange('lastMonth'))
 
   // Chart 2 (İstifadəçi artımı) date states
-  const [chart2Preset, setChart2Preset] = useState<PresetKey | null>('last30')
-  const [chart2Range, setChart2Range] = useState<DateRange | undefined>(() => getPresetRange('last30'))
+  const [chart2Preset, setChart2Preset] = useState<PresetKey | null>('lastMonth')
+  const [chart2Range, setChart2Range] = useState<DateRange | undefined>(() => getPresetRange('lastMonth'))
   
   // 7 cards state
   const [cardPresets, setCardPresets] = useState<(PresetKey | null)[]>(
-    Array(7).fill('last30')
+    Array(7).fill('lastMonth')
   )
   const [cardRanges, setCardRanges] = useState<(DateRange | undefined)[]>(() => {
-    return Array.from({ length: 7 }, () => getPresetRange('last30'))
+    return Array.from({ length: 7 }, () => getPresetRange('lastMonth'))
   })
 
   const setCardPreset = (index: number, val: PresetKey | null) => {

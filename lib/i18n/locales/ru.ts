@@ -556,7 +556,7 @@ const ru: TranslationKeys = {
     gymPaymentsSubtitle: "Сумма к выплате залам от FitNest",
     today: "Сегодня",
     last7Days: "Последние 7 дней",
-    last30Days: "Последний 1 месяц",
+    allTime: "Все время",
     lastMonth: "Прошлый месяц",
     custom: "Custom",
     dateRange: "Период времени",

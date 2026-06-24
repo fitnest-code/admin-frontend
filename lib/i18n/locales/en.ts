@@ -556,7 +556,7 @@ const en: TranslationKeys = {
     gymPaymentsSubtitle: "Amount FitNest will pay to gyms",
     today: "Today",
     last7Days: "Last 7 days",
-    last30Days: "Last month",
+    allTime: "All time",
     lastMonth: "Last month",
     custom: "Custom",
     dateRange: "Date range",

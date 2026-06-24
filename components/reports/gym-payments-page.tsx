@@ -32,10 +32,11 @@ import {
   TableRow 
 } from '@/components/ui/table'
 import { cn } from '@/lib/utils'
-import { useT } from '@/lib/i18n'
+import { useT, useI18nStore } from '@/lib/i18n'
+import { az, enUS, ru } from 'date-fns/locale'
 import { apiGet } from '@/lib/api/client'
 
-type PresetKey = 'today' | 'last7' | 'last30' | 'lastMonth' | 'custom'
+type PresetKey = 'today' | 'last7' | 'lastMonth' | 'allTime' | 'custom'
 
 interface DatePreset {
   key: PresetKey
@@ -44,8 +45,8 @@ interface DatePreset {
 const DATE_PRESETS: DatePreset[] = [
   { key: 'today' },
   { key: 'last7' },
-  { key: 'last30' },
   { key: 'lastMonth' },
+  { key: 'allTime' },
   { key: 'custom' },
 ]
 
@@ -62,8 +63,11 @@ const formatISO = (date: Date, isStart: boolean) => {
 
 export function GymPaymentsPage() {
   const t = useT()
+  const activeLocale = useI18nStore((s) => s.locale)
+  const dateFnsLocale = activeLocale === 'EN' ? enUS : activeLocale === 'RU' ? ru : az
+
   const [periodOpen, setPeriodOpen] = useState(false)
-  const [selectedPreset, setSelectedPreset] = useState<PresetKey | null>('last30')
+  const [selectedPreset, setSelectedPreset] = useState<PresetKey | null>('lastMonth')
   
   const getPresetRange = (preset: PresetKey): DateRange | undefined => {
     const today = new Date()
@@ -72,8 +76,6 @@ export function GymPaymentsPage() {
         return { from: today, to: today }
       case 'last7':
         return { from: subDays(today, 6), to: today }
-      case 'last30':
-        return { from: subDays(today, 29), to: today }
       case 'lastMonth': {
         const lastMonthDate = subMonths(today, 1)
         return {
@@ -81,12 +83,14 @@ export function GymPaymentsPage() {
           to: endOfMonth(lastMonthDate),
         }
       }
+      case 'allTime':
+        return { from: new Date(2020, 0, 1), to: today }
       default:
         return undefined
     }
   }
 
-  const [periodRange, setPeriodRange] = useState<DateRange | undefined>(() => getPresetRange('last30'))
+  const [periodRange, setPeriodRange] = useState<DateRange | undefined>(() => getPresetRange('lastMonth'))
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date())
   const [view, setView] = useState<'presets' | 'calendar'>('presets')
   
@@ -143,8 +147,8 @@ export function GymPaymentsPage() {
     switch (key) {
       case 'today': return t.reports.today
       case 'last7': return t.reports.last7Days
-      case 'last30': return t.reports.last30Days
       case 'lastMonth': return t.reports.lastMonth
+      case 'allTime': return t.reports.allTime
       case 'custom': return t.reports.custom
       default: return ''
     }
@@ -188,14 +192,14 @@ export function GymPaymentsPage() {
               <ChevronDown size={16} className={cn('shrink-0 text-gray-500 transition-transform', periodOpen && 'rotate-180')} />
             </button>
           </PopoverTrigger>
-          <PopoverContent align="start" sideOffset={8} className="w-[240px] rounded-[16px] border-[#ececed] p-0 shadow-xl bg-white z-50 overflow-hidden">
+          <PopoverContent align="start" sideOffset={8} className="w-[280px] rounded-[16px] border-[#ececed] p-0 shadow-xl bg-white z-50 overflow-hidden">
             
             {/* Presets List View */}
             {view === 'presets' && (
               <div className="flex flex-col bg-white">
                 {DATE_PRESETS.map((preset) => {
                   const isPresetActive = selectedPreset === preset.key
-                  const isLastPresetBeforeCustom = preset.key === 'lastMonth'
+                  const isLastPresetBeforeCustom = preset.key === 'allTime'
                   
                   return (
                     <div key={preset.key} className="w-full">
@@ -282,26 +286,8 @@ export function GymPaymentsPage() {
                   onMonthChange={setCalendarMonth}
                   selected={periodRange}
                   onSelect={handleCustomDateSelect}
+                  locale={dateFnsLocale}
                   className="bg-white p-1"
-                  classNames={{
-                    months: 'flex flex-col',
-                    month: 'gap-3',
-                    month_caption: 'hidden',
-                    nav: 'hidden',
-                    weekdays: 'mt-1',
-                    weekday: 'text-xs font-normal text-gray-400 w-9 text-center',
-                    week: 'mt-1 flex justify-center',
-                    day: 'aspect-square p-0 w-9 h-9 flex items-center justify-center',
-                    day_button: cn(
-                      'h-8 w-8 rounded-[8px] text-[14px] font-medium text-gray-800 hover:bg-gray-100 flex items-center justify-center transition-colors',
-                      'data-[selected-single=true]:bg-[#00b4cc] data-[selected-single=true]:text-white',
-                      'data-[range-start=true]:bg-[#00b4cc] data-[range-start=true]:text-white',
-                      'data-[range-end=true]:bg-[#00b4cc] data-[range-end=true]:text-white',
-                      'data-[range-middle=true]:bg-[#00b4cc]/10 data-[range-middle=true]:text-[#00b4cc]'
-                    ),
-                    outside: 'text-gray-300',
-                    today: 'border border-[#00b4cc] text-[#00b4cc] font-bold bg-transparent',
-                  }}
                 />
                 
                 <div className="pt-2 pb-1 flex items-center justify-between border-t border-gray-100 mt-2 px-1">

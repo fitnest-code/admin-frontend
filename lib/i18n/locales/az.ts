@@ -573,7 +573,7 @@ const az = {
     gymPaymentsSubtitle: "FitNestin zallara ödəyəcəyi məbləğ",
     today: "Bu gün",
     last7Days: "Son 7 gün",
-    last30Days: "Son 1 ay",
+    allTime: "Bütün vaxtlar",
     lastMonth: "Keçən ay",
     custom: "Custom",
     dateRange: "Tarix aralığı",
