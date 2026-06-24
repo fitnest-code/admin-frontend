@@ -67,7 +67,7 @@ export function GymPaymentsPage() {
   const dateFnsLocale = activeLocale === 'EN' ? enUS : activeLocale === 'RU' ? ru : az
 
   const [periodOpen, setPeriodOpen] = useState(false)
-  const [selectedPreset, setSelectedPreset] = useState<PresetKey | null>('lastMonth')
+  const [selectedPreset, setSelectedPreset] = useState<PresetKey | null>('allTime')
   
   const getPresetRange = (preset: PresetKey): DateRange | undefined => {
     const today = new Date()
@@ -90,7 +90,7 @@ export function GymPaymentsPage() {
     }
   }
 
-  const [periodRange, setPeriodRange] = useState<DateRange | undefined>(() => getPresetRange('lastMonth'))
+  const [periodRange, setPeriodRange] = useState<DateRange | undefined>(() => getPresetRange('allTime'))
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date())
   const [view, setView] = useState<'presets' | 'calendar'>('presets')
   

@@ -310,23 +310,23 @@ export function GeneralReportsPage() {
   const t = useT()
 
   // Main Date filter states
-  const [mainPreset, setMainPreset] = useState<PresetKey | null>('last7')
-  const [mainRange, setMainRange] = useState<DateRange | undefined>(() => getPresetRange('last7'))
+  const [mainPreset, setMainPreset] = useState<PresetKey | null>('allTime')
+  const [mainRange, setMainRange] = useState<DateRange | undefined>(() => getPresetRange('allTime'))
 
   // Chart 1 (Gəlir Trendi) date states
-  const [chart1Preset, setChart1Preset] = useState<PresetKey | null>('lastMonth')
-  const [chart1Range, setChart1Range] = useState<DateRange | undefined>(() => getPresetRange('lastMonth'))
+  const [chart1Preset, setChart1Preset] = useState<PresetKey | null>('allTime')
+  const [chart1Range, setChart1Range] = useState<DateRange | undefined>(() => getPresetRange('allTime'))
 
   // Chart 2 (İstifadəçi artımı) date states
-  const [chart2Preset, setChart2Preset] = useState<PresetKey | null>('lastMonth')
-  const [chart2Range, setChart2Range] = useState<DateRange | undefined>(() => getPresetRange('lastMonth'))
+  const [chart2Preset, setChart2Preset] = useState<PresetKey | null>('allTime')
+  const [chart2Range, setChart2Range] = useState<DateRange | undefined>(() => getPresetRange('allTime'))
   
   // 7 cards state
   const [cardPresets, setCardPresets] = useState<(PresetKey | null)[]>(
-    Array(7).fill('lastMonth')
+    Array(7).fill('allTime')
   )
   const [cardRanges, setCardRanges] = useState<(DateRange | undefined)[]>(() => {
-    return Array.from({ length: 7 }, () => getPresetRange('lastMonth'))
+    return Array.from({ length: 7 }, () => getPresetRange('allTime'))
   })
 
   const setCardPreset = (index: number, val: PresetKey | null) => {
