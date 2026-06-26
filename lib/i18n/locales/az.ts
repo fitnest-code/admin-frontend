@@ -475,6 +475,9 @@ const az = {
     confirmBlockTitle: "İstifadəçiləri bloklamaq istədiyinizə əminsiniz?",
     blockSubtitle: "Seçilmiş {count} istifadəçi sistemə daxil ola bilməyəcək və bütün sessiyaları sonlandırılacaq.",
     blockButton: "Blokla",
+    unblockButton: "Blokdan çıxart",
+    confirmUnblockTitle: "İstifadəçiləri blokdan çıxarmaq istədiyinizə əminsiniz?",
+    unblockSubtitle: "Seçilmiş {count} istifadəçinin sistemə girişi bərpa olunacaq.",
     pleaseWait: "Gözləyin...",
     pushBroadcastHelp: "Bu bildiriş bütün istifadəçilərə göndəriləcək",
     pushSingleHelp: "Bu bildiriş yalnız bu müştəriyə göndəriləcək",
@@ -488,6 +491,8 @@ const az = {
     emailError: "Email göndərilmədi. Yenidən cəhd edin.",
     blockSuccess: "İstifadəçilər uğurla bloklandı",
     blockError: "Bloklama zamanı xəta baş verdi",
+    unblockSuccess: "İstifadəçilər uğurla blokdan çıxarıldı",
+    unblockError: "Blokdan çıxarma zamanı xəta baş verdi",
   },
   lists: {
     // Shared

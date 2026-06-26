@@ -18,25 +18,30 @@ export function CustomerBulkActions({
   onOpenSms,
   onOpenEmail,
   onOpenBlock,
+  blockMode = 'block',
 }: {
   selectedCount: number
   onOpenPush: () => void
   onOpenSms: () => void
   onOpenEmail?: () => void
   onOpenBlock?: () => void
+  blockMode?: 'block' | 'unblock' | 'disabled'
 }) {
   const t = useT()
+  const blockLabel = blockMode === 'unblock' ? (t.modals.unblockButton || 'Unblock') : t.modals.blockButton
+  const isBlockDisabled = blockMode === 'disabled' || selectedCount === 0
+
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 w-full transition-all duration-300 animate-in fade-in-50 bg-white/50 p-2 rounded-lg border border-dashed border-[#00B4CC]/20">
       <div className="flex items-center px-2">
         <span className="text-[14px] font-medium text-foreground">{t.modals.selectedCount.replace('{count}', String(selectedCount))}</span>
       </div>
       <div className="flex flex-wrap items-center gap-[13.4px]">
-        <ActionBtn iconSrc="/push-notification.svg" icon={Bell} label="Push" onClick={onOpenPush} variant="cyan-outline" />
-        <ActionBtn iconSrc="/sms-icon.svg" icon={MessageSquare} label="SMS" onClick={onOpenSms} variant="cyan-outline" />
-        <ActionBtn iconSrc="/mail-icon.svg" icon={Mail} label="Email " onClick={() => onOpenEmail?.()} variant="cyan-outline" />
-        <ActionBtn iconSrc="/export-icon.svg" icon={Upload} label="Export" onClick={() => {}} variant="cyan-outline" />
-        <ActionBtn icon={Ban} label={t.modals.blockButton} onClick={() => onOpenBlock?.()} variant="danger-outline" />
+        <ActionBtn iconSrc="/push-notification.svg" icon={Bell} label="Push" onClick={onOpenPush} variant="cyan-outline" disabled={selectedCount === 0} />
+        <ActionBtn iconSrc="/sms-icon.svg" icon={MessageSquare} label="SMS" onClick={onOpenSms} variant="cyan-outline" disabled={selectedCount === 0} />
+        <ActionBtn iconSrc="/mail-icon.svg" icon={Mail} label="Email " onClick={() => onOpenEmail?.()} variant="cyan-outline" disabled={selectedCount === 0} />
+        <ActionBtn iconSrc="/export-icon.svg" icon={Upload} label="Export" onClick={() => {}} variant="cyan-outline" disabled={selectedCount === 0} />
+        <ActionBtn icon={Ban} label={blockLabel} onClick={() => onOpenBlock?.()} variant="danger-outline" disabled={isBlockDisabled} />
       </div>
     </div>
   )
@@ -48,21 +53,25 @@ function ActionBtn({
   label,
   onClick,
   variant = 'cyan-outline',
+  disabled = false,
 }: {
   icon: React.ElementType
   iconSrc?: string
   label: string
   onClick: () => void
   variant?: 'push' | 'cyan-outline' | 'danger-outline'
+  disabled?: boolean
 }) {
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
       className={cn(
-        'flex h-[40px] w-[110px] items-center justify-center gap-2 rounded-lg border text-sm font-medium transition-all duration-200 active:scale-[0.98] shadow-xs',
+        'flex h-[40px] w-[110px] items-center justify-center gap-2 rounded-lg border text-sm font-medium transition-all duration-200 active:scale-[0.98] shadow-xs cursor-pointer',
         variant === 'danger-outline'
           ? 'border-red-200 bg-white text-red-600 hover:bg-red-50 hover:border-red-300'
           : 'border-[#00B4CC]/40 bg-white text-foreground hover:bg-[#00B4CC]/5 hover:border-[#00B4CC]',
+        disabled && 'opacity-40 cursor-not-allowed active:scale-100 hover:bg-white hover:border-[#cecfd2]'
       )}
     >
       {iconSrc ? <Image src={iconSrc} width={18} height={18} alt="" className="shrink-0" /> : <Icon size={18} />}
@@ -584,9 +593,19 @@ export function EmailModal({ selectedUsers = [], onClose }: { selectedUsers?: an
   )
 }
 
-import { blockUser } from '@/modules/customers/api/customers.service'
+import { blockUser, unblockUser } from '@/modules/customers/api/customers.service'
 
-export function BlockModal({ selectedUsers = [], onClose, onSuccess }: { selectedUsers?: any[]; onClose: () => void; onSuccess?: () => void }) {
+export function BlockModal({ 
+  selectedUsers = [], 
+  onClose, 
+  onSuccess,
+  mode = 'block'
+}: { 
+  selectedUsers?: any[]; 
+  onClose: () => void; 
+  onSuccess?: () => void;
+  mode?: 'block' | 'unblock'
+}) {
   const [state, setState] = useState<SendState>('form')
   const [loading, setLoading] = useState(false)
   const t = useT()
@@ -596,40 +615,71 @@ export function BlockModal({ selectedUsers = [], onClose, onSuccess }: { selecte
     try {
       for (const user of selectedUsers) {
         if (user.id) {
-          await blockUser(user.id)
+          if (mode === 'unblock') {
+            await unblockUser(user.id)
+          } else {
+            await blockUser(user.id)
+          }
         }
       }
       setState('success')
       onSuccess?.()
     } catch (err) {
-      console.error('Block error:', err)
+      console.error(`${mode} error:`, err)
       setState('error')
     } finally {
       setLoading(false)
     }
   }
 
+  const modalTitle = mode === 'unblock' 
+    ? (t.modals.confirmUnblockTitle || 'İstifadəçiləri blokdan çıxarmaq istədiyinizə əminsiniz?') 
+    : t.modals.confirmBlockTitle
+  
+  const modalSubtitle = mode === 'unblock'
+    ? (t.modals.unblockSubtitle || 'Seçilmiş {count} istifadəçinin sistemə girişi bərpa olunacaq.').replace('{count}', String(selectedUsers.length))
+    : t.modals.blockSubtitle.replace('{count}', String(selectedUsers.length))
+
+  const confirmBtnText = mode === 'unblock'
+    ? (t.modals.unblockButton || 'Blokdan çıxart')
+    : t.modals.blockButton
+
+  const successMessage = mode === 'unblock'
+    ? (t.modals.unblockSuccess || 'İstifadəçilər uğurla blokdan çıxarıldı')
+    : t.modals.blockSuccess
+
+  const errorMessage = mode === 'unblock'
+    ? (t.modals.unblockError || 'Blokdan çıxarma zamanı xəta baş verdi')
+    : t.modals.blockError
+
   return (
     <ModalBase onClose={onClose}>
       {state === 'form' && (
         <div className="flex flex-col items-center justify-center py-4 gap-6">
-          <div className="h-14 w-14 rounded-full bg-red-50 flex items-center justify-center">
-            <Ban size={28} className="text-red-500" />
+          <div className={cn("h-14 w-14 rounded-full flex items-center justify-center", mode === 'unblock' ? "bg-green-50" : "bg-red-50")}>
+            <Ban size={28} className={mode === 'unblock' ? "text-green-500" : "text-red-500"} />
           </div>
           <div className="flex flex-col gap-2 text-center">
             <p className="text-xl font-semibold text-black leading-tight">
-              {t.modals.confirmBlockTitle}
+              {modalTitle}
             </p>
             <p className="text-sm text-muted-foreground px-4">
-              {t.modals.blockSubtitle.replace('{count}', String(selectedUsers.length))}
+              {modalSubtitle}
             </p>
           </div>
           <div className="w-full flex items-center justify-center gap-4 mt-2">
             <button onClick={onClose} disabled={loading} className="flex-1 h-[40px] max-w-[140px] rounded-[8px] bg-white border border-[#cecfd2] flex items-center justify-center px-4 transition-all hover:bg-slate-50 disabled:opacity-50">
               <span className="text-sm font-medium text-black">{t.modals.cancel}</span>
             </button>
-            <button onClick={handleConfirm} disabled={loading} className="flex-1 h-[40px] max-w-[140px] rounded-[8px] bg-red-500 flex items-center justify-center px-4 transition-all hover:bg-red-600 shadow-sm text-white text-sm font-semibold disabled:opacity-50">
-              {loading ? t.modals.pleaseWait : t.modals.blockButton}
+            <button 
+              onClick={handleConfirm} 
+              disabled={loading} 
+              className={cn(
+                "flex-1 h-[40px] max-w-[140px] rounded-[8px] flex items-center justify-center px-4 transition-all shadow-sm text-white text-sm font-semibold disabled:opacity-50",
+                mode === 'unblock' ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600"
+              )}
+            >
+              {loading ? t.modals.pleaseWait : confirmBtnText}
             </button>
           </div>
         </div>
@@ -638,13 +688,13 @@ export function BlockModal({ selectedUsers = [], onClose, onSuccess }: { selecte
         isOpen={state === 'success'}
         onClose={onClose}
         type="success"
-        message={t.modals.blockSuccess}
+        message={successMessage}
       />
       <SuccessAnimationModal
         isOpen={state === 'error'}
         onClose={() => setState('form')}
         type="error"
-        message={t.modals.blockError}
+        message={errorMessage}
       />
     </ModalBase>
   )

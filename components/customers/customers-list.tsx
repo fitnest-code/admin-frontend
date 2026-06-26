@@ -13,7 +13,7 @@ import { PAGE_SIZE } from './list/customer-list-constants'
 import { CustomerFilters, CustomerStats } from './list/customer-list-controls'
 import { CustomerBulkActions, EmailModal, PushModal, SmsModal, BlockModal } from './list/customer-message-modals'
 import { CustomerPagination, CustomerTable } from './list/customer-list-table'
-import { sortCustomers, type CustomerSortValue } from './list/customer-list-utils'
+import { sortCustomers, type CustomerSortValue, normalizeCustomerStatus } from './list/customer-list-utils'
 
 export function CustomersList() {
   const router = useRouter()
@@ -88,6 +88,19 @@ export function CustomersList() {
   }
   const packageOptions = packageNamesQuery.data ?? []
 
+  const selectedUsers = useMemo(() => {
+    return sorted.filter((c) => selected.has(c.id))
+  }, [sorted, selected])
+
+  const blockMode = useMemo(() => {
+    if (selectedUsers.length === 0) return 'disabled'
+    const allBlocked = selectedUsers.every((u) => normalizeCustomerStatus(u.userStatus) === 'blocked')
+    const allNonBlocked = selectedUsers.every((u) => normalizeCustomerStatus(u.userStatus) !== 'blocked')
+    if (allBlocked) return 'unblock'
+    if (allNonBlocked) return 'block'
+    return 'disabled'
+  }, [selectedUsers])
+
   return (
     <div className="flex flex-col gap-5">
       <h1 className="text-xl font-bold text-foreground">{t.lists.customersTitle}</h1>
@@ -136,6 +149,7 @@ export function CustomersList() {
         onOpenSms={() => setSmsOpen(true)} 
         onOpenEmail={() => setEmailOpen(true)}
         onOpenBlock={() => setBlockOpen(true)}
+        blockMode={blockMode}
       />
 
       <CustomerTable
@@ -159,12 +173,13 @@ export function CustomersList() {
 
       <CustomerPagination total={total} page={page} perPage={PAGE_SIZE} onChange={setPage} />
 
-      {pushOpen && <PushModal selectedUsers={Array.from(selected).map(id => sorted.find(c => c.id === id)).filter(Boolean) as any[]} onClose={() => setPushOpen(false)} />}
-      {smsOpen && <SmsModal selectedUsers={Array.from(selected).map(id => sorted.find(c => c.id === id)).filter(Boolean) as any[]} onClose={() => setSmsOpen(false)} />}
-      {emailOpen && <EmailModal selectedUsers={Array.from(selected).map(id => sorted.find(c => c.id === id)).filter(Boolean) as any[]} onClose={() => setEmailOpen(false)} />}
+      {pushOpen && <PushModal selectedUsers={selectedUsers} onClose={() => setPushOpen(false)} />}
+      {smsOpen && <SmsModal selectedUsers={selectedUsers} onClose={() => setSmsOpen(false)} />}
+      {emailOpen && <EmailModal selectedUsers={selectedUsers} onClose={() => setEmailOpen(false)} />}
       {blockOpen && (
         <BlockModal 
-          selectedUsers={Array.from(selected).map(id => sorted.find(c => c.id === id)).filter(Boolean) as any[]} 
+          selectedUsers={selectedUsers} 
+          mode={blockMode === 'unblock' ? 'unblock' : 'block'}
           onClose={() => setBlockOpen(false)} 
           onSuccess={() => {
             customersQuery.refetch()

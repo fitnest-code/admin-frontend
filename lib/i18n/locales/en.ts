@@ -466,6 +466,9 @@ const en: TranslationKeys = {
     confirmBlockTitle: "Are you sure you want to block the users?",
     blockSubtitle: "Selected {count} users will not be able to log in and all their sessions will be terminated.",
     blockButton: "Block",
+    unblockButton: "Unblock",
+    confirmUnblockTitle: "Are you sure you want to unblock the users?",
+    unblockSubtitle: "Selected {count} users will be able to log in again.",
     pleaseWait: "Please wait...",
     pushBroadcastHelp: "This notification will be sent to all users",
     pushSingleHelp: "This notification will be sent only to this customer",
@@ -479,6 +482,8 @@ const en: TranslationKeys = {
     emailError: "Email could not be sent. Please try again.",
     blockSuccess: "Users blocked successfully",
     blockError: "An error occurred during blocking",
+    unblockSuccess: "Users unblocked successfully",
+    unblockError: "An error occurred during unblocking",
   },
   lists: {
     searchPlaceholder: "Search by ID, Name/Surname, Email, Phone.....",
