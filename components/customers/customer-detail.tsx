@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
 import type { CustomerProfile } from '@/modules/customers'
 import { getCustomerStatusLabel, normalizeCustomerStatus, type UiCustomerStatus } from './list/customer-list-utils'
 import { useT } from '@/lib/i18n'
-import { PushModal, SmsModal, EmailModal } from './list/customer-message-modals'
+import { PushModal, SmsModal, EmailModal, BlockModal } from './list/customer-message-modals'
 import { ChangeRoleModal } from './modals/change-role-modal'
 import { ConfirmDeleteSubscriptionModal } from './modals/confirm-delete-subscription-modal'
 import { AssignSubscriptionModal } from './modals/assign-subscription-modal'
@@ -106,27 +106,10 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
   const [deleteSubOpen, setDeleteSubOpen] = useState(false)
   const [assignSubOpen, setAssignSubOpen] = useState(false)
   const [resetDeviceLimitOpen, setResetDeviceLimitOpen] = useState(false)
-  const [blockLoading, setBlockLoading] = useState(false)
+  const [blockOpen, setBlockOpen] = useState(false)
 
   function handleResetDeviceLimit() {
     setResetDeviceLimitOpen(true)
-  }
-
-  async function handleBlockToggle() {
-    setBlockLoading(true)
-    try {
-      if (status === 'blocked') {
-        await unblockUser(customer.id)
-        setCustomer(prev => ({ ...prev, userStatus: 'ACTIVE' }))
-      } else {
-        await blockUser(customer.id)
-        setCustomer(prev => ({ ...prev, userStatus: 'DELETED' }))
-      }
-    } catch (err) {
-      console.error('Failed to toggle block status:', err)
-    } finally {
-      setBlockLoading(false)
-    }
   }
 
   const status = normalizeCustomerStatus(customer.userStatus)
@@ -278,8 +261,7 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
                   <OpsBtn 
                     icon={Ban} 
                     label={status === 'blocked' ? t.details.unblock : t.details.block} 
-                    onClick={handleBlockToggle} 
-                    disabled={blockLoading} 
+                    onClick={() => setBlockOpen(true)} 
                     danger 
                   />
                 </div>
@@ -328,6 +310,20 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
            userId={customer.id}
            onClose={() => setResetDeviceLimitOpen(false)}
            onSuccess={() => router.refresh()}
+         />
+       )}
+       {blockOpen && (
+         <BlockModal 
+           selectedUsers={[{ id: customer.id, fullName: fullName, email: customer.email, phoneNumber: customer.phoneNumber, userStatus: customer.userStatus }]} 
+           mode={status === 'blocked' ? 'unblock' : 'block'}
+           onClose={() => setBlockOpen(false)} 
+           onSuccess={() => {
+             if (status === 'blocked') {
+               setCustomer(prev => ({ ...prev, userStatus: 'ACTIVE' }))
+             } else {
+               setCustomer(prev => ({ ...prev, userStatus: 'DELETED' }))
+             }
+           }}
          />
        )}
     </div>

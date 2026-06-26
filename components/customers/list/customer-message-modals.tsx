@@ -67,7 +67,7 @@ function ActionBtn({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'flex h-[40px] w-[110px] items-center justify-center gap-2 rounded-lg border text-sm font-medium transition-all duration-200 active:scale-[0.98] shadow-xs cursor-pointer',
+        'flex h-[40px] min-w-[110px] w-fit items-center justify-center gap-2 rounded-lg border px-4 text-sm font-medium transition-all duration-200 active:scale-[0.98] shadow-xs cursor-pointer whitespace-nowrap',
         variant === 'danger-outline'
           ? 'border-red-200 bg-white text-red-600 hover:bg-red-50 hover:border-red-300'
           : 'border-[#00B4CC]/40 bg-white text-foreground hover:bg-[#00B4CC]/5 hover:border-[#00B4CC]',
@@ -632,25 +632,43 @@ export function BlockModal({
     }
   }
 
+  const isSingle = selectedUsers.length === 1
+
   const modalTitle = mode === 'unblock' 
-    ? (t.modals.confirmUnblockTitle || 'İstifadəçiləri blokdan çıxarmaq istədiyinizə əminsiniz?') 
-    : t.modals.confirmBlockTitle
+    ? (isSingle 
+        ? (t.modals.confirmUnblockTitleSingle || 'İstifadəçini blokdan çıxarmaq istədiyinizə əminsiniz?') 
+        : (t.modals.confirmUnblockTitle || 'İstifadəçiləri blokdan çıxarmaq istədiyinizə əminsiniz?'))
+    : (isSingle 
+        ? (t.modals.confirmBlockTitleSingle || 'İstifadəçini bloklamaq istədiyinizə əminsiniz?') 
+        : t.modals.confirmBlockTitle)
   
   const modalSubtitle = mode === 'unblock'
-    ? (t.modals.unblockSubtitle || 'Seçilmiş {count} istifadəçinin sistemə girişi bərpa olunacaq.').replace('{count}', String(selectedUsers.length))
-    : t.modals.blockSubtitle.replace('{count}', String(selectedUsers.length))
+    ? (isSingle 
+        ? (t.modals.unblockSubtitleSingle || 'İstifadəçinin sistemə girişi bərpa olunacaq.') 
+        : (t.modals.unblockSubtitle || 'Seçilmiş {count} istifadəçinin sistemə girişi bərpa olunacaq.').replace('{count}', String(selectedUsers.length)))
+    : (isSingle 
+        ? (t.modals.blockSubtitleSingle || 'İstifadəçi sistemə daxil ola bilməyəcək və bütün sessiyaları sonlandırılacaq.') 
+        : t.modals.blockSubtitle.replace('{count}', String(selectedUsers.length)))
 
   const confirmBtnText = mode === 'unblock'
     ? (t.modals.unblockButton || 'Blokdan çıxart')
     : t.modals.blockButton
 
   const successMessage = mode === 'unblock'
-    ? (t.modals.unblockSuccess || 'İstifadəçilər uğurla blokdan çıxarıldı')
-    : t.modals.blockSuccess
+    ? (isSingle 
+        ? (t.modals.unblockSuccessSingle || 'İstifadəçi uğurla blokdan çıxarıldı') 
+        : (t.modals.unblockSuccess || 'İstifadəçilər uğurla blokdan çıxarıldı'))
+    : (isSingle 
+        ? (t.modals.blockSuccessSingle || 'İstifadəçi uğurla bloklandı') 
+        : t.modals.blockSuccess)
 
   const errorMessage = mode === 'unblock'
-    ? (t.modals.unblockError || 'Blokdan çıxarma zamanı xəta baş verdi')
-    : t.modals.blockError
+    ? (isSingle 
+        ? (t.modals.unblockErrorSingle || 'Blokdan çıxarma zamanı xəta baş verdi') 
+        : (t.modals.unblockError || 'Blokdan çıxarma zamanı xəta baş verdi'))
+    : (isSingle 
+        ? (t.modals.blockErrorSingle || 'Bloklama zamanı xəta baş verdi') 
+        : t.modals.blockError)
 
   return (
     <ModalBase onClose={onClose}>
@@ -668,14 +686,18 @@ export function BlockModal({
             </p>
           </div>
           <div className="w-full flex items-center justify-center gap-4 mt-2">
-            <button onClick={onClose} disabled={loading} className="flex-1 h-[40px] max-w-[140px] rounded-[8px] bg-white border border-[#cecfd2] flex items-center justify-center px-4 transition-all hover:bg-slate-50 disabled:opacity-50">
+            <button 
+              onClick={onClose} 
+              disabled={loading} 
+              className="h-[40px] min-w-[120px] px-5 rounded-[8px] bg-white border border-[#cecfd2] flex items-center justify-center transition-all hover:bg-slate-50 disabled:opacity-50 whitespace-nowrap"
+            >
               <span className="text-sm font-medium text-black">{t.modals.cancel}</span>
             </button>
             <button 
               onClick={handleConfirm} 
               disabled={loading} 
               className={cn(
-                "flex-1 h-[40px] max-w-[140px] rounded-[8px] flex items-center justify-center px-4 transition-all shadow-sm text-white text-sm font-semibold disabled:opacity-50",
+                "h-[40px] min-w-[120px] px-5 rounded-[8px] flex items-center justify-center transition-all shadow-sm text-white text-sm font-semibold disabled:opacity-50 whitespace-nowrap",
                 mode === 'unblock' ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600"
               )}
             >

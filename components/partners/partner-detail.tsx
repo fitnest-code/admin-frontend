@@ -6,9 +6,9 @@ import Image from 'next/image'
 import { ArrowLeft, UserCog, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CustomerProfile } from '@/modules/customers'
-import { blockUser, unblockUser, resetDeviceLimit } from '@/modules/customers/api/customers.service'
+import { resetDeviceLimit } from '@/modules/customers/api/customers.service'
 import { getCustomerStatusLabel, normalizeCustomerStatus, type UiCustomerStatus } from '../customers/list/customer-list-utils'
-import { PushModal, SmsModal, EmailModal } from '../customers/list/customer-message-modals'
+import { PushModal, SmsModal, EmailModal, BlockModal } from '../customers/list/customer-message-modals'
 import { ChangeRoleModal } from '../customers/modals/change-role-modal'
 import { ConfirmDeleteSubscriptionModal } from '../customers/modals/confirm-delete-subscription-modal'
 import { AssignSubscriptionModal } from '../customers/modals/assign-subscription-modal'
@@ -85,7 +85,7 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
   const [roleOpen, setRoleOpen] = useState(false)
   const [deleteSubOpen, setDeleteSubOpen] = useState(false)
   const [assignSubOpen, setAssignSubOpen] = useState(false)
-  const [blockLoading, setBlockLoading] = useState(false)
+  const [blockOpen, setBlockOpen] = useState(false)
   const [resetDeviceLimitOpen, setResetDeviceLimitOpen] = useState(false)
 
   function handleResetDeviceLimit() {
@@ -99,23 +99,6 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
   const isSuper = customer.role === 'ROLE_GYM_SUPER_ADMIN'
   const roleLabel = isSuper ? 'Super admin' : 'Admin'
   const roleIcon = isSuper ? '/superAdmin.svg' : '/admin.svg'
-
-  async function handleBlockToggle() {
-    setBlockLoading(true)
-    try {
-      if (status === 'blocked') {
-        await unblockUser(customer.id)
-        setCustomer(prev => ({ ...prev, userStatus: 'ACTIVE' }))
-      } else {
-        await blockUser(customer.id)
-        setCustomer(prev => ({ ...prev, userStatus: 'DELETED' })) // 'DELETED' maps to blocked in UI
-      }
-    } catch (err) {
-      console.error('Failed to toggle block status:', err)
-    } finally {
-      setBlockLoading(false)
-    }
-  }
 
   return (
     <div className="flex flex-col gap-6 w-full pb-12 animate-in fade-in-50 duration-300 font-sans">
@@ -250,9 +233,8 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
                   <span>{t.details.deleteSubscription}</span>
                 </button>
                 <button
-                  onClick={handleBlockToggle}
-                  disabled={blockLoading}
-                  className="flex w-full items-center justify-center gap-3 rounded-lg border border-red-200 bg-red-50/40 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 hover:border-red-300 transition-all duration-200 disabled:opacity-55"
+                  onClick={() => setBlockOpen(true)}
+                  className="flex w-full items-center justify-center gap-3 rounded-lg border border-red-200 bg-red-50/40 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 hover:border-red-300 transition-all duration-200"
                 >
                   <span>{status === 'blocked' ? t.details.unblock : t.details.block}</span>
                 </button>
@@ -318,6 +300,20 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
           userId={customer.id}
           onClose={() => setResetDeviceLimitOpen(false)}
           onSuccess={() => router.refresh()}
+        />
+      )}
+      {blockOpen && (
+        <BlockModal 
+          selectedUsers={[{ id: customer.id, fullName: fullName, email: customer.email, phoneNumber: customer.phoneNumber, userStatus: customer.userStatus }]} 
+          mode={status === 'blocked' ? 'unblock' : 'block'}
+          onClose={() => setBlockOpen(false)} 
+          onSuccess={() => {
+            if (status === 'blocked') {
+              setCustomer(prev => ({ ...prev, userStatus: 'ACTIVE' }))
+            } else {
+              setCustomer(prev => ({ ...prev, userStatus: 'DELETED' }))
+            }
+          }}
         />
       )}
     </div>
