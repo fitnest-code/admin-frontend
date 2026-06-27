@@ -234,8 +234,9 @@ export function useCreateGymComplete() {
       // Build combined JSON payload
       const jsonPayload = {
         // Step 1
-        mainCategoryIds: data.step1.mainCategoryIds,
-        subCategoryIds: data.step1.subCategoryIds,
+        mainCategoryDetails: data.step1.mainCategoryDetails,
+        subCategoryDetails: data.step1.subCategoryDetails,
+        hasSubcategories: data.step1.hasSubcategories,
         name: data.step1.name,
         phone: data.step1.phone,
         description: data.step1.description,

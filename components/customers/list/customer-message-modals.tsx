@@ -664,10 +664,10 @@ export function BlockModal({
 
   const errorMessage = mode === 'unblock'
     ? (isSingle 
-        ? (t.modals.unblockErrorSingle || 'Blokdan çıxarma zamanı xəta baş verdi') 
+        ? ((t.modals as any).unblockErrorSingle || 'Blokdan çıxarma zamanı xəta baş verdi') 
         : (t.modals.unblockError || 'Blokdan çıxarma zamanı xəta baş verdi'))
     : (isSingle 
-        ? (t.modals.blockErrorSingle || 'Bloklama zamanı xəta baş verdi') 
+        ? ((t.modals as any).blockErrorSingle || 'Bloklama zamanı xəta baş verdi') 
         : t.modals.blockError)
 
   return (

@@ -31,8 +31,8 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
 
   const selectedCategoryIds = useMemo(() => {
     return [
-      ...(step1Data?.mainCategoryIds || []),
-      ...(step1Data?.subCategoryIds || [])
+      ...(step1Data?.mainCategoryDetails || []).map(d => d.categoryId),
+      ...(step1Data?.subCategoryDetails || []).map(d => d.categoryId)
     ];
   }, [step1Data]);
   const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);

@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import { CategoryDetail } from '@/lib/types/gym'
 
 export interface LocalTrainer {
   name: string;
@@ -23,8 +24,9 @@ export interface LocalAdmin {
 }
 
 export interface Step1Data {
-  mainCategoryIds: number[];
-  subCategoryIds: number[];
+  mainCategoryDetails: CategoryDetail[];
+  subCategoryDetails: CategoryDetail[];
+  hasSubcategories: boolean;
   name: string;
   description: string;
   phone: string;

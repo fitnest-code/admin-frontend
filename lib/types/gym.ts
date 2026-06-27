@@ -225,22 +225,30 @@ export interface GymInfoUpdateRequest {
 }
 
 // V2 Interfaces
+export interface CategoryDetail {
+  categoryId: number;
+  phone: string;
+  description: string;
+}
+
 export interface GymStep1DataV2 {
-  mainCategoryIds: number[]
-  subCategoryIds: number[]
-  name: string
-  description: string
-  phone: string
-  email: string | null
+  mainCategoryDetails: CategoryDetail[]
+  subCategoryDetails: CategoryDetail[]
+  hasSubcategories?: boolean
+  name: string;
+  description: string;
+  phone: string;
+  email: string | null;
 }
 
 export interface GymStep1PayloadV2 {
-  mainCategoryIds: number[]
-  subCategoryIds: number[]
-  name: string
-  description: string
-  phone: string
-  email: string | null
+  mainCategoryDetails: CategoryDetail[]
+  subCategoryDetails: CategoryDetail[]
+  hasSubcategories: boolean
+  name: string;
+  description: string;
+  phone: string;
+  email: string | null;
   lessonTypeIds: number[]
 }
 
