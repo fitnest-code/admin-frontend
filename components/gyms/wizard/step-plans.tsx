@@ -10,11 +10,12 @@ import { GymCreateStep6RequestV2 } from "@/lib/types/gym";
 import { toast } from "sonner";
 import Image from "next/image";
 import { ErrorToastModal } from "../../categories/modals/error-toast-modal";
+import styles from "./step-plans.module.css";
 
 const gradientsMap: Record<string, string> = {
-  Bronze: "linear-gradient(111.92deg, #d8a673, #b97a3c 99.99%)",
-  Silver: "linear-gradient(106.25deg, #e5e8ec, #9baac7)",
-  Gold: "linear-gradient(104.88deg, #e7b75f, #f8d57e)",
+  Bronze: "linear-gradient(111.92deg, rgba(216, 166, 115, 0.4), #b97a3c 99.99%)",
+  Silver: "linear-gradient(106.25deg, rgba(229, 232, 236, 0.4), #9baac7)",
+  Gold: "linear-gradient(104.88deg, rgba(231, 183, 95, 0.4), #f8d57e)",
   Platinum: "linear-gradient(99.99deg, #313131, #515254 40.45%, #5b5b5d 55.32%, #565857)",
 };
 
@@ -71,12 +72,12 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
     }
   }, [selectedCategoryIds, activeCategoryId]);
 
-  // Robust State Synchronization (supporting V2 categoryId)
+  // Robust State Synchronization
   useEffect(() => {
     if (!allPackageNames || allPackageNames.length === 0 || hasSynced) return;
 
     if (step6Data) {
-      if (allServices === undefined) return; // Wait for supported services to load to resolve IDs
+      if (allServices === undefined) return; // Wait for supported services to load
       
       const pkgs = new Set<string>();
       const prcs: Record<string, string> = {};
@@ -161,7 +162,6 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
     const trimmedName = pendingService.trim();
 
     if (!gymId) {
-      // Local addition
       const alreadyExists = servicesToRender.some(s => s.name.toLowerCase() === trimmedName.toLowerCase());
       if (alreadyExists) {
         setErrorMessage("Bu xidmət artıq mövcuddur");
@@ -187,7 +187,6 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
       setPendingIcon(null);
       setIsCreatingService(false);
     } else {
-      // API call since gymId exists
       try {
         const res = await createServiceMutation.mutateAsync({
           payload: {
@@ -235,9 +234,8 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
 
   const deleteServiceMutation = useDeleteSupportedService();
   const handleDeleteService = async (id: number, svcName: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // prevent triggering service selection toggle
+    e.stopPropagation();
     if (id < 0) {
-      // Local deletion
       setCustomServicesList(prev => prev.filter(name => name !== svcName));
       setPackageServices(prev => {
         const updated: Record<string, string[]> = {};
@@ -247,7 +245,6 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
         return updated;
       });
     } else {
-      // API call since it's a persisted service
       try {
         await deleteServiceMutation.mutateAsync(id);
       } catch (err: any) {
@@ -261,7 +258,7 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
     if (!allPackageNames) return;
 
     const serviceIcons: File[] = [];
-    const processedPackages = new Set<string>(); // unique key is packageId_categoryId to keep them separate
+    const processedPackages = new Set<string>();
 
     const subscriptions = Array.from(selectedPackages).map(key => {
       const index = key.indexOf('_');
@@ -346,246 +343,246 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
   const activePriceKey = activeCategoryId !== null ? `${activeCategoryId}_${activePackage}` : "";
 
   return (
-    <div className="w-full flex flex-col gap-9 font-sans text-black animate-in fade-in duration-500">
-      
-      {/* Category Selection Tabs */}
-      {selectedCategoryIds.length > 1 && (
-        <div className="bg-white rounded-[12px] border border-[#ececed] p-5 flex flex-col gap-3 shadow-sm">
-          <label className="text-[14px] text-black/60 font-medium">Qiymət və xidmətləri hansı kateqoriya üçün tənzimləyirsiniz?</label>
-          <div className="flex flex-wrap items-center gap-3 border-b border-[#ececed] pb-2">
-            {selectedCategoryIds.map((catId: number) => {
-              const catName = categoriesData?.items?.find(c => c.id === catId)?.name || `Kateqoriya ${catId}`;
-              const isActive = activeCategoryId === catId;
-              return (
-                <button
-                  key={catId}
-                  type="button"
-                  onClick={() => {
-                    setActiveCategoryId(catId);
-                    if (PACKAGES.length > 0 && !activePackage) {
-                      setActivePackage(PACKAGES[0]);
-                    }
-                  }}
-                  className={cn(
-                    "px-5 py-2 rounded-[32px] text-sm font-semibold transition-all border",
-                    isActive
-                      ? "bg-[#00B4CC] text-white border-[#00B4CC] shadow-sm"
-                      : "bg-[#fafafa] text-slate-600 border-[#ececed] hover:bg-slate-50"
-                  )}
-                >
-                  {catName}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* 1. Package Selector Section */}
-      <div className="bg-white rounded-[12px] border border-[#ececed] p-5 flex flex-col gap-5 shadow-sm">
-        <div className="border-b border-[#ececed] pb-2">
-          <h2 className="text-[18px] font-semibold leading-[28px]">Zala aid olan abunəliklər</h2>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {PACKAGES.map((pkg) => {
-            const key = activeCategoryId !== null ? `${activeCategoryId}_${pkg}` : "";
-            const isSelected = selectedPackages.has(key);
-            const isActive = activePackage === pkg;
-
-            return (
-              <div
-                key={pkg}
-                onClick={() => setActivePackage(pkg)}
-                style={{ background: gradientsMap[pkg] || gradientsMap["Bronze"] }}
-                className={cn(
-                  "relative h-[56px] rounded-[28px] flex items-center px-5 cursor-pointer transition-all duration-300",
-                  isActive ? "scale-[1.03] shadow-lg ring-2 ring-[#00B4CC]" : "hover:scale-[1.01] shadow-sm",
-                  !isSelected && "ring-1 ring-inset ring-black/5"
-                )}
-              >
-                <div
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    togglePackage(pkg);
-                  }}
-                  className={cn(
-                    "w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all shadow-sm",
-                    isSelected ? "bg-white border-white" : "bg-transparent border-white/70"
-                  )}
-                >
-                  {isSelected && <Check className="text-black w-4 h-4 stroke-[4]" />}
-                </div>
-
-                <b className={cn(
-                  "ml-3 text-[16px] tracking-tight",
-                  pkg === "Platinum" ? "text-white" : "text-white drop-shadow-md"
-                )}>
-                  {pkg}
-                </b>
-
-                {isActive && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-[#00B4CC] rounded-full border-2 border-white shadow-sm animate-pulse" />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 2. Price Section */}
-      <div className="bg-white rounded-[12px] border border-[#ececed] p-5 flex flex-col gap-5 shadow-sm">
-        <div className="border-b border-[#ececed] pb-2">
-          <h2 className="text-[18px] font-semibold leading-[28px]">Giriş qiyməti</h2>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <label className="text-[14px] text-black/60 font-medium">Giriş qiyməti (AZN)</label>
-          <div className="h-[44px] w-full max-w-[320px] bg-[#fafafa] border border-[#ececed] rounded-lg flex items-center px-4">
-            <input
-              type="number"
-              value={activePriceKey ? (prices[activePriceKey] || "") : ""}
-              onChange={(e) => {
-                if (activePriceKey) {
-                  setPrices(prev => ({ ...prev, [activePriceKey]: e.target.value }));
-                }
-              }}
-              className="bg-transparent w-full h-full outline-none text-[15px] font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              placeholder="0.00"
-            />
-            <span className="text-black/40 font-bold ml-2 text-sm">AZN</span>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Services Section */}
-      <div className="bg-white rounded-[12px] border border-[#ececed] p-5 flex flex-col gap-6 shadow-sm">
-        {/* Add Service Section Toggle / Form */}
-        {!isCreatingService ? (
-          <div className="flex items-center justify-between border-b border-[#ececed] pb-2 animate-in fade-in duration-300">
-            <h3 className="text-[18px] font-semibold leading-[28px]">{activePackage} paketə daxil olan xidmətlər</h3>
-            <button
-              onClick={() => setIsCreatingService(true)}
-              className="h-[40px] px-4 bg-[#00B4CC] rounded-lg flex items-center justify-center gap-2 text-white text-sm font-medium transition-all hover:opacity-90"
-            >
-              <span>Xidmət əlavə et</span>
-              <Plus size={18} strokeWidth={2.5} />
-            </button>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-5 p-5 rounded-xl bg-white border border-[#ececed] animate-in fade-in duration-300">
-            <div className="flex items-center justify-between border-b border-[#ececed] pb-1">
-              <h3 className="text-[18px] font-semibold leading-[28px]">Xidmət əlavə et</h3>
-              <button 
-                onClick={() => { setIsCreatingService(false); setPendingIcon(null); }}
-                className="flex items-center justify-center text-[#1F2937] hover:opacity-70 transition-opacity"
-                title="Bağla"
-              >
-                <X size={20} strokeWidth={2} />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex flex-col gap-2">
-                <label className="text-[14px] leading-[20px]">Xidmət adı</label>
-                <div className="h-[44px] bg-[#fafafa] border border-[#ececed] rounded-lg flex items-center px-3">
-                  <input
-                    type="text"
-                    value={pendingService || ""}
-                    onChange={(e) => setPendingService(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleConfirmService()}
-                    placeholder="Məs: Pilates"
-                    className="bg-transparent w-full h-full outline-none text-[15px] leading-[24px]"
-                    autoFocus
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <label className="text-[14px] leading-[20px]">Xidmət ikonu</label>
-                <div className="h-[44px] flex items-center gap-3">
-                  <label className="h-full px-4 rounded-lg border border-[#ececed] bg-[#fafafa] flex items-center justify-center text-xs font-semibold text-black/60 hover:bg-slate-100 transition-colors cursor-pointer whitespace-nowrap">
-                    Şəkil seçin
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => setPendingIcon(e.target.files?.[0] || null)}
-                      className="hidden"
-                    />
-                  </label>
-                  {pendingIcon && (
-                    <span className="text-[13px] text-[#00B4CC] font-medium truncate max-w-[150px]" title={pendingIcon.name}>
-                      {pendingIcon.name}
-                    </span>
-                  )}
-                </div>
+    <div className={styles.frameParent}>
+      <div className={styles.frameGroup}>
+        {/* Category & Package Selection Container */}
+        <div className={styles.frameContainer}>
+          {/* Category Tabs */}
+          {selectedCategoryIds.length > 0 && (
+            <div className={styles.kateqoriyaSeimiParent}>
+              <div className={styles.kateqoriyaSeimi}>Kateqoriya seçimi</div>
+              <div className={styles.component42Parent}>
+                {selectedCategoryIds.map((catId: number) => {
+                  const catName = categoriesData?.items?.find(c => c.id === catId)?.name || `Kateqoriya ${catId}`;
+                  const isActive = activeCategoryId === catId;
+                  return (
+                    <div
+                      key={catId}
+                      onClick={() => {
+                        setActiveCategoryId(catId);
+                        if (PACKAGES.length > 0 && !activePackage) {
+                          setActivePackage(PACKAGES[0]);
+                        }
+                      }}
+                      className={isActive ? styles.component42 : styles.component422}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <div className={styles.yoga} style={{ color: isActive ? "#fff" : "#00b4cc" }}>
+                        {catName}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
+          )}
 
-            <div className="flex justify-end">
-              <button
-                onClick={handleConfirmService}
-                disabled={createServiceMutation.isPending}
-                className="h-[40px] w-[160px] bg-[#00B4CC] rounded-lg flex items-center justify-center text-[#fafafa] text-sm font-medium transition-all hover:opacity-90 shadow-sm"
-              >
-                {createServiceMutation.isPending ? <Loader2 className="animate-spin" size={18} /> : "Əlavə et"}
-              </button>
-            </div>
+          {/* Subscription Package Label */}
+          <div className={styles.zalaAidOlanAbunliklrWrapper}>
+            <div className={styles.zalaAidOlan}>Zala aid olan abunəliklər</div>
           </div>
-        )}
 
-        {/* Services List */}
-        <div className="flex flex-col gap-5">
-          <div className="flex flex-wrap gap-4">
-            {servicesToRender.map((svc: any) => {
-              const activeSvcKey = activePriceKey;
-              const isSelected = activeSvcKey ? (packageServices[activeSvcKey]?.includes(svc.name)) : false;
-              let iconUrl = svc.iconImageUrl || svc.iconUrl;
-              if (!iconUrl && customIcons[svc.name]) {
-                iconUrl = URL.createObjectURL(customIcons[svc.name]);
-              }
+          {/* Subscription Package Selector Cards Grid */}
+          <div className={styles.component20Parent}>
+            {PACKAGES.map((pkg) => {
+              const key = activeCategoryId !== null ? `${activeCategoryId}_${pkg}` : "";
+              const isSelected = selectedPackages.has(key);
+              const isActive = activePackage === pkg;
+
+              let cardClass = styles.component20; // Bronze
+              if (pkg === "Silver") cardClass = styles.component202;
+              else if (pkg === "Gold") cardClass = styles.component203;
+              else if (pkg === "Platinum") cardClass = styles.component204;
 
               return (
                 <div
-                  key={svc.id}
-                  onClick={() => toggleServiceSelection(svc.name)}
+                  key={pkg}
+                  onClick={() => setActivePackage(pkg)}
                   className={cn(
-                    "h-[48px] rounded-lg px-3 flex items-center gap-3 cursor-pointer transition-all border flex-shrink-0",
-                    isSelected
-                      ? "bg-[#00b4cc0a] border-[#00b4cc]"
-                      : "bg-[#fafafa] border-[#ececed]"
+                    cardClass,
+                    isActive && "ring-4 ring-[#00B4CC] ring-offset-2 scale-[1.02]"
                   )}
                 >
-                  {iconUrl && (
-                    <img
-                      src={getImageUrl(iconUrl)}
-                      alt={svc.name}
-                      className="w-5 h-5 object-contain rounded shrink-0"
-                    />
-                  )}
-                  <span className="text-[14px] font-medium text-black leading-[20px] whitespace-nowrap">
-                    {svc.name}
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={(e) => handleDeleteService(svc.id, svc.name, e)}
-                    disabled={deleteServiceMutation.isPending}
-                    className="w-6 h-6 flex items-center justify-center transition-opacity hover:opacity-80 flex-shrink-0 ml-1"
-                    title="Xidməti sil"
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      togglePackage(pkg);
+                    }}
+                    className={cn(
+                      "w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all shadow-sm cursor-pointer",
+                      isSelected ? "bg-white border-white" : "bg-transparent border-white/70"
+                    )}
                   >
-                    <Image src="/trash.png" width={20} height={20} alt="Sil" />
-                  </button>
+                    {isSelected && <Check className="text-black w-4 h-4 stroke-[4]" />}
+                  </div>
+
+                  <b className={cn(
+                    styles.bronze,
+                    "ml-3 text-[16px] tracking-tight",
+                    pkg === "Platinum" ? "text-white" : "text-white drop-shadow-md"
+                  )}>
+                    {pkg}
+                  </b>
                 </div>
               );
             })}
           </div>
         </div>
+
+        {/* Entrance Price Container */}
+        <div className={styles.frameDiv}>
+          <div className={styles.zalaAidOlanAbunliklrWrapper}>
+            <div className={styles.zalaAidOlan}>Giriş qiyməti</div>
+          </div>
+          <div className={styles.giriQiymtiParent}>
+            <div className={styles.giriQiymti2}>Giriş qiyməti</div>
+            <div className={styles.frameWrapper}>
+              <input
+                type="number"
+                value={activePriceKey ? (prices[activePriceKey] || "") : ""}
+                onChange={(e) => {
+                  if (activePriceKey) {
+                    setPrices(prev => ({ ...prev, [activePriceKey]: e.target.value }));
+                  }
+                }}
+                className="bg-transparent w-full h-full outline-none text-[18px] font-semibold text-center"
+                placeholder="0.00"
+              />
+              <span className="text-black/40 font-bold ml-2 text-sm">AZN</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Package Specific Services Container */}
+        <div className={styles.frameParent2}>
+          <div className={styles.platiniumPaketDaxilOlanXiParent}>
+            <div className={styles.zalaAidOlan}>{activePackage} paketə daxil olan xidmətlər</div>
+            {!isCreatingService && (
+              <div
+                onClick={() => setIsCreatingService(true)}
+                className={styles.searchInput}
+                style={{ cursor: "pointer" }}
+              >
+                <div className={styles.xidmtLavEt}>Xidmət əlavə et</div>
+                <div className={styles.square}>
+                  <Plus className="text-white w-6 h-6 stroke-[3]" />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {isCreatingService && (
+            <div className="flex flex-col gap-5 p-5 rounded-xl bg-white border border-[#ececed] w-full animate-in fade-in duration-300">
+              <div className="flex items-center justify-between border-b border-[#ececed] pb-1">
+                <h3 className="text-[18px] font-semibold leading-[28px]">Xidmət əlavə et</h3>
+                <button 
+                  onClick={() => { setIsCreatingService(false); setPendingIcon(null); }}
+                  className="flex items-center justify-center text-[#1F2937] hover:opacity-70 transition-opacity"
+                  title="Bağla"
+                >
+                  <X size={20} strokeWidth={2} />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-[14px] leading-[20px]">Xidmət adı</label>
+                  <div className="h-[44px] bg-[#fafafa] border border-[#ececed] rounded-lg flex items-center px-3">
+                    <input
+                      type="text"
+                      value={pendingService || ""}
+                      onChange={(e) => setPendingService(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleConfirmService()}
+                      placeholder="Məs: Pilates"
+                      className="bg-transparent w-full h-full outline-none text-[15px] leading-[24px]"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-[14px] leading-[20px]">Xidmət ikonu</label>
+                  <div className="h-[44px] flex items-center gap-3">
+                    <label className="h-full px-4 rounded-lg border border-[#ececed] bg-[#fafafa] flex items-center justify-center text-xs font-semibold text-black/60 hover:bg-slate-100 transition-colors cursor-pointer whitespace-nowrap">
+                      Şəkil seçin
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setPendingIcon(e.target.files?.[0] || null)}
+                        className="hidden"
+                      />
+                    </label>
+                    {pendingIcon && (
+                      <span className="text-[13px] text-[#00B4CC] font-medium truncate max-w-[150px]" title={pendingIcon.name}>
+                        {pendingIcon.name}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  onClick={handleConfirmService}
+                  disabled={createServiceMutation.isPending}
+                  className="h-[40px] w-[160px] bg-[#00B4CC] rounded-lg flex items-center justify-center text-[#fafafa] text-sm font-medium transition-all hover:opacity-90 shadow-sm"
+                >
+                  {createServiceMutation.isPending ? <Loader2 className="animate-spin" size={18} /> : "Əlavə et"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className={styles.frameParent3}>
+            <div className={styles.xidmetParent}>
+              {servicesToRender.map((svc: any) => {
+                const activeSvcKey = activePriceKey;
+                const isSelected = activeSvcKey ? (packageServices[activeSvcKey]?.includes(svc.name)) : false;
+                let iconUrl = svc.iconImageUrl || svc.iconUrl;
+                if (!iconUrl && customIcons[svc.name]) {
+                  iconUrl = URL.createObjectURL(customIcons[svc.name]);
+                }
+
+                return (
+                  <div
+                    key={svc.id}
+                    onClick={() => toggleServiceSelection(svc.name)}
+                    className={isSelected ? styles.xidmet : styles.xidmet3}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <div className={styles.frameParent6}>
+                      <div className={styles.textWrapper}>
+                        {iconUrl && (
+                          <img
+                            src={getImageUrl(iconUrl)}
+                            alt={svc.name}
+                            className="w-5 h-5 object-contain rounded shrink-0 mr-2"
+                          />
+                        )}
+                        <div className={styles.xidmtLavEt}>{svc.name}</div>
+                      </div>
+                      
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeleteService(svc.id, svc.name, e)}
+                        disabled={deleteServiceMutation.isPending}
+                        className="w-6 h-6 flex items-center justify-center transition-opacity hover:opacity-80 flex-shrink-0"
+                        title="Xidməti sil"
+                      >
+                        <Image src="/trash.png" width={20} height={20} alt="Sil" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* 4. Footer Buttons */}
-      <div className="flex items-center justify-end gap-3">
-        <button
+      {/* Footer Save & Next Buttons */}
+      <div className={styles.buttonParent}>
+        <div
           onClick={() => {
             const { resetStep6Data } = useGymStore.getState();
             resetStep6Data();
@@ -596,17 +593,17 @@ export function StepPlans({ onNext }: { onNext: () => void }) {
             setPendingIcon(null);
             if (selectedCategoryIds.length > 0) setActiveCategoryId(selectedCategoryIds[0]);
           }}
-          className="h-[40px] px-8 rounded-lg border border-[#ececed] text-[#101828] text-[14px] font-medium hover:bg-slate-50 transition-colors"
+          className={styles.button}
         >
-          Sıfırla
-        </button>
+          <div className={styles.yoga}>Sıfırla</div>
+        </div>
         <button
           onClick={handleNext}
           disabled={savingStep6}
-          className="h-[40px] w-[240px] rounded-lg bg-[#00B4CC] text-white text-[14px] font-medium hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-md shadow-cyan-50"
+          className={styles.button2}
         >
-          {savingStep6 && <Loader2 className="w-4 h-4 animate-spin" />}
-          Növbəti
+          {savingStep6 && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+          <div className={styles.yoga}>Növbəti</div>
         </button>
       </div>
 
