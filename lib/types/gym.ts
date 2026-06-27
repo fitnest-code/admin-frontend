@@ -29,6 +29,7 @@ export interface ITrainer {
   phone: string;
   email: string;
   lessonTypeIds?: number[];
+  categoryIds?: number[];
 }
 
 export interface ITrainersResponse {

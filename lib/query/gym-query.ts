@@ -388,7 +388,7 @@ export function useGymTrainers(gymId: number | string | null | undefined, params
     queryKey: ['gym-trainers', gymId ? Number(gymId) : null, normalizedParams, locale],
     queryFn: () => {
       if (!gymId) return Promise.resolve(null)
-      return apiGet<PaginatedResponse<ITrainer>>(`/admin/gyms/${gymId}/trainers`, { params: normalizedParams })
+      return apiGet<PaginatedResponse<ITrainer>>(`/api/v2/admin/gyms/${gymId}/trainers`, { params: normalizedParams })
     },
     enabled: !!gymId,
     initialData: initialData

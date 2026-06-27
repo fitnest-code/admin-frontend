@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { useProfessions, useCategories, useGymDetailsAdmin } from "@/lib/query/gym-query";
 import { useLessonTypes } from "@/lib/query/use-lesson-types";
 import { useGymStore } from "@/lib/store/gym-store";
+import { useUpdateTrainer } from "@/lib/query/trainers";
+import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { createPortal } from "react-dom";
@@ -14,16 +16,20 @@ interface EditTrainerModalProps {
   onClose: () => void;
   trainer: any;
   index: number;
+  isDashboard?: boolean;
 }
 
-export function EditTrainerModal({ onClose, trainer, index }: EditTrainerModalProps) {
+export function EditTrainerModal({ onClose, trainer, index, isDashboard = false }: EditTrainerModalProps) {
   const [mounted, setMounted] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
   const { gymId, step1Data, updateStep2Trainer } = useGymStore();
   const { data: professions } = useProfessions();
   const { data: categoriesData } = useCategories();
   const { data: gymDetails } = useGymDetailsAdmin(gymId);
   const { lessonTypes: allLessonTypes } = useLessonTypes();
+
+  const updateTrainerMutation = useUpdateTrainer(Number(gymId));
 
   // 1. Get only category IDs added in Step 1
   const activeCategoryIds = useMemo(() => {
@@ -52,7 +58,11 @@ export function EditTrainerModal({ onClose, trainer, index }: EditTrainerModalPr
   });
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(trainer.preview || null);
+  const [preview, setPreview] = useState<string | null>(
+    trainer.picture 
+      ? (trainer.picture.startsWith("http") || trainer.picture.startsWith("/") ? trainer.picture : `/api/v1/media/stream/${trainer.picture}`)
+      : (trainer.preview || null)
+  );
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<Set<number>>(new Set());
   const [selectedLessonTypeIds, setSelectedLessonTypeIds] = useState<Set<number>>(
     new Set(trainer.lessonTypeIds || [])
@@ -96,14 +106,14 @@ export function EditTrainerModal({ onClose, trainer, index }: EditTrainerModalPr
     }
   }, [trainer.lessonTypeIds, availableCategories, selectedCategoryIds]);
 
-  // Load available lesson types for this gym/step1 selection
+  // 2. Load available lesson types for this gym/step1 selection
   const availableLessonTypes = useMemo(() => {
     return gymId 
       ? (gymDetails?.lessonTypes || [])
       : (allLessonTypes?.filter((lt: any) => step1Data?.lessonTypeIds?.includes(lt.id)) || []);
   }, [gymId, gymDetails, allLessonTypes, step1Data]);
 
-  // Filter lesson types so we only display ones belonging to selectedCategoryIds
+  // 3. Filter lesson types so we only display ones belonging to selectedCategories
   const activeLessonTypes = useMemo(() => {
     if (selectedCategoryIds.size === 0) return [];
     const selectedCats = availableCategories.filter((c) => selectedCategoryIds.has(c.id));
@@ -215,147 +225,147 @@ export function EditTrainerModal({ onClose, trainer, index }: EditTrainerModalPr
 
     const professionNameDisplay = dropdownLabel;
     
-    updateStep2Trainer(index, {
-      ...form,
-      professionId: "",
-      photo: selectedFile || trainer.photo,
-      preview: preview!,
-      professionName: professionNameDisplay,
-      lessonTypeIds: Array.from(selectedLessonTypeIds),
-    });
-
-    onClose();
+    if (isDashboard) {
+      updateTrainerMutation.mutate({
+        trainerId: Number(trainer.trainer_id),
+        data: {
+          name: form.name,
+          surname: form.surname,
+          professionId: trainer.profession?.id,
+          phone: form.phone,
+          email: form.email,
+          photo: selectedFile || undefined,
+          lessonTypeIds: Array.from(selectedLessonTypeIds)
+        }
+      }, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["gym-trainers", Number(gymId)] });
+          toast.success("Məşqçi məlumatları yeniləndi");
+          onClose();
+        },
+        onError: (err: any) => {
+          toast.error(err?.response?.data?.message || err?.message || "Xəta baş verdi");
+        }
+      });
+    } else {
+      updateStep2Trainer(index, {
+        ...form,
+        professionId: "",
+        photo: selectedFile || undefined,
+        preview: preview || "",
+        professionName: professionNameDisplay,
+        lessonTypeIds: Array.from(selectedLessonTypeIds)
+      });
+      onClose();
+    }
   };
+
+  const isPending = updateTrainerMutation.isPending;
 
   if (!mounted) return null;
 
   return createPortal(
-    <div className="fixed top-0 left-0 w-full h-full z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 font-sans animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 font-sans animate-in fade-in duration-300">
       <div className="w-full max-w-[800px] max-h-[95vh] rounded-2xl bg-white border border-[#ececed] shadow-2xl overflow-y-auto flex flex-col p-6 md:p-8 gap-6 animate-in zoom-in-95 duration-300 font-sans">
-        
         {/* Header */}
-        <div className="w-full h-10 flex items-center justify-between border-b border-[#ececed] pb-2">
-          <div className="text-[20px] font-semibold text-[#101828]">Məşqçi detalları</div>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-full transition-colors">
-            <X size={18} className="text-[#6a7282]" />
-          </button>
+        <div className="w-full flex flex-col items-start">
+          <div className="w-full h-10 flex items-center justify-between">
+            <div className="flex-1 text-[20px] font-semibold text-[#101828]">Məşqçi detalları</div>
+            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center relative cursor-pointer hover:bg-slate-100 rounded-full transition-colors">
+              <X size={18} className="text-[#6a7282]" />
+            </button>
+          </div>
         </div>
 
+        {/* Form Body */}
         <form onSubmit={handleSave} className="flex flex-col gap-6">
           <div className="w-full flex flex-col md:flex-row gap-6 md:gap-8 items-start">
-            
-            {/* Photo Section */}
+            {/* Left Column: Picture */}
             <div className="flex flex-col items-start gap-2 w-full md:w-[320px] shrink-0">
-              <div className="text-[15px] leading-6 text-black font-semibold">Məşqçi şəkili</div>
+              <div className="w-full text-[15px] leading-6 text-black font-semibold">Məşqçi şəkili</div>
               <div className="w-full flex flex-col items-start gap-3">
-                <input ref={fileRef} type="file" accept=".jpg,.jpeg,.png,.webp" className="hidden" onChange={handlePhotoChange} />
+                <input 
+                  ref={fileRef}
+                  type="file" 
+                  accept=".jpg,.jpeg,.png,.webp" 
+                  className="hidden" 
+                  onChange={handlePhotoChange}
+                />
+                
                 <div 
                   onClick={() => fileRef.current?.click()}
-                  className="w-full h-[200px] md:h-[240px] rounded-[16px] border border-[#ececed] relative cursor-pointer flex items-center justify-center overflow-hidden hover:opacity-90 transition-all group bg-cover bg-center bg-no-repeat"
-                  style={preview ? { backgroundImage: `url(${preview})` } : { backgroundColor: '#fafafa' }}
+                  className="w-full h-[200px] md:h-[240px] bg-[#fafafa] border-2 border-dashed border-[#ececed] rounded-xl relative cursor-pointer flex items-center justify-center overflow-hidden hover:border-[#00B4CC] transition-all group"
                 >
-                  {/* Overlay for "Change photo" */}
-                  <div className={cn(
-                    "absolute inset-0 flex flex-col items-center justify-center gap-4 transition-all duration-300",
-                    preview ? "bg-black/40" : ""
-                  )}>
-                    <div className="flex flex-col items-center gap-4">
-                      <Image 
-                        src="/Şəkil dəyiş/Icon.svg" 
-                        width={32} 
-                        height={32} 
-                        alt="Change" 
-                        className={cn(preview ? "brightness-0 invert" : "")} 
-                      />
-                      <span className={cn(
-                        "text-[13px] leading-5 font-medium tracking-[-0.15px] font-inter",
-                        preview ? "text-white" : "text-black"
-                      )}>
-                        Şəkili dəyiş
-                      </span>
+                  {preview ? (
+                    <img src={preview} className="w-full h-full object-cover" alt="Trainer Image" />
+                  ) : (
+                    <div className="text-[#6a7282] font-medium flex flex-col items-center gap-2 transition-transform group-hover:scale-105">
+                      <Image src="/upload.svg" width={28} height={28} alt="Upload" className="opacity-60" />
+                      <span className="text-[14px]">Şəkil yüklə</span>
                     </div>
-                  </div>
+                  )}
                 </div>
-                <div className="text-[12px] text-[#6a7282] font-medium italic">JPG or PNG • Max size 10MB</div>
+                <div className="text-[12px] leading-5 text-[#6a7282] font-medium italic">
+                  JPG or PNG • Max 10MB
+                </div>
               </div>
             </div>
 
-            {/* Inputs Section */}
+            {/* Right Column: Name details & Category details */}
             <div className="flex flex-col w-full md:flex-1 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <div className="text-[14px] font-semibold text-black/60">Ad <span className="text-red-500">*</span></div>
+              <div className="w-full flex flex-col items-start gap-1.5">
+                <div className="w-full text-[14px] leading-5 text-black/60 font-semibold">Ad <span className="text-red-500">*</span></div>
                 <input 
                   type="text" 
                   value={form.name} 
-                  required
                   onChange={e => setForm({...form, name: e.target.value})} 
-                  className="w-full h-[44px] rounded-lg bg-[#fafafa] border border-[#ececed] px-4 text-[15px] font-medium outline-none focus:border-[#00B4CC] transition-all" 
+                  className="w-full h-[44px] rounded-lg bg-[#fafafa] border border-[#ececed] px-4 text-[15px] font-medium outline-none focus:border-[#00B4CC] transition-all placeholder:text-[#94979c] font-sans" 
                   placeholder="Məs: Aysel"
                 />
               </div>
-
-              <div className="flex flex-col gap-1.5">
-                <div className="text-[14px] font-semibold text-black/60">Soyad <span className="text-red-500">*</span></div>
+              <div className="w-full flex flex-col items-start gap-1.5">
+                <div className="w-full text-[14px] leading-5 text-black/60 font-semibold">Soyad <span className="text-red-500">*</span></div>
                 <input 
                   type="text" 
                   value={form.surname} 
-                  required
                   onChange={e => setForm({...form, surname: e.target.value})} 
-                  className="w-full h-[44px] rounded-lg bg-[#fafafa] border border-[#ececed] px-4 text-[15px] font-medium outline-none focus:border-[#00B4CC] transition-all" 
+                  className="w-full h-[44px] rounded-lg bg-[#fafafa] border border-[#ececed] px-4 text-[15px] font-medium outline-none focus:border-[#00B4CC] transition-all placeholder:text-[#94979c] font-sans" 
                   placeholder="Məs: Quliyeva"
                 />
               </div>
 
-              {/* Category Select - Multi Select */}
+              {/* Category Select Dropdown */}
               <div className="w-full flex flex-col items-start gap-1.5" ref={categoryDropdownRef}>
-                <div className="w-full text-[14px] leading-5 text-black/60 font-semibold">Kateqoriya</div>
+                <div className="w-full text-[14px] leading-5 text-black/60 font-semibold">Kateqoriya seçimi</div>
                 <div className="relative w-full">
                   <div 
                     onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
-                    className="min-h-[44px] w-full rounded-lg bg-[#fafafa] border border-[#ececed] px-3 py-2 text-[15px] font-medium outline-none flex flex-wrap items-center justify-between cursor-pointer hover:border-[#00B4CC] transition-all font-sans select-none gap-1.5"
+                    className="w-full h-[44px] rounded-lg bg-[#fafafa] border border-[#ececed] px-4 text-[15px] font-medium outline-none flex items-center justify-between cursor-pointer hover:border-[#00B4CC] transition-all font-sans select-none"
                   >
-                    {selectedCategoryIds.size > 0 ? (
-                      <div className="flex flex-wrap gap-1.5 max-w-[90%]">
-                        {availableCategories.filter(c => selectedCategoryIds.has(c.id)).map(cat => (
-                          <div 
-                            key={cat.id} 
-                            className="bg-[#00b4cc] text-white text-xs font-semibold rounded px-2.5 py-1 flex items-center gap-1.5 animate-in fade-in zoom-in-95 duration-100"
-                          >
-                            <span>{cat.name}</span>
-                            <span 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleCategory(cat.id);
-                              }}
-                              className="text-white/60 hover:text-white cursor-pointer font-bold leading-none text-xs"
-                            >
-                              ×
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="text-[#94979c]">Kateqoriya seçin</span>
-                    )}
-                    <ChevronDown size={18} className={`text-black/40 transition-transform duration-200 ${isCategoryDropdownOpen ? "rotate-180" : ""}`} />
+                    <span className={selectedCategoryIds.size > 0 ? "text-black" : "text-[#94979c]"}>
+                      {selectedCategoryIds.size === 0 
+                        ? "Kateqoriya seçin" 
+                        : Array.from(selectedCategoryIds).map(id => availableCategories.find(c => c.id === id)?.name).filter(Boolean).join(", ")}
+                    </span>
+                    <ChevronDown size={18} className={cn("text-black/40 transition-transform duration-200", isCategoryDropdownOpen && "rotate-180")} />
                   </div>
 
                   {isCategoryDropdownOpen && (
                     <div className="absolute left-0 top-[calc(100%+8px)] w-full bg-white border border-[#ececed] rounded-xl shadow-lg z-50 max-h-[220px] overflow-y-auto p-2 flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-150">
-                      {availableCategories.map((cat: any) => {
-                        const isSelected = selectedCategoryIds.has(cat.id);
+                      {availableCategories.map((c: any) => {
+                        const isSelected = selectedCategoryIds.has(c.id);
                         return (
                           <div
-                            key={cat.id}
+                            key={c.id}
                             onClick={(e) => {
                               e.stopPropagation();
-                              toggleCategory(cat.id);
+                              toggleCategory(c.id);
                             }}
                             className={`w-full flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors ${
                               isSelected ? "bg-[#00B4CC]/10 text-[#00B4CC] font-medium" : "hover:bg-gray-50 text-black"
                             }`}
                           >
-                            <span className="text-[14px]">{cat.name}</span>
+                            <span className="text-[14px]">{c.name}</span>
                             <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
                               isSelected ? "border-[#00B4CC] bg-[#00B4CC] text-white" : "border-gray-300"
                             }`}>
@@ -364,19 +374,14 @@ export function EditTrainerModal({ onClose, trainer, index }: EditTrainerModalPr
                           </div>
                         );
                       })}
-                      {availableCategories.length === 0 && (
-                        <div className="px-3 py-3 text-sm text-gray-400 text-center">
-                          Kateqoriya tapılmadı
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Lesson Type selector */}
-              <div className="flex flex-col gap-1.5" ref={dropdownRef}>
-                <div className="text-[14px] font-semibold text-black/60">Növ</div>
+              {/* Lesson Type (Növ) Selection */}
+              <div className="w-full flex flex-col items-start gap-1.5" ref={dropdownRef}>
+                <div className="w-full text-[14px] leading-5 text-black/60 font-semibold">Növ</div>
                 <div className="relative w-full">
                   <div 
                     onClick={() => {
@@ -423,11 +428,6 @@ export function EditTrainerModal({ onClose, trainer, index }: EditTrainerModalPr
                           </div>
                         );
                       })}
-                      {activeLessonTypes.length === 0 && (
-                        <div className="px-3 py-3 text-sm text-gray-400 text-center">
-                          Bu kateqoriyalar üçün dərs növü tapılmadı
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
@@ -461,13 +461,13 @@ export function EditTrainerModal({ onClose, trainer, index }: EditTrainerModalPr
           <div className="w-full flex justify-center mt-2">
             <button 
               type="submit" 
-              disabled={!isDirty}
+              disabled={!isDirty || isPending}
               className={cn(
                 "w-[280px] h-[48px] rounded-lg flex items-center justify-center px-4 font-semibold text-[16px] text-white transition-all shadow-md shadow-[#00B4CC]/10",
-                isDirty ? "bg-[#00B4CC] hover:opacity-90" : "bg-[#c1c1cc] cursor-not-allowed"
+                isDirty && !isPending ? "bg-[#00B4CC] hover:opacity-90" : "bg-[#c1c1cc] cursor-not-allowed"
               )}
             >
-              Yadda saxla
+              {isPending ? <Loader2 className="animate-spin" size={18} /> : "Yadda saxla"}
             </button>
           </div>
         </form>

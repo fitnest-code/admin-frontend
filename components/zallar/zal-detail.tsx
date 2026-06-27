@@ -2,33 +2,30 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
-import { ArrowLeft, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ZAL_TABS, type Zal } from '@/lib/zallar-data'
 import { ZalMelumatlarTab } from './tabs/zal-melumatlar-tab'
 import { MesqcilerTab } from './tabs/mesqciler-tab'
-import { GirisQrTab } from './tabs/giris-qr-tab'
 import { ZalAdminiTab } from './tabs/zal-admini-tab'
 import { AnalitikaTab } from './tabs/analitika-tab'
 import { ZalWorkHoursTab } from './tabs/zal-work-hours-tab'
+import { ZalAbunelikTab } from './tabs/zal-abunelik-tab'
+import { GymInfoAdminResponseV2 } from '@/lib/types/gym'
 
 interface ZalDetailProps {
-  zal: Zal
+  gymId: string
+  gymDetails?: GymInfoAdminResponseV2
+  zal?: Zal
   isNew?: boolean
 }
 
-const STATUS_STYLES = {
-  aktiv:   'bg-green-100 text-green-700',
-  deaktiv: 'bg-red-100 text-red-500',
-}
-
-export function ZalDetail({ zal, isNew = false }: ZalDetailProps) {
+export function ZalDetail({ gymId, gymDetails, zal, isNew = false }: ZalDetailProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const pathname = usePathname()
   const tabParam = searchParams.get('tab')
 
-  const [activeTab, setActiveTabState] = useState(tabParam || ZAL_TABS[0].key) // 'analitika' is now the first tab
+  const [activeTab, setActiveTabState] = useState(tabParam || ZAL_TABS[0].key)
 
   useEffect(() => {
     if (tabParam && tabParam !== activeTab) {
@@ -43,14 +40,16 @@ export function ZalDetail({ zal, isNew = false }: ZalDetailProps) {
     router.replace(`${pathname}?${params.toString()}`, { scroll: false })
   }
 
+  const gymName = gymDetails?.name || zal?.name || 'Zal'
+
   function renderTab() {
     switch (activeTab) {
-      case 'analitika':  return <AnalitikaTab />
-      case 'melumatlar': return <ZalMelumatlarTab zal={zal} isNew={isNew} />
-      case 'work-hours': return <ZalWorkHoursTab gymId={zal.id} />
-      case 'mesqciler':  return <MesqcilerTab mesqciler={zal.mesqciler} zalName={zal.name} />
-      case 'admin':      return <ZalAdminiTab admins={zal.admins} />
-      case 'abunelik':
+      case 'analitika':  return <AnalitikaTab gymId={gymId} />
+      case 'melumatlar': return <ZalMelumatlarTab gymId={gymId} gymDetails={gymDetails} zal={zal} isNew={isNew} />
+      case 'work-hours': return <ZalWorkHoursTab gymId={gymDetails?.id || Number(gymId)} />
+      case 'mesqciler':  return <MesqcilerTab gymId={gymId} zalName={gymName} />
+      case 'admin':      return <ZalAdminiTab admins={zal?.admins || []} />
+      case 'abunelik':   return <ZalAbunelikTab gymId={gymId} />
       case 'reyting':
         return (
           <div className="flex items-center justify-center py-24 text-sm text-muted-foreground">
@@ -66,14 +65,14 @@ export function ZalDetail({ zal, isNew = false }: ZalDetailProps) {
       {/* Sub-header / Breadcrumb */}
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-          Super admin- Zal Detail - Analitika
+          Super admin- Zal Detail - {activeTab.toUpperCase()}
         </span>
       </div>
 
       {/* Title row */}
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">{isNew ? 'Yeni Zal' : zal.name}</h1>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">{isNew ? 'Yeni Zal' : gymName}</h1>
           {!isNew && (
             <span className="flex items-center gap-1 rounded-full bg-green-500 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm shadow-green-500/20">
               <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />

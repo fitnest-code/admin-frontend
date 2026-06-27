@@ -16,7 +16,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { createPortal } from "react-dom";
 
-export function AddTrainerModal({ onClose, isDashboard = false }: { onClose: () => void, isDashboard?: boolean }) {
+export function AddTrainerModal({ onClose, isDashboard = false, gymId }: { onClose: () => void, isDashboard?: boolean, gymId?: number }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
@@ -25,7 +25,8 @@ export function AddTrainerModal({ onClose, isDashboard = false }: { onClose: () 
 
   const fileRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
-  const id = useGymStore((state) => state.gymId);
+  const storeGymId = useGymStore((state) => state.gymId);
+  const id = gymId || storeGymId;
 
   const { data: professions } = useProfessions();
   const { mutate: createTrainerAPI, isPending: createPending } = useCreateTrainer(Number(id));

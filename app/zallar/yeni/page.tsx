@@ -30,7 +30,7 @@ const EMPTY_ZAL: Zal = {
 export default function YeniZalPage() {
   return (
     <AdminLayout>
-      <ZalDetail zal={EMPTY_ZAL} isNew />
+      <ZalDetail gymId="new" zal={EMPTY_ZAL} isNew />
     </AdminLayout>
   )
 }
