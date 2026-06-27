@@ -1,46 +1,105 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Loader2, Upload, X } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Loader2, Upload, X, Edit3 } from "lucide-react";
 import { toast } from "sonner";
 import { useGymStore } from "@/lib/store/gym-store";
 import { useValidateGymStep5, useCategories } from "@/lib/query/gym-query";
+import { cn } from "@/lib/utils";
 
 interface RoomPhotoState {
   id: string;
   photo: File | null;
   name: string;
   previewUrl: string | null;
-  categoryId: number | null;
+  categoryId: number;
 }
 
 export function StepImages({ onNext }: { onNext?: () => void }) {
   const { step5Photos, setStep5Photos, step1Data } = useGymStore();
   const [mounted, setMounted] = useState(false);
 
-  const [coverPhoto, setCoverPhoto] = useState<File | null>(step5Photos?.cover || null);
-  const [coverPreview, setCoverPreview] = useState<string | null>(step5Photos?.cover ? URL.createObjectURL(step5Photos.cover) : null);
-
-  const initialRoomPhotos = step5Photos 
-    ? Array.from({ length: 9 }).map((_, i) => {
-        const p = step5Photos.rooms[i];
-        return p ? { id: `rp-${i}`, photo: p.file, name: p.name, previewUrl: URL.createObjectURL(p.file), categoryId: p.categoryId || null } : { id: `rp-${i}`, photo: null, name: "", previewUrl: null, categoryId: null };
-      })
-    : Array.from({ length: 9 }).map((_, i) => ({ id: `rp-${i}`, photo: null, name: "", previewUrl: null, categoryId: null }));
-
-  const [roomPhotos, setRoomPhotos] = useState<RoomPhotoState[]>(initialRoomPhotos);
-
-  const coverInputRef = useRef<HTMLInputElement>(null);
-  const roomInputRefs = useRef<(HTMLInputElement | null)[]>([]);
-
-  const validateStep5 = useValidateGymStep5();
   const { data: categoriesData } = useCategories();
 
   // Filter categories to only display those selected in Step 1
-  const selectedCategories = categoriesData?.items?.filter((c) => 
-    (step1Data?.mainCategoryDetails || []).map(d => d.categoryId).includes(c.id) || 
-    (step1Data?.subCategoryDetails || []).map(d => d.categoryId).includes(c.id)
-  ) || [];
+  const selectedCategories = useMemo(() => {
+    return categoriesData?.items?.filter((c) => 
+      (step1Data?.mainCategoryDetails || []).map(d => d.categoryId).includes(c.id) || 
+      (step1Data?.subCategoryDetails || []).map(d => d.categoryId).includes(c.id)
+    ) || [];
+  }, [categoriesData, step1Data]);
+
+  const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
+
+  // Category-specific cover files and preview URLs
+  const [covers, setCovers] = useState<Record<number, File | null>>({});
+  const [coverPreviews, setCoverPreviews] = useState<Record<number, string | null>>({});
+
+  // Category-specific room slots
+  const [roomPhotos, setRoomPhotos] = useState<Record<number, RoomPhotoState[]>>({});
+
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const roomInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  const validateStep5 = useValidateGymStep5();
+
+  // Initialize states on mount/loaded categories
+  useEffect(() => {
+    if (selectedCategories.length > 0 && Object.keys(roomPhotos).length === 0) {
+      const initialCovers: Record<number, File | null> = {};
+      const initialCoverPreviews: Record<number, string | null> = {};
+      const initialRoomPhotos: Record<number, RoomPhotoState[]> = {};
+
+      selectedCategories.forEach((cat) => {
+        initialRoomPhotos[cat.id] = Array.from({ length: 9 }).map((_, i) => ({
+          id: `rp-${cat.id}-${i}`,
+          photo: null,
+          name: "",
+          previewUrl: null,
+          categoryId: cat.id
+        }));
+      });
+
+      if (step5Photos) {
+        step5Photos.rooms.forEach((r) => {
+          if (r.categoryId) {
+            if (r.name === "COVER") {
+              initialCovers[r.categoryId] = r.file;
+              initialCoverPreviews[r.categoryId] = URL.createObjectURL(r.file);
+            } else {
+              const list = initialRoomPhotos[r.categoryId];
+              if (list) {
+                const emptySlotIdx = list.findIndex(p => p.photo === null);
+                if (emptySlotIdx !== -1) {
+                  list[emptySlotIdx] = {
+                    id: `rp-${r.categoryId}-${emptySlotIdx}`,
+                    photo: r.file,
+                    name: r.name,
+                    previewUrl: URL.createObjectURL(r.file),
+                    categoryId: r.categoryId
+                  };
+                }
+              }
+            }
+          }
+        });
+
+        // Map global cover if needed
+        if (step5Photos.cover && selectedCategories.length > 0) {
+          const mainCatId = selectedCategories[0].id;
+          if (!initialCovers[mainCatId]) {
+            initialCovers[mainCatId] = step5Photos.cover;
+            initialCoverPreviews[mainCatId] = URL.createObjectURL(step5Photos.cover);
+          }
+        }
+      }
+
+      setCovers(initialCovers);
+      setCoverPreviews(initialCoverPreviews);
+      setRoomPhotos(initialRoomPhotos);
+      setActiveCategoryId(selectedCategories[0].id);
+    }
+  }, [selectedCategories, step5Photos]);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -91,90 +150,123 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
   };
 
   const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!activeCategoryId) return;
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 50 * 1024 * 1024) return toast.error("Şəkil ölçüsü max 50MB ola bilər");
       const compressed = await compressImage(file, 1200, 800, 0.72);
-      setCoverPhoto(compressed);
-      setCoverPreview(URL.createObjectURL(compressed));
+      setCovers(prev => ({ ...prev, [activeCategoryId]: compressed }));
+      setCoverPreviews(prev => ({ ...prev, [activeCategoryId]: URL.createObjectURL(compressed) }));
     }
   };
 
   const handleRoomPhotoChange = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!activeCategoryId) return;
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 50 * 1024 * 1024) return toast.error("Şəkil ölçüsü max 50MB ola bilər");
       const compressed = await compressImage(file, 800, 600, 0.65);
       setRoomPhotos(prev => {
-        const newPhotos = [...prev];
-        newPhotos[index] = { 
-          ...newPhotos[index], 
+        const catRooms = [...(prev[activeCategoryId] || [])];
+        catRooms[index] = { 
+          ...catRooms[index], 
           photo: compressed, 
-          previewUrl: URL.createObjectURL(compressed),
-          // Auto-select the first category from step 1 categories list to make it easier for user
-          categoryId: newPhotos[index].categoryId || selectedCategories[0]?.id || null 
+          previewUrl: URL.createObjectURL(compressed)
         };
-        return newPhotos;
+        return { ...prev, [activeCategoryId]: catRooms };
       });
     }
   };
 
   const handleRoomNameChange = (index: number, val: string) => {
+    if (!activeCategoryId) return;
     setRoomPhotos(prev => {
-      const newPhotos = [...prev];
-      newPhotos[index] = { ...newPhotos[index], name: val };
-      return newPhotos;
-    });
-  };
-
-  const handleRoomCategoryChange = (index: number, catId: number | null) => {
-    setRoomPhotos(prev => {
-      const newPhotos = [...prev];
-      newPhotos[index] = { ...newPhotos[index], categoryId: catId };
-      return newPhotos;
+      const catRooms = [...(prev[activeCategoryId] || [])];
+      catRooms[index] = { ...catRooms[index], name: val };
+      return { ...prev, [activeCategoryId]: catRooms };
     });
   };
 
   const handleRemoveRoomPhoto = (index: number) => {
+    if (!activeCategoryId) return;
     setRoomPhotos(prev => {
-      const newPhotos = [...prev];
-      if (newPhotos[index].previewUrl) URL.revokeObjectURL(newPhotos[index].previewUrl!);
-      newPhotos[index] = { ...newPhotos[index], photo: null, previewUrl: null, categoryId: null };
-      return newPhotos;
+      const catRooms = [...(prev[activeCategoryId] || [])];
+      if (catRooms[index].previewUrl) URL.revokeObjectURL(catRooms[index].previewUrl!);
+      catRooms[index] = { 
+        ...catRooms[index], 
+        photo: null, 
+        previewUrl: null 
+      };
+      return { ...prev, [activeCategoryId]: catRooms };
     });
   };
 
-  const activePhotosCount = roomPhotos.filter(p => p.photo).length;
+  const currentRooms = activeCategoryId ? (roomPhotos[activeCategoryId] || []) : [];
+  const activePhotosCount = currentRooms.filter(p => p.photo).length;
+  const currentCoverPreview = activeCategoryId ? (coverPreviews[activeCategoryId] || null) : null;
 
   const handleNext = async () => {
-    if (!coverPhoto) return toast.error("Zəhmət olmasa Cover Şəkil yükləyin");
+    // 1. Validation checks
+    for (const cat of selectedCategories) {
+      if (!covers[cat.id]) {
+        return toast.error(`Zəhmət olmasa "${cat.name}" kateqoriyası üçün Cover Şəkil yükləyin.`);
+      }
 
-    const validRoomPhotos = roomPhotos.filter(p => p.photo !== null);
-
-    const missingNames = validRoomPhotos.some(p => !p.name.trim());
-    if (missingNames) {
-      return toast.error("Yüklənmiş şəkillərin adlarını qeyd edin");
-    }
-
-    const missingCategories = validRoomPhotos.some(p => !p.categoryId);
-    if (missingCategories) {
-      return toast.error("Yüklənmiş şəkillərin kateqoriyalarını seçin");
+      const catRooms = roomPhotos[cat.id] || [];
+      const validRoomPhotos = catRooms.filter(p => p.photo !== null);
+      const missingNames = validRoomPhotos.some(p => !p.name.trim());
+      if (missingNames) {
+        return toast.error(`"${cat.name}" kateqoriyasında yüklənmiş şəkillərin adlarını daxil edin.`);
+      }
     }
 
     try {
       const formData = new FormData();
-      formData.append("coverPhoto", coverPhoto);
-      validRoomPhotos.forEach(p => {
-        formData.append("roomPhotos", p.photo!);
-        formData.append("roomNames", p.name.trim());
-        formData.append("roomCategoryIds", String(p.categoryId));
+      const allRoomPhotosToSend: Array<{ name: string; file: File; categoryId: number }> = [];
+
+      // Set first selected category's cover as global coverPhoto for the gym
+      const mainCatId = selectedCategories[0]?.id;
+      const globalCoverPhoto = mainCatId ? covers[mainCatId] : null;
+      if (globalCoverPhoto) {
+        formData.append("coverPhoto", globalCoverPhoto);
+      }
+
+      selectedCategories.forEach((cat) => {
+        // Send cover as "COVER" room image
+        const catCover = covers[cat.id];
+        if (catCover) {
+          allRoomPhotosToSend.push({
+            name: "COVER",
+            file: catCover,
+            categoryId: cat.id
+          });
+        }
+
+        // Send normal room images
+        const catRooms = roomPhotos[cat.id] || [];
+        catRooms.forEach((p) => {
+          if (p.photo) {
+            allRoomPhotosToSend.push({
+              name: p.name.trim(),
+              file: p.photo,
+              categoryId: cat.id
+            });
+          }
+        });
+      });
+
+      // Append all room images to multipart payload
+      allRoomPhotosToSend.forEach((r) => {
+        formData.append("roomPhotos", r.file);
+        formData.append("roomNames", r.name);
+        formData.append("roomCategoryIds", String(r.categoryId));
       });
 
       await validateStep5.mutateAsync(formData);
       
       setStep5Photos({
-        cover: coverPhoto,
-        rooms: validRoomPhotos.map(p => ({ name: p.name.trim(), file: p.photo!, categoryId: p.categoryId }))
+        cover: globalCoverPhoto,
+        rooms: allRoomPhotosToSend
       });
 
       onNext?.();
@@ -188,135 +280,171 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
   if (!mounted) return null;
 
   return (
-    <div className="w-full bg-white rounded-[24px] border border-[#ECECED] p-6 flex flex-col gap-6 shadow-sm animate-in fade-in duration-500">
+    <div className="w-full bg-white rounded-[12px] border border-[#ECECED] p-6 md:p-8 flex flex-col gap-9 shadow-sm animate-in fade-in duration-500 font-sans text-black">
 
-        {/* Header */}
-        <div className="flex items-center justify-between pb-1 border-b border-[#ECECED]">
-          <h1 className="text-lg font-bold text-[#1F2937]">Zal şəkilləri</h1>
+      {/* Header */}
+      <div className="flex items-center justify-between pb-1 border-b border-[#ECECED]">
+        <h1 className="text-[20px] font-semibold leading-[30px]">Zal məlumatları</h1>
+      </div>
+
+      {/* Category Selection Tab List */}
+      <div className="flex flex-col gap-6 w-full">
+        <label className="text-[16px] font-medium leading-[24px]">Kateqoriya seçimi</label>
+        <div className="flex items-center flex-wrap gap-6">
+          {selectedCategories.map((c) => {
+            const isActive = activeCategoryId === c.id;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setActiveCategoryId(c.id)}
+                className={cn(
+                  "h-12 min-w-[180px] px-7 rounded-full flex items-center justify-center font-semibold text-[16px] transition-all tracking-tight",
+                  isActive 
+                    ? "bg-[#00b4cc] text-white shadow-sm shadow-[#00b4cc]/15" 
+                    : "border border-[#00b4cc] bg-white text-black hover:bg-[#00b4cc]/5"
+                )}
+              >
+                {c.name}
+              </button>
+            );
+          })}
         </div>
+      </div>
 
-        {/* Cover Photo */}
-        <div className="flex flex-col gap-2">
-          <label className="text-xs font-bold text-[#1F2937]">Cover Şəkil</label>
-          <div
-            onClick={() => coverInputRef.current?.click()}
-            className="relative w-full h-[180px] rounded-xl border-2 border-dashed border-[#D1D5DB] bg-[#F9FAFB] flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors overflow-hidden group"
-          >
-            <input type="file" ref={coverInputRef} className="hidden" accept="image/jpeg, image/png" onChange={handleCoverChange} />
-            {coverPreview ? (
-              <>
-                <img src={coverPreview} alt="Cover" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <span className="text-white font-semibold text-sm flex items-center gap-2"><Upload size={16} /> Dəyişdir</span>
-                </div>
-              </>
-            ) : (
-              <div className="flex flex-col items-center text-[#6B7280]">
-                <Upload size={28} className="mb-2 text-[#9CA3AF]" />
-                <span className="text-sm font-semibold">Cover şəkil yüklə</span>
+      {/* Uploaders Container */}
+      {activeCategoryId && (
+        <div className="flex flex-col gap-8 w-full max-w-[727px] animate-in fade-in duration-200">
+          
+          {/* Cover Photo Slot */}
+          <div className="flex flex-col gap-3 w-full">
+            <div className="text-[16px] font-medium leading-[20px]">Cover Şəkil</div>
+            <div className="relative w-full h-[252px] max-w-[444px] flex flex-col gap-3">
+              <div
+                onClick={() => coverInputRef.current?.click()}
+                className="relative w-full h-[252px] rounded-2xl border border-dashed border-[#99a1af] bg-[#fafafa] flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors overflow-hidden group"
+              >
+                <input type="file" ref={coverInputRef} className="hidden" accept="image/jpeg, image/png, image/webp" onChange={handleCoverChange} />
+                {currentCoverPreview ? (
+                  <>
+                    <img src={currentCoverPreview} alt="Cover" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-white font-semibold text-sm flex items-center gap-2"><Upload size={16} /> Şəkili dəyiş</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center text-[#4a5565] gap-7 text-center">
+                    <Upload size={40} className="text-[#99a1af]" />
+                    <span className="text-[14px] leading-5 font-semibold">Upload cover</span>
+                  </div>
+                )}
               </div>
-            )}
+              <span className="text-[14px] leading-5 text-[#6a7282] italic">JPG or PNG • Max size 2MB</span>
+            </div>
           </div>
-          <span className="text-xs text-[#9CA3AF]">JPG or PNG • Max size 50MB</span>
-        </div>
 
-        {/* Room Photos */}
-        <div className="flex flex-col gap-2">
-          <label className="text-xs font-bold text-[#1F2937]">Digər şəkillər ( {activePhotosCount}/9 )</label>
+          {/* Room Photos Slot Grid */}
+          <div className="flex flex-col gap-4 w-full">
+            <div className="text-[16px] font-medium leading-[20px]">Digər şəkillər ( {activePhotosCount}/9 )</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {currentRooms.map((room, index) => (
+                <div key={room.id} className="flex flex-col gap-3 w-[231px] h-[224px]">
+                  
+                  {/* Image slot box */}
+                  <div
+                    onClick={() => !room.previewUrl && roomInputRefs.current[room.id]?.click()}
+                    className={cn(
+                      "relative w-full h-[180px] rounded-2xl border flex flex-col items-center justify-center transition-colors overflow-hidden",
+                      room.previewUrl 
+                        ? "border-[#ececed] bg-cover bg-center bg-no-repeat cursor-default" 
+                        : "border-dashed border-[#d1d5dc] bg-[#fafafa] cursor-pointer hover:bg-slate-50"
+                    )}
+                    style={room.previewUrl ? { backgroundImage: `url(${room.previewUrl})` } : undefined}
+                  >
+                    <input
+                      type="file"
+                      ref={el => { roomInputRefs.current[room.id] = el }}
+                      className="hidden"
+                      accept="image/jpeg, image/png, image/webp"
+                      onChange={e => handleRoomPhotoChange(index, e)}
+                    />
 
-          <div className="grid grid-cols-3 gap-4">
-            {roomPhotos.map((room, index) => (
-              <div key={room.id} className="flex flex-col gap-2 bg-[#FAFBFB] p-2 rounded-xl border border-[#ECECED]">
-                <div
-                  onClick={() => !room.previewUrl && roomInputRefs.current[index]?.click()}
-                  className={`relative w-full aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-colors overflow-hidden ${room.previewUrl ? 'border-[#ECECED] cursor-default' : 'border-[#D1D5DB] bg-[#F9FAFB] cursor-pointer hover:bg-gray-50'
-                    }`}
-                >
-                  <input
-                    type="file"
-                    ref={el => { roomInputRefs.current[index] = el }}
-                    className="hidden"
-                    accept="image/jpeg, image/png"
-                    onChange={e => handleRoomPhotoChange(index, e)}
-                  />
-
-                  {room.previewUrl ? (
-                    <>
-                      <img src={room.previewUrl} alt="Room" className="w-full h-full object-cover" />
-                      <div className="absolute top-2 right-2 flex gap-1">
+                    {room.previewUrl ? (
+                      <div className="absolute top-3 right-3 flex items-center gap-2 overflow-hidden animate-in fade-in duration-200">
                         <button
                           type="button"
-                          onClick={(e) => { e.stopPropagation(); roomInputRefs.current[index]?.click(); }}
-                          className="p-1.5 bg-white/80 hover:bg-white rounded-lg text-[#1F2937] transition-colors"
+                          onClick={(e) => { e.stopPropagation(); roomInputRefs.current[room.id]?.click(); }}
+                          className="p-1 rounded-full bg-white text-black hover:opacity-90 transition-opacity flex items-center justify-center w-6 h-6 shadow"
                         >
-                          <Upload size={14} />
+                          <Edit3 size={14} />
                         </button>
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); handleRemoveRoomPhoto(index); }}
-                          className="p-1.5 bg-white/80 hover:bg-white rounded-lg text-red-500 transition-colors"
+                          className="p-1 rounded-full bg-white text-red-500 hover:opacity-90 transition-opacity flex items-center justify-center w-6 h-6 shadow"
                         >
                           <X size={14} />
                         </button>
                       </div>
-                    </>
-                  ) : (
-                    <div className="flex flex-col items-center text-[#9CA3AF]">
-                      <Upload size={20} className="mb-2" />
-                      <span className="text-xs font-semibold">Yüklə</span>
-                    </div>
-                  )}
-                </div>
+                    ) : (
+                      <div className="flex flex-col items-center text-[#4a5565] gap-4">
+                        <Upload size={28} className="text-[#99a1af]" />
+                        <span className="text-[14px] leading-[18px]">Upload</span>
+                      </div>
+                    )}
+                  </div>
 
-                <div className="flex flex-col gap-1.5 mt-1">
+                  {/* Room Name input */}
                   <input
                     type="text"
                     placeholder="Ad (məs: SPA)"
                     value={room.name}
                     onChange={(e) => handleRoomNameChange(index, e.target.value)}
-                    className="w-full bg-white border border-[#ECECED] rounded-lg px-3 py-2 text-xs font-semibold text-[#1F2937] outline-none focus:border-[#00B4D8]"
+                    className="w-full h-8 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg px-3 text-[14px] font-medium text-[#717182] outline-none focus:border-[#00b4cc] transition-colors placeholder:text-[#717182]/60"
                   />
-                  
-                  <select
-                    value={room.categoryId || ""}
-                    onChange={(e) => handleRoomCategoryChange(index, e.target.value ? Number(e.target.value) : null)}
-                    className="w-full bg-white border border-[#ECECED] rounded-lg px-3 py-2 text-xs font-semibold text-[#1F2937] outline-none focus:border-[#00B4D8] cursor-pointer"
-                  >
-                    <option value="" disabled>Kateqoriya seçin</option>
-                    {selectedCategories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
-                  </select>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Footer Buttons */}
-        <div className="flex justify-end items-center gap-3 pt-4 border-t border-slate-100">
-          <button
-            type="button"
-            onClick={() => {
-              const { resetStep5Photos } = useGymStore.getState();
-              resetStep5Photos();
-              setCoverPhoto(null);
-              setCoverPreview(null);
-              setRoomPhotos(Array.from({ length: 9 }).map((_, i) => ({ id: `rp-${i}`, photo: null, name: "", previewUrl: null, categoryId: null })));
-            }}
-            className="h-[40px] px-8 rounded-lg border border-[#ececed] text-[#101828] text-[14px] font-medium hover:bg-slate-50 transition-colors"
-          >
-            Sıfırla
-          </button>
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={handleNext}
-            className="w-[240px] h-[40px] rounded-lg bg-[#00B4CC] text-white text-[14px] font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-md shadow-cyan-50"
-          >
-            {isPending ? <Loader2 className="animate-spin" size={20} /> : "Növbəti"}
-          </button>
         </div>
+      )}
+
+      {/* Footer Buttons */}
+      <div className="w-full flex justify-end items-center gap-5 border-t border-[#ececed] pt-5">
+        <button
+          type="button"
+          onClick={() => {
+            const { resetStep5Photos } = useGymStore.getState();
+            resetStep5Photos();
+            setCovers({});
+            setCoverPreviews({});
+            
+            const freshRooms: Record<number, RoomPhotoState[]> = {};
+            selectedCategories.forEach((cat) => {
+              freshRooms[cat.id] = Array.from({ length: 9 }).map((_, i) => ({
+                id: `rp-${cat.id}-${i}`,
+                photo: null,
+                name: "",
+                previewUrl: null,
+                categoryId: cat.id
+              }));
+            });
+            setRoomPhotos(freshRooms);
+          }}
+          className="h-[48px] w-[280px] rounded-lg border border-[#00b4cc] bg-white text-[16px] font-semibold text-[#00b4cc] hover:bg-[#00b4cc]/5 transition-colors"
+        >
+          Sıfırla
+        </button>
+        <button
+          type="button"
+          disabled={isPending}
+          onClick={handleNext}
+          className="h-[48px] w-[280px] rounded-lg bg-[#00b4cc] text-white text-[16px] font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-md shadow-[#00b4cc]/10"
+        >
+          {isPending ? <Loader2 className="animate-spin animate-infinite" size={20} /> : "Növbəti"}
+        </button>
+      </div>
 
     </div>
   );
