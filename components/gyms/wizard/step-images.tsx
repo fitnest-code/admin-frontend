@@ -61,30 +61,34 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
       });
 
       if (step5Photos) {
+        // Load category covers
+        if (step5Photos.categoryCovers) {
+          step5Photos.categoryCovers.forEach((cc) => {
+            initialCovers[cc.categoryId] = cc.file;
+            initialCoverPreviews[cc.categoryId] = URL.createObjectURL(cc.file);
+          });
+        }
+
+        // Load rooms
         step5Photos.rooms.forEach((r) => {
           if (r.categoryId) {
-            if (r.name === "COVER") {
-              initialCovers[r.categoryId] = r.file;
-              initialCoverPreviews[r.categoryId] = URL.createObjectURL(r.file);
-            } else {
-              const list = initialRoomPhotos[r.categoryId];
-              if (list) {
-                const emptySlotIdx = list.findIndex(p => p.photo === null);
-                if (emptySlotIdx !== -1) {
-                  list[emptySlotIdx] = {
-                    id: `rp-${r.categoryId}-${emptySlotIdx}`,
-                    photo: r.file,
-                    name: r.name,
-                    previewUrl: URL.createObjectURL(r.file),
-                    categoryId: r.categoryId
-                  };
-                }
+            const list = initialRoomPhotos[r.categoryId];
+            if (list) {
+              const emptySlotIdx = list.findIndex(p => p.photo === null);
+              if (emptySlotIdx !== -1) {
+                list[emptySlotIdx] = {
+                  id: `rp-${r.categoryId}-${emptySlotIdx}`,
+                  photo: r.file,
+                  name: r.name,
+                  previewUrl: URL.createObjectURL(r.file),
+                  categoryId: r.categoryId
+                };
               }
             }
           }
         });
 
-        // Map global cover if needed
+        // Also check if there's a global cover in store and set it on the main category if not already set
         if (step5Photos.cover && selectedCategories.length > 0) {
           const mainCatId = selectedCategories[0].id;
           if (!initialCovers[mainCatId]) {
@@ -223,20 +227,12 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
     try {
       const formData = new FormData();
       const allRoomPhotosToSend: Array<{ name: string; file: File; categoryId: number }> = [];
-
-      // Set first selected category's cover as global coverPhoto for the gym
-      const mainCatId = selectedCategories[0]?.id;
-      const globalCoverPhoto = mainCatId ? covers[mainCatId] : null;
-      if (globalCoverPhoto) {
-        formData.append("coverPhoto", globalCoverPhoto);
-      }
+      const categoryCoversToSend: Array<{ file: File; categoryId: number }> = [];
 
       selectedCategories.forEach((cat) => {
-        // Send cover as "COVER" room image
         const catCover = covers[cat.id];
         if (catCover) {
-          allRoomPhotosToSend.push({
-            name: "COVER",
+          categoryCoversToSend.push({
             file: catCover,
             categoryId: cat.id
           });
@@ -255,6 +251,19 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
         });
       });
 
+      // Set first selected category's cover as global coverPhoto for the gym
+      const mainCatId = selectedCategories[0]?.id;
+      const globalCoverPhoto = mainCatId ? covers[mainCatId] : null;
+      if (globalCoverPhoto) {
+        formData.append("coverPhoto", globalCoverPhoto);
+      }
+
+      // Append category covers
+      categoryCoversToSend.forEach((cc) => {
+        formData.append("categoryCovers", cc.file);
+        formData.append("categoryCoverCategoryIds", String(cc.categoryId));
+      });
+
       // Append all room images to multipart payload
       allRoomPhotosToSend.forEach((r) => {
         formData.append("roomPhotos", r.file);
@@ -266,6 +275,7 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
       
       setStep5Photos({
         cover: globalCoverPhoto,
+        categoryCovers: categoryCoversToSend,
         rooms: allRoomPhotosToSend
       });
 

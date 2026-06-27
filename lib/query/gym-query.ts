@@ -275,6 +275,14 @@ export function useCreateGymComplete() {
         formData.append("coverPhoto", data.step5.cover);
       }
 
+      // Append category covers
+      if (data.step5.categoryCovers) {
+        data.step5.categoryCovers.forEach((cc: any) => {
+          formData.append("categoryCovers", cc.file);
+          formData.append("categoryCoverCategoryIds", String(cc.categoryId));
+        });
+      }
+
       // Append trainer photos (in order matching trainers array)
       data.step2.forEach((t: any) => {
         if (t.photo) formData.append("trainerPhotos", t.photo);

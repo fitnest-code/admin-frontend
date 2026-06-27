@@ -61,7 +61,7 @@ interface GymState {
   step2Trainers: LocalTrainer[];
   step3Data: Step3Data | null;
   step4Data: Step4Data | null;
-  step5Photos: { cover: File | null; rooms: { name: string; file: File; categoryId: number | null }[] } | null;
+  step5Photos: { cover: File | null; categoryCovers: { file: File; categoryId: number }[]; rooms: { name: string; file: File; categoryId: number | null }[] } | null;
   step6Data: Step6Data | null;
   step7Admins: LocalAdmin[];
 
@@ -76,7 +76,7 @@ interface GymState {
   updateStep2Trainer: (index: number, trainer: LocalTrainer) => void;
   setStep3Data: (data: Step3Data) => void;
   setStep4Data: (data: Step4Data) => void;
-  setStep5Photos: (photos: { cover: File | null; rooms: { name: string; file: File; categoryId: number | null }[] }) => void;
+  setStep5Photos: (photos: { cover: File | null; categoryCovers: { file: File; categoryId: number }[]; rooms: { name: string; file: File; categoryId: number | null }[] }) => void;
   setStep6Data: (data: Step6Data) => void;
   setStep7Admins: (admins: LocalAdmin[]) => void;
   addStep7Admin: (admin: LocalAdmin) => void;
