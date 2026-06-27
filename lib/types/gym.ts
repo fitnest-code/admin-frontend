@@ -260,6 +260,14 @@ export interface RoomImageDtoV2 {
   categoryId: number | null
 }
 
+export interface GymDescriptionResponse {
+  categoryId: number
+  categoryName: string
+  phone: string
+  description: string
+  coverImageUrl: string
+}
+
 export interface GymInfoAdminResponseV2 {
   id: number
   categories: Category[]
@@ -267,6 +275,7 @@ export interface GymInfoAdminResponseV2 {
   subCategories?: Category[]
   category?: Category | null
   subCategory?: Category | null
+  descriptions?: GymDescriptionResponse[]
   name: string
   description: string
   coverImageUrl: string
@@ -309,8 +318,9 @@ export interface GymSubscriptionsAdminResponseV2 {
 }
 
 export interface GymInfoUpdateRequestV2 {
-  mainCategoryIds: number[]
-  subCategoryIds: number[]
+  mainCategoryDetails: CategoryDetail[]
+  subCategoryDetails: CategoryDetail[]
+  hasSubcategories?: boolean
   name: string
   description: string
   phone: string

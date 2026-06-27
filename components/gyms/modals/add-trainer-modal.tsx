@@ -180,9 +180,9 @@ export function AddTrainerModal({ onClose, isDashboard = false, gymId }: { onClo
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!id && isDashboard) return toast.error("Zal ID tapılmadı.");
-    if (!form.name || !form.surname || !selectedFile) {
-      return toast.error("Zəhmət olmasa ulduzlu (*) sahələri doldurun və şəkil seçin.");
-    }
+    if (!form.name.trim()) return toast.error("Ad daxil edilməlidir.");
+    if (!form.surname.trim()) return toast.error("Soyad daxil edilməlidir.");
+    if (!selectedFile) return toast.error("Məşqçi şəkli seçilməlidir.");
 
     const professionNameDisplay = dropdownLabel;
 

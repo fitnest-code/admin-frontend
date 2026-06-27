@@ -471,8 +471,18 @@ export function InfoTab({ gymId }: InfoTabProps) {
         updateGymInfo({
           id: Number(gymId),
           payload: {
-            mainCategoryIds: formData.mainCategoryIds,
-            subCategoryIds: formData.subCategoryIds,
+            mainCategoryDetails: formData.mainCategoryIds.map((id: number) => ({
+              categoryId: id,
+              phone: formData.phone || '',
+              description: formData.description || '',
+              coverImageUrl: ''
+            })),
+            subCategoryDetails: formData.subCategoryIds.map((id: number) => ({
+              categoryId: id,
+              phone: formData.phone || '',
+              description: formData.description || '',
+              coverImageUrl: ''
+            })),
             name: formData.name,
             description: formData.description,
             phone: formData.phone,

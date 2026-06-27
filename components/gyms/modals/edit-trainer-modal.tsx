@@ -219,9 +219,8 @@ export function EditTrainerModal({ onClose, trainer, index, isDashboard = false 
     e.preventDefault();
     if (!isDirty) return;
 
-    if (!form.name || !form.surname) {
-      return toast.error("Zəhmət olmasa ulduzlu (*) sahələri doldurun.");
-    }
+    if (!form.name.trim()) return toast.error("Ad daxil edilməlidir.");
+    if (!form.surname.trim()) return toast.error("Soyad daxil edilməlidir.");
 
     const professionNameDisplay = dropdownLabel;
     

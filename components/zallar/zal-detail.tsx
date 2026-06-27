@@ -10,6 +10,7 @@ import { ZalAdminiTab } from './tabs/zal-admini-tab'
 import { AnalitikaTab } from './tabs/analitika-tab'
 import { ZalWorkHoursTab } from './tabs/zal-work-hours-tab'
 import { ZalAbunelikTab } from './tabs/zal-abunelik-tab'
+import { ZalElaqeTab } from './tabs/zal-elaqe-tab'
 import { GymInfoAdminResponseV2 } from '@/lib/types/gym'
 
 interface ZalDetailProps {
@@ -50,6 +51,7 @@ export function ZalDetail({ gymId, gymDetails, zal, isNew = false }: ZalDetailPr
       case 'mesqciler':  return <MesqcilerTab gymId={gymId} zalName={gymName} />
       case 'admin':      return <ZalAdminiTab admins={zal?.admins || []} />
       case 'abunelik':   return <ZalAbunelikTab gymId={gymId} />
+      case 'elaqe':      return <ZalElaqeTab gymId={gymId} gymDetails={gymDetails} />
       case 'reyting':
         return (
           <div className="flex items-center justify-center py-24 text-sm text-muted-foreground">

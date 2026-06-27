@@ -163,6 +163,7 @@ export const ZAL_TABS = [
   { key: 'work-hours',  label: 'İş saatları' },
   { key: 'mesqciler',   label: 'Məşqçilər' },
   { key: 'abunelik',    label: 'Abunəlik / Xidmətlər' },
+  { key: 'elaqe',       label: 'Əlaqə' },
   { key: 'admin',       label: 'Zal Admini' },
   { key: 'reyting',     label: 'Reytinq' },
 ]
