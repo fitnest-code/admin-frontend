@@ -181,3 +181,55 @@
     stroke-width: 3.5;
     fill: none;
 }
+
+.kateqoriyaSeimiParent {
+  	width: 100%;
+  	display: flex;
+  	flex-direction: column;
+  	align-items: flex-start;
+  	gap: 16px;
+  	text-align: left;
+  	font-size: 20px;
+  	color: #000;
+    margin-bottom: 24px;
+}
+.kateqoriyaSeimi {
+  	position: relative;
+  	line-height: 30px;
+  	font-weight: 600;
+}
+.component42Parent {
+  	align-self: stretch;
+  	display: flex;
+  	align-items: center;
+    flex-wrap: wrap;
+  	gap: 16px;
+  	font-size: 16px;
+}
+.component42 {
+  	height: 48px;
+  	border-radius: 32px;
+  	background-color: #00b4cc;
+  	display: flex;
+  	align-items: center;
+  	justify-content: center;
+  	padding: 8px 28px;
+  	box-sizing: border-box;
+    cursor: pointer;
+    color: #fff;
+    font-weight: 500;
+}
+.component422 {
+  	height: 48px;
+  	border-radius: 32px;
+  	border: 1px solid #00b4cc;
+  	box-sizing: border-box;
+  	display: flex;
+  	align-items: center;
+  	justify-content: center;
+  	padding: 8px 28px;
+    cursor: pointer;
+    color: #000;
+    font-weight: 500;
+}
+

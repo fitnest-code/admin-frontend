@@ -825,3 +825,34 @@ export function useUpdateGymRoomName() {
     }
   });
 }
+
+// 36.2 Update Gym Step 5 images/covers
+export function useUpdateGymStep5() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, coverPhoto, categoryCovers, categoryCoverCategoryIds, roomNames, roomCategoryIds, roomPhotos }: {
+      id: number;
+      coverPhoto?: File;
+      categoryCovers?: File[];
+      categoryCoverCategoryIds?: number[];
+      roomNames?: string[];
+      roomCategoryIds?: number[];
+      roomPhotos?: File[];
+    }) => {
+      const formData = new FormData();
+      if (coverPhoto) formData.append("coverPhoto", coverPhoto);
+      if (categoryCovers && categoryCoverCategoryIds) {
+        categoryCovers.forEach(file => formData.append("categoryCovers", file));
+        categoryCoverCategoryIds.forEach(catId => formData.append("categoryCoverCategoryIds", String(catId)));
+      }
+      if (roomNames) roomNames.forEach(name => formData.append("roomNames", name));
+      if (roomCategoryIds) roomCategoryIds.forEach(catId => formData.append("roomCategoryIds", String(catId)));
+      if (roomPhotos) roomPhotos.forEach(file => formData.append("roomPhotos", file));
+
+      return apiPost(`/api/v2/admin/gyms/${id}/step5`, formData);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['gym-details', variables.id] });
+    }
+  });
+}
