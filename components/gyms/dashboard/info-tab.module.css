@@ -208,29 +208,31 @@
   	font-size: 16px;
 }
 .component42 {
-  	height: 48px;
-  	border-radius: 32px;
+  	height: 36px;
+  	border-radius: 20px;
   	background-color: #00b4cc;
   	display: flex;
   	align-items: center;
   	justify-content: center;
-  	padding: 8px 28px;
+  	padding: 6px 16px;
   	box-sizing: border-box;
     cursor: pointer;
     color: #fff;
     font-weight: 500;
+    font-size: 14px;
 }
 .component422 {
-  	height: 48px;
-  	border-radius: 32px;
+  	height: 36px;
+  	border-radius: 20px;
   	border: 1px solid #00b4cc;
   	box-sizing: border-box;
   	display: flex;
   	align-items: center;
   	justify-content: center;
-  	padding: 8px 28px;
+  	padding: 6px 16px;
     cursor: pointer;
     color: #000;
     font-weight: 500;
+    font-size: 14px;
 }
 

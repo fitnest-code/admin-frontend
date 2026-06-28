@@ -127,39 +127,33 @@ export function ContactTab() {
         </div>
       </div>
 
-      {/* Category Selection Pills */}
-      {allCategories.length > 0 && (
-        <div className={styles.kateqoriyaSeimiParent}>
-          <div className={styles.kateqoriyaSeimi}>Kateqoriya seçimi</div>
-          <div className={styles.component42Parent}>
-            {allCategories.map(cat => {
-              const isActive = activeCategoryId === cat.id
-              return (
-                <div
-                  key={cat.id}
-                  onClick={() => setActiveCategoryId(cat.id)}
-                  className={isActive ? styles.component42 : styles.component422}
-                >
-                  {cat.name}
-                </div>
-              )
-            })}
-          </div>
+      {/* Telefon Nömrəsi (with Category Choice) */}
+      <div className="self-stretch flex flex-col items-start gap-[28px]">
+        <div className="self-stretch border-b border-[#ececed] flex items-center justify-between pb-1">
+          <div className="relative leading-[30px] font-semibold text-lg sm:text-xl">Telefon nömrəsi</div>
         </div>
-      )}
 
-      {/* Per-category Phone */}
-      {activeCategoryId !== null && (
-        <div className="self-stretch flex flex-col items-start gap-[28px] animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="self-stretch border-b border-[#ececed] flex items-center justify-between pb-1">
-            <div className="relative leading-[30px] font-semibold text-lg sm:text-xl">
-              {allCategories.find(c => c.id === activeCategoryId)?.name} — Telefon nömrəsi
+        <div className="self-stretch flex flex-col items-start gap-4">
+          {/* Category Selection Pills as tabs */}
+          {allCategories.length > 0 && (
+            <div className={styles.component42Parent}>
+              {allCategories.map(cat => {
+                const isActive = activeCategoryId === cat.id
+                return (
+                  <div
+                    key={cat.id}
+                    onClick={() => setActiveCategoryId(cat.id)}
+                    className={isActive ? styles.component42 : styles.component422}
+                  >
+                    {cat.name}
+                  </div>
+                )
+              })}
             </div>
-          </div>
+          )}
 
-          <div className="self-stretch flex flex-col items-start gap-5">
-            <div className="flex-1 w-full max-w-md flex flex-col items-start gap-3">
-              <div className="self-stretch relative leading-[24px]">Telefon nömrəsi</div>
+          {activeCategoryId !== null && (
+            <div className="w-full max-w-md mt-2 flex flex-col items-start gap-3">
               <div className="self-stretch h-[44px] rounded-lg bg-white border border-[#ececed] flex items-center p-[0px_12px] text-sm focus-within:border-[#00B4CC] transition-colors relative">
                 <input
                   type="text"
@@ -171,9 +165,9 @@ export function ContactTab() {
                 <Copy size={18} className="absolute right-4 text-[#94979c] cursor-pointer hover:text-[#00B4CC]" />
               </div>
             </div>
-          </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Save */}
       <div className="self-stretch flex items-center justify-end gap-3 border-t border-[#ececed] pt-5">
