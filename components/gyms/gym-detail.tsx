@@ -142,6 +142,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       case 'workingHours': return t.gyms.tabWorkingHours;
       case 'address': return t.gyms.tabAddress;
       case 'images': return t.gyms.tabImages;
+      case 'contact': return t.gyms.tabContact;
       default: return key;
     }
   }

@@ -20,15 +20,15 @@
 }
 .frameWrapper {
   	align-self: stretch;
-  	min-height: 60px;
-  	border-radius: 12px;
+  	min-height: 44px;
+  	border-radius: 8px;
   	background-color: #fafafa;
   	border: 1px solid #ececed;
   	box-sizing: border-box;
   	display: flex;
   	align-items: center;
-  	padding: 8px 12px;
-  	font-size: 18px;
+  	padding: 4px 12px;
+  	font-size: 14px;
   	color: #fff;
     cursor: pointer;
     position: relative;
@@ -40,7 +40,7 @@
   	display: flex;
   	align-items: center;
   	justify-content: space-between;
-  	gap: 20px;
+  	gap: 12px;
   	max-width: 100%;
 }
 .frameGroup {
@@ -48,15 +48,15 @@
   	display: flex;
   	flex-wrap: wrap;
   	align-items: center;
-  	gap: 12px;
+  	gap: 8px;
 }
 .frameContainer {
-  	border-radius: 4px;
+  	border-radius: 6px;
   	background-color: #00b4cc;
   	display: flex;
   	align-items: center;
-  	padding: 4px 8px;
-  	gap: 8px;
+  	padding: 2px 6px;
+  	gap: 4px;
 }
 .yogaWrapper {
   	display: flex;
@@ -65,12 +65,13 @@
 }
 .yoga {
   	position: relative;
-  	line-height: 28px;
-  	font-weight: 600;
+  	line-height: 20px;
+  	font-weight: 500;
+    font-size: 13px;
 }
 .x {
-  	height: 24px;
-  	width: 24px;
+  	height: 16px;
+  	width: 16px;
   	position: relative;
     cursor: pointer;
 }

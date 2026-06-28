@@ -107,6 +107,7 @@ const en: TranslationKeys = {
     tabWorkingHours: "Working Hours",
     tabAddress: "Address",
     tabImages: "Images",
+    tabContact: "Contact",
   },
 
   admin: {

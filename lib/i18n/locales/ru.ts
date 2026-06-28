@@ -107,6 +107,7 @@ const ru: TranslationKeys = {
     tabWorkingHours: "Рабочие часы",
     tabAddress: "Адрес",
     tabImages: "Изображения",
+    tabContact: "Контакты",
   },
 
   admin: {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react'
-import { Loader2, Pencil, Copy } from 'lucide-react'
+import { Loader2, Copy } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useGymDetailsAdmin, useUpdateGymDetails } from '@/lib/query/gym-query'
 import { GymDescriptionResponse, CategoryDetail } from '@/lib/types/gym'
@@ -29,15 +29,13 @@ export function ContactTab() {
   // Per-category phone numbers
   const [catPhones, setCatPhones] = useState<Record<number, string>>({})
 
-  // Common email & address
+  // Common email
   const [email, setEmail] = useState('')
-  const [address, setAddress] = useState('')
 
   // Sync from API
   useEffect(() => {
     if (gymInfo) {
       setEmail(gymInfo.email || '')
-      setAddress(gymInfo.address || '')
 
       const phones: Record<number, string> = {}
       if (gymInfo.descriptions && gymInfo.descriptions.length > 0) {
@@ -83,7 +81,7 @@ export function ContactTab() {
         phone: gymInfo.phone || '',
         email,
         city: gymInfo.city || 'Bakı',
-        address,
+        address: gymInfo.address || '',
         latitude: gymInfo.latitude || 40.4093,
         longitude: gymInfo.longitude || 49.8671,
         altitude: null
@@ -106,6 +104,28 @@ export function ContactTab() {
 
   return (
     <div className="w-full flex flex-col items-start gap-[40px] text-base text-[#000] font-sans">
+      
+      {/* Common Fields */}
+      <div className="self-stretch flex flex-col items-start gap-[28px]">
+        <div className="self-stretch border-b border-[#ececed] flex items-center justify-between pb-1">
+          <div className="relative leading-[30px] font-semibold text-lg sm:text-xl">Ümumi əlaqə məlumatları</div>
+        </div>
+
+        <div className="self-stretch flex flex-col items-start gap-5">
+          <div className="w-full max-w-md flex flex-col items-start gap-3">
+            <div className="self-stretch relative leading-[24px]">E-Poçt</div>
+            <div className="self-stretch h-[44px] rounded-lg bg-white border border-[#ececed] flex items-center p-[0px_12px] text-sm focus-within:border-[#00B4CC] transition-colors">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="info@example.com"
+                className="bg-transparent font-semibold text-foreground outline-none w-full h-full"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Category Selection Pills */}
       {allCategories.length > 0 && (
@@ -154,59 +174,6 @@ export function ContactTab() {
           </div>
         </div>
       )}
-
-      {/* Common Fields */}
-      <div className="self-stretch flex flex-col items-start gap-[28px]">
-        <div className="self-stretch border-b border-[#ececed] flex items-center justify-between pb-1">
-          <div className="relative leading-[30px] font-semibold text-lg sm:text-xl">Ümumi əlaqə məlumatları</div>
-        </div>
-
-        <div className="self-stretch flex flex-col items-start gap-5">
-          <div className="self-stretch flex flex-col sm:flex-row items-center justify-between gap-5">
-            {/* E-poçt */}
-            <div className="flex-1 w-full flex flex-col items-start gap-3">
-              <div className="self-stretch relative leading-[24px]">E-Poçt</div>
-              <div className="self-stretch h-[44px] rounded-lg bg-white border border-[#ececed] flex items-center p-[0px_12px] text-sm focus-within:border-[#00B4CC] transition-colors">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="info@example.com"
-                  className="bg-transparent font-semibold text-foreground outline-none w-full h-full"
-                />
-              </div>
-            </div>
-            {/* Ünvan */}
-            <div className="flex-1 w-full flex flex-col items-start gap-3">
-              <div className="self-stretch relative leading-[24px]">Ünvan</div>
-              <div className="self-stretch h-[44px] rounded-lg bg-white border border-[#ececed] flex items-center p-[0px_12px] text-sm focus-within:border-[#00B4CC] transition-colors">
-                <input
-                  type="text"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Ünvan daxil edin"
-                  className="bg-transparent text-foreground outline-none w-full h-full"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Map */}
-      <div className="self-stretch flex flex-col items-start gap-3">
-        <div className="self-stretch border-b border-[#ececed] flex items-center justify-between pb-1">
-          <div className="relative leading-[30px] font-semibold text-lg sm:text-xl">Xəritə</div>
-        </div>
-        <div className="h-48 w-full overflow-hidden rounded-xl border border-[#ececed] bg-[#fafafa]">
-          <iframe
-            src="https://www.openstreetmap.org/export/embed.html?bbox=49.7%2C40.35%2C50.0%2C40.45&layer=mapnik"
-            className="h-full w-full"
-            title="Bakı xəritəsi"
-            loading="lazy"
-          />
-        </div>
-      </div>
 
       {/* Save */}
       <div className="self-stretch flex items-center justify-end gap-3 border-t border-[#ececed] pt-5">

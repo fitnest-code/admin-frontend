@@ -109,6 +109,7 @@ const az = {
     tabWorkingHours: "İş saatları",
     tabAddress: "Ünvan",
     tabImages: "Şəkillər",
+    tabContact: "Əlaqə",
   },
 
   // Gym Admin

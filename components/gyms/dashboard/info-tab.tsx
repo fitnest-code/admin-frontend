@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Upload, Trash2, ChevronDown, Pencil, Loader2, Copy } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -180,6 +180,16 @@ export function InfoTab({ gymId }: InfoTabProps) {
     longitude: 0,
   });
 
+  const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
+  const [catDescriptions, setCatDescriptions] = useState<Record<number, string>>({});
+
+  const allCategories = useMemo(() => {
+    if (!categoriesData?.items) return [];
+    const selectedMain = categoriesData.items.filter(c => formData.mainCategoryIds.includes(c.id));
+    const selectedSub = categoriesData.items.filter(c => formData.subCategoryIds.includes(c.id));
+    return [...selectedMain, ...selectedSub];
+  }, [categoriesData, formData.mainCategoryIds, formData.subCategoryIds]);
+
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -260,11 +270,36 @@ export function InfoTab({ gymId }: InfoTabProps) {
     longitude: gymInfo.longitude || 0,
   }) : "";
 
+  const initialDescsStr = gymInfo ? JSON.stringify(
+    (() => {
+      const descs: Record<number, string> = {};
+      const allCats = [
+        ...(gymInfo.mainCategories || []),
+        ...(gymInfo.subCategories || []),
+        ...(gymInfo.categories || [])
+      ];
+      if (gymInfo.descriptions && gymInfo.descriptions.length > 0) {
+        gymInfo.descriptions.forEach((d: any) => {
+          descs[d.categoryId] = d.description || "";
+        });
+      } else {
+        allCats.forEach((c: any) => {
+          descs[c.id] = gymInfo.description || "";
+        });
+      }
+      return descs;
+    })()
+  ) : "";
+
   const hasRoomNameChanges = isEditing && gymInfo?.rooms?.some(
     room => roomNames[room.id] !== undefined && roomNames[room.id] !== room.name
   );
 
-  const hasChanges = isEditing && (JSON.stringify(formData) !== initialDataStr || hasRoomNameChanges);
+  const hasChanges = isEditing && (
+    JSON.stringify(formData) !== initialDataStr || 
+    hasRoomNameChanges || 
+    JSON.stringify(catDescriptions) !== initialDescsStr
+  );
 
   useEffect(() => {
     if (gymInfo) {
@@ -282,6 +317,28 @@ export function InfoTab({ gymId }: InfoTabProps) {
       });
       setIsUpdatingFromCoords(false);
 
+      // Sync category-specific descriptions
+      const descs: Record<number, string> = {};
+      const allCats = [
+        ...(gymInfo.mainCategories || []),
+        ...(gymInfo.subCategories || []),
+        ...(gymInfo.categories || [])
+      ];
+      if (gymInfo.descriptions && gymInfo.descriptions.length > 0) {
+        gymInfo.descriptions.forEach((d: any) => {
+          descs[d.categoryId] = d.description || "";
+        });
+      } else {
+        allCats.forEach((c: any) => {
+          descs[c.id] = gymInfo.description || "";
+        });
+      }
+      setCatDescriptions(descs);
+
+      if (allCats.length > 0 && activeCategoryId === null) {
+        setActiveCategoryId(allCats[0].id);
+      }
+
       if (gymInfo.rooms) {
         const names: Record<number, string> = {};
         gymInfo.rooms.forEach(r => {
@@ -291,6 +348,16 @@ export function InfoTab({ gymId }: InfoTabProps) {
       }
     }
   }, [gymInfo]);
+
+  useEffect(() => {
+    if (allCategories.length > 0) {
+      if (activeCategoryId === null || !allCategories.some(c => c.id === activeCategoryId)) {
+        setActiveCategoryId(allCategories[0].id);
+      }
+    } else {
+      setActiveCategoryId(null);
+    }
+  }, [allCategories, activeCategoryId]);
 
   // Sync reverse geocoding result to address field
   useEffect(() => {
@@ -447,11 +514,12 @@ export function InfoTab({ gymId }: InfoTabProps) {
   };
 
   const handleSave = async () => {
-    if (!gymId) return;
+    if (!gymId || !gymInfo) return;
+    const info = gymInfo;
 
     try {
-      if (gymInfo?.rooms) {
-        const renamePromises = gymInfo.rooms
+      if (info.rooms) {
+        const renamePromises = info.rooms
           .filter(room => roomNames[room.id] !== undefined && roomNames[room.id] !== room.name)
           .map(room => {
             return updateRoomNameMutate.mutateAsync({
@@ -466,32 +534,38 @@ export function InfoTab({ gymId }: InfoTabProps) {
         }
       }
 
-      const infoHasChanges = JSON.stringify(formData) !== initialDataStr;
+      const infoHasChanges = JSON.stringify(formData) !== initialDataStr || JSON.stringify(catDescriptions) !== initialDescsStr;
       if (infoHasChanges) {
         updateGymInfo({
           id: Number(gymId),
           payload: {
-            mainCategoryDetails: formData.mainCategoryIds.map((id: number) => ({
-              categoryId: id,
-              phone: formData.phone || '',
-              description: formData.description || '',
-              coverImageUrl: ''
-            })),
-            subCategoryDetails: formData.subCategoryIds.map((id: number) => ({
-              categoryId: id,
-              phone: formData.phone || '',
-              description: formData.description || '',
-              coverImageUrl: ''
-            })),
+            mainCategoryDetails: formData.mainCategoryIds.map((id: number) => {
+              const existingDesc = info.descriptions?.find((d: any) => d.categoryId === id);
+              return {
+                categoryId: id,
+                phone: existingDesc?.phone || info.phone || '',
+                description: catDescriptions[id] || '',
+                coverImageUrl: existingDesc?.coverImageUrl || ''
+              };
+            }),
+            subCategoryDetails: formData.subCategoryIds.map((id: number) => {
+              const existingDesc = info.descriptions?.find((d: any) => d.categoryId === id);
+              return {
+                categoryId: id,
+                phone: existingDesc?.phone || info.phone || '',
+                description: catDescriptions[id] || '',
+                coverImageUrl: existingDesc?.coverImageUrl || ''
+              };
+            }),
             name: formData.name,
-            description: formData.description,
+            description: allCategories.length > 0 ? (catDescriptions[allCategories[0].id] || '') : formData.description,
             phone: formData.phone,
             email: formData.email.trim() === "" ? null : formData.email.trim(),
             city: formData.city,
             address: formData.address,
             latitude: Number(formData.latitude),
             longitude: Number(formData.longitude),
-            altitude: (gymInfo as any).altitude || null
+            altitude: (info as any).altitude || null
           }
         }, {
           onSuccess: () => {
@@ -831,20 +905,61 @@ export function InfoTab({ gymId }: InfoTabProps) {
           </div>
 
           {/* Haqqında */}
-          <div className="self-stretch flex flex-col items-start gap-3">
+          <div className="self-stretch flex flex-col items-start gap-3 w-full">
             <div className="self-stretch relative leading-[24px]">{lt.about}</div>
-            <div className={cn(
-              "self-stretch min-h-[80px] rounded-lg border flex flex-col items-start p-[8px_12px] text-sm transition-colors",
-              isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
-            )}>
-              <textarea 
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                readOnly={!isEditing}
-                className="bg-transparent text-foreground outline-none w-full h-full min-h-[64px] resize-none"
-              />
-            </div>
+            
+            {/* Category selection inside description if there are categories */}
+            {allCategories.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-1">
+                {allCategories.map(cat => {
+                  const isActive = activeCategoryId === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setActiveCategoryId(cat.id)}
+                      className={cn(
+                        "h-8 px-4 rounded-full text-xs font-semibold transition-all border",
+                        isActive 
+                          ? "bg-[#00B4CC] border-[#00B4CC] text-white" 
+                          : "bg-white border-[#ececed] text-[#4a5565] hover:bg-slate-50"
+                      )}
+                    >
+                      {cat.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {activeCategoryId !== null ? (
+              <div className={cn(
+                "self-stretch min-h-[80px] rounded-lg border flex flex-col items-start p-[8px_12px] text-sm transition-colors w-full",
+                isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
+              )}>
+                <textarea 
+                  name="description"
+                  value={catDescriptions[activeCategoryId] || ""}
+                  onChange={(e) => setCatDescriptions(prev => ({ ...prev, [activeCategoryId!]: e.target.value }))}
+                  readOnly={!isEditing}
+                  placeholder={`${allCategories.find(c => c.id === activeCategoryId)?.name} haqqında məlumat...`}
+                  className="bg-transparent text-foreground outline-none w-full h-full min-h-[64px] resize-none"
+                />
+              </div>
+            ) : (
+              <div className={cn(
+                "self-stretch min-h-[80px] rounded-lg border flex flex-col items-start p-[8px_12px] text-sm transition-colors w-full",
+                isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
+              )}>
+                <textarea 
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  readOnly={!isEditing}
+                  className="bg-transparent text-foreground outline-none w-full h-full min-h-[64px] resize-none"
+                />
+              </div>
+            )}
           </div>
 
 
@@ -854,51 +969,13 @@ export function InfoTab({ gymId }: InfoTabProps) {
 
 
 
-      {/* Əlaqə Group */}
+      {/* Ünvan Group */}
       <div className="self-stretch flex flex-col items-start gap-[28px]">
         <div className="self-stretch border-b border-[#ececed] flex items-center justify-between pb-1">
-          <div className="relative leading-[30px] font-semibold text-lg sm:text-xl">{lt.contact}</div>
+          <div className="relative leading-[30px] font-semibold text-lg sm:text-xl">{lt.address}</div>
         </div>
 
         <div className="self-stretch flex flex-col items-start gap-5">
-          <div className="self-stretch flex flex-col sm:flex-row items-center justify-between gap-5">
-            {/* Telefon */}
-            <div className="flex-1 w-full flex flex-col items-start gap-3">
-              <div className="self-stretch relative leading-[24px]">{lt.phoneNumber}</div>
-              <div className={cn(
-                "self-stretch h-[44px] rounded-lg border flex items-center p-[0px_12px] text-sm transition-colors relative",
-                isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
-              )}>
-                <input 
-                  type="text" 
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  readOnly={!isEditing}
-                  className="bg-transparent text-foreground outline-none w-full h-full"
-                />
-                <Copy size={18} className="absolute right-4 text-[#94979c] cursor-pointer hover:text-[#00B4CC]" />
-              </div>
-            </div>
-            {/* E-poçt */}
-            <div className="flex-1 w-full flex flex-col items-start gap-3">
-              <div className="self-stretch relative leading-[24px]">{lt.email}</div>
-              <div className={cn(
-                "self-stretch h-[44px] rounded-lg border flex items-center p-[0px_12px] text-sm transition-colors",
-                isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
-              )}>
-                <input 
-                  type="email" 
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  readOnly={!isEditing}
-                  className="bg-transparent font-semibold text-foreground outline-none w-full h-full"
-                />
-              </div>
-            </div>
-          </div>
-
           <div className="self-stretch flex flex-col sm:flex-row items-center justify-between gap-5">
             {/* Şəhər */}
             <div className="flex-1 w-full flex flex-col items-start gap-3 relative">

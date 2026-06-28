@@ -675,32 +675,7 @@ export function StepInfo({ onNext }: { onNext: () => void }) {
         </div>
       </div>
 
-      {/* 4. Lesson Types Tags Grid (Dynamic) */}
-      {allLessonTypes.length > 0 && (
-        <div className="flex flex-col gap-3 animate-in fade-in duration-300">
-          <label className="text-[14px] leading-[20px] text-black/60 font-medium">Dərs növləri</label>
-          <div className="w-full flex flex-wrap items-center gap-2.5">
-            {allLessonTypes.map((lt) => {
-              const isSelected = selectedLessonTypeIds.has(lt.id);
-              return (
-                <button
-                  type="button"
-                  key={lt.id}
-                  onClick={() => toggleLessonType(lt.id)}
-                  className={cn(
-                    "h-[40px] rounded-lg px-4 text-sm font-medium transition-all flex items-center justify-center border select-none cursor-pointer",
-                    isSelected
-                      ? "bg-[#00b4cc]/10 border-[#00b4cc] text-[#00b4cc] font-semibold"
-                      : "bg-[#fafafa] border-[#ececed] text-[#101828] hover:border-slate-300"
-                  )}
-                >
-                  {lt.name}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+
 
       {/* 5. Footer Buttons */}
       <div className="flex items-center justify-end gap-3 border-t border-[#ececed] pt-5 mt-2">
