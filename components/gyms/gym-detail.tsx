@@ -22,7 +22,8 @@ import { ReviewsTab } from './dashboard/reviews-tab'
 import ReservationsTab from './dashboard/reservations-tab'
 import { CustomersTab } from './dashboard/customers-tab'
 import LessonHoursTab from './dashboard/lesson-hours-tab'
-import { ElaqeTab } from './dashboard/elaqe-tab'
+import { ContactTab } from './dashboard/contact-tab'
+import { ImagesTab } from './dashboard/images-tab'
 
 import { useDeleteGym } from '@/lib/query/gym-query'
 
@@ -299,8 +300,10 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
         return <ZalWorkHoursTab gymId={gym.id} />
       case 'plans':
         return <PlansTab gym={gym} />
-      case 'elaqe':
-        return <ElaqeTab />
+      case 'contact':
+        return <ContactTab />
+      case 'images':
+        return <ImagesTab />
       case 'reviews':
         return <ReviewsTab gymName={gym.name} />
       case 'reservations':

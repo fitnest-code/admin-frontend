@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 import { useGymStore } from '@/lib/store/gym-store'
 import styles from './info-tab.module.css'
 
-export function ElaqeTab() {
+export function ContactTab() {
   const gymId = useGymStore((s) => s.gymId)
   const { data: gymInfo } = useGymDetailsAdmin(gymId ? Number(gymId) : null)
   const updateDetailsMutation = useUpdateGymDetails()

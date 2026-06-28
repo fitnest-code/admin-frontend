@@ -51,7 +51,7 @@ export function ZalDetail({ gymId, gymDetails, zal, isNew = false }: ZalDetailPr
       case 'mesqciler':  return <MesqcilerTab gymId={gymId} zalName={gymName} />
       case 'admin':      return <ZalAdminiTab admins={zal?.admins || []} />
       case 'abunelik':   return <ZalAbunelikTab gymId={gymId} />
-      case 'elaqe':      return <ZalElaqeTab gymId={gymId} gymDetails={gymDetails} />
+      case 'contact':    return <ZalElaqeTab gymId={gymId} gymDetails={gymDetails} />
       case 'reyting':
         return (
           <div className="flex items-center justify-center py-24 text-sm text-muted-foreground">
