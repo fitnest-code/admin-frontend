@@ -29,6 +29,8 @@ export function ImagesTab() {
   const { mutate: deleteGymRoom, isPending: isRoomDeleting } = useDeleteGymRoom();
   const updateRoomNameMutate = useUpdateGymRoomName();
 
+  const [isEditing, setIsEditing] = useState(false);
+
   // All categories
   const allCategories = useMemo(() => {
     if (!gymInfo) return [];
@@ -48,7 +50,10 @@ export function ImagesTab() {
 
   // Cover image
   const coverInputRef = useRef<HTMLInputElement | null>(null);
-  const handleCoverClick = () => coverInputRef.current?.click();
+  const handleCoverClick = () => {
+    if (isEditing) coverInputRef.current?.click();
+  };
+  
   const handleCoverFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && gymId) {
@@ -77,6 +82,7 @@ export function ImagesTab() {
   }, [gymInfo]);
 
   const handleEditRoomClick = (room: any) => {
+    if (!isEditing) return;
     setEditingRoom(room);
     editRoomInputRef.current?.click();
   };
@@ -98,7 +104,7 @@ export function ImagesTab() {
   };
 
   const handleDeleteRoomClick = (roomId: number) => {
-    if (!gymId) return;
+    if (!gymId || !isEditing) return;
     setActionRoomId(roomId);
     deleteGymRoom({ id: Number(gymId), roomId }, {
       onSuccess: () => { toast.success("Otaq silindi!"); setActionRoomId(null); },
@@ -107,6 +113,7 @@ export function ImagesTab() {
   };
 
   const handleEmptySlotClick = (index: number) => {
+    if (!isEditing) return;
     const name = emptyRoomNames[index]?.trim();
     if (!name) { toast.error("Zəhmət olmasa otaq adını daxil edin"); return; }
     roomInputRefs.current[index]?.click();
@@ -132,7 +139,6 @@ export function ImagesTab() {
         updateRoomNameMutate.mutate({ id: Number(gymId), roomId: room.id, name: newName });
       }
     });
-    toast.success("Otaq adları yeniləndi!");
   };
 
   if (!gymInfo) {
@@ -147,12 +153,33 @@ export function ImagesTab() {
   const activeCoverUrl = gymInfo.descriptions?.find((d: any) => d.categoryId === activeCategoryId)?.coverImageUrl;
 
   return (
-    <div className="w-full flex flex-col items-start gap-[40px] text-base text-[#000] font-sans">
+    <div className="w-full rounded-[12px] bg-white border border-[#ececed] flex flex-col items-start p-4 sm:p-5 gap-6 text-sm text-[#000] font-sans shadow-sm">
+
+      {/* Header with Edit Button */}
+      <div className="self-stretch border-b border-[#ececed] flex items-center justify-between pb-2">
+        <div className="flex items-center gap-2">
+          <div className="text-base font-semibold text-[#101828] font-sans tracking-tight">Şəkillər</div>
+          <button 
+            onClick={() => {
+              if (isEditing) {
+                // Reset names to original on cancel
+                const names: Record<number, string> = {};
+                gymInfo.rooms?.forEach((r: any) => { names[r.id] = r.name || ""; });
+                setRoomNames(names);
+              }
+              setIsEditing(!isEditing);
+            }}
+            className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
+          >
+            <Pencil size={18} className={isEditing ? "text-[#00B4CC]" : "text-[#6a7282]"} />
+          </button>
+        </div>
+      </div>
 
       {/* Category Selection Pills */}
       {allCategories.length > 0 && (
-        <div className={styles.kateqoriyaSeimiParent}>
-          <div className={styles.kateqoriyaSeimi}>Kateqoriya seçimi</div>
+        <div className="flex flex-col gap-2 w-full">
+          <div className="relative text-xs font-semibold text-black/60">Kateqoriya seçimi</div>
           <div className={styles.component42Parent}>
             {allCategories.map(cat => {
               const isActive = activeCategoryId === cat.id;
@@ -171,40 +198,45 @@ export function ImagesTab() {
       )}
 
       {/* Cover Image Section */}
-      <div className="self-stretch flex flex-col items-start gap-[28px]">
-        <div className="self-stretch border-b border-[#ececed] flex items-center justify-between pb-1">
-          <div className="relative leading-[30px] font-semibold text-lg sm:text-xl">Cover Şəkil</div>
+      <div className="self-stretch flex flex-col items-start gap-3">
+        <div className="self-stretch pb-1">
+          <div className="relative leading-[24px] font-semibold text-sm sm:text-base">Cover Şəkil</div>
         </div>
 
-        <div className="w-full sm:w-[444px] h-[252px] relative text-sm text-[#6a7282]">
-          <div className="absolute top-[264px] left-0 w-full h-5">
-            <div className="relative tracking-[-0.15px] leading-[20px]">JPG or PNG • Max size 2MB</div>
-          </div>
+        <div className="w-full sm:w-[320px] h-[180px] relative text-xs text-[#6a7282]">
           {gymInfo.coverImageUrl ? (
             <div
               onClick={handleCoverClick}
-              className="absolute top-0 left-0 w-full h-full rounded-2xl overflow-hidden border border-[#ececed] cursor-pointer group"
+              className={cn(
+                "absolute top-0 left-0 w-full h-full rounded-2xl overflow-hidden border border-[#ececed] group",
+                isEditing ? "cursor-pointer" : "cursor-default"
+              )}
             >
               <img src={getImageUrl(gymInfo.coverImageUrl)} className="w-full h-full object-cover" alt="cover" />
-              <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <Pencil size={32} className="text-white" />
-              </div>
+              {isEditing && (
+                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Pencil size={24} className="text-white" />
+                </div>
+              )}
               {isCoverUpdating && (
                 <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded-2xl z-20">
-                  <Loader2 className="animate-spin text-[#00B4CC]" size={36} />
+                  <Loader2 className="animate-spin text-[#00B4CC]" size={28} />
                 </div>
               )}
             </div>
           ) : (
             <div
               onClick={handleCoverClick}
-              className="absolute top-0 left-0 w-full h-full rounded-2xl border border-dashed border-[#99a1af] text-center text-[#4a5565] flex flex-col items-center justify-center gap-[30px] cursor-pointer hover:bg-slate-50 transition-colors overflow-hidden"
+              className={cn(
+                "absolute top-0 left-0 w-full h-full rounded-2xl border border-dashed border-[#99a1af] text-center text-[#4a5565] flex flex-col items-center justify-center gap-4 overflow-hidden",
+                isEditing ? "cursor-pointer hover:bg-slate-50 transition-colors" : "cursor-default opacity-60"
+              )}
             >
-              <Upload size={40} className="relative z-10" />
-              <div className="relative tracking-[-0.15px] leading-[20px] font-medium z-10">Upload cover</div>
+              <Upload size={28} />
+              <div className="relative leading-[18px] font-medium">Upload cover</div>
               {isCoverUpdating && (
                 <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded-2xl z-20">
-                  <Loader2 className="animate-spin text-[#00B4CC]" size={36} />
+                  <Loader2 className="animate-spin text-[#00B4CC]" size={28} />
                 </div>
               )}
             </div>
@@ -216,96 +248,96 @@ export function ImagesTab() {
       {/* Category Cover (from descriptions) */}
       {activeCategoryId !== null && activeCoverUrl && (
         <div className="self-stretch flex flex-col items-start gap-3 animate-in fade-in duration-300">
-          <div className="self-stretch border-b border-[#ececed] pb-1">
-            <div className="relative leading-[30px] font-semibold text-lg sm:text-xl">
+          <div className="self-stretch pb-1">
+            <div className="relative leading-[24px] font-semibold text-sm sm:text-base">
               {allCategories.find(c => c.id === activeCategoryId)?.name} — Kateqoriya cover
             </div>
           </div>
-          <div className="w-full sm:w-[444px] h-[252px] rounded-2xl overflow-hidden border border-[#ececed]">
+          <div className="w-full sm:w-[320px] h-[180px] rounded-2xl overflow-hidden border border-[#ececed]">
             <img src={getImageUrl(activeCoverUrl)} className="w-full h-full object-cover" alt="category cover" />
           </div>
         </div>
       )}
 
       {/* Room Images */}
-      <div className="self-stretch flex flex-col items-start gap-[28px]">
-        <div className="self-stretch border-b border-[#ececed] flex items-center justify-between pb-1">
-          <div className="relative leading-[30px] font-semibold text-lg sm:text-xl">
+      <div className="self-stretch flex flex-col items-start gap-3 w-full">
+        <div className="self-stretch border-b border-[#ececed] pb-1">
+          <div className="relative leading-[24px] font-semibold text-sm sm:text-base">
             Digər şəkillər ({gymInfo.rooms?.length || 0}/9)
           </div>
-          {Object.keys(roomNames).length > 0 && (
-            <button
-              onClick={handleSaveRoomNames}
-              className="text-sm text-[#00B4CC] font-semibold hover:underline"
-            >
-              Adları yadda saxla
-            </button>
-          )}
         </div>
 
         <input type="file" ref={editRoomInputRef} onChange={handleEditRoomFileChange} accept="image/*" className="hidden" />
 
-        <div className="w-full flex items-start flex-wrap content-start gap-4 text-center text-sm text-[#4a5565]">
+        <div className="w-full flex items-start flex-wrap content-start gap-3.5 text-center text-xs text-[#4a5565]">
           {gymInfo.rooms?.map((room: any, i: number) => (
-            <div key={i} className="h-[224px] w-[180px] relative text-left text-[#717182]">
-              <div className="absolute inset-0 flex flex-col items-start gap-3">
-                <div className="self-stretch h-[180px] rounded-2xl flex items-start justify-end p-3 box-border bg-cover bg-no-repeat bg-top relative overflow-hidden group border border-[#ececed]">
+            <div key={i} className="h-[174px] w-[130px] relative text-left text-[#717182]">
+              <div className="absolute inset-0 flex flex-col items-start gap-2.5">
+                <div className="self-stretch h-[130px] rounded-2xl flex items-start justify-end p-2.5 box-border bg-cover bg-no-repeat bg-top relative overflow-hidden group border border-[#ececed]">
                   {room.imageUrl ? (
                     <img src={getImageUrl(room.imageUrl)} className="absolute inset-0 w-full h-full object-cover" alt="room" />
                   ) : (
-                    <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-xs">Şəkil yoxdur</div>
+                    <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-2xs">Şəkil yoxdur</div>
                   )}
-                  <div className="relative z-10 overflow-hidden flex items-center gap-[9px] opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => handleEditRoomClick(room)} className="rounded-full bg-white flex items-center p-1 hover:text-[#00B4CC]">
-                      <Pencil size={16} />
-                    </button>
-                    <button onClick={() => handleDeleteRoomClick(room.id)} className="rounded-full bg-white flex items-center p-1 hover:text-red-500">
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
+                  
+                  {isEditing && (
+                    <div className="relative z-10 overflow-hidden flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => handleEditRoomClick(room)} className="rounded-full bg-white flex items-center p-1 hover:text-[#00B4CC]">
+                        <Pencil size={13} />
+                      </button>
+                      <button onClick={() => handleDeleteRoomClick(room.id)} className="rounded-full bg-white flex items-center p-1 hover:text-red-500">
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  )}
                   {actionRoomId === room.id && (
                     <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded-2xl z-20">
-                      <Loader2 className="animate-spin text-[#00B4CC]" size={28} />
+                      <Loader2 className="animate-spin text-[#00B4CC]" size={20} />
                     </div>
                   )}
                 </div>
-                <div className="self-stretch h-8 rounded-lg bg-[#f9fafb] border border-[#e5e7eb] flex items-center p-[4px_12px]">
+                
+                <div className={cn(
+                  "self-stretch h-8 rounded-lg flex items-center p-[4px_8px] transition-colors border",
+                  isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-transparent border-transparent p-0"
+                )}>
                   <input
                     type="text"
                     value={roomNames[room.id] !== undefined ? roomNames[room.id] : (room.name || "")}
                     onChange={(e) => setRoomNames(prev => ({ ...prev, [room.id]: e.target.value }))}
-                    className="bg-transparent outline-none w-full tracking-[-0.15px] text-[#000]"
+                    readOnly={!isEditing}
+                    className="bg-transparent outline-none w-full text-xs text-[#000]"
                   />
                 </div>
               </div>
             </div>
           ))}
 
-          {/* Empty upload slots */}
-          {[...Array(Math.max(0, 9 - (gymInfo.rooms?.length || 0)))].map((_, i) => (
-            <div key={`empty-${i}`} className="h-[224px] w-[180px] relative text-left text-[#717182]">
-              <div className="absolute inset-0 flex flex-col items-start gap-3">
+          {/* Empty upload slots only if editing */}
+          {isEditing && [...Array(Math.max(0, 9 - (gymInfo.rooms?.length || 0)))].map((_, i) => (
+            <div key={`empty-${i}`} className="h-[174px] w-[130px] relative text-left text-[#717182] animate-in fade-in duration-300">
+              <div className="absolute inset-0 flex flex-col items-start gap-2.5">
                 <div
                   onClick={() => handleEmptySlotClick(i)}
-                  className="self-stretch h-[180px] rounded-2xl border border-dashed border-[#d1d5dc] flex items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors relative overflow-hidden"
+                  className="self-stretch h-[130px] rounded-2xl border border-dashed border-[#d1d5dc] flex items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors relative overflow-hidden"
                 >
-                  <div className="flex flex-col items-center gap-4">
-                    <Upload size={28} />
-                    <div className="relative leading-[18px]">Upload</div>
+                  <div className="flex flex-col items-center gap-2">
+                    <Upload size={20} />
+                    <div className="relative leading-[14px]">Yüklə</div>
                   </div>
                   {uploadingSlotIndex === i && isRoomAdding && (
                     <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded-2xl z-20">
-                      <Loader2 className="animate-spin text-[#00B4CC]" size={28} />
+                      <Loader2 className="animate-spin text-[#00B4CC]" size={20} />
                     </div>
                   )}
                 </div>
-                <div className="self-stretch h-8 rounded-lg bg-[#f9fafb] border border-[#e5e7eb] flex items-center p-[4px_12px]">
+                <div className="self-stretch h-8 rounded-lg bg-white border border-[#ececed] flex items-center p-[4px_8px]">
                   <input
                     type="text"
                     placeholder="Ad (məs: SPA)"
                     value={emptyRoomNames[i] || ""}
                     onChange={(e) => setEmptyRoomNames(prev => ({ ...prev, [i]: e.target.value }))}
-                    className="bg-transparent outline-none w-full tracking-[-0.15px] placeholder:text-[#717182]"
+                    className="bg-transparent outline-none w-full text-xs placeholder:text-[#717182]"
                   />
                 </div>
                 <input
@@ -320,6 +352,36 @@ export function ImagesTab() {
           ))}
         </div>
       </div>
+
+      {/* Save / Cancel actions footer */}
+      {isEditing && (
+        <div className="self-stretch flex items-center justify-end gap-3 border-t border-[#ececed] pt-5 mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <button
+            onClick={() => {
+              if (gymInfo?.rooms) {
+                const names: Record<number, string> = {};
+                gymInfo.rooms.forEach((r: any) => { names[r.id] = r.name || ""; });
+                setRoomNames(names);
+              }
+              setIsEditing(false);
+            }}
+            className="h-[40px] px-6 rounded-lg border border-[#ececed] bg-white text-xs font-medium text-[#101828] hover:bg-slate-50 transition-colors"
+          >
+            Ləğv et
+          </button>
+          <button
+            onClick={() => {
+              handleSaveRoomNames();
+              setIsEditing(false);
+              toast.success("Məlumatlar uğurla yeniləndi");
+            }}
+            className="h-[40px] px-6 rounded-lg bg-[#00B4CC] text-xs font-semibold text-white hover:bg-[#009DB3] transition-colors"
+          >
+            Yadda saxla
+          </button>
+        </div>
+      )}
+
     </div>
   );
 }

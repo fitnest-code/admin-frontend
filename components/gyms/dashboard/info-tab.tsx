@@ -592,9 +592,9 @@ export function InfoTab({ gymId }: InfoTabProps) {
       <div className="self-stretch flex flex-col items-start gap-[28px]">
         
       {/* Header */}
-      <div className="self-stretch border-b border-[#ececed] flex items-center justify-between pb-3">
-        <div className="flex items-center gap-3">
-          <div className="text-[18px] font-bold text-[#101828] font-sans tracking-tight">{lt.gymInfo}</div>
+      <div className="self-stretch border-b border-[#ececed] flex items-center justify-between pb-2">
+        <div className="flex items-center gap-2">
+          <div className="text-base font-semibold text-[#101828] font-sans tracking-tight">{lt.gymInfo}</div>
           <button 
             onClick={() => setIsEditing(!isEditing)}
             className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
@@ -972,7 +972,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
       {/* Ünvan Group */}
       <div className="self-stretch flex flex-col items-start gap-[28px]">
         <div className="self-stretch border-b border-[#ececed] flex items-center justify-between pb-1">
-          <div className="relative leading-[30px] font-semibold text-lg sm:text-xl">{lt.address}</div>
+          <div className="relative leading-[24px] font-semibold text-base">{lt.address}</div>
         </div>
 
         <div className="self-stretch flex flex-col items-start gap-5">
