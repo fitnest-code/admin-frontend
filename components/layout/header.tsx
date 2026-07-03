@@ -30,7 +30,7 @@ export function Header() {
   const mobileSidebarOpen = useUIStore((state) => state.mobileSidebarOpen)
   const setMobileSidebarOpen = useUIStore((state) => state.setMobileSidebarOpen)
   const toggleMobileSidebar = useUIStore((state) => state.toggleMobileSidebar)
-  
+
   const [currentLang, setCurrentLang] = useState<string>("AZ")
   const [languages, setLanguages] = useState<string[]>(["AZ", "RU", "EN"])
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false)
@@ -273,7 +273,7 @@ export function Header() {
               <ChevronDown size={16} className={cn("text-slate-500 transition-transform duration-200", dropdownOpen && "rotate-180")} />
             </div>
           </button>
-          
+
           {dropdownOpen && (
             <div className="absolute right-0 top-full mt-2 w-[110px] rounded-lg border border-[#ececed] bg-white p-1 shadow-lg z-50 animate-in fade-in slide-in-from-top-2 duration-200">
               {languages.map(code => (
@@ -282,8 +282,8 @@ export function Header() {
                   onClick={() => handleLangChange(code)}
                   className={cn(
                     "w-full text-left h-[36px] px-2.5 rounded-md text-[13px] font-semibold flex items-center gap-2.5 transition-all cursor-pointer",
-                    currentLang === code 
-                      ? "bg-[#00B4CC15] text-[#00B4CC]" 
+                    currentLang === code
+                      ? "bg-[#00B4CC15] text-[#00B4CC]"
                       : "text-slate-700 hover:bg-slate-50"
                   )}
                 >

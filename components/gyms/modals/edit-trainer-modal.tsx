@@ -50,6 +50,26 @@ export function EditTrainerModal({ onClose, trainer, index, isDashboard = false 
     return categoriesData?.items?.filter((c) => activeCategoryIds.has(c.id)) || [];
   }, [categoriesData, activeCategoryIds]);
 
+  // 2. Load available lesson types for this gym/step1 selection
+  const availableLessonTypes = useMemo(() => {
+    return gymId
+      ? (gymDetails?.lessonTypes || [])
+      : (allLessonTypes?.filter((lt: any) => step1Data?.lessonTypeIds?.includes(lt.id)) || []);
+  }, [gymId, gymDetails, allLessonTypes, step1Data]);
+
+  // Lesson types are matched to categories by name: gym-scoped lesson types (GymLessonType)
+  // are copies with their own IDs, distinct from the catalog LessonType IDs referenced in
+  // category.lessonTypes, so IDs can't be intersected directly for an existing gym.
+  const normalizeName = (name: string) => (name || "").trim().toLowerCase();
+  const lessonTypeIdToName = useMemo(() => {
+    return new Map(availableLessonTypes.map((lt: any) => [lt.id, normalizeName(lt.name)]));
+  }, [availableLessonTypes]);
+  const categoryHasLessonType = (category: any, ltId: number) => {
+    const name = lessonTypeIdToName.get(ltId);
+    if (!name) return false;
+    return category.lessonTypes?.some((lt: any) => normalizeName(lt.name) === name) ?? false;
+  };
+
   const [form, setForm] = useState({
     name: trainer.name || "",
     surname: trainer.surname || "",
@@ -93,9 +113,7 @@ export function EditTrainerModal({ onClose, trainer, index, isDashboard = false 
     if (trainer.lessonTypeIds && availableCategories.length > 0 && selectedCategoryIds.size === 0) {
       const initialCatIds = new Set<number>();
       trainer.lessonTypeIds.forEach((ltId: number) => {
-        const matchingCat = availableCategories.find(c => 
-          c.lessonTypes?.some((lt: any) => lt.id === ltId)
-        );
+        const matchingCat = availableCategories.find(c => categoryHasLessonType(c, ltId));
         if (matchingCat) {
           initialCatIds.add(matchingCat.id);
         }
@@ -104,23 +122,16 @@ export function EditTrainerModal({ onClose, trainer, index, isDashboard = false 
         setSelectedCategoryIds(initialCatIds);
       }
     }
-  }, [trainer.lessonTypeIds, availableCategories, selectedCategoryIds]);
-
-  // 2. Load available lesson types for this gym/step1 selection
-  const availableLessonTypes = useMemo(() => {
-    return gymId 
-      ? (gymDetails?.lessonTypes || [])
-      : (allLessonTypes?.filter((lt: any) => step1Data?.lessonTypeIds?.includes(lt.id)) || []);
-  }, [gymId, gymDetails, allLessonTypes, step1Data]);
+  }, [trainer.lessonTypeIds, availableCategories, selectedCategoryIds, lessonTypeIdToName]);
 
   // 3. Filter lesson types so we only display ones belonging to selectedCategories
   const activeLessonTypes = useMemo(() => {
     if (selectedCategoryIds.size === 0) return [];
     const selectedCats = availableCategories.filter((c) => selectedCategoryIds.has(c.id));
-    const allowedLessonTypeIds = new Set(
-      selectedCats.flatMap((c) => c.lessonTypes || []).map((lt: any) => lt.id)
+    const allowedNames = new Set(
+      selectedCats.flatMap((c) => c.lessonTypes || []).map((lt: any) => normalizeName(lt.name))
     );
-    return availableLessonTypes.filter((lt: any) => allowedLessonTypeIds.has(lt.id));
+    return availableLessonTypes.filter((lt: any) => allowedNames.has(normalizeName(lt.name)));
   }, [availableLessonTypes, availableCategories, selectedCategoryIds]);
 
   // Clean up selected lesson types if their categories are deselected
@@ -131,14 +142,13 @@ export function EditTrainerModal({ onClose, trainer, index, isDashboard = false 
         next.delete(catId);
         const removedCategory = availableCategories.find((c) => c.id === catId);
         if (removedCategory && removedCategory.lessonTypes) {
-          const removedLtIds = new Set(removedCategory.lessonTypes.map((lt: any) => lt.id));
           setSelectedLessonTypeIds((prevLts) => {
             const nextLts = new Set(prevLts);
             for (const ltId of prevLts) {
               const belongsToRemaining = availableCategories
                 .filter((c) => c.id !== catId && next.has(c.id))
-                .some((c) => c.lessonTypes?.some((lt: any) => lt.id === ltId));
-              if (!belongsToRemaining && removedLtIds.has(ltId)) {
+                .some((c) => categoryHasLessonType(c, ltId));
+              if (!belongsToRemaining && categoryHasLessonType(removedCategory, ltId)) {
                 nextLts.delete(ltId);
               }
             }
@@ -186,9 +196,7 @@ export function EditTrainerModal({ onClose, trainer, index, isDashboard = false 
     const initialCatIds = new Set<number>();
     if (trainer.lessonTypeIds && availableCategories.length > 0) {
       trainer.lessonTypeIds.forEach((ltId: number) => {
-        const matchingCat = availableCategories.find(c => 
-          c.lessonTypes?.some((lt: any) => lt.id === ltId)
-        );
+        const matchingCat = availableCategories.find(c => categoryHasLessonType(c, ltId));
         if (matchingCat) initialCatIds.add(matchingCat.id);
       });
     }
@@ -204,7 +212,7 @@ export function EditTrainerModal({ onClose, trainer, index, isDashboard = false 
       origLessons !== currLessons ||
       origCats !== currCats
     );
-  }, [form, selectedFile, selectedLessonTypeIds, selectedCategoryIds, trainer, availableCategories]);
+  }, [form, selectedFile, selectedLessonTypeIds, selectedCategoryIds, trainer, availableCategories, lessonTypeIdToName]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
