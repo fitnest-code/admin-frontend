@@ -191,20 +191,31 @@ export default function CategoryModal({
   const handleStartEditLessonType = async (lt: any) => {
     setEditingLessonType(lt);
     setEditLessonTypeLang("AZ");
-    setEditLessonTypeNames({ AZ: "", EN: "", RU: "" });
+    setEditLessonTypeNames({ AZ: lt.name || "", EN: "", RU: "" });
     setIsSubmittingLessonType(true);
 
     try {
-      const ltDetails = await apiGet<any>(`/admin/lesson-types/${lt.id}`);
-      const azName = ltDetails?.name || lt.name;
+      let azName = lt.name;
+      try {
+        const ltDetails = await apiGet<any>(`/admin/lesson-types/${lt.id}`);
+        if (ltDetails?.name) azName = ltDetails.name;
+      } catch (e) {
+        console.warn("Failed to fetch lesson type details:", e);
+      }
 
-      const list = await apiGet<any[]>(`/admin/translations`, {
-        params: {
-          entityType: "LessonType",
-          entityId: String(lt.id),
-          fieldName: "name"
-        }
-      });
+      let transList: any[] = [];
+      try {
+        const list = await apiGet<any[]>(`/admin/translations`, {
+          params: {
+            entityType: "LessonType",
+            entityId: String(lt.id),
+            fieldName: "name"
+          }
+        });
+        transList = Array.isArray(list) ? list : (list as any)?.data || [];
+      } catch (e) {
+        console.warn("Failed to fetch translations:", e);
+      }
 
       const newNames: Record<string, string> = {
         AZ: azName,
@@ -212,7 +223,6 @@ export default function CategoryModal({
         RU: ""
       };
 
-      const transList = Array.isArray(list) ? list : (list as any)?.data || [];
       transList.forEach((item: any) => {
         if (item.languageCode && item.fieldName === "name") {
           newNames[item.languageCode.toUpperCase()] = item.fieldValue || "";
