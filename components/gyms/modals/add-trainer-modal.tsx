@@ -83,40 +83,47 @@ export function AddTrainerModal({ onClose, isDashboard = false, gymId }: { onClo
     return new Set<number>();
   }, [id, gymDetails, step1Data]);
 
-  // Filter global category items
+  // Existing gym: gym details already return each category with its lesson types,
+  // so use them directly. Wizard: filter the global category list by step1 selection.
   const availableCategories = useMemo(() => {
+    if (id && gymDetails) {
+      const all = [...(gymDetails.mainCategories || []), ...(gymDetails.subCategories || [])];
+      const byId = new Map(all.map((c) => [c.id, c]));
+      return Array.from(byId.values());
+    }
     return categoriesData?.items?.filter((c) => activeCategoryIds.has(c.id)) || [];
-  }, [categoriesData, activeCategoryIds]);
+  }, [id, gymDetails, categoriesData, activeCategoryIds]);
 
-  // 2. Load available lesson types for this gym/step1 selection
-  const availableLessonTypes = useMemo(() => {
-    return id 
-      ? (gymDetails?.lessonTypes || [])
-      : (allLessonTypes?.filter((lt: any) => step1Data?.lessonTypeIds?.includes(lt.id)) || []);
-  }, [id, gymDetails, allLessonTypes, step1Data]);
-
-  // Lesson types are matched to categories by name: gym-scoped lesson types (GymLessonType)
-  // are copies with their own IDs, distinct from the catalog LessonType IDs referenced in
-  // category.lessonTypes, so IDs can't be intersected directly for an existing gym.
+  // 2. Load available lesson types for this gym/step1 selection (wizard branch only;
+  // for an existing gym, lesson types come directly from each selected category below)
   const normalizeName = (name: string) => (name || "").trim().toLowerCase();
-  const lessonTypeIdToName = useMemo(() => {
-    return new Map(availableLessonTypes.map((lt: any) => [lt.id, normalizeName(lt.name)]));
-  }, [availableLessonTypes]);
+  const availableLessonTypes = useMemo(() => {
+    return id
+      ? []
+      : (allLessonTypes?.filter((lt: any) => step1Data?.lessonTypeIds?.includes(lt.id)) || []);
+  }, [id, allLessonTypes, step1Data]);
+
   const categoryHasLessonType = (category: any, ltId: number) => {
-    const name = lessonTypeIdToName.get(ltId);
-    if (!name) return false;
-    return category.lessonTypes?.some((lt: any) => normalizeName(lt.name) === name) ?? false;
+    return category.lessonTypes?.some((lt: any) => lt.id === ltId) ?? false;
   };
 
-  // 3. Filter lesson types so we only display ones belonging to selectedCategories
+  // 3. Filter lesson types so we only display ones belonging to selectedCategories.
+  // Existing gym: each category from /categories already carries its own catalog
+  // lessonTypes with real IDs, so use them directly instead of an indirect gym-level pool.
+  // Wizard (gym not yet created): keep restricting to what was chosen in step1.
   const activeLessonTypes = useMemo(() => {
     if (selectedCategoryIds.size === 0) return [];
     const selectedCats = availableCategories.filter((c) => selectedCategoryIds.has(c.id));
+    if (id) {
+      const byId = new Map<number, any>();
+      selectedCats.forEach((c) => (c.lessonTypes || []).forEach((lt: any) => byId.set(lt.id, lt)));
+      return Array.from(byId.values());
+    }
     const allowedNames = new Set(
       selectedCats.flatMap((c) => c.lessonTypes || []).map((lt: any) => normalizeName(lt.name))
     );
     return availableLessonTypes.filter((lt: any) => allowedNames.has(normalizeName(lt.name)));
-  }, [availableLessonTypes, availableCategories, selectedCategoryIds]);
+  }, [id, availableLessonTypes, availableCategories, selectedCategoryIds]);
 
   // Clean up selected lesson types if their categories are deselected
   const toggleCategory = (catId: number) => {
