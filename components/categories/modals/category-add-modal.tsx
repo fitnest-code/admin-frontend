@@ -4,19 +4,21 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { X, Plus, Loader2 } from "lucide-react";
 import { useLessonTypes } from "@/lib/query/use-lesson-types";
+import { apiGet } from "@/lib/api/client";
 
 export interface CategoryFormData {
   name: string;
   photo: File | null;
   icon: File | null;
   lessonTypeIds?: number[];
+  translations?: { languageCode: string; fieldValue: string }[];
 }
 
 interface CategoryModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (data: CategoryFormData) => void;
-  initialData?: { name: string; image: string; iconUrl?: string; lessonTypes?: { id: number; name: string }[] };
+  initialData?: { id?: number; name: string; image: string; iconUrl?: string; lessonTypes?: { id: number; name: string }[] };
   mode?: "create" | "edit";
 }
 
@@ -27,7 +29,10 @@ export default function CategoryModal({
   initialData,
   mode = "create",
 }: CategoryModalProps) {
-  const [name, setName] = useState("");
+  const [languages, setLanguages] = useState<string[]>(["AZ", "RU", "EN"]);
+  const [activeTab, setActiveTab] = useState<string>("AZ");
+  const [names, setNames] = useState<Record<string, string>>({ AZ: "", EN: "", RU: "" });
+
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [iconPreview, setIconPreview] = useState<string | null>(null);
@@ -36,11 +41,32 @@ export default function CategoryModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const iconInputRef = useRef<HTMLInputElement>(null);
 
-  const { lessonTypes, createLessonType, deleteLessonType } = useLessonTypes();
+  const { lessonTypes, createLessonType, deleteLessonType } = useLessonTypes(activeTab);
+
+  // Fetch languages
+  useEffect(() => {
+    apiGet<any>('/me/languages')
+      .then(res => {
+        const list = res?.data || res;
+        if (Array.isArray(list)) {
+          setLanguages(list.map((l: any) => {
+            const val = typeof l === 'object' && l !== null ? (l.code || '') : l;
+            return String(val).toUpperCase();
+          }).filter(Boolean));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (open) {
-      setName(initialData?.name ?? "");
+      const azName = initialData?.name ?? "";
+      setNames({
+        AZ: azName,
+        EN: "",
+        RU: "",
+      });
+      setActiveTab("AZ");
       setImagePreview(initialData?.image ?? null);
       setIconPreview(initialData?.iconUrl ?? null);
       setSelectedFile(null);
@@ -50,8 +76,35 @@ export default function CategoryModal({
       } else {
         setSelectedLessonTypeIds(new Set());
       }
+
+      if (mode === "edit" && initialData?.id) {
+        apiGet<any[]>(`/admin/translations`, {
+          params: {
+            entityType: "CATEGORY",
+            entityId: String(initialData.id),
+            fieldName: "name"
+          }
+        })
+        .then(res => {
+          const list = res?.data || res;
+          if (Array.isArray(list)) {
+            const newNames: Record<string, string> = {
+              AZ: azName,
+              EN: "",
+              RU: ""
+            };
+            list.forEach(item => {
+              if (item.languageCode && item.fieldName === "name") {
+                newNames[item.languageCode.toUpperCase()] = item.fieldValue || "";
+              }
+            });
+            setNames(prev => ({ ...prev, ...newNames }));
+          }
+        })
+        .catch(err => console.error("Error fetching translations:", err));
+      }
     }
-  }, [open, initialData]);
+  }, [open, initialData, mode]);
 
   const handleFile = useCallback((file: File) => {
     if (!file.type.startsWith("image/")) return;
@@ -75,12 +128,18 @@ export default function CategoryModal({
   const [isSubmittingLessonType, setIsSubmittingLessonType] = useState(false);
 
   const handleSave = () => {
-    if (!name.trim()) return;
+    if (!names.AZ.trim()) return;
     onSave({ 
-      name: name.trim(), 
+      name: names.AZ.trim(), 
       photo: selectedFile,
       icon: selectedIconFile,
-      lessonTypeIds: Array.from(selectedLessonTypeIds)
+      lessonTypeIds: Array.from(selectedLessonTypeIds),
+      translations: Object.entries(names)
+        .filter(([lang, val]) => lang !== "AZ" && val.trim() !== "")
+        .map(([lang, val]) => ({
+          languageCode: lang,
+          fieldValue: val.trim()
+        }))
     });
   };
 
@@ -168,14 +227,34 @@ export default function CategoryModal({
             </div>
           </div>
 
+          {/* Language Tabs */}
+          <div className="w-full flex items-center border-b border-[#ececed] gap-1">
+            {languages.map((lang) => (
+              <button
+                key={lang}
+                type="button"
+                onClick={() => setActiveTab(lang)}
+                className={`px-4 py-2 text-[13px] font-semibold transition-all border-b-2 ${
+                  activeTab === lang
+                    ? "border-[#00b4cc] text-[#00b4cc]"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {lang}
+              </button>
+            ))}
+          </div>
+
           {/* Kateqoriya adı */}
           <div className="w-full flex flex-col items-start gap-2">
-            <label className="text-[12px] sm:text-[13px] leading-[20px] font-medium text-black/60">Kateqoriya adı</label>
+            <label className="text-[12px] sm:text-[13px] leading-[20px] font-medium text-black/60">
+              Kateqoriya adı ({activeTab})
+            </label>
             <input
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Məs: Fitness"
+              value={names[activeTab] || ""}
+              onChange={(e) => setNames((prev) => ({ ...prev, [activeTab]: e.target.value }))}
+              placeholder={activeTab === "AZ" ? "Məs: Fitness" : activeTab === "EN" ? "E.g., Fitness" : "Например: Фитнес"}
               className="w-full h-[40px] rounded-lg bg-[#fafafa] border border-[#ececed] px-3 text-[13px] sm:text-[14px] font-medium outline-none focus:border-[#00b4cc] transition-colors"
             />
           </div>
@@ -312,7 +391,7 @@ export default function CategoryModal({
         {/* Footer */}
         <button
           onClick={handleSave}
-          disabled={!name.trim()}
+          disabled={!names.AZ.trim()}
           className="w-full max-w-[280px] h-[48px] rounded-xl bg-[#00b4cc] text-white flex items-center justify-center px-4 py-2 font-medium text-[14px] disabled:opacity-50 hover:bg-[#00a4bd] transition-all shadow-md shadow-cyan-50"
         >
           Yadda saxla

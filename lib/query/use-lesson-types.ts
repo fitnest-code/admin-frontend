@@ -6,12 +6,14 @@ export interface LessonTypeResponse {
   name: string;
 }
 
-export function useLessonTypes() {
+export function useLessonTypes(lang?: string) {
   const queryClient = useQueryClient();
 
   const { data: lessonTypes = [], isLoading } = useQuery<LessonTypeResponse[]>({
-    queryKey: ["lesson-types"],
-    queryFn: () => apiRequest<LessonTypeResponse[]>("/admin/lesson-types"),
+    queryKey: ["lesson-types", lang],
+    queryFn: () => apiRequest<LessonTypeResponse[]>("/admin/lesson-types", {
+      headers: lang ? { "Accept-Language": lang } : undefined
+    }),
   });
 
   const { mutateAsync: createLessonType } = useMutation({

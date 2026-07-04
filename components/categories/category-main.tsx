@@ -8,6 +8,7 @@ import { ErrorToastModal } from "./modals/error-toast-modal";
 import { SuccessAnimationModal } from "../ui/success-animation-modal";
 import { useCategories } from "@/lib/query/add-category";
 import { CustomerPagination as Pagination } from "../customers/list/customer-list-table";
+import { apiPost } from "@/lib/api/client";
 
 import { useT, useI18nStore } from "@/lib/i18n";
 
@@ -35,24 +36,39 @@ export default function CategoriesPage() {
 
   const handleSave = async (formData: CategoryFormData) => {
     try {
+      let categoryId: number | undefined;
       if (editTarget) {
-        await updateCategory({ 
+        const res: any = await updateCategory({ 
           id: editTarget.id, 
           name: formData.name, 
           photo: formData.photo,
           icon: formData.icon,
           lessonTypeIds: formData.lessonTypeIds 
         });
+        categoryId = res?.id || editTarget.id;
         setModalConfig({ isOpen: true, message: t.categories.updated, type: "success" });
       } else {
-        await createCategory({ 
+        const res: any = await createCategory({ 
           name: formData.name, 
           photo: formData.photo,
           icon: formData.icon,
           lessonTypeIds: formData.lessonTypeIds 
         });
+        categoryId = res?.id;
         setModalConfig({ isOpen: true, message: t.categories.created, type: "success" });
       }
+
+      if (categoryId && formData.translations && formData.translations.length > 0) {
+        const translationPayload = formData.translations.map((tr) => ({
+          entityType: "CATEGORY",
+          entityId: String(categoryId),
+          fieldName: "name",
+          languageCode: tr.languageCode,
+          fieldValue: tr.fieldValue,
+        }));
+        await apiPost("/admin/translations/bulk", translationPayload);
+      }
+
       setModalOpen(false);
       setEditTarget(null);
     } catch (err: any) {
@@ -138,6 +154,7 @@ export default function CategoriesPage() {
         }}
         onSave={handleSave}
         initialData={editTarget ? { 
+          id: editTarget.id,
           name: editTarget.name, 
           image: editTarget.photoUrl, 
           iconUrl: editTarget.iconUrl, 
