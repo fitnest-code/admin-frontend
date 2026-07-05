@@ -141,19 +141,19 @@ function PackageNameDropdown({ value, onChange, existingNames = [] }: { value: s
 
   return (
     <div className="w-full flex flex-col gap-1.5 text-left font-sans" ref={ref}>
-      <label className="text-[16px] leading-[24px] font-medium text-black">{t.subscriptions.packageNameHeader}</label>
+      <label className="text-sm font-medium text-black">{t.subscriptions.packageNameHeader}</label>
       <div className="relative w-full">
         <button
           type="button"
           onClick={() => setOpen((p) => !p)}
-          className="w-full h-[60px] rounded-[12px] bg-[#fafafa] border border-[#ececed] px-4 flex items-center justify-between text-[18px] text-black outline-none transition-colors hover:border-[#00b4cc]"
+          className="w-full h-[40px] rounded-[10px] bg-[#fafafa] border border-[#ececed] px-3 flex items-center justify-between text-sm text-black outline-none transition-colors hover:border-[#00b4cc]"
         >
-          <span className="leading-[28px] font-medium">{value || t.subscriptions.notSelected}</span>
-          <ChevronDown size={20} className={cn('transition-transform text-gray-500 shrink-0', open && 'rotate-180')} />
+          <span className="font-medium">{value || t.subscriptions.notSelected}</span>
+          <ChevronDown size={16} className={cn('transition-transform text-gray-500 shrink-0', open && 'rotate-180')} />
         </button>
         
         {open && (
-          <ul className="absolute left-0 top-full z-50 mt-1 w-full overflow-hidden rounded-[12px] border border-[#ececed] bg-white shadow-xl max-h-52 divide-y divide-gray-100">
+          <ul className="absolute left-0 top-full z-50 mt-1 w-full overflow-hidden rounded-[10px] border border-[#ececed] bg-white shadow-xl max-h-52 divide-y divide-gray-100">
             {STATIC_PACKAGES.map((pkgName) => {
               const isUsed = existingNames.includes(pkgName) && value !== pkgName
               return (
@@ -163,7 +163,7 @@ function PackageNameDropdown({ value, onChange, existingNames = [] }: { value: s
                     disabled={isUsed}
                     onClick={() => { onChange(pkgName); setOpen(false) }}
                     className={cn(
-                      "w-full flex items-center justify-between px-4 py-3 text-[16px] font-medium transition-colors text-left disabled:opacity-30",
+                      "w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium transition-colors text-left disabled:opacity-30",
                       value === pkgName ? "text-[#00b4cc] bg-[#00b4cc]/5 font-bold" : "text-black hover:bg-gray-50"
                     )}
                   >
