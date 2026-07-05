@@ -459,16 +459,16 @@ function PackageFormModal({
 
             {/* Pricing / Tiers Wrapper */}
             <div className="w-full flex flex-col gap-2 pt-1">
-              <div className="w-full rounded-[10px] bg-[#fafafa] border border-[#ececed] flex items-center justify-between p-2 px-3">
-                <span className="text-base font-medium text-black">
+              <div className="w-full h-[40px] rounded-[10px] bg-[#fafafa] border border-[#ececed] flex items-center justify-between px-3">
+                <span className="text-sm font-medium text-black">
                   {t.subscriptions.durationAndPrices}
                 </span>
                 <button
                   type="button"
                   onClick={addTier}
-                  className="h-[40px] w-[40px] rounded-[8px] bg-white border border-[#ececed] flex items-center justify-center transition-colors hover:bg-gray-100 shadow-2xs"
+                  className="h-[28px] w-[28px] rounded-[6px] bg-white border border-[#ececed] flex items-center justify-center transition-colors hover:bg-gray-100 shadow-2xs"
                 >
-                  <Plus size={18} className="text-[#00b4cc]" />
+                  <Plus size={14} className="text-[#00b4cc]" />
                 </button>
               </div>
 
