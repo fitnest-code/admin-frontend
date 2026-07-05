@@ -11,25 +11,6 @@ function buildTargetPath(pathParts: string[]) {
   return `/api/v1/${clean}`
 }
 
-function getFilenameWithExtension(name: string, type: string, key: string): string {
-  if (key === 'data' || type === 'application/json') {
-    return 'data.json';
-  }
-  if (name && name !== 'blob') {
-    return name;
-  }
-  if (type) {
-    const cleanType = type.toLowerCase();
-    if (cleanType.includes('json')) return 'data.json';
-    if (cleanType.includes('png')) return 'image.png';
-    if (cleanType.includes('jpeg') || cleanType.includes('jpg')) return 'image.jpg';
-    if (cleanType.includes('gif')) return 'image.gif';
-    if (cleanType.includes('webp')) return 'image.webp';
-    if (cleanType.includes('svg')) return 'image.svg';
-  }
-  return 'upload.bin';
-}
-
 function pickForwardHeaders(
   request: NextRequest,
   options?: { omitContentType?: boolean },
@@ -129,41 +110,21 @@ async function forward(request: NextRequest, context: RouteContext) {
     const targetPath = buildTargetPath(path)
 
     const method = request.method.toUpperCase()
-
     const targetUrl = new URL(buildBackendUrl(targetPath))
     targetUrl.search = request.nextUrl.search
-    const rawContentType = request.headers.get('content-type') ?? ''
-    const isMultipart = rawContentType.toLowerCase().includes('multipart/form-data')
 
     let body: BodyInit | undefined
     let useStreamDuplex = false
 
     if (method === 'GET' || method === 'HEAD') {
       body = undefined
-    } else if (isMultipart) {
-      // Stream ilə birbaşa request.body ötürmək multipart boundary-ni poza bilər;
-      // FormData yenidən yığılır, fetch öz boundary Content-Type yazar.
-      const incoming = await request.formData()
-      const outgoing = new FormData()
-      for (const [key, value] of incoming.entries()) {
-        const isBlob = value && typeof value === 'object' && typeof (value as any).arrayBuffer === 'function';
-        if (isBlob) {
-          const valBlob = value as Blob;
-          const name = (value as any).name || '';
-          const filename = getFilenameWithExtension(name, valBlob.type, key)
-          outgoing.append(key, valBlob, filename)
-        } else {
-          outgoing.append(key, value as string)
-        }
-      }
-      body = outgoing
     } else {
       body = request.body ?? undefined
       useStreamDuplex = body != null
     }
 
     const forwardHeaders = pickForwardHeaders(request, {
-      omitContentType: isMultipart,
+      omitContentType: false,
     })
 
     const backendResponse = await fetch(targetUrl.toString(), {
