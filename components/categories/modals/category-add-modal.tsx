@@ -64,6 +64,10 @@ export default function CategoryModal({
   }, []);
 
   useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["lesson-types"] });
+  }, [activeTab, queryClient]);
+
+  useEffect(() => {
     if (open) {
       const azName = initialData?.name ?? "";
       setNames({
@@ -452,7 +456,7 @@ export default function CategoryModal({
                     <div
                       key={lt.id}
                       onClick={(e) => e.stopPropagation()}
-                      className="flex-[1_1_calc(100%-4px)] sm:flex-none min-w-[160px] sm:min-w-[200px] h-[36px] rounded-lg flex items-center justify-between px-2 gap-1.5 bg-[#fafafa] border border-[#00b4cc]"
+                      className="flex-none h-[36px] rounded-lg flex items-center justify-between px-2 gap-1.5 bg-[#fafafa] border border-[#00b4cc]"
                     >
                       <input
                         type="text"
@@ -469,7 +473,8 @@ export default function CategoryModal({
                         }}
                         onClick={(e) => e.stopPropagation()}
                         autoFocus
-                        className="w-full h-full bg-transparent outline-none text-[#101828] text-[12px] sm:text-[13px] font-medium"
+                        style={{ width: `${Math.max(editingLtValue.length || 6, 6) + 2}ch` }}
+                        className="bg-transparent outline-none text-[#101828] text-[12px] sm:text-[13px] font-medium min-w-[60px] max-w-[180px]"
                       />
                       <div className="flex items-center gap-0.5 shrink-0">
                         <button
