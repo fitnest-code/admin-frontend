@@ -109,7 +109,7 @@ export default function CategoryModal({
           }
         })
         .then(res => {
-          const list = res?.data || res;
+          const list = (res as any)?.data || res;
           if (Array.isArray(list)) {
             const newNames: Record<string, string> = {
               AZ: azName,

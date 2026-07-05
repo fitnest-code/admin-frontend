@@ -22,17 +22,18 @@ export interface BackendPackageResponse {
   duration_options?: BackendPackageOption[];
 }
 
-export const useSubscriptions = () => {
+export const useSubscriptions = (lang?: string) => {
   const queryClient = useQueryClient();
   const locale = useI18nStore((s) => s.locale);
+  const activeLang = lang || locale;
 
   // 1. Get grouped packages mapped to SubPackage array
   const { data: packagesData, isLoading, refetch } = useQuery({
-    queryKey: ["subscriptions", locale],
+    queryKey: ["subscriptions", activeLang],
     queryFn: async () => {
       const res = await apiRequest<BackendPackageResponse[]>("/admin/subscription-packages", {
         headers: {
-          "Accept-Language": locale,
+          "Accept-Language": activeLang,
         }
       });
       if (!Array.isArray(res)) return [];
@@ -60,10 +61,10 @@ export const useSubscriptions = () => {
 
   // 2. Get flat options (as requested by user)
   const { data: flatOptions } = useQuery({
-    queryKey: ["subscription-options", locale],
+    queryKey: ["subscription-options", activeLang],
     queryFn: () => apiRequest<any[]>("/admin/subscription-packages/options", {
       headers: {
-        "Accept-Language": locale,
+        "Accept-Language": activeLang,
       }
     }),
   });
@@ -207,6 +208,20 @@ export const useSubscriptions = () => {
     },
   });
 
+  // 9. Bulk save translations for subscription packages
+  const updateTranslations = useMutation({
+    mutationFn: async (translations: { entityType: string; entityId: string; fieldName: string; languageCode: string; fieldValue: string }[]) => {
+      return apiRequest("/admin/subscription-packages/translations/bulk", {
+        method: "PUT",
+        body: translations,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+      refetch();
+    },
+  });
+
   return {
     packages: packagesData || [],
     flatOptions: flatOptions || [],
@@ -218,6 +233,7 @@ export const useSubscriptions = () => {
     addBenefit: addBenefit.mutateAsync,
     deleteBenefit: deleteBenefit.mutateAsync,
     updatePackageStatus: updatePackageStatus.mutateAsync,
+    updateTranslations: updateTranslations.mutateAsync,
   };
 };
 
