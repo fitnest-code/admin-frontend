@@ -152,6 +152,8 @@ export function InfoTab({ gymId }: InfoTabProps) {
   const [infoLangTab, setInfoLangTab] = useState<string>("AZ");
   const [gymNames, setGymNames] = useState<Record<string, string>>({ AZ: "", EN: "", RU: "" });
   const [gymCatDescs, setGymCatDescs] = useState<Record<string, Record<number, string>>>({ AZ: {}, EN: {}, RU: {} });
+  const [initialGymNames, setInitialGymNames] = useState<Record<string, string>>({ AZ: "", EN: "", RU: "" });
+  const [initialGymCatDescs, setInitialGymCatDescs] = useState<Record<string, Record<number, string>>>({ AZ: {}, EN: {}, RU: {} });
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
 
   const [isMainDropdownOpen, setIsMainDropdownOpen] = useState(false);
@@ -305,7 +307,9 @@ export function InfoTab({ gymId }: InfoTabProps) {
   const hasChanges = isEditing && (
     JSON.stringify(formData) !== initialDataStr || 
     hasRoomNameChanges || 
-    JSON.stringify(catDescriptions) !== initialDescsStr
+    JSON.stringify(catDescriptions) !== initialDescsStr ||
+    JSON.stringify(gymNames) !== JSON.stringify(initialGymNames) ||
+    JSON.stringify(gymCatDescs) !== JSON.stringify(initialGymCatDescs)
   );
 
   useEffect(() => {
@@ -388,6 +392,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
             }
           });
           setGymNames(newNames);
+          setInitialGymNames(newNames);
 
           // Fetch gym description translations
           const descRes = await apiGet<any[]>('/admin/translations', {
@@ -411,6 +416,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
             }
           });
           setGymCatDescs(newDescs);
+          setInitialGymCatDescs(JSON.parse(JSON.stringify(newDescs)));
           setTranslationsLoaded(true);
         } catch (e) {
           console.error('Failed to fetch gym translations:', e);
@@ -421,6 +427,8 @@ export function InfoTab({ gymId }: InfoTabProps) {
     if (!isEditing) {
       setTranslationsLoaded(false);
       setInfoLangTab("AZ");
+      setInitialGymNames({ AZ: "", EN: "", RU: "" });
+      setInitialGymCatDescs({ AZ: {}, EN: {}, RU: {} });
     }
   }, [isEditing, gymId, translationsLoaded]);
 
