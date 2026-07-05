@@ -220,8 +220,6 @@ export default function CategoryModal({
           const item = transList.find((t: any) => t.languageCode?.toUpperCase() === activeTab && t.fieldName === "name");
           if (item?.fieldValue) {
             setEditingLtValue(item.fieldValue);
-          } else {
-            setEditingLtValue("");
           }
         } catch (e) {
           console.warn("Failed to fetch translations:", e);
