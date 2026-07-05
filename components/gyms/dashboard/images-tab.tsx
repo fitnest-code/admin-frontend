@@ -13,11 +13,79 @@ import {
 import { toast } from "sonner";
 import { useGymStore } from "@/lib/store/gym-store";
 import styles from "./info-tab.module.css";
+import { apiGet, apiPost } from "@/lib/api/client";
+import { useI18nStore } from "@/lib/i18n";
 
 const getImageUrl = (urlOrFsId: string | undefined | null) => {
   if (!urlOrFsId) return "";
   if (urlOrFsId.startsWith("http") || urlOrFsId.startsWith("/")) return urlOrFsId;
   return `/api/v1/media/stream/${urlOrFsId}`;
+};
+
+const LOCAL_TRANSLATIONS: Record<string, Record<string, string>> = {
+  AZ: {
+    images: "Şəkillər",
+    categorySelection: "Kateqoriya seçimi",
+    coverPhoto: "Cover Şəkil",
+    uploadCover: "Upload cover",
+    categoryCover: "Kateqoriya cover",
+    otherPhotos: "Digər şəkillər",
+    noImage: "Şəkil yoxdur",
+    upload: "Yüklə",
+    namePlaceholder: "Ad (məs: SPA)",
+    cancel: "Ləğv et",
+    save: "Yadda saxla",
+    saved: "Məlumatlar uğurla yeniləndi",
+    coverUpdated: "Cover şəkli uğurla yeniləndi!",
+    roomUpdated: "Otaq şəkli yeniləndi!",
+    roomAdded: "Otaq əlavə edildi!",
+    roomDeleted: "Otaq silindi!",
+    error: "Xəta baş verdi",
+    enterRoomName: "Zəhmət olmasa otaq adını daxil edin",
+    roomNameLang: "Otaq adı",
+  },
+  EN: {
+    images: "Images",
+    categorySelection: "Category selection",
+    coverPhoto: "Cover Photo",
+    uploadCover: "Upload cover",
+    categoryCover: "Category cover",
+    otherPhotos: "Other photos",
+    noImage: "No image",
+    upload: "Upload",
+    namePlaceholder: "Name (e.g. SPA)",
+    cancel: "Cancel",
+    save: "Save",
+    saved: "Data updated successfully",
+    coverUpdated: "Cover photo updated successfully!",
+    roomUpdated: "Room photo updated!",
+    roomAdded: "Room added!",
+    roomDeleted: "Room deleted!",
+    error: "An error occurred",
+    enterRoomName: "Please enter a room name",
+    roomNameLang: "Room name",
+  },
+  RU: {
+    images: "Изображения",
+    categorySelection: "Выбор категории",
+    coverPhoto: "Обложка",
+    uploadCover: "Загрузить обложку",
+    categoryCover: "Обложка категории",
+    otherPhotos: "Другие фотографии",
+    noImage: "Нет изображения",
+    upload: "Загрузить",
+    namePlaceholder: "Название (напр. SPA)",
+    cancel: "Отмена",
+    save: "Сохранить",
+    saved: "Данные успешно обновлены",
+    coverUpdated: "Обложка успешно обновлена!",
+    roomUpdated: "Фото комнаты обновлено!",
+    roomAdded: "Комната добавлена!",
+    roomDeleted: "Комната удалена!",
+    error: "Произошла ошибка",
+    enterRoomName: "Пожалуйста, введите название комнаты",
+    roomNameLang: "Название комнаты",
+  },
 };
 
 export function ImagesTab() {
@@ -30,6 +98,13 @@ export function ImagesTab() {
   const updateRoomNameMutate = useUpdateGymRoomName();
 
   const [isEditing, setIsEditing] = useState(false);
+
+  const locale = useI18nStore((s) => s.locale);
+  const lt = LOCAL_TRANSLATIONS[locale] || LOCAL_TRANSLATIONS.AZ;
+
+  const [roomLangTab, setRoomLangTab] = useState<string>("AZ");
+  const [roomNamesByLang, setRoomNamesByLang] = useState<Record<string, Record<number, string>>>({ AZ: {}, EN: {}, RU: {} });
+  const [roomTranslationsLoaded, setRoomTranslationsLoaded] = useState(false);
 
   // All categories
   const allCategories = useMemo(() => {
@@ -58,8 +133,8 @@ export function ImagesTab() {
     const file = e.target.files?.[0];
     if (file && gymId) {
       updateGymCover({ id: Number(gymId), file }, {
-        onSuccess: () => toast.success("Cover şəkli uğurla yeniləndi!"),
-        onError: (err: any) => toast.error(err?.message || "Cover yükləmə xətası"),
+        onSuccess: () => toast.success(lt.coverUpdated),
+        onError: (err: any) => toast.error(err?.message || lt.error),
       });
     }
   };
@@ -81,6 +156,36 @@ export function ImagesTab() {
     }
   }, [gymInfo]);
 
+  useEffect(() => {
+    if (isEditing && gymInfo?.rooms && !roomTranslationsLoaded) {
+      const fetchRoomTranslations = async () => {
+        const byLang: Record<string, Record<number, string>> = { AZ: {}, EN: {}, RU: {} };
+        gymInfo.rooms.forEach((room: any) => { byLang.AZ[room.id] = room.name || ""; });
+        for (const room of gymInfo.rooms) {
+          try {
+            const res = await apiGet<any[]>('/admin/translations', {
+              params: { entityType: 'ROOM', entityId: String(room.id), fieldName: 'name' }
+            });
+            const list = Array.isArray(res) ? res : (res as any)?.data || [];
+            list.forEach((item: any) => {
+              if (item.languageCode && item.fieldName === "name") {
+                const lang = item.languageCode.toUpperCase();
+                if (byLang[lang]) byLang[lang][room.id] = item.fieldValue || "";
+              }
+            });
+          } catch (e) { /* ignore */ }
+        }
+        setRoomNamesByLang(byLang);
+        setRoomTranslationsLoaded(true);
+      };
+      fetchRoomTranslations();
+    }
+    if (!isEditing) {
+      setRoomTranslationsLoaded(false);
+      setRoomLangTab("AZ");
+    }
+  }, [isEditing, gymInfo?.rooms, roomTranslationsLoaded]);
+
   const handleEditRoomClick = (room: any) => {
     if (!isEditing) return;
     setEditingRoom(room);
@@ -94,11 +199,11 @@ export function ImagesTab() {
       deleteGymRoom({ id: Number(gymId), roomId: editingRoom.id }, {
         onSuccess: () => {
           addRoomImages({ id: Number(gymId), roomNames: [editingRoom.name], files: [file] }, {
-            onSuccess: () => { toast.success("Otaq şəkli yeniləndi!"); setActionRoomId(null); setEditingRoom(null); },
-            onError: () => { toast.error("Xəta baş verdi"); setActionRoomId(null); },
+            onSuccess: () => { toast.success(lt.roomUpdated); setActionRoomId(null); setEditingRoom(null); },
+            onError: () => { toast.error(lt.error); setActionRoomId(null); },
           });
         },
-        onError: () => { toast.error("Xəta baş verdi"); setActionRoomId(null); },
+        onError: () => { toast.error(lt.error); setActionRoomId(null); },
       });
     }
   };
@@ -107,15 +212,15 @@ export function ImagesTab() {
     if (!gymId || !isEditing) return;
     setActionRoomId(roomId);
     deleteGymRoom({ id: Number(gymId), roomId }, {
-      onSuccess: () => { toast.success("Otaq silindi!"); setActionRoomId(null); },
-      onError: () => { toast.error("Xəta baş verdi"); setActionRoomId(null); },
+      onSuccess: () => { toast.success(lt.roomDeleted); setActionRoomId(null); },
+      onError: () => { toast.error(lt.error); setActionRoomId(null); },
     });
   };
 
   const handleEmptySlotClick = (index: number) => {
     if (!isEditing) return;
     const name = emptyRoomNames[index]?.trim();
-    if (!name) { toast.error("Zəhmət olmasa otaq adını daxil edin"); return; }
+    if (!name) { toast.error(lt.enterRoomName); return; }
     roomInputRefs.current[index]?.click();
   };
 
@@ -125,13 +230,13 @@ export function ImagesTab() {
     if (file && name && gymId) {
       setUploadingSlotIndex(index);
       addRoomImages({ id: Number(gymId), roomNames: [name], files: [file] }, {
-        onSuccess: () => { toast.success("Otaq əlavə edildi!"); setUploadingSlotIndex(null); setEmptyRoomNames(prev => ({ ...prev, [index]: "" })); },
-        onError: () => { toast.error("Xəta baş verdi"); setUploadingSlotIndex(null); },
+        onSuccess: () => { toast.success(lt.roomAdded); setUploadingSlotIndex(null); setEmptyRoomNames(prev => ({ ...prev, [index]: "" })); },
+        onError: () => { toast.error(lt.error); setUploadingSlotIndex(null); },
       });
     }
   };
 
-  const handleSaveRoomNames = () => {
+  const handleSaveRoomNames = async () => {
     if (!gymInfo?.rooms || !gymId) return;
     gymInfo.rooms.forEach((room: any) => {
       const newName = roomNames[room.id];
@@ -139,12 +244,32 @@ export function ImagesTab() {
         updateRoomNameMutate.mutate({ id: Number(gymId), roomId: room.id, name: newName });
       }
     });
+
+    // Save translations for EN, RU
+    const translationPayload: any[] = [];
+    for (const lang of ["EN", "RU"]) {
+      for (const room of (gymInfo?.rooms || [])) {
+        const val = roomNamesByLang[lang]?.[room.id];
+        if (val && val.trim()) {
+          translationPayload.push({
+            entityType: "ROOM",
+            entityId: String(room.id),
+            fieldName: "name",
+            languageCode: lang,
+            fieldValue: val.trim(),
+          });
+        }
+      }
+    }
+    if (translationPayload.length > 0) {
+      try { await apiPost("/admin/translations/bulk", translationPayload); } catch (e) { console.error(e); }
+    }
   };
 
   if (!gymInfo) {
     return (
       <div className="flex items-center justify-center py-24 text-sm text-muted-foreground">
-        Yüklənir...
+        {lt.images}...
       </div>
     );
   }
@@ -158,7 +283,7 @@ export function ImagesTab() {
       {/* Header with Edit Button */}
       <div className="self-stretch border-b border-[#ececed] flex items-center justify-between pb-2">
         <div className="flex items-center gap-2">
-          <div className="text-base font-semibold text-[#101828] font-sans tracking-tight">Şəkillər</div>
+          <div className="text-base font-semibold text-[#101828] font-sans tracking-tight">{lt.images}</div>
           <button 
             onClick={() => {
               if (isEditing) {
@@ -179,7 +304,7 @@ export function ImagesTab() {
       {/* Category Selection Pills */}
       {allCategories.length > 0 && (
         <div className="flex flex-col gap-2 w-full">
-          <div className="relative text-xs font-semibold text-black/60">Kateqoriya seçimi</div>
+          <div className="relative text-xs font-semibold text-black/60">{lt.categorySelection}</div>
           <div className={styles.component42Parent}>
             {allCategories.map(cat => {
               const isActive = activeCategoryId === cat.id;
@@ -200,7 +325,7 @@ export function ImagesTab() {
       {/* Cover Image Section */}
       <div className="self-stretch flex flex-col items-start gap-3">
         <div className="self-stretch pb-1">
-          <div className="relative leading-[24px] font-semibold text-sm sm:text-base">Cover Şəkil</div>
+          <div className="relative leading-[24px] font-semibold text-sm sm:text-base">{lt.coverPhoto}</div>
         </div>
 
         <div className="w-full sm:w-[320px] h-[180px] relative text-xs text-[#6a7282]">
@@ -233,7 +358,7 @@ export function ImagesTab() {
               )}
             >
               <Upload size={28} />
-              <div className="relative leading-[18px] font-medium">Upload cover</div>
+              <div className="relative leading-[18px] font-medium">{lt.uploadCover}</div>
               {isCoverUpdating && (
                 <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded-2xl z-20">
                   <Loader2 className="animate-spin text-[#00B4CC]" size={28} />
@@ -250,7 +375,7 @@ export function ImagesTab() {
         <div className="self-stretch flex flex-col items-start gap-3 animate-in fade-in duration-300">
           <div className="self-stretch pb-1">
             <div className="relative leading-[24px] font-semibold text-sm sm:text-base">
-              {allCategories.find(c => c.id === activeCategoryId)?.name} — Kateqoriya cover
+              {allCategories.find(c => c.id === activeCategoryId)?.name} — {lt.categoryCover}
             </div>
           </div>
           <div className="w-full sm:w-[320px] h-[180px] rounded-2xl overflow-hidden border border-[#ececed]">
@@ -263,11 +388,22 @@ export function ImagesTab() {
       <div className="self-stretch flex flex-col items-start gap-3 w-full">
         <div className="self-stretch border-b border-[#ececed] pb-1">
           <div className="relative leading-[24px] font-semibold text-sm sm:text-base">
-            Digər şəkillər ({gymInfo.rooms?.length || 0}/9)
+            {lt.otherPhotos} ({gymInfo.rooms?.length || 0}/9)
           </div>
         </div>
 
         <input type="file" ref={editRoomInputRef} onChange={handleEditRoomFileChange} accept="image/*" className="hidden" />
+
+        {isEditing && (
+          <div className="flex items-center border-b border-[#ececed] gap-1 mt-1">
+            {["AZ", "EN", "RU"].map((lang) => (
+              <button key={lang} type="button" onClick={() => setRoomLangTab(lang)}
+                className={`px-4 py-2 text-[13px] font-semibold transition-all border-b-2 ${
+                  roomLangTab === lang ? "border-[#00b4cc] text-[#00b4cc]" : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}>{lang}</button>
+            ))}
+          </div>
+        )}
 
         <div className="w-full flex items-start flex-wrap content-start gap-3.5 text-center text-xs text-[#4a5565]">
           {gymInfo.rooms?.map((room: any, i: number) => (
@@ -277,7 +413,7 @@ export function ImagesTab() {
                   {room.imageUrl ? (
                     <img src={getImageUrl(room.imageUrl)} className="absolute inset-0 w-full h-full object-cover" alt="room" />
                   ) : (
-                    <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-2xs">Şəkil yoxdur</div>
+                    <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-2xs">{lt.noImage}</div>
                   )}
                   
                   {isEditing && (
@@ -303,8 +439,19 @@ export function ImagesTab() {
                 )}>
                   <input
                     type="text"
-                    value={roomNames[room.id] !== undefined ? roomNames[room.id] : (room.name || "")}
-                    onChange={(e) => setRoomNames(prev => ({ ...prev, [room.id]: e.target.value }))}
+                    value={roomLangTab === "AZ"
+                      ? (roomNames[room.id] !== undefined ? roomNames[room.id] : (room.name || ""))
+                      : (roomNamesByLang[roomLangTab]?.[room.id] || "")}
+                    onChange={(e) => {
+                      if (roomLangTab === "AZ") {
+                        setRoomNames(prev => ({ ...prev, [room.id]: e.target.value }));
+                      } else {
+                        setRoomNamesByLang(prev => ({
+                          ...prev,
+                          [roomLangTab]: { ...prev[roomLangTab], [room.id]: e.target.value }
+                        }));
+                      }
+                    }}
                     readOnly={!isEditing}
                     className="bg-transparent outline-none w-full text-xs text-[#000]"
                   />
@@ -323,7 +470,7 @@ export function ImagesTab() {
                 >
                   <div className="flex flex-col items-center gap-2">
                     <Upload size={20} />
-                    <div className="relative leading-[14px]">Yüklə</div>
+                    <div className="relative leading-[14px]">{lt.upload}</div>
                   </div>
                   {uploadingSlotIndex === i && isRoomAdding && (
                     <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded-2xl z-20">
@@ -334,7 +481,7 @@ export function ImagesTab() {
                 <div className="self-stretch h-8 rounded-lg bg-white border border-[#ececed] flex items-center p-[4px_8px]">
                   <input
                     type="text"
-                    placeholder="Ad (məs: SPA)"
+                    placeholder={lt.namePlaceholder}
                     value={emptyRoomNames[i] || ""}
                     onChange={(e) => setEmptyRoomNames(prev => ({ ...prev, [i]: e.target.value }))}
                     className="bg-transparent outline-none w-full text-xs placeholder:text-[#717182]"
@@ -367,17 +514,17 @@ export function ImagesTab() {
             }}
             className="h-[40px] px-6 rounded-lg border border-[#ececed] bg-white text-xs font-medium text-[#101828] hover:bg-slate-50 transition-colors"
           >
-            Ləğv et
+            {lt.cancel}
           </button>
           <button
-            onClick={() => {
-              handleSaveRoomNames();
+            onClick={async () => {
+              await handleSaveRoomNames();
               setIsEditing(false);
-              toast.success("Məlumatlar uğurla yeniləndi");
+              toast.success(lt.saved);
             }}
             className="h-[40px] px-6 rounded-lg bg-[#00B4CC] text-xs font-semibold text-white hover:bg-[#009DB3] transition-colors"
           >
-            Yadda saxla
+            {lt.save}
           </button>
         </div>
       )}

@@ -18,6 +18,7 @@ import LocationPickerMap from "@/components/ui/location-picker-map";
 import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 import { useI18nStore } from "@/lib/i18n";
 import { toast } from "sonner";
+import { apiGet, apiPost } from "@/lib/api/client";
 import styles from "./info-tab.module.css";
 
 interface InfoTabProps {
@@ -146,6 +147,12 @@ export function InfoTab({ gymId }: InfoTabProps) {
   
   const locale = useI18nStore((s) => s.locale);
   const lt = LOCAL_TRANSLATIONS[locale] || LOCAL_TRANSLATIONS.AZ;
+
+  // --- Translation state (AZ/EN/RU) ---
+  const [infoLangTab, setInfoLangTab] = useState<string>("AZ");
+  const [gymNames, setGymNames] = useState<Record<string, string>>({ AZ: "", EN: "", RU: "" });
+  const [gymCatDescs, setGymCatDescs] = useState<Record<string, Record<number, string>>>({ AZ: {}, EN: {}, RU: {} });
+  const [translationsLoaded, setTranslationsLoaded] = useState(false);
 
   const [isMainDropdownOpen, setIsMainDropdownOpen] = useState(false);
   const [isSubDropdownOpen, setIsSubDropdownOpen] = useState(false);
@@ -346,8 +353,76 @@ export function InfoTab({ gymId }: InfoTabProps) {
         });
         setRoomNames(names);
       }
+
+      // Sync AZ translations
+      setGymNames(prev => ({ ...prev, AZ: gymInfo.name || "" }));
+      const azDescs: Record<number, string> = {};
+      const syncCats = [
+        ...(gymInfo.mainCategories || []),
+        ...(gymInfo.subCategories || []),
+        ...(gymInfo.categories || [])
+      ];
+      if (gymInfo.descriptions && gymInfo.descriptions.length > 0) {
+        gymInfo.descriptions.forEach((d: any) => { azDescs[d.categoryId] = d.description || ""; });
+      } else {
+        syncCats.forEach((c: any) => { azDescs[c.id] = gymInfo.description || ""; });
+      }
+      setGymCatDescs(prev => ({ ...prev, AZ: azDescs }));
     }
   }, [gymInfo]);
+
+  // Fetch translations when entering edit mode
+  useEffect(() => {
+    if (isEditing && gymId && !translationsLoaded) {
+      const fetchTranslations = async () => {
+        try {
+          // Fetch gym name translations
+          const nameRes = await apiGet<any[]>('/admin/translations', {
+            params: { entityType: 'GYM', entityId: String(gymId), fieldName: 'name' }
+          });
+          const nameList = Array.isArray(nameRes) ? nameRes : (nameRes as any)?.data || [];
+          const newNames: Record<string, string> = { ...gymNames };
+          nameList.forEach((item: any) => {
+            if (item.languageCode && item.fieldName === 'name') {
+              newNames[item.languageCode.toUpperCase()] = item.fieldValue || '';
+            }
+          });
+          setGymNames(newNames);
+
+          // Fetch gym description translations
+          const descRes = await apiGet<any[]>('/admin/translations', {
+            params: { entityType: 'GYM', entityId: String(gymId) }
+          });
+          const descList = Array.isArray(descRes) ? descRes : (descRes as any)?.data || [];
+          const newDescs: Record<string, Record<number, string>> = { ...gymCatDescs };
+          descList.forEach((item: any) => {
+            if (item.languageCode && item.fieldName) {
+              const lang = item.languageCode.toUpperCase();
+              if (lang === 'AZ') return;
+              if (!newDescs[lang]) newDescs[lang] = {};
+              if (item.fieldName === 'description') {
+                // General description (used as fallback)
+              } else if (item.fieldName.startsWith('description_')) {
+                const catId = parseInt(item.fieldName.replace('description_', ''), 10);
+                if (!isNaN(catId)) {
+                  newDescs[lang][catId] = item.fieldValue || '';
+                }
+              }
+            }
+          });
+          setGymCatDescs(newDescs);
+          setTranslationsLoaded(true);
+        } catch (e) {
+          console.error('Failed to fetch gym translations:', e);
+        }
+      };
+      fetchTranslations();
+    }
+    if (!isEditing) {
+      setTranslationsLoaded(false);
+      setInfoLangTab("AZ");
+    }
+  }, [isEditing, gymId, translationsLoaded]);
 
   useEffect(() => {
     if (allCategories.length > 0) {
@@ -513,6 +588,46 @@ export function InfoTab({ gymId }: InfoTabProps) {
     });
   };
 
+  const saveGymTranslations = async () => {
+    if (!gymId) return;
+    const payload: any[] = [];
+    // Gym name translations (EN, RU)
+    for (const lang of ["EN", "RU"]) {
+      const val = gymNames[lang];
+      if (val && val.trim()) {
+        payload.push({
+          entityType: "GYM",
+          entityId: String(gymId),
+          fieldName: "name",
+          languageCode: lang,
+          fieldValue: val.trim(),
+        });
+      }
+    }
+    // Category description translations (EN, RU)
+    for (const lang of ["EN", "RU"]) {
+      const descs = gymCatDescs[lang] || {};
+      for (const [catId, val] of Object.entries(descs)) {
+        if (val && (val as string).trim()) {
+          payload.push({
+            entityType: "GYM",
+            entityId: String(gymId),
+            fieldName: `description_${catId}`,
+            languageCode: lang,
+            fieldValue: (val as string).trim(),
+          });
+        }
+      }
+    }
+    if (payload.length > 0) {
+      try {
+        await apiPost("/admin/translations/bulk", payload);
+      } catch (e) {
+        console.error("Failed to save gym translations:", e);
+      }
+    }
+  };
+
   const handleSave = async () => {
     if (!gymId || !gymInfo) return;
     const info = gymInfo;
@@ -568,12 +683,16 @@ export function InfoTab({ gymId }: InfoTabProps) {
             altitude: (info as any).altitude || null
           }
         }, {
-          onSuccess: () => {
+          onSuccess: async () => {
+            // Save translations for gym name and category descriptions
+            await saveGymTranslations();
             setIsEditing(false);
             setShowSuccessModal(true);
           }
         });
       } else {
+        // Even if no AZ data changed, translations may have changed
+        await saveGymTranslations();
         setIsEditing(false);
         setShowSuccessModal(true);
       }
@@ -886,9 +1005,21 @@ export function InfoTab({ gymId }: InfoTabProps) {
             </div>
           </div>
 
+          {/* Language Tabs (only in edit mode) */}
+          {isEditing && (
+            <div className="w-full flex items-center border-b border-[#ececed] gap-1">
+              {["AZ", "EN", "RU"].map((lang) => (
+                <button key={lang} type="button" onClick={() => setInfoLangTab(lang)}
+                  className={`px-4 py-2 text-[13px] font-semibold transition-all border-b-2 ${
+                    infoLangTab === lang ? "border-[#00b4cc] text-[#00b4cc]" : "border-transparent text-gray-500 hover:text-gray-700"
+                  }`}>{lang}</button>
+              ))}
+            </div>
+          )}
+
           {/* Zal adı */}
           <div className="flex flex-col items-start gap-3 w-full">
-            <div className="self-stretch relative leading-[24px]">{lt.gymName}</div>
+            <div className="self-stretch relative leading-[24px]">{lt.gymName} {isEditing && infoLangTab !== "AZ" ? `(${infoLangTab})` : ""}</div>
             <div className={cn(
               "self-stretch h-[44px] rounded-lg border flex items-center p-[0px_12px] text-sm transition-colors",
               isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
@@ -896,9 +1027,16 @@ export function InfoTab({ gymId }: InfoTabProps) {
               <input 
                 type="text" 
                 name="name"
-                value={formData.name}
-                onChange={handleChange}
+                value={infoLangTab === "AZ" ? formData.name : (gymNames[infoLangTab] || "")}
+                onChange={(e) => {
+                  if (infoLangTab === "AZ") {
+                    handleChange(e);
+                  } else {
+                    setGymNames(prev => ({ ...prev, [infoLangTab]: e.target.value }));
+                  }
+                }}
                 readOnly={!isEditing}
+                placeholder={infoLangTab === "AZ" ? "" : infoLangTab === "EN" ? "English name" : "Название на русском"}
                 className="bg-transparent text-foreground outline-none w-full h-full"
               />
             </div>
@@ -906,7 +1044,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
 
           {/* Haqqında */}
           <div className="self-stretch flex flex-col items-start gap-3 w-full">
-            <div className="self-stretch relative leading-[24px]">{lt.about}</div>
+            <div className="self-stretch relative leading-[24px]">{lt.about} {isEditing && infoLangTab !== "AZ" ? `(${infoLangTab})` : ""}</div>
             
             {/* Category selection inside description if there are categories */}
             {allCategories.length > 0 && (
@@ -939,10 +1077,23 @@ export function InfoTab({ gymId }: InfoTabProps) {
               )}>
                 <textarea 
                   name="description"
-                  value={catDescriptions[activeCategoryId] || ""}
-                  onChange={(e) => setCatDescriptions(prev => ({ ...prev, [activeCategoryId!]: e.target.value }))}
+                  value={infoLangTab === "AZ" 
+                    ? (catDescriptions[activeCategoryId] || "") 
+                    : (gymCatDescs[infoLangTab]?.[activeCategoryId] || "")}
+                  onChange={(e) => {
+                    if (infoLangTab === "AZ") {
+                      setCatDescriptions(prev => ({ ...prev, [activeCategoryId!]: e.target.value }));
+                    } else {
+                      setGymCatDescs(prev => ({
+                        ...prev,
+                        [infoLangTab]: { ...prev[infoLangTab], [activeCategoryId!]: e.target.value }
+                      }));
+                    }
+                  }}
                   readOnly={!isEditing}
-                  placeholder={`${allCategories.find(c => c.id === activeCategoryId)?.name} haqqında məlumat...`}
+                  placeholder={infoLangTab === "AZ" 
+                    ? `${allCategories.find(c => c.id === activeCategoryId)?.name} haqqında məlumat...`
+                    : infoLangTab === "EN" ? "Description in English..." : "Описание на русском..."}
                   className="bg-transparent text-foreground outline-none w-full h-full min-h-[64px] resize-none"
                 />
               </div>

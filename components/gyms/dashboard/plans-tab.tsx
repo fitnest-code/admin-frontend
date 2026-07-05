@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
-import { Plus, Check, Loader2, Trash2, X } from "lucide-react";
+import { Plus, Check, Loader2, Trash2, X, Pencil } from "lucide-react";
+import { apiGet, apiPost } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 import { useGymStore } from "@/lib/store/gym-store";
 import { useSupportedServices, useCreateGymStep6, useCreateSupportedService, useDeleteSupportedService, useUpdateGymSubscriptions, useGymSubscriptionsAdmin } from "@/lib/query/gym-query";
@@ -103,6 +104,10 @@ export function PlansTab({ gym }: { gym?: any }) {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [deleteServiceId, setDeleteServiceId] = useState<number | null>(null);
   const [isCreatingService, setIsCreatingService] = useState(false);
+  const [editingServiceId, setEditingServiceId] = useState<number | null>(null);
+  const [serviceNames, setServiceNames] = useState<Record<string, string>>({ AZ: "", EN: "", RU: "" });
+  const [serviceActiveTab, setServiceActiveTab] = useState<string>("AZ");
+  const [isSavingTranslation, setIsSavingTranslation] = useState(false);
 
   // Sync state when gym data arrives
   useEffect(() => {
@@ -253,6 +258,50 @@ export function PlansTab({ gym }: { gym?: any }) {
         toast.error(err?.response?.data?.message || err?.message || t.plans.genericError);
       }
     });
+  };
+
+  const handleEditServiceTranslation = async (svc: any) => {
+    setEditingServiceId(svc.id);
+    setServiceActiveTab("AZ");
+    setServiceNames({ AZ: svc.name, EN: "", RU: "" });
+    try {
+      const res = await apiGet<any[]>('/admin/translations', {
+        params: { entityType: 'SUPPORTED_SERVICE', entityId: String(svc.id), fieldName: 'name' }
+      });
+      const list = Array.isArray(res) ? res : (res as any)?.data || [];
+      const newNames: Record<string, string> = { AZ: svc.name, EN: "", RU: "" };
+      list.forEach((item: any) => {
+        if (item.languageCode && item.fieldName === "name") {
+          newNames[item.languageCode.toUpperCase()] = item.fieldValue || "";
+        }
+      });
+      setServiceNames(newNames);
+    } catch (e) { console.error("Failed to fetch service translations:", e); }
+  };
+
+  const handleSaveServiceTranslation = async () => {
+    if (!editingServiceId) return;
+    setIsSavingTranslation(true);
+    try {
+      const payload = Object.entries(serviceNames)
+        .filter(([lang, val]) => lang !== "AZ" && val.trim() !== "")
+        .map(([lang, val]) => ({
+          entityType: "SUPPORTED_SERVICE",
+          entityId: String(editingServiceId),
+          fieldName: "name",
+          languageCode: lang,
+          fieldValue: val.trim(),
+        }));
+      if (payload.length > 0) {
+        await apiPost("/admin/translations/bulk", payload);
+      }
+      setEditingServiceId(null);
+      toast.success(locale === 'RU' ? 'Переводы сохранены' : locale === 'EN' ? 'Translations saved' : 'Tərcümələr yadda saxlanıldı');
+    } catch (e: any) {
+      toast.error(e?.message || "Error saving translations");
+    } finally {
+      setIsSavingTranslation(false);
+    }
   };
 
   const gradients: Record<Package, string> = {
@@ -411,6 +460,7 @@ export function PlansTab({ gym }: { gym?: any }) {
               )?.iconImageUrl;
 
               return (
+                <>
                 <div
                   key={svc.id}
                   onClick={() => toggleServiceSelection(svc.name)}
@@ -433,16 +483,58 @@ export function PlansTab({ gym }: { gym?: any }) {
                       {svc.name}
                     </span>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDeleteServiceId(svc.id);
-                    }}
-                    className="w-5 h-5 flex-shrink-0 flex items-center justify-center hover:scale-110 transition-transform opacity-60 hover:opacity-100"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditServiceTranslation(svc);
+                      }}
+                      className="w-5 h-5 flex-shrink-0 flex items-center justify-center hover:scale-110 transition-transform opacity-60 hover:opacity-100"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteServiceId(svc.id);
+                      }}
+                      className="w-5 h-5 flex-shrink-0 flex items-center justify-center hover:scale-110 transition-transform opacity-60 hover:opacity-100"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
+                {editingServiceId === svc.id && (
+                  <div className="col-span-full rounded-xl border border-[#ececed] bg-white p-4 flex flex-col gap-3 animate-in fade-in duration-200">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold">{svc.name} — {locale === 'RU' ? 'Перевод' : locale === 'EN' ? 'Translation' : 'Tərcümə'}</span>
+                      <button onClick={() => setEditingServiceId(null)} className="text-gray-400 hover:text-gray-600 transition-colors"><X size={16} /></button>
+                    </div>
+                    <div className="flex items-center border-b border-[#ececed] gap-1">
+                      {["AZ", "EN", "RU"].map((lang) => (
+                        <button key={lang} type="button" onClick={() => setServiceActiveTab(lang)}
+                          className={`px-4 py-2 text-[13px] font-semibold transition-all border-b-2 ${
+                            serviceActiveTab === lang ? "border-[#00b4cc] text-[#00b4cc]" : "border-transparent text-gray-500 hover:text-gray-700"
+                          }`}>{lang}</button>
+                      ))}
+                    </div>
+                    <input
+                      type="text"
+                      value={serviceNames[serviceActiveTab] || ""}
+                      onChange={(e) => setServiceNames(prev => ({ ...prev, [serviceActiveTab]: e.target.value }))}
+                      readOnly={serviceActiveTab === "AZ"}
+                      placeholder={serviceActiveTab === "AZ" ? "Əsas ad" : serviceActiveTab === "EN" ? "English name" : "Название на русском"}
+                      className={`h-[40px] rounded-lg border border-[#ececed] px-3 text-[14px] outline-none focus:border-[#00b4cc] transition-colors ${serviceActiveTab === 'AZ' ? 'bg-[#f5f5f5] text-gray-500' : 'bg-[#fafafa]'}`}
+                    />
+                    <div className="flex justify-end">
+                      <button onClick={handleSaveServiceTranslation} disabled={isSavingTranslation}
+                        className="h-[36px] px-5 rounded-lg bg-[#00B4CC] text-white text-sm font-medium hover:opacity-90 transition-all flex items-center gap-2">
+                        {isSavingTranslation ? <Loader2 className="animate-spin" size={16} /> : (locale === 'RU' ? 'Сохранить' : locale === 'EN' ? 'Save' : 'Yadda saxla')}
+                      </button>
+                    </div>
+                  </div>
+                )}
+                </>
               );
             })}
           </div>
