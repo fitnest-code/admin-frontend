@@ -150,6 +150,9 @@ const az = {
     updated: "Hədəf uğurla yeniləndi",
     deleted: "Hədəf silindi",
     codeNoSpaces: "Kodda boşluq olmamalıdır və yalnız [A-Z0-9_-] simvollarından istifadə edilməlidir",
+    uploadImage: "Şəkil Yüklə",
+    enterTitle: "Başlıq daxil edin",
+    enterSubtitle: "Yarımbaşlıq daxil edin",
   },
 
   // Validation

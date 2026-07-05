@@ -4,6 +4,8 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { X, Upload, Loader2 } from "lucide-react";
 import az, { type TranslationKeys } from "@/lib/i18n/locales/az";
+import { apiGet } from "@/lib/api/client";
+import { cn } from "@/lib/utils";
 
 export interface GoalFormData {
   code: string;
@@ -15,7 +17,7 @@ export interface GoalFormData {
 interface GoalModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (data: GoalFormData) => void;
+  onSave: (data: GoalFormData, translations?: Record<string, Record<string, string>>) => void;
   initialData?: { code: string; title: string; subtitle?: string; imageUrl?: string };
   mode?: "create" | "edit";
   t: TranslationKeys;
@@ -31,9 +33,11 @@ export default function GoalModal({
   t,
   isLoading = false,
 }: GoalModalProps) {
+  const [activeTab, setActiveTab] = useState<string>("AZ");
+  const [titles, setTitles] = useState<Record<string, string>>({ AZ: "", RU: "", EN: "" });
+  const [subtitles, setSubtitles] = useState<Record<string, string>>({ AZ: "", RU: "", EN: "" });
+  
   const [code, setCode] = useState("");
-  const [title, setTitle] = useState("");
-  const [subtitle, setSubtitle] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -42,12 +46,40 @@ export default function GoalModal({
 
   useEffect(() => {
     if (open) {
+      const azTitle = initialData?.title ?? "";
+      const azSubtitle = initialData?.subtitle ?? "";
+      
+      setTitles({ AZ: azTitle, RU: "", EN: "" });
+      setSubtitles({ AZ: azSubtitle, RU: "", EN: "" });
+      setActiveTab("AZ");
       setCode(initialData?.code ?? "");
-      setTitle(initialData?.title ?? "");
-      setSubtitle(initialData?.subtitle ?? "");
       setImagePreview(initialData?.imageUrl ?? null);
       setSelectedFile(null);
       setErrors({});
+
+      if (initialData?.code) {
+        apiGet<any>(`/translations/GoalReference/${initialData.code}`)
+          .then((res) => {
+            const list = res?.data || res;
+            if (Array.isArray(list)) {
+              const newTitles: Record<string, string> = { AZ: azTitle, RU: "", EN: "" };
+              const newSubtitles: Record<string, string> = { AZ: azSubtitle, RU: "", EN: "" };
+              list.forEach((item: any) => {
+                const lang = item.languageCode?.toUpperCase();
+                if (lang === "RU" || lang === "EN") {
+                  if (item.fieldName === "title") {
+                    newTitles[lang] = item.fieldValue || "";
+                  } else if (item.fieldName === "subtitle") {
+                    newSubtitles[lang] = item.fieldValue || "";
+                  }
+                }
+              });
+              setTitles(newTitles);
+              setSubtitles(newSubtitles);
+            }
+          })
+          .catch((err) => console.warn("Failed to load goal translations", err));
+      }
     }
   }, [open, initialData]);
 
@@ -71,7 +103,7 @@ export default function GoalModal({
   const handleSave = () => {
     const newErrors: { [key: string]: string } = {};
 
-    if (!title.trim()) {
+    if (!titles.AZ.trim()) {
       newErrors.title = t.validation.required;
     }
 
@@ -82,7 +114,7 @@ export default function GoalModal({
 
     let finalCode = code;
     if (mode === "create") {
-      finalCode = title.trim().toUpperCase()
+      finalCode = titles.AZ.trim().toUpperCase()
           .replace(/Ə/g, 'E').replace(/Ö/g, 'O').replace(/Ü/g, 'U')
           .replace(/Ş/g, 'S').replace(/Ç/g, 'C').replace(/Ğ/g, 'G')
           .replace(/İ/g, 'I').replace(/I/g, 'I')
@@ -92,12 +124,23 @@ export default function GoalModal({
       if (!finalCode) finalCode = "GOAL_" + Date.now();
     }
 
+    const translationsPayload = {
+      EN: {
+        title: titles.EN.trim(),
+        subtitle: subtitles.EN.trim(),
+      },
+      RU: {
+        title: titles.RU.trim(),
+        subtitle: subtitles.RU.trim(),
+      }
+    };
+
     onSave({
       code: finalCode,
-      title: title.trim(),
-      subtitle: subtitle.trim(),
+      title: titles.AZ.trim(),
+      subtitle: subtitles.AZ.trim(),
       image: selectedFile,
-    });
+    }, translationsPayload);
   };
 
   if (!open) return null;
@@ -106,7 +149,7 @@ export default function GoalModal({
     <div className="fixed inset-0 z-[60] flex items-center justify-center font-sans p-4 sm:py-10">
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => onOpenChange(false)} />
       
-      <div className="relative z-10 w-full max-w-[500px] max-h-[90vh] overflow-y-auto rounded-2xl bg-white border border-[#ececed] flex flex-col items-center justify-center p-4 sm:p-6 gap-5 shadow-2xl">
+      <div className="relative z-10 w-full max-w-[500px] max-h-[90vh] overflow-y-auto rounded-2xl bg-white border border-[#ececed] flex flex-col items-center justify-center p-4 sm:p-6 gap-4 shadow-2xl">
         
         {/* Header */}
         <div className="w-full flex items-center justify-between gap-5 text-[#101828] border-b border-[#ececed] pb-2.5">
@@ -116,6 +159,25 @@ export default function GoalModal({
           <button onClick={() => onOpenChange(false)} className="w-6 h-6 text-[#101828] hover:text-gray-600 transition-colors flex items-center justify-center">
             <X size={18} />
           </button>
+        </div>
+
+        {/* Language Tabs */}
+        <div className="w-full flex border-b border-[#ececed] gap-2">
+          {["AZ", "RU", "EN"].map((lang) => (
+            <button
+              key={lang}
+              type="button"
+              onClick={() => setActiveTab(lang)}
+              className={cn(
+                "h-[36px] px-4 text-[13px] font-semibold transition-all border-b-2 outline-none",
+                activeTab === lang
+                  ? "border-[#00b4cc] text-[#00b4cc]"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              )}
+            >
+              {lang}
+            </button>
+          ))}
         </div>
 
         {/* Content */}
@@ -138,7 +200,9 @@ export default function GoalModal({
                 ) : (
                   <div className="flex flex-col items-center gap-2">
                     <Upload className="w-8 h-8 text-gray-400" />
-                    <span className="text-[12px] sm:text-[13px] font-medium leading-[20px] tracking-[-0.15px] text-[#101828]">Şəkil Yüklə</span>
+                    <span className="text-[12px] sm:text-[13px] font-medium leading-[20px] tracking-[-0.15px] text-[#101828]">
+                      {t.goals.uploadImage || "Şəkil Yüklə"}
+                    </span>
                   </div>
                 )}
               </div>
@@ -146,37 +210,37 @@ export default function GoalModal({
             </div>
           </div>
 
-
-
           {/* Title */}
           <div className="w-full flex flex-col items-start gap-2">
             <label className="text-[12px] sm:text-[13px] leading-[20px] font-medium text-black/60">
-              {t.goals.goalTitle}
+              {t.goals.goalTitle} ({activeTab})
             </label>
             <input
               type="text"
-              value={title}
+              value={titles[activeTab] || ""}
               onChange={(e) => {
-                setTitle(e.target.value);
-                setErrors((prev) => ({ ...prev, title: "" }));
+                setTitles(prev => ({ ...prev, [activeTab]: e.target.value }));
+                if (activeTab === "AZ") {
+                  setErrors((prev) => ({ ...prev, title: "" }));
+                }
               }}
-              placeholder="Başlıq daxil edin"
+              placeholder={t.goals.enterTitle || "Başlıq daxil edin"}
               className={`w-full h-[40px] rounded-lg bg-[#fafafa] border px-3 text-[13px] sm:text-[14px] font-medium outline-none focus:border-[#00b4cc] transition-colors ${
-                errors.title ? "border-red-500" : "border-[#ececed]"
+                errors.title && activeTab === "AZ" ? "border-red-500" : "border-[#ececed]"
               }`}
             />
-            {errors.title && <p className="text-[11px] text-red-500 mt-[-4px]">{errors.title}</p>}
+            {errors.title && activeTab === "AZ" && <p className="text-[11px] text-red-500 mt-[-4px]">{errors.title}</p>}
           </div>
 
           {/* Subtitle */}
           <div className="w-full flex flex-col items-start gap-2">
             <label className="text-[12px] sm:text-[13px] leading-[20px] font-medium text-black/60">
-              {t.goals.goalSubtitle}
+              {t.goals.goalSubtitle} ({activeTab})
             </label>
             <textarea
-              value={subtitle}
-              onChange={(e) => setSubtitle(e.target.value)}
-              placeholder="Yarımbaşlıq daxil edin"
+              value={subtitles[activeTab] || ""}
+              onChange={(e) => setSubtitles(prev => ({ ...prev, [activeTab]: e.target.value }))}
+              placeholder={t.goals.enterSubtitle || "Yarımbaşlıq daxil edin"}
               className="w-full h-[80px] rounded-lg bg-[#fafafa] border border-[#ececed] p-3 text-[13px] sm:text-[14px] font-medium outline-none focus:border-[#00b4cc] transition-colors resize-none"
             />
           </div>

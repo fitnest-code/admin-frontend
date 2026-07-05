@@ -146,6 +146,9 @@ const en: TranslationKeys = {
     updated: "Goal updated successfully",
     deleted: "Goal deleted",
     codeNoSpaces: "Code must not contain spaces and only [A-Z0-9_-] characters",
+    uploadImage: "Upload Image",
+    enterTitle: "Enter title",
+    enterSubtitle: "Enter subtitle",
   },
 
   validation: {

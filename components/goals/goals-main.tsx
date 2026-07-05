@@ -13,7 +13,7 @@ import { useI18nStore, useT } from "@/lib/i18n";
 export default function GoalsMain() {
   const t = useT();
   const selectedLang = useI18nStore((s) => s.locale);
-  const { goals, isLoading, createGoal, updateGoal, deleteGoal } = useGoals(selectedLang);
+  const { goals, isLoading, createGoal, updateGoal, deleteGoal, updateTranslations } = useGoals(selectedLang);
   const [search, setSearch] = useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -34,7 +34,7 @@ export default function GoalsMain() {
       g.code.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleSave = async (data: GoalFormData) => {
+  const handleSave = async (data: GoalFormData, translations?: Record<string, Record<string, string>>) => {
     try {
       if (modalMode === "create") {
         await createGoal.mutateAsync({
@@ -43,6 +43,54 @@ export default function GoalsMain() {
           subtitle: data.subtitle,
           image: data.image,
         });
+        
+        if (translations) {
+          const translationPayload: any[] = [];
+          if (translations.EN) {
+            if (translations.EN.title) {
+              translationPayload.push({
+                entityType: "GoalReference",
+                entityId: data.code,
+                fieldName: "title",
+                languageCode: "EN",
+                fieldValue: translations.EN.title,
+              });
+            }
+            if (translations.EN.subtitle) {
+              translationPayload.push({
+                entityType: "GoalReference",
+                entityId: data.code,
+                fieldName: "subtitle",
+                languageCode: "EN",
+                fieldValue: translations.EN.subtitle,
+              });
+            }
+          }
+          if (translations.RU) {
+            if (translations.RU.title) {
+              translationPayload.push({
+                entityType: "GoalReference",
+                entityId: data.code,
+                fieldName: "title",
+                languageCode: "RU",
+                fieldValue: translations.RU.title,
+              });
+            }
+            if (translations.RU.subtitle) {
+              translationPayload.push({
+                entityType: "GoalReference",
+                entityId: data.code,
+                fieldName: "subtitle",
+                languageCode: "RU",
+                fieldValue: translations.RU.subtitle,
+              });
+            }
+          }
+          if (translationPayload.length > 0) {
+            await updateTranslations.mutateAsync(translationPayload);
+          }
+        }
+
         setToastModal({ open: true, message: t.goals.added, type: "success" });
       } else {
         await updateGoal.mutateAsync({
@@ -51,6 +99,54 @@ export default function GoalsMain() {
           subtitle: data.subtitle,
           image: data.image,
         });
+
+        if (translations) {
+          const translationPayload: any[] = [];
+          if (translations.EN) {
+            if (translations.EN.title) {
+              translationPayload.push({
+                entityType: "GoalReference",
+                entityId: data.code,
+                fieldName: "title",
+                languageCode: "EN",
+                fieldValue: translations.EN.title,
+              });
+            }
+            if (translations.EN.subtitle) {
+              translationPayload.push({
+                entityType: "GoalReference",
+                entityId: data.code,
+                fieldName: "subtitle",
+                languageCode: "EN",
+                fieldValue: translations.EN.subtitle,
+              });
+            }
+          }
+          if (translations.RU) {
+            if (translations.RU.title) {
+              translationPayload.push({
+                entityType: "GoalReference",
+                entityId: data.code,
+                fieldName: "title",
+                languageCode: "RU",
+                fieldValue: translations.RU.title,
+              });
+            }
+            if (translations.RU.subtitle) {
+              translationPayload.push({
+                entityType: "GoalReference",
+                entityId: data.code,
+                fieldName: "subtitle",
+                languageCode: "RU",
+                fieldValue: translations.RU.subtitle,
+              });
+            }
+          }
+          if (translationPayload.length > 0) {
+            await updateTranslations.mutateAsync(translationPayload);
+          }
+        }
+
         setToastModal({ open: true, message: t.goals.updated, type: "success" });
       }
       setIsModalOpen(false);

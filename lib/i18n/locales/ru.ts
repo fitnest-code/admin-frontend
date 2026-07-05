@@ -146,6 +146,9 @@ const ru: TranslationKeys = {
     updated: "Цель успешно обновлена",
     deleted: "Цель удалена",
     codeNoSpaces: "Код не должен содержать пробелов и только символы [A-Z0-9_-]",
+    uploadImage: "Загрузить фото",
+    enterTitle: "Введите заголовок",
+    enterSubtitle: "Введите подзаголовок",
   },
 
   validation: {

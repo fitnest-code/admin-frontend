@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "../api/client";
+import { apiRequest, apiPost } from "../api/client";
 
 export interface IGoal {
   code: string;
@@ -85,6 +85,15 @@ export const useGoals = (lang: string = "AZ") => {
     },
   });
 
+  const updateTranslations = useMutation({
+    mutationFn: async (payload: any[]) => {
+      return apiPost<any[]>("/translations/bulk", payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["goals"] });
+    },
+  });
+
   return {
     goals,
     isLoading,
@@ -92,5 +101,6 @@ export const useGoals = (lang: string = "AZ") => {
     createGoal,
     updateGoal,
     deleteGoal,
+    updateTranslations,
   };
 };
