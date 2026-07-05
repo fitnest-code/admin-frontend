@@ -87,6 +87,18 @@ export default function CategoryModal({
       }
 
       if (mode === "edit" && initialData?.id) {
+        apiGet<any>('/categories', {
+          headers: { "Accept-Language": "AZ" }
+        }).then((res) => {
+          const items = Array.isArray(res) 
+            ? res 
+            : (res?.content || res?.data || res?.items || []);
+          const match = items.find((c: any) => c.id === initialData.id);
+          if (match?.name) {
+            setNames((prev) => ({ ...prev, AZ: match.name }));
+          }
+        }).catch((err) => console.error("Error fetching categories in AZ:", err));
+
         apiGet<any[]>(`/admin/translations`, {
           params: {
             entityType: "CATEGORY",
@@ -107,7 +119,11 @@ export default function CategoryModal({
                 newNames[item.languageCode.toUpperCase()] = item.fieldValue || "";
               }
             });
-            setNames(prev => ({ ...prev, ...newNames }));
+            setNames(prev => ({ 
+              ...prev, 
+              ...newNames,
+              AZ: prev.AZ !== azName ? prev.AZ : newNames.AZ 
+            }));
           }
         })
         .catch(err => console.error("Error fetching translations:", err));
