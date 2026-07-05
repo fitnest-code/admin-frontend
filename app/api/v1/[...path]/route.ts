@@ -11,6 +11,25 @@ function buildTargetPath(pathParts: string[]) {
   return `/api/v1/${clean}`
 }
 
+function getFilenameWithExtension(name: string, type: string, key: string): string {
+  if (key === 'data' || type === 'application/json') {
+    return 'data.json';
+  }
+  if (name && name !== 'blob') {
+    return name;
+  }
+  if (type) {
+    const cleanType = type.toLowerCase();
+    if (cleanType.includes('json')) return 'data.json';
+    if (cleanType.includes('png')) return 'image.png';
+    if (cleanType.includes('jpeg') || cleanType.includes('jpg')) return 'image.jpg';
+    if (cleanType.includes('gif')) return 'image.gif';
+    if (cleanType.includes('webp')) return 'image.webp';
+    if (cleanType.includes('svg')) return 'image.svg';
+  }
+  return 'upload.bin';
+}
+
 function pickForwardHeaders(
   request: NextRequest,
   options?: { omitContentType?: boolean },
@@ -128,7 +147,8 @@ async function forward(request: NextRequest, context: RouteContext) {
       const outgoing = new FormData()
       for (const [key, value] of incoming.entries()) {
         if (value instanceof File) {
-          outgoing.append(key, value, value.name || 'upload.bin')
+          const filename = getFilenameWithExtension(value.name, value.type, key)
+          outgoing.append(key, value, filename)
         } else {
           outgoing.append(key, value as string)
         }
