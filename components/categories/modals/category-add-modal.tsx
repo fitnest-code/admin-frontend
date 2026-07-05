@@ -6,6 +6,7 @@ import { X, Plus, Loader2, Pencil, Check } from "lucide-react";
 import { useLessonTypes } from "@/lib/query/use-lesson-types";
 import { apiGet, apiPost, apiRequest } from "@/lib/api/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useT } from "@/lib/i18n";
 
 export interface CategoryFormData {
   name: string;
@@ -30,6 +31,7 @@ export default function CategoryModal({
   initialData,
   mode = "create",
 }: CategoryModalProps) {
+  const t = useT();
   const [languages, setLanguages] = useState<string[]>(["AZ", "RU", "EN"]);
   const [activeTab, setActiveTab] = useState<string>("AZ");
   const [names, setNames] = useState<Record<string, string>>({ AZ: "", EN: "", RU: "" });
@@ -297,7 +299,7 @@ export default function CategoryModal({
         {/* Header */}
         <div className="w-full flex items-center justify-between gap-5 text-[#101828] border-b border-[#ececed] pb-2.5">
           <h2 className="text-[16px] sm:text-[18px] font-semibold leading-tight">
-            {mode === "create" ? "Yeni kateqoriya əlavə et" : "Kateqoriyanı redaktə et"}
+            {mode === "create" ? t.categories.createHeader : t.categories.editHeader}
           </h2>
           <button onClick={() => onOpenChange(false)} className="w-6 h-6 text-[#101828] hover:text-gray-600 transition-colors flex items-center justify-center">
             <X size={18} />
@@ -309,7 +311,7 @@ export default function CategoryModal({
           
           {/* Kateqoriya şəkli */}
           <div className="w-full flex flex-col items-start gap-2">
-            <label className="text-[12px] sm:text-[13px] leading-[20px] font-medium text-black/60">Kateqoriya şəkli</label>
+            <label className="text-[12px] sm:text-[13px] leading-[20px] font-medium text-black/60">{t.categories.photoLabel}</label>
             <div className="w-full flex flex-col items-start gap-2 text-center text-[13px] text-[#4a5565] font-inter">
               <div 
                 onClick={() => fileInputRef.current?.click()}
@@ -352,7 +354,7 @@ export default function CategoryModal({
           {/* Kateqoriya adı */}
           <div className="w-full flex flex-col items-start gap-2">
             <label className="text-[12px] sm:text-[13px] leading-[20px] font-medium text-black/60">
-              Kateqoriya adı ({activeTab})
+              {t.categories.nameLabel} ({activeTab})
             </label>
             <input
               type="text"
@@ -367,7 +369,7 @@ export default function CategoryModal({
 
           {/* Kateqoriya Icon */}
           <div className="w-full flex flex-col items-start gap-2">
-            <label className="text-[12px] sm:text-[13px] leading-[20px] font-medium text-black/60">Kateqoriya Icon</label>
+            <label className="text-[12px] sm:text-[13px] leading-[20px] font-medium text-black/60">{t.categories.iconLabel}</label>
             <div className="w-full flex flex-col items-start gap-2 text-center text-[13px] text-[#4a5565] font-inter">
               <div 
                 onClick={() => iconInputRef.current?.click()}
@@ -395,14 +397,14 @@ export default function CategoryModal({
           <div className="w-full rounded-xl bg-white border border-[#ececed] flex flex-col items-start p-3 sm:p-5 gap-4 text-[13px]">
             {/* Header */}
             <div className="w-full border-b border-[#ececed] pb-2 flex items-center justify-between text-[14px] sm:text-[16px] font-semibold text-[#000] gap-2">
-              <span className="leading-tight">Növ ({selectedLessonTypeIds.size}/{lessonTypes?.length || 0})</span>
+              <span className="leading-tight">{t.categories.lessonTypesLabel} ({selectedLessonTypeIds.size}/{lessonTypes?.length || 0})</span>
               {!isAddingLessonType && (
                 <button
                   type="button"
                   onClick={() => setIsAddingLessonType(true)}
                   className="h-[32px] rounded-lg bg-[#00b4cc] flex items-center justify-center px-3 gap-1.5 text-[12px] sm:text-[13px] text-[#fafafa] font-medium hover:bg-[#00a4bd] transition-colors shrink-0"
                 >
-                  <span className="leading-none">Növ əlavə et</span>
+                  <span className="leading-none">{t.categories.addLessonTypeBtn}</span>
                   <Plus size={14} className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
               )}
@@ -412,7 +414,7 @@ export default function CategoryModal({
             {isAddingLessonType && (
               <div className="w-full rounded-xl bg-white border border-[#ececed] flex flex-col items-end p-3 sm:p-5 gap-4 shadow-sm animate-in fade-in duration-200">
                 <div className="w-full border-b border-[#ececed] pb-2 flex items-center justify-between text-[14px] sm:text-[16px] font-semibold text-[#000]">
-                  <span className="leading-tight">Növ əlavə et</span>
+                  <span className="leading-tight">{t.categories.addLessonTypeBtn}</span>
                   <button
                     type="button"
                     onClick={() => { setIsAddingLessonType(false); setNewLessonTypeName(""); }}
@@ -423,7 +425,7 @@ export default function CategoryModal({
                 </div>
 
                 <div className="w-full flex flex-col items-start gap-2">
-                  <label className="text-[12px] sm:text-[13px] text-[#000] leading-tight font-medium">Növ adı</label>
+                  <label className="text-[12px] sm:text-[13px] text-[#000] leading-tight font-medium">{t.categories.lessonTypesLabel} {t.common.name.toLowerCase()}</label>
                   <div className="w-full h-[40px] rounded-lg bg-[#fafafa] border border-[#ececed] flex items-center justify-between px-3 gap-3 text-[13px] sm:text-[14px] focus-within:border-[#00b4cc] transition-colors">
                     <input
                       type="text"
@@ -453,7 +455,7 @@ export default function CategoryModal({
                   {isSubmittingLessonType ? (
                     <Loader2 className="animate-spin" size={16} />
                   ) : (
-                    <span className="leading-none">Əlavə et</span>
+                    <span className="leading-none">{t.common.add}</span>
                   )}
                 </button>
               </div>
@@ -564,7 +566,7 @@ export default function CategoryModal({
           disabled={!names.AZ.trim()}
           className="w-full max-w-[280px] h-[48px] rounded-xl bg-[#00b4cc] text-white flex items-center justify-center px-4 py-2 font-medium text-[14px] disabled:opacity-50 hover:bg-[#00a4bd] transition-all shadow-md shadow-cyan-50"
         >
-          Yadda saxla
+          {t.common.save}
         </button>
 
       </div>

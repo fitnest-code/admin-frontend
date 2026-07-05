@@ -65,6 +65,13 @@ const az = {
     deleted: "Kateqoriya uğurla silindi!",
     saveFailed: "Yadda saxlamaq mümkün olmadı",
     deleteError: "Kateqoriya istifadə olunur və silinə bilməz",
+    editHeader: "Kateqoriyanı redaktə et",
+    createHeader: "Kateqoriya əlavə et",
+    photoLabel: "Kateqoriya şəkli",
+    iconLabel: "Kateqoriya İkonu",
+    nameLabel: "Kateqoriya adı",
+    lessonTypesLabel: "Növ",
+    addLessonTypeBtn: "Növ əlavə et",
   },
 
   // Gyms

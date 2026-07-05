@@ -64,6 +64,13 @@ const en: TranslationKeys = {
     deleted: "Category deleted successfully!",
     saveFailed: "Failed to save",
     deleteError: "Category is in use and cannot be deleted",
+    editHeader: "Edit Category",
+    createHeader: "Add Category",
+    photoLabel: "Category Photo",
+    iconLabel: "Category Icon",
+    nameLabel: "Category Name",
+    lessonTypesLabel: "Types",
+    addLessonTypeBtn: "Add Type",
   },
 
   gyms: {

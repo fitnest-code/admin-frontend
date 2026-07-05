@@ -64,6 +64,13 @@ const ru: TranslationKeys = {
     deleted: "Категория успешно удалена!",
     saveFailed: "Не удалось сохранить",
     deleteError: "Категория используется и не может быть удалена",
+    editHeader: "Редактировать категорию",
+    createHeader: "Добавить категорию",
+    photoLabel: "Фото категории",
+    iconLabel: "Иконка категории",
+    nameLabel: "Название категории",
+    lessonTypesLabel: "Вид",
+    addLessonTypeBtn: "Добавить вид",
   },
 
   gyms: {
