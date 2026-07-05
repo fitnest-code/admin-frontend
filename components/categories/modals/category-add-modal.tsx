@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
-import { X, Plus, Loader2, Pencil } from "lucide-react";
+import { X, Plus, Loader2, Pencil, Check } from "lucide-react";
 import { useLessonTypes } from "@/lib/query/use-lesson-types";
 import { apiGet, apiPost, apiRequest } from "@/lib/api/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -35,9 +35,8 @@ export default function CategoryModal({
   const [names, setNames] = useState<Record<string, string>>({ AZ: "", EN: "", RU: "" });
 
   const queryClient = useQueryClient();
-  const [editingLessonType, setEditingLessonType] = useState<any | null>(null);
-  const [editLessonTypeLang, setEditLessonTypeLang] = useState<string>("AZ");
-  const [editLessonTypeNames, setEditLessonTypeNames] = useState<Record<string, string>>({ AZ: "", EN: "", RU: "" });
+  const [editingLtId, setEditingLtId] = useState<number | null>(null);
+  const [editingLtValue, setEditingLtValue] = useState<string>("");
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -189,47 +188,41 @@ export default function CategoryModal({
   };
 
   const handleStartEditLessonType = async (lt: any) => {
-    setEditingLessonType(lt);
-    setEditLessonTypeLang("AZ");
-    setEditLessonTypeNames({ AZ: lt.name || "", EN: "", RU: "" });
+    setEditingLtId(lt.id);
+    setEditingLtValue(lt.name || "");
     setIsSubmittingLessonType(true);
 
     try {
-      let azName = lt.name;
-      try {
-        const ltDetails = await apiGet<any>(`/admin/lesson-types/${lt.id}`);
-        if (ltDetails?.name) azName = ltDetails.name;
-      } catch (e) {
-        console.warn("Failed to fetch lesson type details:", e);
-      }
-
-      let transList: any[] = [];
-      try {
-        const list = await apiGet<any[]>(`/admin/translations`, {
-          params: {
-            entityType: "LessonType",
-            entityId: String(lt.id),
-            fieldName: "name"
+      if (activeTab === "AZ") {
+        try {
+          const ltDetails = await apiGet<any>(`/admin/lesson-types/${lt.id}`);
+          if (ltDetails?.name) {
+            setEditingLtValue(ltDetails.name);
           }
-        });
-        transList = Array.isArray(list) ? list : (list as any)?.data || [];
-      } catch (e) {
-        console.warn("Failed to fetch translations:", e);
-      }
-
-      const newNames: Record<string, string> = {
-        AZ: azName,
-        EN: "",
-        RU: ""
-      };
-
-      transList.forEach((item: any) => {
-        if (item.languageCode && item.fieldName === "name") {
-          newNames[item.languageCode.toUpperCase()] = item.fieldValue || "";
+        } catch (e) {
+          console.warn("Failed to fetch lesson type details:", e);
         }
-      });
-
-      setEditLessonTypeNames(newNames);
+      } else {
+        try {
+          const list = await apiGet<any[]>(`/admin/translations`, {
+            params: {
+              entityType: "LessonType",
+              entityId: String(lt.id),
+              fieldName: "name",
+              languageCode: activeTab
+            }
+          });
+          const transList = Array.isArray(list) ? list : (list as any)?.data || [];
+          const item = transList.find((t: any) => t.languageCode?.toUpperCase() === activeTab && t.fieldName === "name");
+          if (item?.fieldValue) {
+            setEditingLtValue(item.fieldValue);
+          } else {
+            setEditingLtValue("");
+          }
+        } catch (e) {
+          console.warn("Failed to fetch translations:", e);
+        }
+      }
     } catch (err) {
       console.error("Failed to load lesson type for editing:", err);
     } finally {
@@ -237,37 +230,42 @@ export default function CategoryModal({
     }
   };
 
-  const handleEditLessonTypeSubmit = async () => {
-    if (!editingLessonType || !editLessonTypeNames.AZ.trim() || isSubmittingLessonType) return;
+  const handleConfirmEditLessonType = async (lt: any) => {
+    const trimmed = editingLtValue.trim();
+    if (!trimmed || isSubmittingLessonType) return;
     setIsSubmittingLessonType(true);
 
     try {
-      await apiRequest(`/admin/lesson-types/${editingLessonType.id}`, {
-        method: "PUT",
-        body: { name: editLessonTypeNames.AZ.trim() }
-      });
-
-      const translationPayload = Object.entries(editLessonTypeNames)
-        .filter(([lang, val]) => lang !== "AZ" && val.trim() !== "")
-        .map(([lang, val]) => ({
-          entityType: "LessonType",
-          entityId: String(editingLessonType.id),
-          fieldName: "name",
-          languageCode: lang,
-          fieldValue: val.trim()
-        }));
-
-      if (translationPayload.length > 0) {
-        await apiPost("/admin/translations/bulk", translationPayload);
+      if (activeTab === "AZ") {
+        await apiRequest(`/admin/lesson-types/${lt.id}`, {
+          method: "PUT",
+          body: { name: trimmed }
+        });
+      } else {
+        await apiRequest(`/admin/translations`, {
+          method: "PUT",
+          body: {
+            entityType: "LessonType",
+            entityId: String(lt.id),
+            fieldName: "name",
+            languageCode: activeTab,
+            fieldValue: trimmed
+          }
+        });
       }
-
-      setEditingLessonType(null);
+      setEditingLtId(null);
+      setEditingLtValue("");
       queryClient.invalidateQueries({ queryKey: ["lesson-types"] });
     } catch (err) {
-      console.error("Failed to update lesson type translations:", err);
+      console.error("Failed to update lesson type name/translation:", err);
     } finally {
       setIsSubmittingLessonType(false);
     }
+  };
+
+  const handleCancelEditLessonType = () => {
+    setEditingLtId(null);
+    setEditingLtValue("");
   };
 
   if (!open) return null;
@@ -443,81 +441,63 @@ export default function CategoryModal({
               </div>
             )}
 
-            {/* Edit Form Box */}
-            {editingLessonType && (
-              <div className="w-full rounded-xl bg-white border border-[#ececed] flex flex-col items-end p-3 sm:p-5 gap-4 shadow-sm animate-in fade-in duration-200">
-                <div className="w-full border-b border-[#ececed] pb-2 flex items-center justify-between text-[14px] sm:text-[16px] font-semibold text-[#000]">
-                  <span className="leading-tight">Növü redaktə et</span>
-                  <button
-                    type="button"
-                    onClick={() => { setEditingLessonType(null); }}
-                    className="text-gray-400 hover:text-gray-600 transition-colors p-1"
-                  >
-                    <X size={16} className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* Language tabs for LessonType editing */}
-                <div className="w-full flex items-center border-b border-[#ececed] gap-1 mb-1">
-                  {languages.map((lang) => (
-                    <button
-                      key={lang}
-                      type="button"
-                      onClick={() => setEditLessonTypeLang(lang)}
-                      className={`px-3 py-1.5 text-[11px] font-semibold transition-all border-b-2 ${
-                        editLessonTypeLang === lang
-                          ? "border-[#00b4cc] text-[#00b4cc]"
-                          : "border-transparent text-gray-500 hover:text-gray-700"
-                      }`}
-                    >
-                      {lang}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="w-full flex flex-col items-start gap-2">
-                  <label className="text-[12px] sm:text-[13px] text-[#000] leading-tight font-medium">
-                    Növ adı ({editLessonTypeLang})
-                  </label>
-                  <div className="w-full h-[40px] rounded-lg bg-[#fafafa] border border-[#ececed] flex items-center justify-between px-3 gap-3 text-[13px] sm:text-[14px] focus-within:border-[#00b4cc] transition-colors">
-                    <input
-                      type="text"
-                      value={editLessonTypeNames[editLessonTypeLang] || ""}
-                      onChange={(e) => setEditLessonTypeNames((prev) => ({ ...prev, [editLessonTypeLang]: e.target.value }))}
-                      onKeyDown={(e) => e.key === "Enter" && handleEditLessonTypeSubmit()}
-                      placeholder={editLessonTypeLang === "AZ" ? "Məs: Pilates" : editLessonTypeLang === "EN" ? "E.g., Pilates" : "Например: Пилатес"}
-                      autoFocus
-                      className="w-full h-full bg-transparent outline-none text-[#000] text-[13px] sm:text-[14px]"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setEditLessonTypeNames((prev) => ({ ...prev, [editLessonTypeLang]: "" }))}
-                      className="w-5 h-5 rounded-[4px] bg-[#ececed] flex items-center justify-center text-[#000] hover:bg-gray-200 transition-colors shrink-0"
-                    >
-                      <X size={10} className="w-2.5 h-2.5" />
-                    </button>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleEditLessonTypeSubmit}
-                  disabled={!editLessonTypeNames.AZ.trim() || isSubmittingLessonType}
-                  className="w-full sm:w-[120px] h-[36px] rounded-lg bg-[#00b4cc] flex items-center justify-center text-[#fafafa] font-medium text-[13px] hover:bg-[#00a4bd] disabled:opacity-50 transition-colors gap-2"
-                >
-                  {isSubmittingLessonType ? (
-                    <Loader2 className="animate-spin" size={16} />
-                  ) : (
-                    <span className="leading-none">Yenilə</span>
-                  )}
-                </button>
-              </div>
-            )}
-
             {/* List of Items Grid */}
             <div className="w-full flex flex-wrap items-center gap-2 pt-1 max-h-[160px] overflow-y-auto pr-1">
               {lessonTypes?.map((lt) => {
                 const isSelected = selectedLessonTypeIds.has(lt.id);
+                const isEditing = editingLtId === lt.id;
+
+                if (isEditing) {
+                  return (
+                    <div
+                      key={lt.id}
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex-[1_1_calc(100%-4px)] sm:flex-none min-w-[160px] sm:min-w-[200px] h-[36px] rounded-lg flex items-center justify-between px-2 gap-1.5 bg-[#fafafa] border border-[#00b4cc]"
+                    >
+                      <input
+                        type="text"
+                        value={editingLtValue}
+                        onChange={(e) => setEditingLtValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.stopPropagation();
+                            handleConfirmEditLessonType(lt);
+                          } else if (e.key === "Escape") {
+                            e.stopPropagation();
+                            handleCancelEditLessonType();
+                          }
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        autoFocus
+                        className="w-full h-full bg-transparent outline-none text-[#101828] text-[12px] sm:text-[13px] font-medium"
+                      />
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleConfirmEditLessonType(lt);
+                          }}
+                          disabled={!editingLtValue.trim() || isSubmittingLessonType}
+                          className="p-1 text-green-600 hover:text-green-800 disabled:opacity-50 transition-colors flex items-center justify-center"
+                        >
+                          <Check size={14} className="stroke-[3]" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCancelEditLessonType();
+                          }}
+                          className="p-1 text-gray-400 hover:text-gray-600 transition-colors flex items-center justify-center"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
+
                 return (
                   <div
                     key={lt.id}
