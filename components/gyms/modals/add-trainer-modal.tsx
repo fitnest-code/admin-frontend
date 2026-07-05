@@ -13,6 +13,7 @@ import { useLessonTypes } from "@/lib/query/use-lesson-types";
 import { useGymStore } from "@/lib/store/gym-store";
 import { useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
+import { ImageCropper } from "@/components/ui/image-cropper";
 import { cn } from "@/lib/utils";
 import { createPortal } from "react-dom";
 
@@ -42,6 +43,7 @@ export function AddTrainerModal({ onClose, isDashboard = false, gymId }: { onClo
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [cropperSrc, setCropperSrc] = useState<string | null>(null);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<Set<number>>(new Set());
   const [selectedLessonTypeIds, setSelectedLessonTypeIds] = useState<Set<number>>(new Set());
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
@@ -191,9 +193,9 @@ export function AddTrainerModal({ onClose, isDashboard = false, gymId }: { onClo
       return;
     }
 
-    setSelectedFile(file);
     const objectUrl = URL.createObjectURL(file);
-    setPreview(objectUrl);
+    setCropperSrc(objectUrl);
+    e.target.value = "";
   };
 
   const handleSave = (e: React.FormEvent) => {
@@ -265,7 +267,9 @@ export function AddTrainerModal({ onClose, isDashboard = false, gymId }: { onClo
                   className="w-full h-[200px] md:h-[240px] bg-[#fafafa] border-2 border-dashed border-[#ececed] rounded-xl relative cursor-pointer flex items-center justify-center overflow-hidden hover:border-[#00B4CC] transition-all group"
                 >
                   {preview ? (
-                    <img src={preview} className="w-full h-full object-cover" alt="Trainer" />
+                    <div className="w-[140px] h-[140px] rounded-full overflow-hidden relative shadow-md bg-white border border-[#ececed]">
+                      <img src={preview} className="w-full h-full object-cover" alt="Trainer" />
+                    </div>
                   ) : (
                     <div className="text-[#6a7282] font-medium flex flex-col items-center gap-2 transition-transform group-hover:scale-105">
                       <Image src="/upload.svg" width={28} height={28} alt="Upload" className="opacity-60" />
@@ -467,6 +471,17 @@ export function AddTrainerModal({ onClose, isDashboard = false, gymId }: { onClo
           </div>
         </form>
       </div>
+      {cropperSrc && (
+        <ImageCropper
+          imageSrc={cropperSrc}
+          onCrop={(croppedFile) => {
+            setSelectedFile(croppedFile);
+            setPreview(URL.createObjectURL(croppedFile));
+            setCropperSrc(null);
+          }}
+          onCancel={() => setCropperSrc(null)}
+        />
+      )}
     </div>,
     document.body
   );

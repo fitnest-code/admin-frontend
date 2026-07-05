@@ -11,6 +11,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { createPortal } from "react-dom";
+import { ImageCropper } from "@/components/ui/image-cropper";
 
 interface EditTrainerModalProps {
   onClose: () => void;
@@ -89,6 +90,7 @@ export function EditTrainerModal({ onClose, trainer, index, isDashboard = false 
   
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [cropperSrc, setCropperSrc] = useState<string | null>(null);
 
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -224,9 +226,22 @@ export function EditTrainerModal({ onClose, trainer, index, isDashboard = false 
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setSelectedFile(file);
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Yalnız JPG, PNG və WEBP formatında şəkil seçə bilərsiniz");
+      e.target.value = "";
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Şəkil ölçüsü maksimum 10MB olmalıdır");
+      e.target.value = "";
+      return;
+    }
+
     const objectUrl = URL.createObjectURL(file);
-    setPreview(objectUrl);
+    setCropperSrc(objectUrl);
+    e.target.value = "";
   };
 
   const handleSave = (e: React.FormEvent) => {
@@ -310,7 +325,9 @@ export function EditTrainerModal({ onClose, trainer, index, isDashboard = false 
                   className="w-full h-[200px] md:h-[240px] bg-[#fafafa] border-2 border-dashed border-[#ececed] rounded-xl relative cursor-pointer flex items-center justify-center overflow-hidden hover:border-[#00B4CC] transition-all group"
                 >
                   {preview ? (
-                    <img src={preview} className="w-full h-full object-cover" alt="Trainer Image" />
+                    <div className="w-[140px] h-[140px] rounded-full overflow-hidden relative shadow-md bg-white border border-[#ececed]">
+                      <img src={preview} className="w-full h-full object-cover" alt="Trainer Image" />
+                    </div>
                   ) : (
                     <div className="text-[#6a7282] font-medium flex flex-col items-center gap-2 transition-transform group-hover:scale-105">
                       <Image src="/upload.svg" width={28} height={28} alt="Upload" className="opacity-60" />
@@ -485,6 +502,17 @@ export function EditTrainerModal({ onClose, trainer, index, isDashboard = false 
           </div>
         </form>
       </div>
+      {cropperSrc && (
+        <ImageCropper
+          imageSrc={cropperSrc}
+          onCrop={(croppedFile) => {
+            setSelectedFile(croppedFile);
+            setPreview(URL.createObjectURL(croppedFile));
+            setCropperSrc(null);
+          }}
+          onCancel={() => setCropperSrc(null)}
+        />
+      )}
     </div>,
     document.body
   );
