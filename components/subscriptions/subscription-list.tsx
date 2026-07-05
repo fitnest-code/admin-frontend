@@ -12,6 +12,7 @@ import { ErrorToastModal } from '../categories/modals/error-toast-modal'
 import { ConfirmDeleteModal } from '../gyms/modals/confirm-delete-modal'
 import { SuccessAnimationModal } from '../ui/success-animation-modal'
 import { useT } from '@/lib/i18n'
+import { apiGet } from '@/lib/api/client'
 
 const PAGE_SIZE = 6
 
@@ -76,7 +77,8 @@ function Pagination({ total, page, perPage, onChange }: {
 }
 
 // ── Entry limit select ────────────────────────────────────────────────────────
-function EntryLimitSelect({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function EntryLimitSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -86,7 +88,7 @@ function EntryLimitSelect({ label, value, onChange }: { label: string; value: st
   }, [])
   return (
     <div className="flex flex-col gap-1.5">
-      {label && <label className="text-xs text-muted-foreground">{label}</label>}
+      <label className="text-xs text-muted-foreground">{t.subscriptions.entryLimitField}</label>
       <div className="relative" ref={ref}>
         <button
           type="button"
@@ -136,38 +138,41 @@ function PackageNameDropdown({ value, onChange, existingNames = [] }: { value: s
   }, [])
 
   const STATIC_PACKAGES = ['Bronze', 'Silver', 'Gold', 'Platinum']
-  const availablePackages = STATIC_PACKAGES.filter(pkgName => pkgName === value || !existingNames.includes(pkgName))
 
   return (
     <div className="w-full flex flex-col gap-1.5 text-left font-sans" ref={ref}>
-      <label className="text-sm font-medium text-black">{t.common.name}</label>
+      <label className="text-[16px] leading-[24px] font-medium text-black">{t.subscriptions.packageNameHeader}</label>
       <div className="relative w-full">
         <button
           type="button"
           onClick={() => setOpen((p) => !p)}
-          className="w-full h-[40px] rounded-[10px] bg-[#fafafa] border border-[#ececed] px-3 flex items-center justify-between text-sm text-black outline-none transition-colors hover:border-[#00b4cc]"
+          className="w-full h-[60px] rounded-[12px] bg-[#fafafa] border border-[#ececed] px-4 flex items-center justify-between text-[18px] text-black outline-none transition-colors hover:border-[#00b4cc]"
         >
-          <span className="font-medium">{value || t.subscriptions.notSelected}</span>
-          <ChevronDown size={16} className={cn('transition-transform text-gray-500 shrink-0', open && 'rotate-180')} />
+          <span className="leading-[28px] font-medium">{value || t.subscriptions.notSelected}</span>
+          <ChevronDown size={20} className={cn('transition-transform text-gray-500 shrink-0', open && 'rotate-180')} />
         </button>
         
         {open && (
           <ul className="absolute left-0 top-full z-50 mt-1 w-full overflow-hidden rounded-[12px] border border-[#ececed] bg-white shadow-xl max-h-52 divide-y divide-gray-100">
-            {availablePackages.map((pkgName) => (
-              <li key={pkgName}>
-                <button
-                  type="button"
-                  onClick={() => { onChange(pkgName); setOpen(false) }}
-                  className={cn(
-                    "w-full flex items-center justify-between px-4 py-3 text-[16px] font-medium transition-colors hover:bg-gray-50 text-left",
-                    value === pkgName ? "text-[#00b4cc] bg-[#00b4cc]/5 font-bold" : "text-black"
-                  )}
-                >
-                  <span>{pkgName}</span>
-                  {value === pkgName && <Check size={16} className="text-[#00b4cc]" />}
-                </button>
-              </li>
-            ))}
+            {STATIC_PACKAGES.map((pkgName) => {
+              const isUsed = existingNames.includes(pkgName) && value !== pkgName
+              return (
+                <li key={pkgName}>
+                  <button
+                    type="button"
+                    disabled={isUsed}
+                    onClick={() => { onChange(pkgName); setOpen(false) }}
+                    className={cn(
+                      "w-full flex items-center justify-between px-4 py-3 text-[16px] font-medium transition-colors text-left disabled:opacity-30",
+                      value === pkgName ? "text-[#00b4cc] bg-[#00b4cc]/5 font-bold" : "text-black hover:bg-gray-50"
+                    )}
+                  >
+                    <span>{pkgName}</span>
+                    {value === pkgName && <Check size={16} className="text-[#00b4cc]" />}
+                  </button>
+                </li>
+              )
+            })}
           </ul>
         )}
       </div>
@@ -184,13 +189,18 @@ function PackageFormModal({
   onError,
 }: {
   initial?: SubPackage
-  onSave: (pkg: Omit<SubPackage, 'id'>) => void
+  onSave: (pkg: Omit<SubPackage, 'id'>, translations: Record<string, Record<string, string>>) => void
   onClose: () => void
   existingNames?: string[]
   onError?: (msg: string) => void
 }) {
   const t = useT()
-  const { addBenefit, deleteBenefit } = useSubscriptions()
+  const { addBenefit, deleteBenefit, updateTranslations } = useSubscriptions()
+  const [activeTab, setActiveTab] = useState<string>("AZ")
+  const [translations, setTranslations] = useState<Record<string, Record<string, string>>>({ EN: {}, RU: {} })
+  const [editingServiceIdx, setEditingServiceIdx] = useState<number | null>(null)
+  const [editingServiceValue, setEditingServiceValue] = useState<string>("")
+
   const STATIC_PACKAGES = ['Bronze', 'Silver', 'Gold', 'Platinum']
   const defaultAvailable = STATIC_PACKAGES.find(p => !existingNames.includes(p)) || 'Bronze'
   const [name, setName] = useState(initial?.name || defaultAvailable)
@@ -203,6 +213,48 @@ function PackageFormModal({
   const [services, setServices] = useState<string[]>(initial?.services ?? [])
   const [serviceInput, setServiceInput] = useState('')
   const [status, setStatus] = useState<SubStatus>(initial?.status ?? 'active')
+
+  useEffect(() => {
+    if (initial?.id && !initial.id.startsWith('temp') && !initial.id.startsWith('sub-')) {
+      apiGet<any[]>("/admin/subscription-packages", { headers: { "Accept-Language": "EN" } })
+        .then(res => {
+          const pkg = res.find(p => String(p.package_id) === initial.id);
+          if (pkg && pkg.benefits) {
+            const enBenefits = pkg.benefits;
+            const azBenefits = initial.services || [];
+            setTranslations(prev => {
+              const newEn = { ...prev.EN };
+              azBenefits.forEach((azSrv, idx) => {
+                if (enBenefits[idx]) {
+                  newEn[azSrv] = enBenefits[idx];
+                } 
+              });
+              return { ...prev, EN: newEn };
+            });
+          }
+        })
+        .catch(err => console.warn("Failed to fetch EN translations", err));
+
+      apiGet<any[]>("/admin/subscription-packages", { headers: { "Accept-Language": "RU" } })
+        .then(res => {
+          const pkg = res.find(p => String(p.package_id) === initial.id);
+          if (pkg && pkg.benefits) {
+            const ruBenefits = pkg.benefits;
+            const azBenefits = initial.services || [];
+            setTranslations(prev => {
+              const newRu = { ...prev.RU };
+              azBenefits.forEach((azSrv, idx) => {
+                if (ruBenefits[idx]) {
+                  newRu[azSrv] = ruBenefits[idx];
+                } 
+              });
+              return { ...prev, RU: newRu };
+            });
+          }
+        })
+        .catch(err => console.warn("Failed to fetch RU translations", err));
+    }
+  }, [initial]);
 
   function addTier() {
     setPriceTiers((prev) => [...prev, { duration: `${prev.length + 1} ay`, price: 0, discountPrice: 0 }])
@@ -238,9 +290,15 @@ function PackageFormModal({
     }
   }
 
-  async function handleRemoveService(i: number) {
-    const targetService = services[i]
-    setServices((prev) => prev.filter((_, idx) => idx !== i))
+  async function handleRemoveService(idx: number) {
+    const targetService = services[idx]
+    setServices((prev) => prev.filter((_, i) => i !== idx))
+    setTranslations((prev) => {
+      const next = { ...prev }
+      delete next.EN[targetService]
+      delete next.RU[targetService]
+      return next
+    })
     
     if (initial?.id && !initial.id.startsWith('temp') && !initial.id.startsWith('sub-')) {
       try {
@@ -249,6 +307,77 @@ function PackageFormModal({
         console.warn('Live service deletion sync error', err)
       }
     }
+  }
+
+  function handleStartEditService(idx: number) {
+    setEditingServiceIdx(idx)
+    const baseSrv = services[idx]
+    if (activeTab === "AZ") {
+      setEditingServiceValue(baseSrv)
+    } else {
+      setEditingServiceValue(translations[activeTab]?.[baseSrv] || "")
+    }
+  }
+
+  async function handleConfirmEditService(idx: number) {
+    const trimmed = editingServiceValue.trim()
+    if (!trimmed) return
+
+    const baseSrv = services[idx]
+    if (activeTab === "AZ") {
+      const oldVal = services[idx]
+      setServices(prev => {
+        const copy = [...prev]
+        copy[idx] = trimmed
+        return copy
+      })
+      setTranslations(prev => {
+        const next = { ...prev }
+        if (next.EN[oldVal]) {
+          next.EN[trimmed] = next.EN[oldVal]
+          delete next.EN[oldVal]
+        }
+        if (next.RU[oldVal]) {
+          next.RU[trimmed] = next.RU[oldVal]
+          delete next.RU[oldVal]
+        }
+        return next
+      })
+
+      if (initial?.id && !initial.id.startsWith('temp') && !initial.id.startsWith('sub-')) {
+        try {
+          await deleteBenefit({ packageId: initial.id, description: oldVal })
+          await addBenefit({ packageId: initial.id, description: trimmed })
+        } catch (err) {
+          console.warn('Sync benefit edit error', err)
+        }
+      }
+    } else {
+      setTranslations(prev => ({
+        ...prev,
+        [activeTab]: {
+          ...prev[activeTab],
+          [baseSrv]: trimmed
+        }
+      }))
+
+      if (initial?.id && !initial.id.startsWith('temp') && !initial.id.startsWith('sub-')) {
+        try {
+          await updateTranslations([{
+            entityType: "PLANBENEFIT",
+            entityId: `${initial.id}_${baseSrv}`,
+            fieldName: "description",
+            languageCode: activeTab,
+            fieldValue: trimmed
+          }])
+        } catch (err) {
+          console.warn('Sync benefit translation edit error', err)
+        }
+      }
+    }
+
+    setEditingServiceIdx(null)
+    setEditingServiceValue("")
   }
 
   function handleSave() {
@@ -264,7 +393,7 @@ function PackageFormModal({
     }
 
     const entryLimitNum = parseInt(entryLimit) || 12
-    onSave({ name, priceTiers, entryLimit: entryLimitNum, services, status })
+    onSave({ name, priceTiers, entryLimit: entryLimitNum, services, status }, translations)
   }
 
   return (
@@ -293,6 +422,29 @@ function PackageFormModal({
 
         {/* Dividing Line (.frameChild) */}
         <div className="w-full h-[1px] border-t border-[#cecfd2]" />
+
+        {/* Language Tabs */}
+        <div className="flex border-b border-[#ececed] gap-2">
+          {["AZ", "RU", "EN"].map((lang) => (
+            <button
+              key={lang}
+              type="button"
+              onClick={() => {
+                setActiveTab(lang);
+                setEditingServiceIdx(null);
+                setEditingServiceValue("");
+              }}
+              className={cn(
+                "h-[40px] px-6 text-[14px] font-semibold transition-all border-b-2 outline-none",
+                activeTab === lang
+                  ? "border-[#00b4cc] text-[#00b4cc]"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              )}
+            >
+              {lang}
+            </button>
+          ))}
+        </div>
 
         {/* Content Body Grid (.frameGroup) */}
         <div className="w-full flex flex-col md:flex-row items-stretch justify-between gap-6 text-[16px]">
@@ -388,23 +540,25 @@ function PackageFormModal({
             <div className="w-full flex flex-col items-stretch gap-2.5">
               <div className="w-full flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-black">{t.subscriptions.servicesLimit}</label>
-                <div className="w-full flex items-center gap-2">
-                  <input
-                    value={serviceInput}
-                    onChange={(e) => setServiceInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddService())}
-                    placeholder={t.subscriptions.serviceName}
-                    className="flex-1 h-[40px] rounded-[10px] bg-[#fafafa] border border-[#ececed] px-3 text-sm outline-none focus:border-[#00b4cc]"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddService}
-                    disabled={!serviceInput.trim() || services.length >= 20}
-                    className="h-[40px] w-[40px] rounded-[10px] bg-[#fafafa] border border-[#ececed] flex items-center justify-center transition-colors hover:bg-gray-200 disabled:opacity-40 shrink-0"
-                  >
-                    <Plus size={16} className="text-[#00b4cc]" />
-                  </button>
-                </div>
+                {activeTab === "AZ" && (
+                  <div className="w-full flex items-center gap-2">
+                    <input
+                      value={serviceInput}
+                      onChange={(e) => setServiceInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddService())}
+                      placeholder={t.subscriptions.serviceName}
+                      className="flex-1 h-[40px] rounded-[10px] bg-[#fafafa] border border-[#ececed] px-3 text-sm outline-none focus:border-[#00b4cc]"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddService}
+                      disabled={!serviceInput.trim() || services.length >= 20}
+                      className="h-[40px] w-[40px] rounded-[10px] bg-[#fafafa] border border-[#ececed] flex items-center justify-center transition-colors hover:bg-gray-200 disabled:opacity-40 shrink-0"
+                    >
+                      <Plus size={16} className="text-[#00b4cc]" />
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Added Services Box (.frameParent6) */}
@@ -414,19 +568,66 @@ function PackageFormModal({
                     {t.subscriptions.noServiceAdded}
                   </div>
                 ) : (
-                  services.map((srv, idx) => (
-                    <div key={idx} className="w-full h-[36px] rounded-[8px] bg-white border border-[#ececed] px-3 flex items-center justify-between shadow-2xs shrink-0">
-                      <span className="text-xs font-normal text-black truncate pr-2">{srv}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveService(idx)}
-                        className="h-[22px] w-[22px] rounded-[4px] bg-[#e7272c] flex items-center justify-center transition-colors hover:bg-red-700 shrink-0"
-                        aria-label="Sil"
-                      >
-                        <X size={12} className="text-white" />
-                      </button>
-                    </div>
-                  ))
+                  services.map((srv, idx) => {
+                    const displayName = activeTab === "AZ" ? srv : (translations[activeTab]?.[srv] || srv);
+                    if (editingServiceIdx === idx) {
+                      return (
+                        <div key={idx} className="w-full h-[36px] rounded-[8px] bg-white border border-[#00b4cc] px-3 flex items-center justify-between shadow-2xs shrink-0 gap-2">
+                          <input
+                            type="text"
+                            value={editingServiceValue}
+                            onChange={(e) => setEditingServiceValue(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleConfirmEditService(idx))}
+                            className="flex-1 outline-none text-xs font-normal text-black bg-transparent"
+                            style={{ width: `${Math.max(6, editingServiceValue.length + 1)}ch` }}
+                            autoFocus
+                          />
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleConfirmEditService(idx)}
+                              disabled={!editingServiceValue.trim()}
+                              className="p-1 text-green-600 hover:text-green-800 disabled:opacity-50 transition-colors flex items-center justify-center"
+                            >
+                              <Check size={14} className="stroke-[3]" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => { setEditingServiceIdx(null); setEditingServiceValue(""); }}
+                              className="p-1 text-gray-400 hover:text-gray-600 transition-colors flex items-center justify-center"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div key={idx} className="w-full h-[36px] rounded-[8px] bg-white border border-[#ececed] px-3 flex items-center justify-between shadow-2xs shrink-0">
+                        <span className="text-xs font-normal text-black truncate pr-2">{displayName}</span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleStartEditService(idx)}
+                            className="h-[22px] w-[22px] rounded-[4px] bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+                            aria-label={t.subscriptions.change}
+                          >
+                            <Pencil size={11} className="text-gray-600" />
+                          </button>
+                          {activeTab === "AZ" && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveService(idx)}
+                              className="h-[22px] w-[22px] rounded-[4px] bg-[#e7272c] flex items-center justify-center transition-colors hover:bg-red-700 shrink-0"
+                              aria-label="Sil"
+                            >
+                              <X size={12} className="text-white" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
                 )}
               </div>
               <div className="w-full text-right text-sm text-gray-500 font-normal">
@@ -679,7 +880,16 @@ function PackageCard({
 // ── Main ──────────────────────────────────────────────────────────────────────
 export function SubscriptionList() {
   const t = useT()
-  const { packages: backendPackages, isLoading, createPackage, updatePackage, deletePackage, updatePackageStatus } = useSubscriptions()
+  const { 
+    packages: backendPackages, 
+    isLoading, 
+    createPackage, 
+    updatePackage, 
+    deletePackage, 
+    updatePackageStatus,
+    updateTranslations,
+    refetch
+  } = useSubscriptions()
   const [localPackages, setLocalPackages] = useState<SubPackage[]>([])
   const [modalPkg, setModalPkg] = useState<SubPackage | 'new' | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -713,7 +923,7 @@ export function SubscriptionList() {
   const currentPackages = backendPackages || []
   const paginated = currentPackages.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
-  async function handleSave(data: Omit<SubPackage, 'id'>) {
+  async function handleSave(data: Omit<SubPackage, 'id'>, translations?: Record<string, Record<string, string>>) {
     if (modalPkg && modalPkg !== 'new') {
       const targetId = (modalPkg as SubPackage).id
       setLocalPackages((prev) => prev.map((p) => p.id === targetId ? { ...(modalPkg as SubPackage), ...data } : p))
@@ -729,6 +939,34 @@ export function SubscriptionList() {
             services: data.services,
             priceTiers: data.priceTiers,
           })
+
+          if (translations) {
+            const translationPayload: any[] = [];
+            data.services.forEach((azSrv) => {
+              if (translations.EN?.[azSrv]) {
+                translationPayload.push({
+                  entityType: "PLANBENEFIT",
+                  entityId: `${targetId}_${azSrv}`,
+                  fieldName: "description",
+                  languageCode: "EN",
+                  fieldValue: translations.EN[azSrv],
+                });
+              }
+              if (translations.RU?.[azSrv]) {
+                translationPayload.push({
+                  entityType: "PLANBENEFIT",
+                  entityId: `${targetId}_${azSrv}`,
+                  fieldName: "description",
+                  languageCode: "RU",
+                  fieldValue: translations.RU[azSrv],
+                });
+              }
+            });
+            if (translationPayload.length > 0) {
+              await updateTranslations(translationPayload);
+            }
+          }
+
           setModalConfig({ isOpen: true, message: t.subscriptions.packageUpdated, type: "success" })
         } catch (err: any) {
           console.warn('Backend subscription update sync error', err)
@@ -739,8 +977,6 @@ export function SubscriptionList() {
         setModalConfig({ isOpen: true, message: t.subscriptions.packageUpdated, type: "success" })
       }
     } else {
-      const tempId = `sub-${Date.now()}`
-      setLocalPackages((prev) => [...prev, { id: tempId, ...data }])
       setModalPkg(null)
       
       try {
@@ -751,6 +987,39 @@ export function SubscriptionList() {
           services: data.services,
           priceTiers: data.priceTiers,
         })
+
+        if (translations) {
+          const updated = await refetch();
+          const createdPkg = updated.data?.find(p => p.name === data.name);
+          if (createdPkg && !createdPkg.id.startsWith('temp') && !createdPkg.id.startsWith('sub-')) {
+            const packageId = createdPkg.id;
+            const translationPayload: any[] = [];
+            data.services.forEach((azSrv) => {
+              if (translations.EN?.[azSrv]) {
+                translationPayload.push({
+                  entityType: "PLANBENEFIT",
+                  entityId: `${packageId}_${azSrv}`,
+                  fieldName: "description",
+                  languageCode: "EN",
+                  fieldValue: translations.EN[azSrv],
+                });
+              }
+              if (translations.RU?.[azSrv]) {
+                translationPayload.push({
+                  entityType: "PLANBENEFIT",
+                  entityId: `${packageId}_${azSrv}`,
+                  fieldName: "description",
+                  languageCode: "RU",
+                  fieldValue: translations.RU[azSrv],
+                });
+              }
+            });
+            if (translationPayload.length > 0) {
+              await updateTranslations(translationPayload);
+            }
+          }
+        }
+
         setModalConfig({ isOpen: true, message: t.subscriptions.packageCreated, type: "success" })
       } catch (err: any) {
         console.warn('Backend subscription creation sync error', err)
