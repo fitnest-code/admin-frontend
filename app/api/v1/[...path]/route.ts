@@ -146,8 +146,9 @@ async function forward(request: NextRequest, context: RouteContext) {
       const incoming = await request.formData()
       const outgoing = new FormData()
       for (const [key, value] of incoming.entries()) {
-        if (value instanceof File) {
-          const filename = getFilenameWithExtension(value.name, value.type, key)
+        if (value instanceof Blob) {
+          const name = value instanceof File ? value.name : ''
+          const filename = getFilenameWithExtension(name, value.type, key)
           outgoing.append(key, value, filename)
         } else {
           outgoing.append(key, value as string)
