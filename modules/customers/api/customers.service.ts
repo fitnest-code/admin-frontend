@@ -97,3 +97,7 @@ export function resetDeviceLimit(userId: number) {
   return apiPost<void>(`/api/v1/admin/users/${userId}/device-limit/reset`)
 }
 
+export function hardDeleteUser(userId: number) {
+  return apiDelete<void>(`/api/v1/admin/users/${userId}/hard-delete`)
+}
+

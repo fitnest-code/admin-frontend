@@ -1,8 +1,8 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/query/query-keys'
-import { getCustomerById, getCustomerCurrentSubscription, getCustomers, getSubscriptionPackageNames, getUserPaymentHistory, getUserQrHistory, getUserStatistics } from '@/modules/customers/api/customers.service'
+import { getCustomerById, getCustomerCurrentSubscription, getCustomers, getSubscriptionPackageNames, getUserPaymentHistory, getUserQrHistory, getUserStatistics, hardDeleteUser } from '@/modules/customers/api/customers.service'
 import { useI18nStore } from '@/lib/i18n'
 import type { GetCustomersParams } from '@/modules/customers/types/customer.types'
 
@@ -77,5 +77,15 @@ export function useCustomerCurrentSubscriptionQuery(userId: string) {
     enabled: Boolean(userId),
     staleTime: 0,
     refetchOnMount: 'always',
+  })
+}
+
+export function useHardDeleteUserMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (userId: number) => hardDeleteUser(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.customers.all })
+    }
   })
 }

@@ -14,6 +14,9 @@ import { ConfirmDeleteSubscriptionModal } from '../customers/modals/confirm-dele
 import { AssignSubscriptionModal } from '../customers/modals/assign-subscription-modal'
 import { ResetPasswordModal } from './reset-password-modal'
 import { ResetDeviceLimitModal } from '../customers/modals/reset-device-limit-modal'
+import { ConfirmDeleteUserModal } from '../customers/modals/confirm-delete-user-modal'
+import { useHardDeleteUserMutation } from '@/modules/customers'
+import { toast } from 'sonner'
 import { useT } from '@/lib/i18n'
 
 const STATUS_STYLES = {
@@ -87,6 +90,9 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
   const [assignSubOpen, setAssignSubOpen] = useState(false)
   const [blockOpen, setBlockOpen] = useState(false)
   const [resetDeviceLimitOpen, setResetDeviceLimitOpen] = useState(false)
+  const [deleteUserOpen, setDeleteUserOpen] = useState(false)
+
+  const deleteUserMutation = useHardDeleteUserMutation()
 
   function handleResetDeviceLimit() {
     setResetDeviceLimitOpen(true)
@@ -233,6 +239,12 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
                   <span>{t.details.deleteSubscription}</span>
                 </button>
                 <button
+                  onClick={() => setDeleteUserOpen(true)}
+                  className="flex w-full items-center justify-center gap-3 rounded-lg border border-red-200 bg-red-50/40 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 hover:border-red-300 transition-all duration-200"
+                >
+                  <span>İstifadəçini sil</span>
+                </button>
+                <button
                   onClick={() => setBlockOpen(true)}
                   className="flex w-full items-center justify-center gap-3 rounded-lg border border-red-200 bg-red-50/40 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 hover:border-red-300 transition-all duration-200"
                 >
@@ -314,6 +326,24 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
               setCustomer(prev => ({ ...prev, userStatus: 'DELETED' }))
             }
           }}
+        />
+      )}
+      {deleteUserOpen && (
+        <ConfirmDeleteUserModal
+          isLoading={deleteUserMutation.isPending}
+          onConfirm={() => {
+            deleteUserMutation.mutate(customer.id, {
+              onSuccess: () => {
+                toast.success("İstifadəçi uğurla silindi")
+                setDeleteUserOpen(false)
+                router.push('/partners')
+              },
+              onError: (err: any) => {
+                toast.error(err?.message || "Xəta baş verdi")
+              }
+            })
+          }}
+          onCancel={() => setDeleteUserOpen(false)}
         />
       )}
     </div>
