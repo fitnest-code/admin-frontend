@@ -19,6 +19,7 @@ import { SubscriptionTab } from './tabs/subscription-tab'
 import { PaymentsTab } from './tabs/payments-tab'
 import { AccessTab } from './tabs/access-tab'
 import { useHardDeleteUserMutation } from '@/modules/customers'
+import { SuccessAnimationModal } from '@/components/ui/success-animation-modal'
 import { toast } from 'sonner'
 
 const CUSTOMER_TABS = [
@@ -111,6 +112,11 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
   const [resetDeviceLimitOpen, setResetDeviceLimitOpen] = useState(false)
   const [blockOpen, setBlockOpen] = useState(false)
   const [deleteUserOpen, setDeleteUserOpen] = useState(false)
+  const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; message: string; type: "success" | "error" }>({
+    isOpen: false,
+    message: "",
+    type: "success",
+  })
 
   const deleteUserMutation = useHardDeleteUserMutation()
 
@@ -264,7 +270,7 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
                 <div className="pt-2 border-t border-border/60 flex flex-col gap-3">
                   <OpsBtn icon={ShieldCheck} label={t.modals.assignSubscriptionTitle || 'Abunəlik təyin et'} onClick={() => setAssignSubOpen(true)} />
                   <OpsBtn icon={Trash2} label={t.details.deleteSubscription} onClick={() => setDeleteSubOpen(true)} danger />
-                  <OpsBtn icon={Trash2} label="İstifadəçini sil" onClick={() => setDeleteUserOpen(true)} danger />
+                  <OpsBtn icon={Trash2} label={t.details.deleteUser} onClick={() => setDeleteUserOpen(true)} danger />
                   <OpsBtn 
                     icon={Ban} 
                     label={status === 'blocked' ? t.details.unblock : t.details.block} 
@@ -333,24 +339,32 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
            }}
          />
        )}
-       {deleteUserOpen && (
-         <ConfirmDeleteUserModal
-           isLoading={deleteUserMutation.isPending}
-           onConfirm={() => {
-             deleteUserMutation.mutate(customer.id, {
-               onSuccess: () => {
-                 toast.success("İstifadəçi uğurla silindi")
-                 setDeleteUserOpen(false)
-                 router.push('/customers')
-               },
-               onError: (err: any) => {
-                 toast.error(err?.message || "Xəta baş verdi")
-               }
-             })
-           }}
-           onCancel={() => setDeleteUserOpen(false)}
-         />
-       )}
-    </div>
-  )
-}
+        {deleteUserOpen && (
+          <ConfirmDeleteUserModal
+            isLoading={deleteUserMutation.isPending}
+            onConfirm={() => {
+              deleteUserMutation.mutate(customer.id, {
+                onSuccess: () => {
+                  setDeleteUserOpen(false)
+                  setModalConfig({ isOpen: true, message: t.details.userDeleted, type: "success" })
+                  setTimeout(() => {
+                    router.push('/customers')
+                  }, 1000)
+                },
+                onError: (err: any) => {
+                  setModalConfig({ isOpen: true, message: err?.message || t.details.userDeleteFailed, type: "error" })
+                }
+              })
+            }}
+            onCancel={() => setDeleteUserOpen(false)}
+          />
+        )}
+        <SuccessAnimationModal
+          isOpen={modalConfig.isOpen}
+          onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
+          message={modalConfig.message}
+          type={modalConfig.type}
+        />
+     </div>
+   )
+ }

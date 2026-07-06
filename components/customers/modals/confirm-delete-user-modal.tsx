@@ -31,7 +31,7 @@ export function ConfirmDeleteUserModal({ onConfirm, onCancel, isLoading }: Confi
     >
       <div className="w-full max-w-[548px] min-h-[170px] rounded-[12px] bg-white flex flex-col items-center justify-center p-10 gap-7 shadow-2xl animate-in zoom-in-95 duration-200 font-sans">
         <div className="text-[26px] font-medium text-[#131212] leading-[40px] text-center">
-          {t.lists.deleteUserConfirmTitle || 'İstifadəçini silmək istədiyinizdən əminsiniz?'}
+          {t.details.deleteUserConfirmTitle}
         </div>
         
         <div className="w-full flex items-center justify-between gap-5">

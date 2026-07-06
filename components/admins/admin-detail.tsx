@@ -16,6 +16,7 @@ import { ResetPasswordModal } from '../partners/reset-password-modal'
 import { ResetDeviceLimitModal } from '../customers/modals/reset-device-limit-modal'
 import { ConfirmDeleteUserModal } from '../customers/modals/confirm-delete-user-modal'
 import { useHardDeleteUserMutation } from '@/modules/customers'
+import { SuccessAnimationModal } from '@/components/ui/success-animation-modal'
 import { toast } from 'sonner'
 import { useT } from '@/lib/i18n'
 
@@ -91,6 +92,11 @@ export function AdminDetail({ customer: initialCustomer }: { customer: CustomerP
   const [blockOpen, setBlockOpen] = useState(false)
   const [resetDeviceLimitOpen, setResetDeviceLimitOpen] = useState(false)
   const [deleteUserOpen, setDeleteUserOpen] = useState(false)
+  const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; message: string; type: "success" | "error" }>({
+    isOpen: false,
+    message: "",
+    type: "success",
+  })
 
   const deleteUserMutation = useHardDeleteUserMutation()
 
@@ -241,7 +247,7 @@ export function AdminDetail({ customer: initialCustomer }: { customer: CustomerP
                   onClick={() => setDeleteUserOpen(true)}
                   className="flex w-full items-center justify-center gap-3 rounded-lg border border-red-200 bg-red-50/40 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 hover:border-red-300 transition-all duration-200"
                 >
-                  <span>İstifadəçini sil</span>
+                  <span>{t.details.deleteUser}</span>
                 </button>
                 <button
                   onClick={() => setBlockOpen(true)}
@@ -333,19 +339,27 @@ export function AdminDetail({ customer: initialCustomer }: { customer: CustomerP
           onConfirm={() => {
             deleteUserMutation.mutate(customer.id, {
               onSuccess: () => {
-                toast.success("İstifadəçi uğurla silindi")
                 setDeleteUserOpen(false)
+                setModalConfig({ isOpen: true, message: t.details.userDeleted, type: "success" })
                 const redirectPath = customer.role === 'ROLE_FITNEST_STAFF' ? '/fitnest-staff' : '/admins'
-                router.push(redirectPath)
+                setTimeout(() => {
+                  router.push(redirectPath)
+                }, 1000)
               },
               onError: (err: any) => {
-                toast.error(err?.message || "Xəta baş verdi")
+                setModalConfig({ isOpen: true, message: err?.message || t.details.userDeleteFailed, type: "error" })
               }
             })
           }}
           onCancel={() => setDeleteUserOpen(false)}
         />
       )}
+      <SuccessAnimationModal
+        isOpen={modalConfig.isOpen}
+        onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
+        message={modalConfig.message}
+        type={modalConfig.type}
+      />
     </div>
   )
 }
