@@ -778,6 +778,12 @@ function PaymentTab() {
 function RolesTab() {
   const queryClient = useQueryClient()
   const [newRoleName, setNewRoleName] = useState('')
+  const [roleToDelete, setRoleToDelete] = useState<{ id: number; name: string } | null>(null)
+  const [animModal, setAnimModal] = useState<{ isOpen: boolean; message: string; type: 'success' | 'error' }>({
+    isOpen: false,
+    message: '',
+    type: 'success',
+  })
 
   const { data: roles = [], isLoading, isError } = useQuery({
     queryKey: ['admin-roles-raw'],
@@ -788,11 +794,11 @@ function RolesTab() {
     mutationFn: createRole,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-roles-raw'] })
-      toast.success("Rol uğurla yaradıldı!")
+      setAnimModal({ isOpen: true, message: "Rol uğurla yaradıldı!", type: 'success' })
       setNewRoleName('')
     },
     onError: (err: any) => {
-      toast.error(err?.message || "Rolu yaratmaq mümkün olmadı")
+      setAnimModal({ isOpen: true, message: err?.message || "Rolu yaratmaq mümkün olmadı", type: 'error' })
     }
   })
 
@@ -800,10 +806,12 @@ function RolesTab() {
     mutationFn: deleteRole,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-roles-raw'] })
-      toast.success("Rol uğurla silindi!")
+      setRoleToDelete(null)
+      setAnimModal({ isOpen: true, message: "Rol uğurla silindi!", type: 'success' })
     },
     onError: (err: any) => {
-      toast.error(err?.message || "Rolu silmək mümkün olmadı")
+      setRoleToDelete(null)
+      setAnimModal({ isOpen: true, message: err?.message || "Rolu silmək mümkün olmadı", type: 'error' })
     }
   })
 
@@ -861,8 +869,7 @@ function RolesTab() {
                   <td className="px-4 py-2.5 text-right">
                     {r.name !== 'ROLE_ADMIN' && r.name !== 'ROLE_SUPER_ADMIN' && r.name !== 'ADMIN' && (
                       <button
-                        onClick={() => deleteMutation.mutate(r.id)}
-                        disabled={deleteMutation.isPending}
+                        onClick={() => setRoleToDelete({ id: r.id, name: r.name })}
                         className="text-red-400 hover:text-red-600 transition-colors p-1"
                         title="Rolu sil"
                       >
@@ -876,6 +883,24 @@ function RolesTab() {
           </table>
         </div>
       )}
+
+      {/* Delete confirmation modal */}
+      {roleToDelete && (
+        <ConfirmDeleteModal
+          name={roleToDelete.name}
+          onConfirm={() => deleteMutation.mutate(roleToDelete.id)}
+          onCancel={() => setRoleToDelete(null)}
+          isLoading={deleteMutation.isPending}
+        />
+      )}
+
+      {/* Success/Error animation modal */}
+      <SuccessAnimationModal
+        isOpen={animModal.isOpen}
+        onClose={() => setAnimModal(prev => ({ ...prev, isOpen: false }))}
+        message={animModal.message}
+        type={animModal.type}
+      />
     </Section>
   )
 }

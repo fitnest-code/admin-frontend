@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import { Check, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useT } from '@/lib/i18n'
-import { getAllRoles, changeUserRole, type UserRoleDto } from '@/modules/customers/api/customers.service'
+import { getRawRoles, changeUserRole, type AdminRoleRawDto } from '@/modules/customers/api/customers.service'
 import { SuccessAnimationModal } from '@/components/ui/success-animation-modal'
 
 interface ChangeRoleModalProps {
@@ -18,7 +18,7 @@ interface ChangeRoleModalProps {
 export function ChangeRoleModal({ userId, currentRole, onClose, onSuccess }: ChangeRoleModalProps) {
   const [mounted, setMounted] = useState(false)
   const t = useT()
-  const [roles, setRoles] = useState<UserRoleDto[]>([])
+  const [roles, setRoles] = useState<AdminRoleRawDto[]>([])
   const [selectedRole, setSelectedRole] = useState(currentRole || 'ROLE_USER')
   const [loading, setLoading] = useState(false)
   const [loadingRoles, setLoadingRoles] = useState(true)
@@ -30,17 +30,16 @@ export function ChangeRoleModal({ userId, currentRole, onClose, onSuccess }: Cha
 
     async function fetchRoles() {
       try {
-        const data = await getAllRoles()
+        const data = await getRawRoles()
         setRoles(data)
       } catch (err) {
         console.error('Failed to load roles:', err)
-        // Fallback roles if API fails or mock isn't fully ready
         setRoles([
-          { id: 'ROLE_ADMIN', name: 'Sistem admini' },
-          { id: 'ROLE_FITNEST_STAFF', name: 'Fitnest Komandası' },
-          { id: 'ROLE_GYM_SUPER_ADMIN', name: 'Zal Super Admini' },
-          { id: 'ROLE_GYM_ADMIN', name: 'Zal Admini' },
-          { id: 'ROLE_USER', name: 'Müştəri' },
+          { id: 1, name: 'ROLE_ADMIN' },
+          { id: 2, name: 'ROLE_FITNEST_STAFF' },
+          { id: 3, name: 'ROLE_GYM_SUPER_ADMIN' },
+          { id: 4, name: 'ROLE_GYM_ADMIN' },
+          { id: 5, name: 'ROLE_USER' },
         ])
       } finally {
         setLoadingRoles(false)
@@ -73,11 +72,7 @@ export function ChangeRoleModal({ userId, currentRole, onClose, onSuccess }: Cha
     }
   }
 
-  function getRoleLabel(roleId: string, defaultName: string) {
-    const key = `role_${roleId}` as keyof typeof t.modals
-    if (t.modals[key]) return t.modals[key] as string
-    return defaultName
-  }
+
 
   if (!mounted) return null
 
@@ -106,12 +101,12 @@ export function ChangeRoleModal({ userId, currentRole, onClose, onSuccess }: Cha
             ) : (
               <div className="flex flex-col gap-2 max-h-[260px] overflow-y-auto pr-1">
                 {roles.map((r) => {
-                  const isSelected = selectedRole === r.id
+                  const isSelected = selectedRole === r.name
                   return (
                     <button
                       key={r.id}
                       type="button"
-                      onClick={() => setSelectedRole(r.id)}
+                      onClick={() => setSelectedRole(r.name)}
                       className={cn(
                         "w-full flex items-center justify-between px-4 py-3 rounded-lg border text-left transition-all duration-200 outline-none cursor-pointer",
                         isSelected 
@@ -119,7 +114,7 @@ export function ChangeRoleModal({ userId, currentRole, onClose, onSuccess }: Cha
                           : "border-[#cecfd2]/60 bg-white text-foreground hover:bg-slate-50"
                       )}
                     >
-                      <span className="text-sm font-medium">{getRoleLabel(r.id, r.name)}</span>
+                      <span className="text-sm font-medium">{r.name}</span>
                       <div className={cn(
                         "h-4 w-4 rounded-full border flex items-center justify-center transition-all",
                         isSelected ? "border-[#00B4CC] bg-[#00B4CC]" : "border-[#cecfd2]"
