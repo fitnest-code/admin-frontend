@@ -140,7 +140,7 @@ export function AdminsList() {
     size: PAGE_SIZE,
     search: debouncedSearch || undefined,
     sort: sortBy || undefined,
-    roles: ['ROLE_ADMIN'],
+    roles: ['ROLE_ADMIN', 'ROLE_TEST', 'TEST'],
   })
 
   const admins = adminsQuery.data?.items ?? []
