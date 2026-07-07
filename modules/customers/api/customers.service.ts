@@ -101,3 +101,20 @@ export function hardDeleteUser(userId: number) {
   return apiDelete<void>(`/api/v1/admin/users/${userId}/hard-delete`)
 }
 
+export interface AdminRoleRawDto {
+  id: number
+  name: string
+}
+
+export function getRawRoles() {
+  return apiGet<AdminRoleRawDto[]>('/api/v1/admin/roles/raw')
+}
+
+export function createRole(name: string) {
+  return apiPost<AdminRoleRawDto>(`/api/v1/admin/roles?name=${encodeURIComponent(name)}`)
+}
+
+export function deleteRole(roleId: number) {
+  return apiDelete<void>(`/api/v1/admin/roles/${roleId}`)
+}
+

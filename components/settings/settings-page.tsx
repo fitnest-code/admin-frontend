@@ -12,6 +12,9 @@ import { cn } from '@/lib/utils'
 import { useCancellationReasons, CancelReason } from '@/lib/query/use-cancellation-reasons'
 import { ConfirmDeleteModal } from '../gyms/modals/confirm-delete-modal'
 import { SuccessAnimationModal } from '../ui/success-animation-modal'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { getRawRoles, createRole, deleteRole } from '@/modules/customers'
+import { toast } from 'sonner'
 
 import { LegalDocumentsTab } from '../legal/legal-documents-tab'
 import { ContactDetailsPage } from '../contact-details/contact-details-page'
@@ -23,6 +26,7 @@ const TABS = [
   { key: 'legal',         label: 'Hüquqi sənədlər',    icon: Scale        },
   { key: 'contact',       label: 'Əlaqə məlumatları',  icon: PhoneCall    },
   { key: 'cancellation',  label: 'Ləğv səbəbləri',     icon: Ban          },
+  { key: 'roles',         label: 'Rollar',             icon: Shield       },
 ] as const
 
 type TabKey = typeof TABS[number]['key']
@@ -114,6 +118,7 @@ export function SettingsPage() {
         {activeTab === 'legal'         && <LegalDocumentsTab />}
         {activeTab === 'contact'       && <ContactDetailsPage isTab={true} />}
         {activeTab === 'cancellation'  && <CancellationReasonsMain isTab={true} />}
+        {activeTab === 'roles'         && <RolesTab />}
       </div>
     </div>
   )
@@ -771,98 +776,106 @@ function PaymentTab() {
 // ─── 6. Roles tab ─────────────────────────────────────────────────────────────
 
 function RolesTab() {
-  const [roles, setRoles] = useState<Role[]>(INITIAL_ROLES)
+  const queryClient = useQueryClient()
   const [newRoleName, setNewRoleName] = useState('')
 
-  function togglePerm(roleId: string, perm: PermName) {
-    setRoles((prev) => prev.map((r) => {
-      if (r.id !== roleId) return r
-      const next = new Set(r.perms)
-      next.has(perm) ? next.delete(perm) : next.add(perm)
-      return { ...r, perms: next }
-    }))
-  }
+  const { data: roles = [], isLoading, isError } = useQuery({
+    queryKey: ['admin-roles-raw'],
+    queryFn: getRawRoles,
+  })
 
-  function addRole() {
+  const createMutation = useMutation({
+    mutationFn: createRole,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-roles-raw'] })
+      toast.success("Rol uğurla yaradıldı!")
+      setNewRoleName('')
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || "Rolu yaratmaq mümkün olmadı")
+    }
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteRole,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-roles-raw'] })
+      toast.success("Rol uğurla silindi!")
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || "Rolu silmək mümkün olmadı")
+    }
+  })
+
+  function handleAddRole() {
     const name = newRoleName.trim()
     if (!name) return
-    setRoles((prev) => [...prev, { id: `r${Date.now()}`, name, perms: new Set() }])
-    setNewRoleName('')
-  }
-
-  function removeRole(id: string) {
-    setRoles((prev) => prev.filter((r) => r.id !== id))
+    createMutation.mutate(name)
   }
 
   return (
-    <Section title="Rol və icazə idarəsi">
+    <Section title="Rol idarəsi">
       {/* Add role */}
       <div className="flex gap-2">
         <input
           value={newRoleName}
           onChange={(e) => setNewRoleName(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && addRole()}
+          onKeyDown={(e) => e.key === 'Enter' && !createMutation.isPending && handleAddRole()}
           placeholder="Yeni rol adı..."
           className="flex-1 rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-[#00B4CC] transition-colors"
+          disabled={createMutation.isPending}
         />
         <button
-          onClick={addRole}
-          disabled={!newRoleName.trim()}
+          onClick={handleAddRole}
+          disabled={!newRoleName.trim() || createMutation.isPending}
           className="flex items-center gap-1.5 rounded-lg bg-[#00B4CC] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#008799] disabled:opacity-40 transition-colors"
         >
-          <Plus size={14} /> Əlavə et
+          {createMutation.isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Plus size={14} />
+          )} 
+          Əlavə et
         </button>
       </div>
 
-      {/* Permission matrix */}
-      <div className="overflow-x-auto rounded-lg border border-border">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-secondary">
-              <th className="px-4 py-2.5 text-left text-xs font-semibold text-foreground w-36">İcazə</th>
-              {roles.map((r) => (
-                <th key={r.id} className="px-3 py-2.5 text-center text-xs font-semibold text-foreground">
-                  <div className="flex flex-col items-center gap-1">
-                    <span>{r.name}</span>
-                    {r.name !== 'Super Admin' && (
-                      <button onClick={() => removeRole(r.id)} className="text-red-400 hover:text-red-600 transition-colors" aria-label={`${r.name} rolunu sil`}>
-                        <Trash2 size={11} />
+      {isLoading ? (
+        <div className="text-sm text-muted-foreground py-4">Yüklənir...</div>
+      ) : isError ? (
+        <div className="text-sm text-red-500 py-4">Rollar yüklənərkən xəta baş verdi.</div>
+      ) : (
+        <div className="overflow-hidden rounded-lg border border-border mt-4">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-secondary">
+                <th className="px-4 py-2.5 text-left text-xs font-semibold text-foreground w-1/4">ID</th>
+                <th className="px-4 py-2.5 text-left text-xs font-semibold text-foreground">Rol adı</th>
+                <th className="px-4 py-2.5 text-right text-xs font-semibold text-foreground w-24">Əməliyyat</th>
+              </tr>
+            </thead>
+            <tbody>
+              {roles.map((r, ri) => (
+                <tr key={r.id} className={cn('border-b border-border last:border-0', ri % 2 === 0 ? 'bg-card' : 'bg-secondary/40')}>
+                  <td className="px-4 py-2.5 text-sm text-foreground">{r.id}</td>
+                  <td className="px-4 py-2.5 text-sm font-medium text-foreground">{r.name}</td>
+                  <td className="px-4 py-2.5 text-right">
+                    {r.name !== 'ROLE_ADMIN' && r.name !== 'ROLE_SUPER_ADMIN' && r.name !== 'ADMIN' && (
+                      <button
+                        onClick={() => deleteMutation.mutate(r.id)}
+                        disabled={deleteMutation.isPending}
+                        className="text-red-400 hover:text-red-600 transition-colors p-1"
+                        title="Rolu sil"
+                      >
+                        <Trash2 size={14} />
                       </button>
                     )}
-                  </div>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {PERMISSIONS.map((perm, pi) => (
-              <tr key={perm} className={cn('border-b border-border last:border-0', pi % 2 === 0 ? 'bg-card' : 'bg-secondary/40')}>
-                <td className="px-4 py-2.5 text-xs font-medium text-foreground">{perm}</td>
-                {roles.map((r) => (
-                  <td key={r.id} className="px-3 py-2.5 text-center">
-                    <button
-                      onClick={() => r.name !== 'Super Admin' && togglePerm(r.id, perm)}
-                      disabled={r.name === 'Super Admin'}
-                      aria-label={`${r.name} — ${perm}`}
-                      aria-pressed={r.perms.has(perm)}
-                      className={cn(
-                        'mx-auto flex h-5 w-5 items-center justify-center rounded transition-colors',
-                        r.perms.has(perm)
-                          ? 'bg-[#00B4CC] text-white'
-                          : 'border border-border bg-background text-transparent hover:border-[#00B4CC]',
-                        r.name === 'Super Admin' && 'cursor-default',
-                      )}
-                    >
-                      <Check size={11} />
-                    </button>
                   </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <SaveButton />
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </Section>
   )
 }
