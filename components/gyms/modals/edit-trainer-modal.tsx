@@ -212,10 +212,10 @@ export function EditTrainerModal({ onClose, trainer, index, isDashboard = false 
     const currCats = Array.from(selectedCategoryIds).sort().join(",");
 
     return (
-      form.name !== trainer.name ||
-      form.surname !== trainer.surname ||
-      form.phone !== trainer.phone ||
-      form.email !== trainer.email ||
+      form.name !== (trainer.name || "") ||
+      form.surname !== (trainer.surname || "") ||
+      (form.phone || "") !== (trainer.phone || "") ||
+      (form.email || "") !== (trainer.email || "") ||
       selectedFile !== null ||
       origLessons !== currLessons ||
       origCats !== currCats
@@ -255,7 +255,7 @@ export function EditTrainerModal({ onClose, trainer, index, isDashboard = false 
     
     if (isDashboard) {
       updateTrainerMutation.mutate({
-        trainerId: Number(trainer.trainer_id),
+        trainerId: Number(trainer.trainer_id || trainer.id),
         data: {
           name: form.name,
           surname: form.surname,

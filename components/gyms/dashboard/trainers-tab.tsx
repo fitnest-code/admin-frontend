@@ -3,7 +3,7 @@
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import { AddTrainerModal } from "../modals/add-trainer-modal";
-import { TrainerDetailsModal } from "../modals/trainer-details-modal";
+import { EditTrainerModal } from "../modals/edit-trainer-modal";
 import { useState, useRef, useEffect } from "react";
 import { useGymStore } from "@/lib/store/gym-store";
 import { useGymTrainers, useDeleteTrainer } from "@/lib/query/gym-query";
@@ -369,7 +369,14 @@ export function TrainersTab() {
       )}
 
       {showAdd && <AddTrainerModal onClose={() => setShowAdd(false)} isDashboard={true} />}
-      {showDetails && <TrainerDetailsModal trainer={showDetails} onClose={() => setShowDetails(null)} />}
+      {showDetails && (
+        <EditTrainerModal 
+          trainer={showDetails} 
+          index={0} 
+          isDashboard={true} 
+          onClose={() => setShowDetails(null)} 
+        />
+      )}
       {deleteTrainerId !== null && (
         <ConfirmDeleteModal
           name={trainers.find((t: any) => (t.trainer_id || t.id) === deleteTrainerId)?.name || lt.trainer}
