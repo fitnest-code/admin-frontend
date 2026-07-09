@@ -33,7 +33,8 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
     const [maxSlots, setMaxSlots] = useState<number | ''>('')
     const [showSuccess, setShowSuccess] = useState(false)
 
-    // Fetch gym-specific lesson types (from gym_lesson_types table)
+    // Lesson types come from the gym's categories: every lesson type of every
+    // category assigned to the gym is available (ids are global lesson type ids)
     const { data: lessonTypesData } = useGymLessonTypes(gymId)
     const availableLessonTypes = lessonTypesData || []
 

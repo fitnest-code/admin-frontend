@@ -3,12 +3,11 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 import styles from './lesson-hours-tab.module.css'
-import { 
-    useGymLessonHours, 
+import {
+    useGymLessonHours,
     useGymLessonHoursArchive,
     useDeleteLessonHour,
-    useGymTrainers,
-    useGymLessonTypes
+    useGymTrainers
 } from '@/lib/query/gym-query'
 import { useParams } from 'next/navigation'
 import { AddLessonHourModal } from './modals/add-lesson-hour-modal'

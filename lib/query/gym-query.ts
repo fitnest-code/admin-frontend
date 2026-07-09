@@ -697,7 +697,7 @@ export function useDeleteLessonHour() {
   });
 }
 
-// 29. Zalın dərs növlərini çəkmək üçün
+// 29. Zalın dərs növlərini çəkmək üçün (zalın kateqoriyalarına aid bütün dərs növləri)
 export function useGymLessonTypes(gymId: number | string | null | undefined) {
   const normalizedGymId = gymId ? Number(gymId) : null;
   return useQuery({
