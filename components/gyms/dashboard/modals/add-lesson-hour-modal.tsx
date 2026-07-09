@@ -7,8 +7,7 @@ import { cn } from '@/lib/utils'
 import { 
     useAddLessonHour, 
     useGymTrainers, 
-    useCategories,
-    useGymDetailsAdmin
+    useGymLessonTypes
 } from '@/lib/query/gym-query'
 import { CustomCalendar } from '@/components/ui/custom-calendar'
 import { format, parse } from 'date-fns'
@@ -34,13 +33,9 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
     const [maxSlots, setMaxSlots] = useState<number | ''>('')
     const [showSuccess, setShowSuccess] = useState(false)
 
-    // Fetch gym details & categories to extract all lesson types belonging to the gym's category
-    const { data: gymDetails } = useGymDetailsAdmin(gymId)
-    const { data: categoriesData } = useCategories()
-    const activeCategoryIds = gymDetails?.categories?.map(c => c.id) || []
-    const availableLessonTypes = categoriesData?.items
-        ?.filter((c: any) => activeCategoryIds.includes(c.id))
-        ?.flatMap((c: any) => c.lessonTypes || []) || []
+    // Fetch gym-specific lesson types (from gym_lesson_types table)
+    const { data: lessonTypesData } = useGymLessonTypes(gymId)
+    const availableLessonTypes = lessonTypesData || []
 
     // Fetch all trainers without strict pagination to filter properly client-side
     const { data: trainersData, isLoading: trainersLoading } = useGymTrainers(gymId, { 
