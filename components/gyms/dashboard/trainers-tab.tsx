@@ -73,7 +73,15 @@ export function TrainersTab() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteTrainerId, setDeleteTrainerId] = useState<string | number | null>(null);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean;
+    message: string;
+    type: "success" | "error";
+  }>({
+    isOpen: false,
+    message: "",
+    type: "success",
+  });
   const pageSize = 10;
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -104,10 +112,10 @@ export function TrainersTab() {
     deleteTrainerMutate({ gymId: Number(gymId), trainerId: deleteTrainerId }, {
       onSuccess: () => {
         setDeleteTrainerId(null);
-        setShowSuccessModal(true);
+        setModalConfig({ isOpen: true, message: "Məşqçi uğurla silindi!", type: "success" });
       },
       onError: (err: any) => {
-        toast.error(err?.message || lt.errorOccurred);
+        setModalConfig({ isOpen: true, message: err?.response?.data?.message || err?.message || lt.errorOccurred, type: "error" });
       }
     });
     setOpenMenuId(null);
@@ -385,7 +393,12 @@ export function TrainersTab() {
           isLoading={isDeletingTrainer}
         />
       )}
-      <SuccessAnimationModal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)} />
+      <SuccessAnimationModal 
+        isOpen={modalConfig.isOpen}
+        onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
+        message={modalConfig.message}
+        type={modalConfig.type}
+      />
     </div>
   );
 }

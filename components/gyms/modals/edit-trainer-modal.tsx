@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { createPortal } from "react-dom";
 import { ImageCropper } from "@/components/ui/image-cropper";
+import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 
 interface EditTrainerModalProps {
   onClose: () => void;
@@ -87,7 +88,15 @@ export function EditTrainerModal({ onClose, trainer, index, isDashboard = false 
   const [selectedLessonTypeIds, setSelectedLessonTypeIds] = useState<Set<number>>(
     new Set(trainer.lessonTypeIds || [])
   );
-  
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean;
+    message: string;
+    type: "success" | "error";
+  }>({
+    isOpen: false,
+    message: "",
+    type: "success",
+  });
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [cropperSrc, setCropperSrc] = useState<string | null>(null);
@@ -268,11 +277,10 @@ export function EditTrainerModal({ onClose, trainer, index, isDashboard = false 
       }, {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ["gym-trainers", Number(gymId)] });
-          toast.success("Məşqçi məlumatları yeniləndi");
-          onClose();
+          setModalConfig({ isOpen: true, message: "Məşqçi məlumatları yeniləndi", type: "success" });
         },
         onError: (err: any) => {
-          toast.error(err?.response?.data?.message || err?.message || "Xəta baş verdi");
+          setModalConfig({ isOpen: true, message: err?.response?.data?.message || err?.message || "Xəta baş verdi", type: "error" });
         }
       });
     } else {
@@ -536,6 +544,17 @@ export function EditTrainerModal({ onClose, trainer, index, isDashboard = false 
           onCancel={() => setCropperSrc(null)}
         />
       )}
+      <SuccessAnimationModal 
+        isOpen={modalConfig.isOpen}
+        onClose={() => {
+          setModalConfig(prev => ({ ...prev, isOpen: false }));
+          if (modalConfig.type === "success") {
+            onClose();
+          }
+        }}
+        message={modalConfig.message}
+        type={modalConfig.type}
+      />
     </div>,
     document.body
   );
