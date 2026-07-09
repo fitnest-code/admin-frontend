@@ -364,38 +364,56 @@ export function EditTrainerModal({ onClose, trainer, index, isDashboard = false 
                 />
               </div>
 
-              {/* Category Select Dropdown */}
+              {/* Category Select - Multi Select */}
               <div className="w-full flex flex-col items-start gap-1.5" ref={categoryDropdownRef}>
-                <div className="w-full text-[14px] leading-5 text-black/60 font-semibold">Kateqoriya seçimi</div>
+                <div className="w-full text-[14px] leading-5 text-black/60 font-semibold">Kateqoriya</div>
                 <div className="relative w-full">
                   <div 
                     onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
-                    className="w-full h-[44px] rounded-lg bg-[#fafafa] border border-[#ececed] px-4 text-[15px] font-medium outline-none flex items-center justify-between cursor-pointer hover:border-[#00B4CC] transition-all font-sans select-none"
+                    className="min-h-[44px] w-full rounded-lg bg-[#fafafa] border border-[#ececed] px-3 py-2 text-[15px] font-medium outline-none flex flex-wrap items-center justify-between cursor-pointer hover:border-[#00B4CC] transition-all font-sans select-none gap-1.5"
                   >
-                    <span className={selectedCategoryIds.size > 0 ? "text-black" : "text-[#94979c]"}>
-                      {selectedCategoryIds.size === 0 
-                        ? "Kateqoriya seçin" 
-                        : Array.from(selectedCategoryIds).map(id => availableCategories.find(c => c.id === id)?.name).filter(Boolean).join(", ")}
-                    </span>
-                    <ChevronDown size={18} className={cn("text-black/40 transition-transform duration-200", isCategoryDropdownOpen && "rotate-180")} />
+                    {selectedCategoryIds.size > 0 ? (
+                      <div className="flex flex-wrap gap-1.5 max-w-[90%]">
+                        {availableCategories.filter(c => selectedCategoryIds.has(c.id)).map(cat => (
+                          <div 
+                            key={cat.id} 
+                            className="bg-[#00b4cc] text-white text-xs font-semibold rounded px-2.5 py-1 flex items-center gap-1.5 animate-in fade-in zoom-in-95 duration-100"
+                          >
+                            <span>{cat.name}</span>
+                            <span 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleCategory(cat.id);
+                              }}
+                              className="text-white/60 hover:text-white cursor-pointer font-bold leading-none text-xs"
+                            >
+                              ×
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-[#94979c]">Kateqoriya seçin</span>
+                    )}
+                    <ChevronDown size={18} className={`text-black/40 transition-transform duration-200 ${isCategoryDropdownOpen ? "rotate-180" : ""}`} />
                   </div>
 
                   {isCategoryDropdownOpen && (
                     <div className="absolute left-0 top-[calc(100%+8px)] w-full bg-white border border-[#ececed] rounded-xl shadow-lg z-50 max-h-[220px] overflow-y-auto p-2 flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-150">
-                      {availableCategories.map((c: any) => {
-                        const isSelected = selectedCategoryIds.has(c.id);
+                      {availableCategories.map((cat: any) => {
+                        const isSelected = selectedCategoryIds.has(cat.id);
                         return (
                           <div
-                            key={c.id}
+                            key={cat.id}
                             onClick={(e) => {
-                              e.stopPropagation();
-                              toggleCategory(c.id);
+                                e.stopPropagation();
+                                toggleCategory(cat.id);
                             }}
                             className={`w-full flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors ${
                               isSelected ? "bg-[#00B4CC]/10 text-[#00B4CC] font-medium" : "hover:bg-gray-50 text-black"
                             }`}
                           >
-                            <span className="text-[14px]">{c.name}</span>
+                            <span className="text-[14px]">{cat.name}</span>
                             <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
                               isSelected ? "border-[#00B4CC] bg-[#00B4CC] text-white" : "border-gray-300"
                             }`}>
@@ -404,6 +422,11 @@ export function EditTrainerModal({ onClose, trainer, index, isDashboard = false 
                           </div>
                         );
                       })}
+                      {availableCategories.length === 0 && (
+                        <div className="px-3 py-3 text-sm text-gray-400 text-center">
+                          Kateqoriya tapılmadı
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
