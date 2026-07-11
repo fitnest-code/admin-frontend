@@ -7,7 +7,8 @@ import {
     useGymLessonHours,
     useGymLessonHoursArchive,
     useDeleteLessonHour,
-    useGymTrainers
+    useGymTrainers,
+    useLessonHourReservationCounts
 } from '@/lib/query/gym-query'
 import { useParams } from 'next/navigation'
 import { AddLessonHourModal } from './modals/add-lesson-hour-modal'
@@ -29,6 +30,7 @@ const LessonHoursTab = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false)
     const [isRulesModalOpen, setIsRulesModalOpen] = useState(false)
     const [deleteLessonId, setDeleteLessonId] = useState<number | null>(null)
+    const { data: reservationCounts } = useLessonHourReservationCounts(deleteLessonId)
     const [currentPage, setCurrentPage] = useState(1)
     const pageSize = 10
 
@@ -458,6 +460,11 @@ const LessonHoursTab = () => {
                     onConfirm={handleDelete}
                     onCancel={() => setDeleteLessonId(null)}
                     isLoading={deleteMutation.isPending}
+                    description={
+                        reservationCounts && (reservationCounts.pendingCount > 0 || reservationCounts.approvedCount > 0)
+                            ? `Silmək istədiyiniz dərs saatına ${reservationCounts.pendingCount} gözləmədə olan, ${reservationCounts.approvedCount} təsdiq olunmuş rezervasiya mövcuddur. Əgər davam etsəz həmin müştərilərə bildiriş göndəriləcək.`
+                            : undefined
+                    }
                 />
             )}
         </div>

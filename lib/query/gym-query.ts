@@ -856,3 +856,15 @@ export function useUpdateGymStep5() {
     }
   });
 }
+
+// 36.3 Dərs saatına aid rezervasiya saylarını çəkmək üçün
+export function useLessonHourReservationCounts(lessonHourId: number | string | null | undefined) {
+  return useQuery({
+    queryKey: ['lesson-hour-reservation-counts', lessonHourId],
+    queryFn: () => {
+      if (!lessonHourId) return Promise.resolve({ pendingCount: 0, approvedCount: 0 })
+      return apiGet<{ pendingCount: number, approvedCount: number }>(`/admin/gyms/lesson-hours/${lessonHourId}/reservation-counts`)
+    },
+    enabled: !!lessonHourId,
+  })
+}

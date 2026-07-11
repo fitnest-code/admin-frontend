@@ -11,9 +11,10 @@ interface ConfirmDeleteModalProps {
   onConfirm: () => void
   onCancel: () => void
   isLoading?: boolean
+  description?: string
 }
 
-export function ConfirmDeleteModal({ name, onConfirm, onCancel, isLoading }: ConfirmDeleteModalProps) {
+export function ConfirmDeleteModal({ name, onConfirm, onCancel, isLoading, description }: ConfirmDeleteModalProps) {
   const [mounted, setMounted] = useState(false)
   const t = useT()
 
@@ -34,6 +35,12 @@ export function ConfirmDeleteModal({ name, onConfirm, onCancel, isLoading }: Con
         <div className="text-[26px] font-medium text-[#131212] leading-[40px] text-center">
           {t.lessonHours.deleteConfirmTitle}
         </div>
+
+        {description && (
+          <div className="text-[15px] font-sans font-normal text-slate-500 leading-relaxed text-center max-w-[460px] -mt-3">
+            {description}
+          </div>
+        )}
         
         <div className="w-full flex items-center justify-between gap-5">
           <button 
