@@ -344,7 +344,22 @@ const LessonHoursTab = () => {
                                         <td>{hour.trainerName}</td>
                                         <td>{hour.date}</td>
                                         <td>{formatTo24h(hour.timeRange)}</td>
-                                        <td>{hour.emptySpaces}</td>
+                                        <td>
+                                            <div className="flex items-center gap-2">
+                                                {/* Submitted (Approved) */}
+                                                <span className="inline-flex items-center justify-center min-w-[24px] px-1.5 py-0.5 text-xs font-semibold rounded bg-emerald-50 text-[#22c55e] border border-emerald-100" title="Təsdiqlənmiş (Submitted)">
+                                                    {hour.approvedReservations ?? 0}
+                                                </span>
+                                                {/* Waiting (Pending) */}
+                                                <span className="inline-flex items-center justify-center min-w-[24px] px-1.5 py-0.5 text-xs font-semibold rounded bg-amber-50 text-[#f97316] border border-amber-100" title="Gözləmədə (Waiting)">
+                                                    {hour.pendingReservations ?? 0}
+                                                </span>
+                                                {/* Empty Spaces */}
+                                                <span className="inline-flex items-center justify-center min-w-[24px] px-1.5 py-0.5 text-xs font-semibold rounded bg-slate-50 text-[#64748b] border border-slate-100" title="Boş yerlər (Empty)">
+                                                    {hour.emptySpaces ?? 0}
+                                                </span>
+                                            </div>
+                                        </td>
                                         <td>
                                             <span className={styles.statusBadge}>
                                                 {hour.status === 'OPEN' ? t.lessonHours.statusActive : t.lessonHours.statusClosed}
