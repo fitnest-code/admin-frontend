@@ -30,7 +30,7 @@ const LessonHoursTab = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false)
     const [isRulesModalOpen, setIsRulesModalOpen] = useState(false)
     const [deleteLessonId, setDeleteLessonId] = useState<number | null>(null)
-    const { data: reservationCounts } = useLessonHourReservationCounts(deleteLessonId)
+    const { data: reservationCounts, isLoading: isCountsLoading } = useLessonHourReservationCounts(deleteLessonId)
     const [currentPage, setCurrentPage] = useState(1)
     const pageSize = 10
 
@@ -459,11 +459,24 @@ const LessonHoursTab = () => {
                     name={lessonHours?.find((h: any) => h.id === deleteLessonId)?.lessonTypeName || t.lessonHours.fallbackName}
                     onConfirm={handleDelete}
                     onCancel={() => setDeleteLessonId(null)}
-                    isLoading={deleteMutation.isPending}
+                    isLoading={deleteMutation.isPending || isCountsLoading}
                     description={
-                        reservationCounts && (reservationCounts.pendingCount > 0 || reservationCounts.approvedCount > 0)
-                            ? `Silmək istədiyiniz dərs saatına ${reservationCounts.pendingCount} gözləmədə olan, ${reservationCounts.approvedCount} təsdiq olunmuş rezervasiya mövcuddur. Əgər davam etsəz həmin müştərilərə bildiriş göndəriləcək.`
-                            : undefined
+                        (() => {
+                            if (!reservationCounts) return undefined;
+                            const { pendingCount: pending, approvedCount: approved } = reservationCounts;
+                            if (pending === 0 && approved === 0) return undefined;
+
+                            let text = "";
+                            if (pending > 0 && approved > 0) {
+                                text = `${pending} gözləmədə olan, ${approved} təsdiq olunmuş`;
+                            } else if (pending > 0) {
+                                text = `${pending} gözləmədə olan`;
+                            } else if (approved > 0) {
+                                text = `${approved} təsdiq olunmuş`;
+                            }
+
+                            return `Silmək istədiyiniz dərs saatına ${text} rezervasiya mövcuddur. Əgər davam etsəz həmin müştərilərə bildiriş göndəriləcək.`;
+                        })()
                     }
                 />
             )}
