@@ -53,12 +53,15 @@
     background: #FFFFFF;
     border: 1px solid #E5E7EB;
     border-radius: 12px;
-    overflow: hidden;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
 }
 
 .table {
     width: 100%;
     border-collapse: collapse;
+    min-width: 750px;
 }
 
 .table th {
