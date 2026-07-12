@@ -430,7 +430,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       )}
 
       {/* Header with Status */}
-      <div className="w-full flex items-center justify-between border-b border-[#ececed] pb-3 relative">
+      <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#ececed] pb-3 relative">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
             <h1 className="text-[20px] font-bold text-[#101828] tracking-tight">{gym.name}</h1>
@@ -442,7 +442,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-end sm:justify-start">
           {isGymAdmin && adminGyms.length > 1 && (
             <div className="flex items-center gap-2">
               <div className="relative">

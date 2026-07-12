@@ -160,9 +160,9 @@ export function Header() {
   }
 
   return (
-    <header className="relative mx-6 mt-6 mb-6 h-[60px] rounded-xl bg-[#00B4CC26] px-5 flex items-center justify-between gap-4 transition-all duration-300">
+    <header className="relative mx-4 sm:mx-6 mt-4 sm:mt-6 mb-6 h-[60px] rounded-xl bg-[#00B4CC26] px-3 sm:px-5 flex items-center justify-between gap-2 sm:gap-4 transition-all duration-300">
       {/* Left: Profile Chip & Mobile Toggle */}
-      <div className="flex items-center gap-3 shrink-0">
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         {!(
           user?.role?.toUpperCase() === 'ROLE_GYM_SUPER_ADMIN' || 
           user?.role?.toUpperCase() === 'ROLE_GYM_ADMIN' ||
@@ -179,20 +179,20 @@ export function Header() {
         )}
         <Link 
           href="/profile"
-          className="flex items-center gap-3 hover:opacity-80 active:scale-98 transition-all cursor-pointer"
+          className="flex items-center gap-2 sm:gap-3 hover:opacity-80 active:scale-98 transition-all cursor-pointer"
           title="Profil"
         >
           <div className="w-10 h-10 rounded-full bg-white border border-[#ececed] flex items-center justify-center text-[14px] font-medium text-black">
             {initials}
           </div>
-          <div className="text-[14px] leading-[20px] text-black font-medium">
+          <div className="text-[14px] leading-[20px] text-black font-medium hidden sm:block">
             {user?.name || (user?.role === 'SUPER_ADMIN' ? 'Owner' : 'Admin')}
           </div>
         </Link>
       </div>
 
       {/* Right: Language Dropdown & Exit Action */}
-      <div className="flex items-center gap-6 shrink-0">
+      <div className="flex items-center gap-3 sm:gap-6 shrink-0">
         {/* Notifications Bell */}
         <div className="relative flex items-center" ref={notificationsRef}>
           <button
@@ -309,7 +309,7 @@ export function Header() {
           <div className="w-5 h-5 flex items-center justify-center">
             <LogOut size={16} />
           </div>
-          <span className="text-[14px] leading-[20px] font-medium">{t.common.exit}</span>
+          <span className="text-[14px] leading-[20px] font-medium hidden sm:block">{t.common.exit}</span>
         </button>
       </div>
 
