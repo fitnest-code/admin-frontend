@@ -132,7 +132,7 @@ const LessonHoursTab = () => {
         <div className={styles.container}>
             <div className={styles.header}>
                 <h2 className={styles.title}>{t.lessonHours.title}</h2>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
                     <button 
                         className={cn(styles.addBtn, "bg-white border border-[#00B4CC] text-[#00B4CC] hover:bg-slate-50")} 
                         onClick={() => setIsRulesModalOpen(true)}
@@ -346,17 +346,17 @@ const LessonHoursTab = () => {
                                         <td>{formatTo24h(hour.timeRange)}</td>
                                         <td>
                                             <div className="flex items-center gap-2">
-                                                {/* Submitted (Approved) */}
-                                                <span className="inline-flex items-center justify-center min-w-[24px] px-1.5 py-0.5 text-xs font-semibold rounded bg-emerald-50 text-[#22c55e] border border-emerald-100" title="Təsdiqlənmiş (Submitted)">
-                                                    {hour.approvedReservations ?? 0}
+                                                {/* Empty Spaces */}
+                                                <span className="inline-flex items-center justify-center min-w-[24px] px-1.5 py-0.5 text-xs font-semibold rounded bg-slate-50 text-[#64748b] border border-slate-100" title="Boş yerlər (Empty)">
+                                                    {hour.emptySpaces ?? 0}
                                                 </span>
                                                 {/* Waiting (Pending) */}
                                                 <span className="inline-flex items-center justify-center min-w-[24px] px-1.5 py-0.5 text-xs font-semibold rounded bg-amber-50 text-[#f97316] border border-amber-100" title="Gözləmədə (Waiting)">
                                                     {hour.pendingReservations ?? 0}
                                                 </span>
-                                                {/* Empty Spaces */}
-                                                <span className="inline-flex items-center justify-center min-w-[24px] px-1.5 py-0.5 text-xs font-semibold rounded bg-slate-50 text-[#64748b] border border-slate-100" title="Boş yerlər (Empty)">
-                                                    {hour.emptySpaces ?? 0}
+                                                {/* Submitted (Approved) */}
+                                                <span className="inline-flex items-center justify-center min-w-[24px] px-1.5 py-0.5 text-xs font-semibold rounded bg-emerald-50 text-[#22c55e] border border-emerald-100" title="Təsdiqlənmiş (Submitted)">
+                                                    {hour.approvedReservations ?? 0}
                                                 </span>
                                             </div>
                                         </td>

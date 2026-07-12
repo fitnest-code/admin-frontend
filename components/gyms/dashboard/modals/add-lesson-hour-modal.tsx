@@ -69,6 +69,10 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
     }
 
     const handleSubmit = () => {
+        if (!selectedLessonType) {
+            alert('Zəhmət olmasa dərs növünü seçin')
+            return
+        }
         if (!date) {
             alert(t.lessonHours.dateRequiredAlert)
             return
