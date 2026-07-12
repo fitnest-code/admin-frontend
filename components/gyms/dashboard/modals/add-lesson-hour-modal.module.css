@@ -266,4 +266,46 @@
     background-color: rgba(0, 180, 204, 0.04);
 }
 
+@media (max-width: 640px) {
+    .modal {
+        padding: 20px;
+        gap: 20px;
+        border-radius: 16px;
+        max-height: 95vh;
+        overflow-y: auto;
+    }
+    
+    .title {
+        font-size: 20px;
+    }
+    
+    .body {
+        gap: 16px;
+    }
+    
+    .sectionTitle {
+        font-size: 16px;
+        margin-bottom: 12px;
+    }
+    
+    .trainerCard {
+        width: 100% !important;
+    }
+    
+    .row {
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .input {
+        padding: 12px;
+        font-size: 16px;
+    }
+    
+    .footer {
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+
 

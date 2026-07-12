@@ -255,7 +255,7 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                                 {showStartPicker && (
                                     <>
                                         <div className="fixed inset-0 z-40" onClick={() => setShowStartPicker(false)} />
-                                        <div className="absolute top-full left-0 z-[60] mt-1 w-full bg-white border border-[#E5E7EB] rounded-xl shadow-xl p-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                                        <div className="absolute top-full left-0 z-[60] mt-1 w-full max-w-[286px] bg-white border border-[#E5E7EB] rounded-xl shadow-xl p-3 animate-in fade-in slide-in-from-top-1 duration-200">
                                             <TimePicker 
                                                 value={startTime}
                                                 onChange={(val) => {
@@ -289,7 +289,7 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                                 {showEndPicker && (
                                     <>
                                         <div className="fixed inset-0 z-40" onClick={() => setShowEndPicker(false)} />
-                                        <div className="absolute top-full left-0 z-[60] mt-1 w-full bg-white border border-[#E5E7EB] rounded-xl shadow-xl p-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                                        <div className="absolute top-full left-0 z-[60] mt-1 w-full max-w-[286px] bg-white border border-[#E5E7EB] rounded-xl shadow-xl p-3 animate-in fade-in slide-in-from-top-1 duration-200">
                                             <TimePicker 
                                                 value={endTime}
                                                 onChange={(val) => {
