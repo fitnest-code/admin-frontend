@@ -172,13 +172,13 @@ export function GymsList() {
       </div>
 
       {/* Table - removed overflow-hidden to prevent dropdown clipping */}
-      <div className="rounded-xl border border-border bg-card">
-        <div className="grid grid-cols-[1fr_1fr_1fr_6rem_5rem] items-center gap-4 border-b border-border bg-[#00B4CC14] px-4 py-3 rounded-t-xl">
-          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">{t.gyms.gymName}</span>
-          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">{t.gyms.address}</span>
-          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">{t.gyms.owner}</span>
-          <span className="text-xs font-semibold text-foreground uppercase tracking-wider text-center">{t.gyms.status}</span>
-          <span className="text-xs font-semibold text-foreground uppercase tracking-wider text-center">{t.gyms.more}</span>
+      <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+        <div className="grid grid-cols-[1fr_1fr_1fr_6rem_5rem] items-center gap-3 border-b border-[#cecfd2]/60 dark:border-border bg-[#00B4CC]/[0.15] dark:bg-[#00B4CC]/10 px-4 py-3 rounded-t-lg">
+          <span className="text-[11px] font-bold uppercase text-foreground/80">{t.gyms.gymName}</span>
+          <span className="text-[11px] font-bold uppercase text-foreground/80">{t.gyms.address}</span>
+          <span className="text-[11px] font-bold uppercase text-foreground/80">{t.gyms.owner}</span>
+          <span className="text-[11px] font-bold uppercase text-foreground/80 text-center">{t.gyms.status}</span>
+          <span className="text-[11px] font-bold uppercase text-foreground/80 text-center">{t.gyms.more}</span>
         </div>
 
         {gymsQuery.isLoading ? (
@@ -280,20 +280,21 @@ function GymRow({
 
   return (
     <div 
+      onClick={onView}
       className={cn(
-        "grid grid-cols-[1fr_1fr_1fr_6rem_5rem] items-center gap-4 border-b border-border px-4 py-3.5 last:border-0 hover:bg-secondary/40 transition-colors relative",
+        "grid grid-cols-[1fr_1fr_1fr_6rem_5rem] items-center gap-3 border-b border-border px-4 py-3 last:border-0 hover:bg-secondary/40 transition-all duration-200 cursor-pointer relative",
         isMenuOpen ? "z-50 shadow-sm" : "z-0"
       )}
     >
       <span className="text-sm font-normal text-black truncate">{gym.name}</span>
-      <span className="text-sm text-black truncate">{gym.fullAddress}</span>
-      <span className="text-sm text-black truncate">{gym.ownerName || ''}</span>
-      <div className="flex justify-center">
+      <span className="text-sm font-normal text-black truncate">{gym.fullAddress}</span>
+      <span className="text-sm font-normal text-black truncate">{gym.ownerName || ''}</span>
+      <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
         <GymStatusToggle active={gym.status === 'ACTIVE'} onToggle={onToggle} />
       </div>
       
       {/* Action menu */}
-      <div className="relative flex justify-center" ref={isMenuOpen ? menuRef : undefined}>
+      <div className="relative flex justify-center" ref={isMenuOpen ? menuRef : undefined} onClick={(e) => e.stopPropagation()}>
         <button
           onClick={() => onToggleMenu(gym.id)}
           className={cn(
@@ -309,13 +310,6 @@ function GymRow({
 
         {isMenuOpen && (
           <div className="absolute right-0 top-11 z-50 w-[180px] flex flex-col gap-3 rounded-[12px] border border-[#ECECED] bg-white p-3 shadow-lg animate-in fade-in zoom-in-95 duration-100">
-            <button
-              onClick={onView}
-              className="flex w-full items-center gap-2 border-b border-[#ECECED] pb-3 text-base font-normal text-black hover:opacity-70 transition-opacity"
-            >
-              <Eye size={16} className="text-[#333333]" />
-              <span className="leading-none">{t.gyms.details}</span>
-            </button>
             <button
               onClick={onDelete}
               className="flex w-full items-center gap-2 text-base font-normal text-[#F10303] hover:opacity-70 transition-opacity"
