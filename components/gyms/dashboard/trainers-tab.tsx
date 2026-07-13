@@ -12,6 +12,12 @@ import { cn } from "@/lib/utils";
 import { ConfirmDeleteModal } from "../modals/confirm-delete-modal";
 import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 import { useI18nStore } from "@/lib/i18n";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 const LOCAL_TRANSLATIONS: Record<string, Record<string, string>> = {
   AZ: {
@@ -70,7 +76,6 @@ const LOCAL_TRANSLATIONS: Record<string, Record<string, string>> = {
 export function TrainersTab() {
   const [showAdd, setShowAdd] = useState(false);
   const [showDetails, setShowDetails] = useState<any>(null);
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteTrainerId, setDeleteTrainerId] = useState<string | number | null>(null);
   const [modalConfig, setModalConfig] = useState<{
@@ -83,7 +88,6 @@ export function TrainersTab() {
     type: "success",
   });
   const pageSize = 10;
-  const menuRef = useRef<HTMLDivElement>(null);
   
   const [colWidths, setColWidths] = useState<number[]>([280, 180, 220]);
   const startXRef = useRef<number>(0);
@@ -144,14 +148,7 @@ export function TrainersTab() {
   const { gymId } = useGymStore();
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setOpenMenuId(null);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
       if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current);
       if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current);
     };
@@ -333,33 +330,22 @@ export function TrainersTab() {
                         {/* Actions */}
                         <td className="border-b border-border px-10 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                           <div className="flex justify-center relative">
-                            <button
-                              onClick={() => setOpenMenuId(openMenuId === trainerUid ? null : trainerUid)}
-                              className="w-8 h-8 flex items-center justify-center transition-opacity hover:opacity-70"
-                            >
-                              <Image src="/more.png" width={24} height={24} alt="more" />
-                            </button>
-
-                            {openMenuId === trainerUid && (
-                              <div 
-                                ref={menuRef} 
-                                className={cn(
-                                  "absolute right-0 z-[100] w-[180px] bg-white rounded-[12px] border border-[#ECECED] p-3 shadow-lg animate-in fade-in zoom-in duration-200",
-                                  (i === trainers.length - 1 && trainers.length > 1) ? "bottom-full mb-2" : "top-10"
-                                )}
-                              >
-                                <button
-                                  onClick={() => {
-                                    setDeleteTrainerId(t.trainer_id || t.id);
-                                    setOpenMenuId(null);
-                                  }}
-                                  className="flex w-full items-center gap-2 text-base font-normal text-[#F10303] hover:opacity-70 transition-opacity"
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button className="w-8 h-8 flex items-center justify-center transition-opacity hover:opacity-70 outline-hidden">
+                                  <Image src="/more.png" width={24} height={24} alt="more" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-[180px] bg-white rounded-[12px] border border-[#ECECED] p-3 shadow-lg">
+                                <DropdownMenuItem
+                                  onClick={() => setDeleteTrainerId(t.trainer_id || t.id)}
+                                  className="flex w-full items-center gap-2 text-base font-normal text-[#F10303] hover:opacity-70 transition-opacity cursor-pointer focus:bg-red-50 focus:text-[#F10303]"
                                 >
                                   <Image src="/trash.png" width={16} height={16} alt="Delete" />
                                   <span className="leading-none">{lt.deleteTrainer}</span>
-                                </button>
-                              </div>
-                            )}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </td>
                       </tr>
