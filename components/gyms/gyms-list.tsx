@@ -14,6 +14,12 @@ import { toast } from 'sonner'
 import { useGymStore } from '@/lib/store/gym-store'
 
 import { useT } from '@/lib/i18n'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu'
 
 const PER_PAGE = 10
 
@@ -28,9 +34,7 @@ export function GymsList() {
   const [sortOpen, setSortOpen] = useState(false)
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
-  const [openMenuId, setOpenMenuId] = useState<number | null>(null)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQuery(query.trim()), 350)
@@ -48,7 +52,6 @@ export function GymsList() {
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (sortRef.current && !sortRef.current.contains(e.target as Node)) setSortOpen(false)
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpenMenuId(null)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -203,11 +206,8 @@ export function GymsList() {
               <GymRow
                 key={gym.id}
                 gym={gym}
-                openMenuId={openMenuId}
-                menuRef={menuRef}
-                onToggleMenu={(id) => setOpenMenuId(openMenuId === id ? null : id)}
                 onView={() => router.push(`/gyms/${gym.id}`)}
-                onDelete={() => { setDeleteId(gym.id); setOpenMenuId(null) }}
+                onDelete={() => setDeleteId(gym.id)}
                 onToggle={() => handleToggle(gym.id, gym.status === 'ACTIVE')}
               />
             ))}
@@ -260,31 +260,21 @@ export function GymsList() {
 
 function GymRow({
   gym,
-  openMenuId,
-  menuRef,
-  onToggleMenu,
   onView,
   onDelete,
   onToggle,
 }: {
   gym: AdminGymListItem
-  openMenuId: number | null
-  menuRef: React.RefObject<HTMLDivElement | null>
-  onToggleMenu: (id: number) => void
   onView: () => void
   onDelete: () => void
   onToggle: () => void
 }) {
   const t = useT()
-  const isMenuOpen = openMenuId === gym.id
 
   return (
     <div 
       onClick={onView}
-      className={cn(
-        "grid grid-cols-[1fr_1fr_1fr_6rem_5rem] items-center gap-3 border-b border-border px-4 py-3 last:border-0 hover:bg-secondary/40 transition-all duration-200 cursor-pointer relative",
-        isMenuOpen ? "z-50 shadow-sm" : "z-0"
-      )}
+      className="grid grid-cols-[1fr_1fr_1fr_6rem_5rem] items-center gap-3 border-b border-border px-4 py-3 last:border-0 hover:bg-secondary/40 transition-all duration-200 cursor-pointer relative"
     >
       <span className="text-sm font-normal text-black truncate">{gym.name}</span>
       <span className="text-sm font-normal text-black truncate">{gym.fullAddress}</span>
@@ -294,31 +284,27 @@ function GymRow({
       </div>
       
       {/* Action menu */}
-      <div className="relative flex justify-center" ref={isMenuOpen ? menuRef : undefined} onClick={(e) => e.stopPropagation()}>
-        <button
-          onClick={() => onToggleMenu(gym.id)}
-          className={cn(
-            "flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200",
-            isMenuOpen ? "bg-secondary text-[#00B4CC]" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-          )}
-          aria-label={t.gyms.more}
-          aria-haspopup="true"
-          aria-expanded={isMenuOpen}
-        >
-          <MoreVertical size={20} />
-        </button>
-
-        {isMenuOpen && (
-          <div className="absolute right-0 top-11 z-50 w-[180px] flex flex-col gap-3 rounded-[12px] border border-[#ECECED] bg-white p-3 shadow-lg animate-in fade-in zoom-in-95 duration-100">
+      <div className="relative flex justify-center" onClick={(e) => e.stopPropagation()}>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <button
+              className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200 outline-none"
+              aria-label={t.gyms.more}
+            >
+              <MoreVertical size={20} />
+            </button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="end" className="w-[180px] flex flex-col gap-3 rounded-[12px] border border-[#ECECED] bg-white p-3 shadow-lg">
+            <DropdownMenuItem
               onClick={onDelete}
-              className="flex w-full items-center gap-2 text-base font-normal text-[#F10303] hover:opacity-70 transition-opacity"
+              className="flex w-full items-center gap-2 text-base font-normal text-[#F10303] hover:opacity-70 transition-opacity cursor-pointer focus:bg-transparent px-0 py-0"
             >
               <Trash2 size={16} />
               <span className="leading-none">{t.common.delete}</span>
-            </button>
-          </div>
-        )}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   )

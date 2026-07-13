@@ -13,6 +13,12 @@ import { ConfirmDeleteModal } from '../gyms/modals/confirm-delete-modal'
 import { SuccessAnimationModal } from '../ui/success-animation-modal'
 import { useT } from '@/lib/i18n'
 import { apiGet } from '@/lib/api/client'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu'
 
 const PAGE_SIZE = 6
 
@@ -671,22 +677,13 @@ function PackageRow({
   onToggleStatus: (p: SubPackage) => void
 }) {
   const t = useT()
-  const [menuOpen, setMenuOpen] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    function h(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
-    }
-    document.addEventListener('mousedown', h)
-    return () => document.removeEventListener('mousedown', h)
-  }, [])
-
   const firstTier = pkg.priceTiers[0]
 
   return (
     <tr className="border-b border-border hover:bg-secondary/40 transition-colors">
-      <td className="px-4 py-3 text-sm font-normal text-black">{pkg.name}</td>
+      <td className="px-4 py-3 text-sm font-normal text-black overflow-hidden">
+        <span className="truncate block" title={pkg.name}>{pkg.name}</span>
+      </td>
       <td className="px-4 py-3">
         <button
           type="button"
@@ -701,20 +698,22 @@ function PackageRow({
           {pkg.status === 'active' ? t.subscriptions.active : t.subscriptions.deactive}
         </button>
       </td>
-      <td className="px-4 py-3 text-sm text-black">
+      <td className="px-4 py-3 text-sm text-black overflow-hidden">
         {pkg.priceTiers.map((tier, i) => (
-          <div key={i} className="flex items-baseline gap-1">
+          <div key={i} className="flex items-baseline gap-1 truncate">
             <span className="font-normal text-black">{tier.discountPrice || tier.price}</span>
             <span className="text-black text-xs">AZN</span>
             <span className="text-black text-xs">/ {formatDuration(tier.duration, t)}</span>
           </div>
         ))}
       </td>
-      <td className="px-4 py-3 text-sm text-black">{pkg.entryLimit} {t.subscriptions.entryLimit}</td>
-      <td className="px-4 py-3">
-        <div className="flex flex-wrap gap-1">
+      <td className="px-4 py-3 text-sm text-black overflow-hidden">
+        <span className="truncate block">{pkg.entryLimit} {t.subscriptions.entryLimit}</span>
+      </td>
+      <td className="px-4 py-3 overflow-hidden">
+        <div className="flex flex-wrap gap-1 truncate">
           {pkg.services.slice(0, 2).map((s) => (
-            <span key={s} className="rounded-md border border-border px-2 py-0.5 text-xs text-black">{s}</span>
+            <span key={s} className="rounded-md border border-border px-2 py-0.5 text-xs text-black truncate">{s}</span>
           ))}
           {pkg.services.length > 2 && (
             <span className="rounded-md border border-border px-2 py-0.5 text-xs text-black">
@@ -724,29 +723,30 @@ function PackageRow({
         </div>
       </td>
       <td className="px-4 py-3">
-        <div className="relative flex justify-center" ref={menuRef}>
-          <button
-            onClick={() => setMenuOpen((p) => !p)}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-          >
-            <MoreVertical size={15} />
-          </button>
-          {menuOpen && (
-            <div className="absolute right-0 top-full z-50 mt-1 w-36 rounded-xl border border-border bg-card shadow-xl overflow-hidden">
+        <div className="relative flex justify-center" onClick={(e) => e.stopPropagation()}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <button
-                onClick={() => { onEdit(pkg); setMenuOpen(false) }}
-                className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors"
+                className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors outline-none"
+              >
+                <MoreVertical size={15} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-36 rounded-xl border border-border bg-card shadow-xl overflow-hidden p-1 flex flex-col gap-1">
+              <DropdownMenuItem
+                onClick={() => onEdit(pkg)}
+                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors cursor-pointer focus:bg-transparent px-0 py-0"
               >
                 <Pencil size={13} className="text-[#00B4CC]" /> {t.subscriptions.change}
-              </button>
-              <button
-                onClick={() => { onDelete(pkg.id); setMenuOpen(false) }}
-                className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => onDelete(pkg.id)}
+                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors cursor-pointer focus:bg-transparent px-0 py-0"
               >
                 <Trash2 size={13} /> {t.subscriptions.delete}
-              </button>
-            </div>
-          )}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </td>
     </tr>
@@ -901,6 +901,66 @@ export function SubscriptionList() {
     message: "",
     type: "success",
   })
+
+  const [colWidths, setColWidths] = useState<number[]>([220, 140, 180, 150, 200]);
+  const startXRef = useRef<number>(0);
+  const startWidthRef = useRef<number>(0);
+  const activeColIndexRef = useRef<number>(-1);
+  const tableRef = useRef<HTMLTableElement>(null);
+  const containerWidthRef = useRef<number>(0);
+
+  const mouseMoveRef = useRef<(e: MouseEvent) => void>(null);
+  const mouseUpRef = useRef<() => void>(null);
+
+  const minWidths = [150, 120, 120, 120, 150];
+
+  mouseMoveRef.current = (e: MouseEvent) => {
+    if (activeColIndexRef.current === -1) return;
+    const deltaX = e.clientX - startXRef.current;
+    const minW = minWidths[activeColIndexRef.current] || 100;
+
+    const sumOthers = colWidths.reduce((acc, w, idx) => {
+      return idx !== activeColIndexRef.current ? acc + w : acc;
+    }, 0);
+
+    const maxW = Math.max(minW, containerWidthRef.current - sumOthers - 100);
+    const newWidth = Math.min(maxW, Math.max(minW, startWidthRef.current + deltaX));
+    setColWidths((prev) => {
+      const copy = [...prev];
+      copy[activeColIndexRef.current] = newWidth;
+      return copy;
+    });
+  };
+
+  mouseUpRef.current = () => {
+    activeColIndexRef.current = -1;
+    if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current);
+    if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current);
+  };
+
+  const handleMouseDown = (index: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    activeColIndexRef.current = index;
+    startXRef.current = e.clientX;
+    startWidthRef.current = colWidths[index];
+
+    if (tableRef.current) {
+      containerWidthRef.current = tableRef.current.getBoundingClientRect().width;
+    } else {
+      containerWidthRef.current = 800;
+    }
+
+    if (mouseMoveRef.current) document.addEventListener("mousemove", mouseMoveRef.current);
+    if (mouseUpRef.current) document.addEventListener("mouseup", mouseUpRef.current);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current);
+      if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current);
+    };
+  }, []);
 
   async function handleToggleStatus(pkg: SubPackage) {
     const newStatus = pkg.status === 'active' ? 'inactive' : 'active'
@@ -1121,15 +1181,63 @@ export function SubscriptionList() {
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-border bg-card">
-          <table className="w-full">
+          <table ref={tableRef} className="w-full border-separate border-spacing-0" style={{ tableLayout: "fixed", minWidth: "800px" }}>
+            <colgroup>
+              <col style={{ width: `${colWidths[0]}px` }} />
+              <col style={{ width: `${colWidths[1]}px` }} />
+              <col style={{ width: `${colWidths[2]}px` }} />
+              <col style={{ width: `${colWidths[3]}px` }} />
+              <col style={{ width: `${colWidths[4]}px` }} />
+              <col />
+            </colgroup>
             <thead>
               <tr className="bg-[#00B4CC]/10 text-left">
-                <th className="px-4 py-3 text-xs font-semibold text-foreground">{t.subscriptions.packageNameHeader}</th>
-                <th className="px-4 py-3 text-xs font-semibold text-foreground">{t.subscriptions.statusHeader}</th>
-                <th className="px-4 py-3 text-xs font-semibold text-foreground">{t.subscriptions.priceDurationHeader}</th>
-                <th className="px-4 py-3 text-xs font-semibold text-foreground">{t.subscriptions.limitHeader}</th>
-                <th className="px-4 py-3 text-xs font-semibold text-foreground">{t.subscriptions.servicesHeader}</th>
-                <th className="px-4 py-3 text-xs font-semibold text-foreground text-center">{t.subscriptions.actionsHeader}</th>
+                <th className="px-4 py-3 text-xs font-semibold text-foreground relative">
+                  {t.subscriptions.packageNameHeader}
+                  <div
+                    onMouseDown={(e) => handleMouseDown(0, e)}
+                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
+                  >
+                    <div className="w-[2px] h-4 bg-[#cecfd2] dark:bg-border group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
+                  </div>
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold text-foreground relative">
+                  {t.subscriptions.statusHeader}
+                  <div
+                    onMouseDown={(e) => handleMouseDown(1, e)}
+                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
+                  >
+                    <div className="w-[2px] h-4 bg-[#cecfd2] dark:bg-border group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
+                  </div>
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold text-foreground relative">
+                  {t.subscriptions.priceDurationHeader}
+                  <div
+                    onMouseDown={(e) => handleMouseDown(2, e)}
+                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
+                  >
+                    <div className="w-[2px] h-4 bg-[#cecfd2] dark:bg-border group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
+                  </div>
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold text-foreground relative">
+                  {t.subscriptions.limitHeader}
+                  <div
+                    onMouseDown={(e) => handleMouseDown(3, e)}
+                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
+                  >
+                    <div className="w-[2px] h-4 bg-[#cecfd2] dark:bg-border group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
+                  </div>
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold text-foreground relative">
+                  {t.subscriptions.servicesHeader}
+                  <div
+                    onMouseDown={(e) => handleMouseDown(4, e)}
+                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
+                  >
+                    <div className="w-[2px] h-4 bg-[#cecfd2] dark:bg-border group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
+                  </div>
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold text-foreground text-center relative">{t.subscriptions.actionsHeader}</th>
               </tr>
             </thead>
             <tbody>

@@ -6,6 +6,12 @@ import { Copy, Download, RefreshCw, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useCustomerPaymentsQuery } from '@/modules/customers/hooks/use-customers-query'
 import type { UserPaymentHistoryItem } from '@/modules/customers/types/customer.types'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu"
 
 const PAGE_SIZE = 5
 
@@ -87,20 +93,10 @@ function PaymentMethodBadge({ method }: { method: string }) {
 export function PaymentsTab({ userId }: { userId: string }) {
   const [page, setPage]             = useState(1)
   const [selected, setSelected]     = useState<UserPaymentHistoryItem | null>(null)
-  const [menuOpen, setMenuOpen]     = useState<string | null>(null)
   const [modalState, setModalState] = useState<ModalState>(null)
   const [copied, setCopied]         = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
 
   const { data = [], isLoading, isError } = useCustomerPaymentsQuery(userId)
-
-  useEffect(() => {
-    function h(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(null)
-    }
-    document.addEventListener('mousedown', h)
-    return () => document.removeEventListener('mousedown', h)
-  }, [])
 
   const totalPages = Math.max(1, Math.ceil(data.length / PAGE_SIZE))
   const rows = data.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
@@ -217,55 +213,44 @@ export function PaymentsTab({ userId }: { userId: string }) {
 
                   {/* Actions column using exact requested Image visual token */}
                   <div className="w-[60px] shrink-0 flex items-center justify-center">
-                    <div className="relative inline-block" ref={menuOpen === row.transactionId ? menuRef : undefined}>
-                      <button
-                        type="button"
-                        onClick={() => setMenuOpen(menuOpen === row.transactionId ? null : row.transactionId)}
-                        className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-secondary/80 transition-all cursor-pointer outline-none"
-                        aria-label="Ətraflı"
-                      >
-                        <Image src="/more.png" width={24} height={24} alt="Ətraflı" className="object-contain" />
-                      </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-secondary/80 transition-all cursor-pointer outline-none"
+                          aria-label="Ətraflı"
+                        >
+                          <Image src="/more.png" width={24} height={24} alt="Ətraflı" className="object-contain" />
+                        </button>
+                      </DropdownMenuTrigger>
                       
-                      {/* Exact Custom Styled Etrafli Popover container */}
-                      {menuOpen === row.transactionId && (
-                        <div className="absolute right-0 top-full z-50 mt-1 w-[200px] rounded-[12px] bg-white border border-[#ececed] p-3 flex flex-col gap-3 shadow-2xl font-sans text-black">
-                          {/* Item 1: Bax */}
-                          <div className="w-full border-b border-[#00b4cc] pb-2 flex items-center">
-                            <button
-                              type="button"
-                              onClick={() => openDetail(row)}
-                              className="w-full text-left text-[16px] leading-[24px] text-black hover:text-[#00b4cc] transition-colors font-medium cursor-pointer block"
-                            >
-                              Bax
-                            </button>
-                          </div>
+                      <DropdownMenuContent align="end" className="w-[200px] rounded-[12px] bg-white border border-[#ececed] p-3 flex flex-col gap-3 shadow-2xl font-sans text-black">
+                        {/* Item 1: Bax */}
+                        <DropdownMenuItem
+                          onClick={() => openDetail(row)}
+                          className="w-full text-left text-[16px] leading-[24px] text-black hover:text-[#00b4cc] focus:text-[#00b4cc] transition-colors font-medium cursor-pointer block border-b border-[#00b4cc] pb-2 rounded-none focus:bg-transparent px-0 py-0"
+                        >
+                          Bax
+                        </DropdownMenuItem>
 
-                          {/* Item 2: Tranzaksiya ID- ni kopyala */}
-                          <div className="w-full border-b border-[#ececed] pb-2 flex items-center justify-between">
-                            <button
-                              type="button"
-                              onClick={() => copyId(row.transactionId)}
-                              className="w-full text-left text-[16px] leading-[24px] text-black hover:text-[#00b4cc] transition-colors font-medium cursor-pointer flex items-center justify-between"
-                            >
-                              <span>Tranzaksiya ID- ni kopyala</span>
-                              {copied && <Check size={14} className="text-[#00b4cc] shrink-0 ml-1" />}
-                            </button>
-                          </div>
+                        {/* Item 2: Tranzaksiya ID- ni kopyala */}
+                        <DropdownMenuItem
+                          onClick={() => copyId(row.transactionId)}
+                          className="w-full text-left text-[16px] leading-[24px] text-black hover:text-[#00b4cc] focus:text-[#00b4cc] transition-colors font-medium cursor-pointer flex items-center justify-between border-b border-[#ececed] pb-2 rounded-none focus:bg-transparent px-0 py-0"
+                        >
+                          <span>Tranzaksiya ID- ni kopyala</span>
+                          {copied && <Check size={14} className="text-[#00b4cc] shrink-0 ml-1" />}
+                        </DropdownMenuItem>
 
-                          {/* Item 3: Qəbzi yüklə */}
-                          <div className="w-full flex items-center pt-0.5">
-                            <button
-                              type="button"
-                              onClick={() => { downloadDirectReceipt(row); setMenuOpen(null); }}
-                              className="w-full text-left text-[16px] leading-[24px] text-black hover:text-[#00b4cc] transition-colors font-medium cursor-pointer block"
-                            >
-                              Qəbzi yüklə
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                        {/* Item 3: Qəbzi yüklə */}
+                        <DropdownMenuItem
+                          onClick={() => downloadDirectReceipt(row)}
+                          className="w-full text-left text-[16px] leading-[24px] text-black hover:text-[#00b4cc] focus:text-[#00b4cc] transition-colors font-medium cursor-pointer block pt-0.5 focus:bg-transparent px-0 py-0"
+                        >
+                          Qəbzi yüklə
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               )

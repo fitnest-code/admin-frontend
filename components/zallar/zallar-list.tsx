@@ -7,6 +7,12 @@ import { cn } from '@/lib/utils'
 import { MOCK_ZALLAR, SORT_OPTIONS, type Zal } from '@/lib/zallar-data'
 import { ZalStatusToggle } from './zal-status-toggle'
 import { ConfirmDeleteModal } from './modals/confirm-delete-modal'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu'
 
 export function ZallarList() {
   const router = useRouter()
@@ -14,12 +20,10 @@ export function ZallarList() {
   const [sortValue, setSortValue] = useState('newest')
   const [sortOpen, setSortOpen] = useState(false)
   const [zallar, setZallar] = useState<Zal[]>(MOCK_ZALLAR)
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
 
   const sortRef = useRef<HTMLDivElement>(null)
-  const menuRef = useRef<HTMLDivElement>(null)
 
   const PER_PAGE = 5
   const TOTAL_PAGES = 34 // mock
@@ -28,7 +32,6 @@ export function ZallarList() {
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (sortRef.current && !sortRef.current.contains(e.target as Node)) setSortOpen(false)
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpenMenuId(null)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -176,9 +179,6 @@ export function ZallarList() {
               <ZalTableRow
                 key={zal.id}
                 zal={zal}
-                openMenuId={openMenuId}
-                menuRef={menuRef}
-                onToggleMenu={(id) => setOpenMenuId((prev) => (prev === id ? null : id))}
                 onView={() => router.push(`/zallar/${zal.id}`)}
                 onDelete={() => setDeleteTargetId(zal.id)}
                 onToggleStatus={() => handleToggleStatus(zal.id)}
@@ -227,9 +227,6 @@ export function ZallarList() {
 
 interface ZalTableRowProps {
   zal: Zal
-  openMenuId: string | null
-  menuRef: React.RefObject<HTMLDivElement | null>
-  onToggleMenu: (id: string) => void
   onView: () => void
   onDelete: () => void
   onToggleStatus: () => void
@@ -237,21 +234,13 @@ interface ZalTableRowProps {
 
 function ZalTableRow({
   zal,
-  openMenuId,
-  menuRef,
-  onToggleMenu,
   onView,
   onDelete,
   onToggleStatus,
 }: ZalTableRowProps) {
-  const isMenuOpen = openMenuId === zal.id
-
   return (
     <div 
-      className={cn(
-        "grid grid-cols-[2rem_1fr_1fr_1fr_6rem_4rem] items-center gap-4 border-b border-border px-4 py-3.5 last:border-0 hover:bg-secondary/40 transition-colors relative",
-        isMenuOpen ? "z-50 shadow-sm" : "z-0"
-      )}
+      className="grid grid-cols-[2rem_1fr_1fr_1fr_6rem_4rem] items-center gap-4 border-b border-border px-4 py-3.5 last:border-0 hover:bg-secondary/40 transition-colors relative"
     >
       <input type="checkbox" className="h-4 w-4 rounded accent-[#00B4CC]" aria-label={`${zal.name} seç`} />
       <span className="text-sm font-medium text-foreground truncate">{zal.name}</span>
@@ -264,38 +253,34 @@ function ZalTableRow({
       </div>
 
       {/* Action menu */}
-      <div className="relative flex justify-end" ref={isMenuOpen ? menuRef : undefined}>
-        <button
-          onClick={() => onToggleMenu(zal.id)}
-          className={cn(
-            "flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200",
-            isMenuOpen ? "bg-secondary text-[#00B4CC]" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-          )}
-          aria-label="Ətraflı seçimlər"
-          aria-haspopup="true"
-          aria-expanded={isMenuOpen}
-        >
-          <MoreVertical size={20} />
-        </button>
-
-        {isMenuOpen && (
-          <div className="absolute right-0 top-11 z-50 w-[180px] flex flex-col gap-3 rounded-[12px] border border-[#ECECED] bg-white p-3 shadow-lg animate-in fade-in zoom-in-95 duration-100">
+      <div className="relative flex justify-end" onClick={(e) => e.stopPropagation()}>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <button
+              className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200 outline-none"
+              aria-label="Ətraflı seçimlər"
+            >
+              <MoreVertical size={20} />
+            </button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="end" className="w-[180px] flex flex-col gap-3 rounded-[12px] border border-[#ECECED] bg-white p-3 shadow-lg">
+            <DropdownMenuItem
               onClick={onView}
-              className="flex w-full items-center gap-2 border-b border-[#ECECED] pb-3 text-base font-normal text-black hover:opacity-70 transition-opacity"
+              className="flex w-full items-center gap-2 border-b border-[#ECECED] pb-3 text-base font-normal text-black hover:opacity-70 transition-opacity cursor-pointer focus:bg-transparent px-0 py-0 rounded-none"
             >
               <Eye size={16} className="text-[#333333]" />
               <span className="leading-none">Detallı bax</span>
-            </button>
-            <button
+            </DropdownMenuItem>
+            <DropdownMenuItem
               onClick={onDelete}
-              className="flex w-full items-center gap-2 text-base font-normal text-[#F10303] hover:opacity-70 transition-opacity"
+              className="flex w-full items-center gap-2 text-base font-normal text-[#F10303] hover:opacity-70 transition-opacity cursor-pointer focus:bg-transparent px-0 py-0"
             >
               <Trash2 size={16} />
               <span className="leading-none">Sil</span>
-            </button>
-          </div>
-        )}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   )

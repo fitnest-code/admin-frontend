@@ -8,6 +8,12 @@ import { useGymStore } from "@/lib/store/gym-store";
 import { AddTrainerModal } from "../../gyms/modals/add-trainer-modal";
 import { EditTrainerModal } from "../../gyms/modals/edit-trainer-modal";
 import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 interface MesqcilerTabProps {
   gymId: string | number;
@@ -28,24 +34,11 @@ export function MesqcilerTab({ gymId, zalName }: MesqcilerTabProps) {
 
   const [showAdd, setShowAdd] = useState(false);
   const [editingTrainer, setEditingTrainer] = useState<{ trainer: any; index: number } | null>(null);
-  const [activeMenu, setActiveMenu] = useState<number | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setActiveMenu(null);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const handleDelete = async (trainerId: string) => {
     try {
       await deleteTrainerMutation.mutateAsync({ gymId: parsedGymId, trainerId });
       toast.success("Məşqçi uğurla silindi");
-      setActiveMenu(null);
     } catch (err: any) {
       toast.error(err?.response?.data?.message || err?.message || "Məşqçini silmək mümkün olmadı");
     }
@@ -130,51 +123,38 @@ export function MesqcilerTab({ gymId, zalName }: MesqcilerTabProps) {
 
                   {/* Action Menu */}
                   <div className="relative flex items-center justify-center">
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveMenu(activeMenu === idx ? null : idx);
-                      }}
-                      className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-full transition-colors group"
-                    >
-                      <Image 
-                        src="/more.png" 
-                        width={24} 
-                        height={24} 
-                        alt="More" 
-                        className="opacity-60 group-hover:opacity-100 transition-opacity" 
-                      />
-                    </button>
-
-                    {activeMenu === idx && (
-                      <div 
-                        ref={menuRef}
-                        className="absolute right-full top-0 mt-0 mr-2 w-[160px] bg-white border border-[#E5E7EB] rounded-lg shadow-lg z-50 flex flex-col animate-in fade-in zoom-in-95 duration-150 overflow-hidden"
-                      >
-                        {/* View/Edit */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
                         <button 
-                          className="flex items-center gap-2 px-4 py-2.5 hover:bg-slate-50 transition-colors text-left"
-                          onClick={() => {
-                            setEditingTrainer({ trainer: t, index: idx });
-                            setActiveMenu(null);
-                          }}
+                          className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-full transition-colors group outline-none"
                         >
-                          <Eye size={15} className="text-[#364153]" />
+                          <Image 
+                            src="/more.png" 
+                            width={24} 
+                            height={24} 
+                            alt="More" 
+                            className="opacity-60 group-hover:opacity-100 transition-opacity" 
+                          />
+                        </button>
+                      </DropdownMenuTrigger>
+                      
+                      <DropdownMenuContent align="end" className="w-[160px] bg-white border border-[#E5E7EB] rounded-lg shadow-lg p-1 flex flex-col gap-1 overflow-hidden">
+                        <DropdownMenuItem
+                          onClick={() => setEditingTrainer({ trainer: t, index: idx })}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-[13px] text-foreground hover:bg-slate-50 transition-colors cursor-pointer focus:bg-transparent px-0 py-0"
+                        >
+                          <Eye size={15} className="text-[#364153] shrink-0" />
                           <span className="text-[13px] text-[#364153] font-medium">Düzəliş et</span>
-                        </button>
-
-                        <div className="h-[1px] bg-[#F3F4F6] w-full" />
-
-                        {/* Delete */}
-                        <button 
-                          className="flex items-center gap-2 px-4 py-2.5 hover:bg-red-50 transition-colors text-left"
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
                           onClick={() => handleDelete(t.trainer_id)}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-[13px] text-red-500 hover:bg-red-50 transition-colors cursor-pointer focus:bg-transparent px-0 py-0"
                         >
-                          <Trash2 size={15} className="text-[#E7000B]" />
+                          <Trash2 size={15} className="text-[#E7000B] shrink-0" />
                           <span className="text-[13px] text-[#E7000B] font-medium">Sil</span>
-                        </button>
-                      </div>
-                    )}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               );

@@ -9,26 +9,19 @@ import { useValidateGymStep2 } from "@/lib/query/gym-query";
 import { toast } from "sonner";
 import { AddTrainerModal } from "../modals/add-trainer-modal";
 import { EditTrainerModal } from "../modals/edit-trainer-modal";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 export function StepTrainers({ onNext }: { onNext: () => void }) {
   const [showAdd, setShowAdd] = useState(false);
   const [editingTrainer, setEditingTrainer] = useState<{ trainer: any, index: number } | null>(null);
-  const [activeMenu, setActiveMenu] = useState<number | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
   
   const { step2Trainers, removeStep2Trainer } = useGymStore();
   const validateStep2 = useValidateGymStep2();
-
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setActiveMenu(null);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const handleNext = async () => {
     if (step2Trainers.length === 0) {
@@ -121,60 +114,38 @@ export function StepTrainers({ onNext }: { onNext: () => void }) {
 
                 {/* Actions */}
                 <div className="relative flex items-center justify-center">
-                   <button 
-                     onClick={(e) => {
-                       e.stopPropagation();
-                       setActiveMenu(activeMenu === idx ? null : idx);
-                     }}
-                     className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-full transition-colors group"
-                   >
-                      <Image 
-                        src="/more.png" 
-                        width={24} 
-                        height={24} 
-                        alt="More" 
-                        className="opacity-60 group-hover:opacity-100 transition-opacity" 
-                      />
-                   </button>
-
-                   {/* Dropdown Menu */}
-                   {activeMenu === idx && (
-                     <div 
-                       ref={menuRef}
-                       className="absolute right-full top-0 mt-0 mr-2 w-[160px] h-[91px] bg-white border border-[#E5E7EB] rounded-[10px] shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1)] z-50 flex flex-col animate-in fade-in zoom-in duration-150 overflow-hidden"
-                     >
-                       {/* Bax Button */}
-                       <button 
-                         className="flex-1 flex items-center gap-2 px-4 hover:bg-[#F9FAFB] transition-colors group"
-                         onClick={() => {
-                            setEditingTrainer({ trainer: t, index: idx });
-                            setActiveMenu(null);
-                         }}
-                       >
-                         <div className="w-4 h-4 flex items-center justify-center">
-                           <Eye size={16} className="text-[#364153]" />
-                         </div>
-                         <span className="text-[14px] font-sans text-[#364153]">Bax</span>
-                       </button>
-
-                       {/* Divider */}
-                       <div className="h-[1px] bg-[#F3F4F6] w-full" />
-
-                       {/* Ləğv et Button */}
-                       <button 
-                         className="flex-1 flex items-center gap-2 px-4 hover:bg-[#F9FAFB] transition-colors group"
-                         onClick={() => {
-                           removeStep2Trainer(idx);
-                           setActiveMenu(null);
-                         }}
-                       >
-                         <div className="w-4 h-4 flex items-center justify-center">
-                           <Trash2 size={16} className="text-[#E7000B]" />
-                         </div>
-                         <span className="text-[14px] font-sans text-[#E7000B]">Ləğv et</span>
-                       </button>
-                     </div>
-                   )}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button 
+                        className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-full transition-colors group outline-none"
+                      >
+                        <Image 
+                          src="/more.png" 
+                          width={24} 
+                          height={24} 
+                          alt="More" 
+                          className="opacity-60 group-hover:opacity-100 transition-opacity" 
+                        />
+                      </button>
+                    </DropdownMenuTrigger>
+                    
+                    <DropdownMenuContent align="end" className="w-[160px] bg-white border border-[#E5E7EB] rounded-[10px] shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1)] p-1 flex flex-col gap-1 overflow-hidden">
+                      <DropdownMenuItem
+                        onClick={() => setEditingTrainer({ trainer: t, index: idx })}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-[14px] text-foreground hover:bg-[#F9FAFB] transition-colors cursor-pointer focus:bg-transparent px-0 py-0"
+                      >
+                        <Eye size={16} className="text-[#364153] shrink-0" />
+                        <span className="text-[14px] font-sans text-[#364153]">Bax</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => removeStep2Trainer(idx)}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-[14px] text-red-500 hover:bg-[#F9FAFB] transition-colors cursor-pointer focus:bg-transparent px-0 py-0"
+                      >
+                        <Trash2 size={16} className="text-[#E7000B] shrink-0" />
+                        <span className="text-[14px] font-sans text-[#E7000B]">Ləğv et</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             ))

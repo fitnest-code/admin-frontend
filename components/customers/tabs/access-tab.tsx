@@ -50,12 +50,69 @@ export function AccessTab({ userId }: { userId: string }) {
 
   const { data = [], isLoading, isError } = useCustomerQrHistoryQuery(userId)
 
+  const [colWidths, setColWidths] = useState<number[]>([160, 200, 130, 200]);
+  const startXRef = useRef<number>(0);
+  const startWidthRef = useRef<number>(0);
+  const activeColIndexRef = useRef<number>(-1);
+  const tableRef = useRef<HTMLTableElement>(null);
+  const containerWidthRef = useRef<number>(0);
+
+  const mouseMoveRef = useRef<(e: MouseEvent) => void>(null);
+  const mouseUpRef = useRef<() => void>(null);
+
+  const minWidths = [140, 150, 100, 150];
+
+  mouseMoveRef.current = (e: MouseEvent) => {
+    if (activeColIndexRef.current === -1) return;
+    const deltaX = e.clientX - startXRef.current;
+    const minW = minWidths[activeColIndexRef.current] || 100;
+
+    const sumOthers = colWidths.reduce((acc, w, idx) => {
+      return idx !== activeColIndexRef.current ? acc + w : acc;
+    }, 0);
+
+    const maxW = Math.max(minW, containerWidthRef.current - sumOthers - 100);
+    const newWidth = Math.min(maxW, Math.max(minW, startWidthRef.current + deltaX));
+    setColWidths((prev) => {
+      const copy = [...prev];
+      copy[activeColIndexRef.current] = newWidth;
+      return copy;
+    });
+  };
+
+  mouseUpRef.current = () => {
+    activeColIndexRef.current = -1;
+    if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current);
+    if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current);
+  };
+
+  const handleMouseDown = (index: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    activeColIndexRef.current = index;
+    startXRef.current = e.clientX;
+    startWidthRef.current = colWidths[index];
+
+    if (tableRef.current) {
+      containerWidthRef.current = tableRef.current.getBoundingClientRect().width;
+    } else {
+      containerWidthRef.current = 750;
+    }
+
+    if (mouseMoveRef.current) document.addEventListener("mousemove", mouseMoveRef.current);
+    if (mouseUpRef.current) document.addEventListener("mouseup", mouseUpRef.current);
+  };
+
   useEffect(() => {
     function h(e: MouseEvent) {
       if (sortRef.current && !sortRef.current.contains(e.target as Node)) setSortOpen(false)
     }
     document.addEventListener('mousedown', h)
-    return () => document.removeEventListener('mousedown', h)
+    return () => {
+      document.removeEventListener('mousedown', h)
+      if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current);
+      if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current);
+    }
   }, [])
 
   const filtered = useMemo(() => {
@@ -121,14 +178,53 @@ export function AccessTab({ userId }: { userId: string }) {
 
       {/* Table */}
       <div className="overflow-x-auto rounded-xl border border-border">
-        <table className="w-full text-sm">
+        <table ref={tableRef} className="w-full text-sm border-separate border-spacing-0" style={{ tableLayout: "fixed", minWidth: "750px" }}>
+          <colgroup>
+            <col style={{ width: `${colWidths[0]}px` }} />
+            <col style={{ width: `${colWidths[1]}px` }} />
+            <col style={{ width: `${colWidths[2]}px` }} />
+            <col style={{ width: `${colWidths[3]}px` }} />
+            <col />
+          </colgroup>
           <thead>
             <tr className="bg-[#E8F9FB] text-left">
-              <th className="px-4 py-3 font-semibold text-foreground whitespace-nowrap">Tarix / Saat</th>
-              <th className="px-4 py-3 font-semibold text-foreground whitespace-nowrap">Zal Adı</th>
-              <th className="px-4 py-3 font-semibold text-foreground whitespace-nowrap">Nəticə</th>
-              <th className="px-4 py-3 font-semibold text-foreground whitespace-nowrap">Səbəb</th>
-              <th className="px-4 py-3 font-semibold text-foreground whitespace-nowrap">Platforma</th>
+              <th className="px-4 py-3 font-semibold text-foreground whitespace-nowrap relative">
+                Tarix / Saat
+                <div
+                  onMouseDown={(e) => handleMouseDown(0, e)}
+                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
+                >
+                  <div className="w-[2px] h-4 bg-[#cecfd2] dark:bg-border group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
+                </div>
+              </th>
+              <th className="px-4 py-3 font-semibold text-foreground whitespace-nowrap relative">
+                Zal Adı
+                <div
+                  onMouseDown={(e) => handleMouseDown(1, e)}
+                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
+                >
+                  <div className="w-[2px] h-4 bg-[#cecfd2] dark:bg-border group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
+                </div>
+              </th>
+              <th className="px-4 py-3 font-semibold text-foreground whitespace-nowrap relative">
+                Nəticə
+                <div
+                  onMouseDown={(e) => handleMouseDown(2, e)}
+                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
+                >
+                  <div className="w-[2px] h-4 bg-[#cecfd2] dark:bg-border group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
+                </div>
+              </th>
+              <th className="px-4 py-3 font-semibold text-foreground whitespace-nowrap relative">
+                Səbəb
+                <div
+                  onMouseDown={(e) => handleMouseDown(3, e)}
+                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
+                >
+                  <div className="w-[2px] h-4 bg-[#cecfd2] dark:bg-border group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
+                </div>
+              </th>
+              <th className="px-4 py-3 font-semibold text-foreground whitespace-nowrap relative">Platforma</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -157,18 +253,26 @@ export function AccessTab({ userId }: { userId: string }) {
             )}
             {!isLoading && !isError && rows.map((row, i) => (
               <tr key={i} className="bg-card hover:bg-secondary/30 transition-colors">
-                <td className="px-4 py-3 whitespace-nowrap text-foreground">{row.dateTime}</td>
-                <td className="px-4 py-3 whitespace-nowrap text-foreground">{row.gymName}</td>
-                <td className="px-4 py-3 whitespace-nowrap">
+                <td className="px-4 py-3 overflow-hidden">
+                  <span className="text-foreground whitespace-nowrap truncate block" title={row.dateTime}>{row.dateTime}</span>
+                </td>
+                <td className="px-4 py-3 overflow-hidden">
+                  <span className="text-foreground whitespace-nowrap truncate block" title={row.gymName}>{row.gymName}</span>
+                </td>
+                <td className="px-4 py-3 overflow-hidden">
                   <span className={cn(
-                    'rounded-full px-3 py-1 text-xs font-semibold',
+                    'rounded-full px-3 py-1 text-xs font-semibold truncate block w-fit',
                     row.status === 'Uğurlu' ? 'bg-green-600 text-white' : 'bg-red-500 text-white',
                   )}>
                     • {row.status === 'Uğurlu' ? 'Təsdiqləndı' : 'Rədd edildi'}
                   </span>
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-foreground">{reasonLabel(row)}</td>
-                <td className="px-4 py-3 whitespace-nowrap text-foreground">{row.platform}</td>
+                <td className="px-4 py-3 overflow-hidden">
+                  <span className="text-foreground whitespace-nowrap truncate block" title={reasonLabel(row)}>{reasonLabel(row)}</span>
+                </td>
+                <td className="px-4 py-3 overflow-hidden">
+                  <span className="text-foreground whitespace-nowrap truncate block" title={row.platform}>{row.platform}</span>
+                </td>
               </tr>
             ))}
           </tbody>
