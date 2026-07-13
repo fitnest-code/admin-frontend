@@ -8,12 +8,20 @@ import {
   useSubscriptionPackageNamesQuery,
   useUserStatisticsQuery,
   type CustomerSubscriptionType,
+  getCustomers,
+  type CustomerListItem,
 } from '@/modules/customers'
 import { PAGE_SIZE } from './list/customer-list-constants'
 import { CustomerFilters, CustomerStats } from './list/customer-list-controls'
 import { CustomerBulkActions, EmailModal, PushModal, SmsModal, BlockModal } from './list/customer-message-modals'
 import { CustomerPagination, CustomerTable } from './list/customer-list-table'
-import { sortCustomers, type CustomerSortValue, normalizeCustomerStatus } from './list/customer-list-utils'
+import {
+  sortCustomers,
+  type CustomerSortValue,
+  normalizeCustomerStatus,
+  normalizeSubscriptionStatus,
+  getSubscriptionStatusLabel,
+} from './list/customer-list-utils'
 
 export function CustomersList() {
   const router = useRouter()
@@ -24,7 +32,8 @@ export function CustomersList() {
   const [pkg, setPkg] = useState<number | null>(null)
   const [duration, setDuration] = useState<number | null>(null)
   const [subStatus, setSubStatus] = useState<Exclude<CustomerSubscriptionType, 'ALL'> | null>(null)
-  const [selected, setSelected] = useState<Set<number>>(new Set())
+  const [selected, setSelected] = useState<Map<number, CustomerListItem>>(new Map())
+  const [isSelectingAll, setIsSelectingAll] = useState(false)
   const [page, setPage] = useState(1)
   const [pushOpen, setPushOpen] = useState(false)
   const [smsOpen, setSmsOpen] = useState(false)
@@ -55,26 +64,58 @@ export function CustomersList() {
   const sorted = useMemo(() => sortCustomers(customers, sortBy), [customers, sortBy])
 
   useEffect(() => {
-    setSelected(new Set())
+    setSelected(new Map())
   }, [page, search, pkg, duration, subStatus])
 
-  function toggleAll() {
-    setSelected((prev) => {
-      const next = new Set(prev)
-      const allOnPage = sorted.length > 0 && sorted.every((customer) => prev.has(customer.id))
+  async function toggleAll() {
+    const allOnPage = sorted.length > 0 && sorted.every((customer) => selected.has(customer.id))
 
-      if (allOnPage) sorted.forEach((customer) => next.delete(customer.id))
-      else sorted.forEach((customer) => next.add(customer.id))
-
-      return next
-    })
+    if (allOnPage) {
+      setSelected((prev) => {
+        const next = new Map(prev)
+        sorted.forEach((customer) => next.delete(customer.id))
+        return next
+      })
+    } else {
+      setIsSelectingAll(true)
+      try {
+        const res = await getCustomers({
+          page: 0,
+          size: 100000, // Fetch all matching users matching search & filters
+          search: debouncedSearch || undefined,
+          packageId: pkg ?? undefined,
+          packageDuration: duration ?? undefined,
+          subscriptionStatus: subStatus ?? undefined,
+          sort: sortBy ?? undefined,
+          roles: ['ROLE_USER'],
+        })
+        const allItems = res?.items ?? []
+        setSelected((prev) => {
+          const next = new Map(prev)
+          allItems.forEach((customer) => {
+            next.set(customer.id, customer)
+          })
+          return next
+        })
+      } catch (err) {
+        console.error("Failed to select all customers:", err)
+      } finally {
+        setIsSelectingAll(false)
+      }
+    }
   }
 
   function toggleOne(id: number) {
     setSelected((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
+      const next = new Map(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        const customer = sorted.find((c) => c.id === id)
+        if (customer) {
+          next.set(id, customer)
+        }
+      }
       return next
     })
   }
@@ -89,8 +130,8 @@ export function CustomersList() {
   const packageOptions = packageNamesQuery.data ?? []
 
   const selectedUsers = useMemo(() => {
-    return sorted.filter((c) => selected.has(c.id))
-  }, [sorted, selected])
+    return Array.from(selected.values())
+  }, [selected])
 
   const blockMode = useMemo(() => {
     if (selectedUsers.length === 0) return 'disabled'
@@ -100,6 +141,40 @@ export function CustomersList() {
     if (allNonBlocked) return 'block'
     return 'disabled'
   }, [selectedUsers])
+
+  function handleExport() {
+    if (selected.size === 0) return
+
+    const selectedList = Array.from(selected.values())
+    const csvRows = [
+      ['ID', 'Ad / Soyad', 'Telefon', 'Email', 'Status', 'Abunəlik'],
+      ...selectedList.map((u) => [
+        u.id,
+        u.fullName || '',
+        u.phoneNumber || '',
+        u.email || '',
+        normalizeCustomerStatus(u.userStatus) === 'active' 
+          ? 'Aktiv' 
+          : normalizeCustomerStatus(u.userStatus) === 'inactive' 
+            ? 'Deaktiv' 
+            : 'Bloklanıb',
+        getSubscriptionStatusLabel(normalizeSubscriptionStatus(u.subscriptionStatus), t.lists),
+      ]),
+    ]
+
+    const csvContent = csvRows
+      .map((row) => row.map((val) => `"${String(val).replace(/"/g, '""')}"`).join(','))
+      .join('\n')
+
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `customers_${new Date().toISOString().slice(0, 10)}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -150,15 +225,17 @@ export function CustomersList() {
         onOpenEmail={() => setEmailOpen(true)}
         onOpenBlock={() => setBlockOpen(true)}
         blockMode={blockMode}
+        onExport={handleExport}
       />
 
       <CustomerTable
         customers={sorted}
         isLoading={customersQuery.isLoading}
-        selected={selected}
+        selected={new Set(selected.keys())}
         onToggleAll={toggleAll}
         onToggleOne={toggleOne}
         onView={(id) => router.push(`/customers/${id}`)}
+        isSelectingAll={isSelectingAll}
       />
 
       {customersQuery.isError && (
@@ -183,7 +260,7 @@ export function CustomersList() {
           onClose={() => setBlockOpen(false)} 
           onSuccess={() => {
             customersQuery.refetch()
-            setSelected(new Set())
+            setSelected(new Map())
           }}
         />
       )}

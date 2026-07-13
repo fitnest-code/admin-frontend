@@ -19,6 +19,7 @@ export function CustomerBulkActions({
   onOpenEmail,
   onOpenBlock,
   blockMode = 'block',
+  onExport,
 }: {
   selectedCount: number
   onOpenPush: () => void
@@ -26,6 +27,7 @@ export function CustomerBulkActions({
   onOpenEmail?: () => void
   onOpenBlock?: () => void
   blockMode?: 'block' | 'unblock' | 'disabled'
+  onExport?: () => void
 }) {
   const t = useT()
   const blockLabel = blockMode === 'unblock' ? (t.modals.unblockButton || 'Unblock') : t.modals.blockButton
@@ -40,7 +42,7 @@ export function CustomerBulkActions({
         <ActionBtn iconSrc="/push-notification.svg" icon={Bell} label="Push" onClick={onOpenPush} variant="cyan-outline" disabled={selectedCount === 0} />
         <ActionBtn iconSrc="/sms-icon.svg" icon={MessageSquare} label="SMS" onClick={onOpenSms} variant="cyan-outline" disabled={selectedCount === 0} />
         <ActionBtn iconSrc="/mail-icon.svg" icon={Mail} label="Email " onClick={() => onOpenEmail?.()} variant="cyan-outline" disabled={selectedCount === 0} />
-        <ActionBtn iconSrc="/export-icon.svg" icon={Upload} label="Export" onClick={() => {}} variant="cyan-outline" disabled={selectedCount === 0} />
+        <ActionBtn iconSrc="/export-icon.svg" icon={Upload} label="Export" onClick={() => onExport?.()} variant="cyan-outline" disabled={selectedCount === 0} />
         <ActionBtn icon={Ban} label={blockLabel} onClick={() => onOpenBlock?.()} variant="danger-outline" disabled={isBlockDisabled} />
       </div>
     </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { Check, Eye } from 'lucide-react'
+import { Check, Eye, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useT } from '@/lib/i18n'
 import type { CustomerListItem } from '@/modules/customers'
@@ -94,6 +94,7 @@ export function CustomerTable({
   onToggleAll,
   onToggleOne,
   onView,
+  isSelectingAll = false,
 }: {
   customers: CustomerListItem[]
   isLoading: boolean
@@ -101,6 +102,7 @@ export function CustomerTable({
   onToggleAll: () => void
   onToggleOne: (id: number) => void
   onView: (id: number) => void
+  isSelectingAll?: boolean
 }) {
   const t = useT()
   const allOnPage = customers.length > 0 && customers.every((customer) => selected.has(customer.id))
@@ -121,7 +123,11 @@ export function CustomerTable({
     <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
       <div className="grid grid-cols-[3rem_3.5rem_1.5fr_1fr_1fr_6rem_7rem] items-center gap-3 border-b border-[#cecfd2]/60 dark:border-border bg-[#00B4CC]/[0.15] dark:bg-[#00B4CC]/10 px-4 py-3 rounded-t-lg">
         <div className="flex justify-center">
-          <input type="checkbox" checked={allOnPage} onChange={onToggleAll} className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded" />
+          {isSelectingAll ? (
+            <Loader2 className="h-4 w-4 animate-spin text-[#00B4CC]" />
+          ) : (
+            <input type="checkbox" checked={allOnPage} onChange={onToggleAll} className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded" />
+          )}
         </div>
         <span className="text-[11px] font-bold uppercase text-foreground/80">{t.lists.colId}</span>
         <span className="text-[11px] font-bold uppercase text-foreground/80">{t.lists.colName}</span>
