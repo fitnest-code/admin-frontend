@@ -11,6 +11,7 @@ import { PAGE_SIZE } from '../customers/list/customer-list-constants'
 import { CustomerPagination } from '../customers/list/customer-list-table'
 import { normalizeCustomerStatus } from '../customers/list/customer-list-utils'
 import styles from '../partners/partners-list.module.css'
+import { useResizableColumns } from '@/hooks/use-resizable-columns'
 
 const STAFF_SORT_OPTIONS = [
   { value: 'newest', label: 'Yeni əlavə olunanlar' },
@@ -115,58 +116,10 @@ export function FitnestStaffList() {
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [page, setPage] = useState(1)
 
-  // ── Resizable columns state ──
-  const [colWidths, setColWidths] = useState<number[]>([60, 200, 150])
-  const startXRef = useRef<number>(0)
-  const startWidthRef = useRef<number>(0)
-  const activeColIndexRef = useRef<number>(-1)
-  const tableRef = useRef<HTMLTableElement>(null)
-  const containerWidthRef = useRef<number>(0)
-  const mouseMoveRef = useRef<((e: MouseEvent) => void) | null>(null)
-  const mouseUpRef = useRef<(() => void) | null>(null)
-  const minWidths = [40, 120, 80]
-
-  mouseMoveRef.current = (e: MouseEvent) => {
-    if (activeColIndexRef.current === -1) return
-    const deltaX = e.clientX - startXRef.current
-    const minW = minWidths[activeColIndexRef.current] || 100
-    const sumOthers = colWidths.reduce(
-      (acc, w, idx) => (idx !== activeColIndexRef.current ? acc + w : acc),
-      0,
-    )
-    const maxW = Math.max(minW, containerWidthRef.current - sumOthers - 90)
-    const newWidth = Math.min(maxW, Math.max(minW, startWidthRef.current + deltaX))
-    setColWidths((prev) => {
-      const copy = [...prev]
-      copy[activeColIndexRef.current] = newWidth
-      return copy
-    })
-  }
-
-  mouseUpRef.current = () => {
-    activeColIndexRef.current = -1
-    if (mouseMoveRef.current) document.removeEventListener('mousemove', mouseMoveRef.current)
-    if (mouseUpRef.current) document.removeEventListener('mouseup', mouseUpRef.current)
-  }
-
-  const handleMouseDown = (index: number, e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    activeColIndexRef.current = index
-    startXRef.current = e.clientX
-    startWidthRef.current = colWidths[index]
-    if (tableRef.current) containerWidthRef.current = tableRef.current.getBoundingClientRect().width
-    else containerWidthRef.current = 800
-    if (mouseMoveRef.current) document.addEventListener('mousemove', mouseMoveRef.current)
-    if (mouseUpRef.current) document.addEventListener('mouseup', mouseUpRef.current)
-  }
-
-  useEffect(() => {
-    return () => {
-      if (mouseMoveRef.current) document.removeEventListener('mousemove', mouseMoveRef.current)
-      if (mouseUpRef.current) document.removeEventListener('mouseup', mouseUpRef.current)
-    }
-  }, [])
+  const { colWidths, tableRef, handleMouseDown } = useResizableColumns(
+    [60, 200, 150],
+    [40, 120, 80]
+  )
 
   useEffect(() => {
     const timer = window.setTimeout(() => {

@@ -6,6 +6,7 @@ import { Copy, Download, RefreshCw, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useCustomerPaymentsQuery } from '@/modules/customers/hooks/use-customers-query'
 import type { UserPaymentHistoryItem } from '@/modules/customers/types/customer.types'
+import { useResizableColumns } from '@/hooks/use-resizable-columns'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -100,65 +101,10 @@ export function PaymentsTab({ userId }: { userId: string }) {
 
   const { data = [], isLoading, isError } = useCustomerPaymentsQuery(userId)
 
-  const [colWidths, setColWidths] = useState<number[]>([160, 160, 160, 100, 160, 130]);
-  const startXRef = useRef<number>(0);
-  const startWidthRef = useRef<number>(0);
-  const activeColIndexRef = useRef<number>(-1);
-  const tableRef = useRef<HTMLTableElement>(null);
-  const containerWidthRef = useRef<number>(0);
-
-  const mouseMoveRef = useRef<(e: MouseEvent) => void>(null);
-  const mouseUpRef = useRef<() => void>(null);
-
-  const minWidths = [120, 120, 120, 90, 140, 120];
-
-  mouseMoveRef.current = (e: MouseEvent) => {
-    if (activeColIndexRef.current === -1) return;
-    const deltaX = e.clientX - startXRef.current;
-    const minW = minWidths[activeColIndexRef.current] || 100;
-
-    const sumOthers = colWidths.reduce((acc, w, idx) => {
-      return idx !== activeColIndexRef.current ? acc + w : acc;
-    }, 0);
-
-    const maxW = Math.max(minW, containerWidthRef.current - sumOthers - 80);
-    const newWidth = Math.min(maxW, Math.max(minW, startWidthRef.current + deltaX));
-    setColWidths((prev) => {
-      const copy = [...prev];
-      copy[activeColIndexRef.current] = newWidth;
-      return copy;
-    });
-  };
-
-  mouseUpRef.current = () => {
-    activeColIndexRef.current = -1;
-    if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current);
-    if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current);
-  };
-
-  const handleMouseDown = (index: number, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    activeColIndexRef.current = index;
-    startXRef.current = e.clientX;
-    startWidthRef.current = colWidths[index];
-
-    if (tableRef.current) {
-      containerWidthRef.current = tableRef.current.getBoundingClientRect().width;
-    } else {
-      containerWidthRef.current = 800;
-    }
-
-    if (mouseMoveRef.current) document.addEventListener("mousemove", mouseMoveRef.current);
-    if (mouseUpRef.current) document.addEventListener("mouseup", mouseUpRef.current);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current);
-      if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current);
-    };
-  }, []);
+  const { colWidths, tableRef, handleMouseDown } = useResizableColumns(
+    [160, 160, 160, 100, 160, 130],
+    [120, 120, 120, 90, 140, 120]
+  )
 
   const totalPages = Math.max(1, Math.ceil(data.length / PAGE_SIZE))
   const rows = data.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
@@ -223,8 +169,8 @@ export function PaymentsTab({ userId }: { userId: string }) {
             <col />
           </colgroup>
           <thead>
-            <tr className="bg-[#00b4cc]/15 text-left text-[14px] font-medium text-[#4a5565]">
-              <th className="px-4 py-3 font-semibold text-foreground relative pl-6 border-b border-[#cecfd2]">
+            <tr className="bg-[#00b4cc]/15 text-left text-xs font-bold uppercase text-foreground/80">
+              <th className="px-4 py-3 relative pl-6 border-b border-[#cecfd2]">
                 Tranzaksiya ID
                 <div
                   onMouseDown={(e) => handleMouseDown(0, e)}
@@ -233,7 +179,7 @@ export function PaymentsTab({ userId }: { userId: string }) {
                   <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
                 </div>
               </th>
-              <th className="px-4 py-3 font-semibold text-foreground relative border-b border-[#cecfd2]">
+              <th className="px-4 py-3 relative border-b border-[#cecfd2]">
                 Sifariş ID
                 <div
                   onMouseDown={(e) => handleMouseDown(1, e)}
@@ -242,7 +188,7 @@ export function PaymentsTab({ userId }: { userId: string }) {
                   <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
                 </div>
               </th>
-              <th className="px-4 py-3 font-semibold text-foreground text-center relative border-b border-[#cecfd2]">
+              <th className="px-4 py-3 text-center relative border-b border-[#cecfd2]">
                 Tarix
                 <div
                   onMouseDown={(e) => handleMouseDown(2, e)}
@@ -251,7 +197,7 @@ export function PaymentsTab({ userId }: { userId: string }) {
                   <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
                 </div>
               </th>
-              <th className="px-4 py-3 font-semibold text-foreground text-center relative border-b border-[#cecfd2]">
+              <th className="px-4 py-3 text-center relative border-b border-[#cecfd2]">
                 Məbləğ
                 <div
                   onMouseDown={(e) => handleMouseDown(3, e)}
@@ -260,7 +206,7 @@ export function PaymentsTab({ userId }: { userId: string }) {
                   <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
                 </div>
               </th>
-              <th className="px-4 py-3 font-semibold text-foreground text-center relative border-b border-[#cecfd2]">
+              <th className="px-4 py-3 text-center relative border-b border-[#cecfd2]">
                 Ödəniş metodu
                 <div
                   onMouseDown={(e) => handleMouseDown(4, e)}
@@ -269,7 +215,7 @@ export function PaymentsTab({ userId }: { userId: string }) {
                   <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
                 </div>
               </th>
-              <th className="px-4 py-3 font-semibold text-foreground text-center relative border-b border-[#cecfd2]">
+              <th className="px-4 py-3 text-center relative border-b border-[#cecfd2]">
                 Status
                 <div
                   onMouseDown={(e) => handleMouseDown(5, e)}
@@ -278,7 +224,7 @@ export function PaymentsTab({ userId }: { userId: string }) {
                   <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
                 </div>
               </th>
-              <th className="px-4 py-3 font-semibold text-foreground text-center border-b border-[#cecfd2]">Ətraflı</th>
+              <th className="px-4 py-3 text-center border-b border-[#cecfd2]">Ətraflı</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#cecfd2] bg-white">
@@ -318,22 +264,22 @@ export function PaymentsTab({ userId }: { userId: string }) {
                   className="hover:bg-[#fafafa] transition-colors duration-150"
                 >
                   {/* Transaction ID */}
-                  <td className="px-4 py-3 text-left pl-6 text-xs font-medium text-black overflow-hidden">
+                  <td className="px-4 py-3 text-left pl-6 text-sm font-normal text-black overflow-hidden">
                     <span className="truncate block" title={row.transactionId}>{row.transactionId || '—'}</span>
                   </td>
 
                   {/* Order ID */}
-                  <td className="px-4 py-3 text-left text-xs font-medium text-black overflow-hidden">
+                  <td className="px-4 py-3 text-left text-sm font-normal text-black overflow-hidden">
                     <span className="truncate block" title={row.orderId}>{row.orderId || '—'}</span>
                   </td>
 
                   {/* Date Time */}
-                  <td className="px-4 py-3 text-center text-sm font-medium text-black overflow-hidden">
+                  <td className="px-4 py-3 text-center text-sm font-normal text-black overflow-hidden">
                     <span className="whitespace-nowrap truncate block" title={formattedDate}>{formattedDate}</span>
                   </td>
 
                   {/* Amount Value */}
-                  <td className="px-4 py-3 text-center text-sm font-medium text-black overflow-hidden">
+                  <td className="px-4 py-3 text-center text-sm font-normal text-black overflow-hidden">
                     <span className="whitespace-nowrap truncate block">
                       {row.amount ? (row.amount.includes('AZN') ? row.amount : `${row.amount} AZN`) : ''}
                     </span>
@@ -576,10 +522,22 @@ function Pagination({ page, totalPages, onChange }: { page: number; totalPages: 
     const res: (number | '...')[] = []
     if (totalPages <= 6) { 
       for (let i = 1; i <= totalPages; i++) res.push(i) 
-    } else { 
-      res.push(1, 2, 3, 4)
-      res.push('...')
-      res.push(totalPages) 
+    } else {
+      if (page <= 3) {
+        res.push(1, 2, 3, 4)
+        res.push('...')
+        res.push(totalPages)
+      } else if (page >= totalPages - 2) {
+        res.push(1)
+        res.push('...')
+        res.push(totalPages - 3, totalPages - 2, totalPages - 1, totalPages)
+      } else {
+        res.push(1)
+        res.push('...')
+        res.push(page - 1, page, page + 1)
+        res.push('...')
+        res.push(totalPages)
+      }
     }
     return res
   }
