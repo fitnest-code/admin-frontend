@@ -19,12 +19,22 @@ import { useHardDeleteUserMutation } from '@/modules/customers'
 import { SuccessAnimationModal } from '@/components/ui/success-animation-modal'
 import { toast } from 'sonner'
 import { useT } from '@/lib/i18n'
+import { SubscriptionTab } from '../customers/tabs/subscription-tab'
+import { PaymentsTab } from '../customers/tabs/payments-tab'
+import { AccessTab } from '../customers/tabs/access-tab'
 
 const STATUS_STYLES = {
   active: 'bg-[#166728] text-white',
   inactive: 'bg-[#6B7280] text-white',
   blocked: 'bg-red-600 text-white',
 } satisfies Record<UiCustomerStatus, string>
+
+const CUSTOMER_TABS = [
+  { key: 'profile', labelKey: 'tabProfile' },
+  { key: 'subscription', labelKey: 'tabSubscription' },
+  { key: 'payments', labelKey: 'tabPayments' },
+  { key: 'access', labelKey: 'tabAccess' },
+] as const
 
 function formatValue(value: string | number | null | undefined, fallback: string, suffix?: string) {
   if (value === null || value === undefined || value === '') return fallback
@@ -82,6 +92,7 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
   const router = useRouter()
   const t = useT()
   const [customer, setCustomer] = useState(initialCustomer)
+  const [tab, setTab] = useState('profile')
   const [pushOpen, setPushOpen] = useState(false)
   const [smsOpen, setSmsOpen] = useState(false)
   const [emailOpen, setEmailOpen] = useState(false)
@@ -168,8 +179,29 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
         </div>
       </div>
 
+      {/* Tabs Navigation */}
+      <div className="border-b border-border">
+        <nav className="-mb-px flex overflow-x-auto gap-2">
+          {CUSTOMER_TABS.map((item) => (
+            <button
+              key={item.key}
+              onClick={() => setTab(item.key)}
+              className={cn(
+                'shrink-0 border-b-2 px-5 py-3 text-sm font-semibold whitespace-nowrap transition-all duration-200',
+                tab === item.key 
+                  ? 'border-[#00B4CC] text-[#00B4CC]' 
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border/60',
+              )}
+            >
+              {t.details[item.labelKey]}
+            </button>
+          ))}
+        </nav>
+      </div>
+
       {/* Main Content Layout */}
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-stretch lg:gap-6">
+      {tab === 'profile' && (
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-stretch lg:gap-6">
         {/* Left Column: Personal info & Reset Password */}
         <div className="flex flex-1 flex-col gap-6">
           {/* Personal Info Card */}
@@ -261,6 +293,11 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
           </div>
         </div>
       </div>
+      )}
+
+      {tab === 'subscription' && <SubscriptionTab userId={String(customer.id)} />}
+      {tab === 'payments' && <PaymentsTab userId={String(customer.id)} />}
+      {tab === 'access' && <AccessTab userId={String(customer.id)} />}
 
       {/* Modals */}
       {pushOpen && (
