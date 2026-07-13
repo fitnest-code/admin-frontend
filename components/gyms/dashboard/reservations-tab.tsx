@@ -13,6 +13,7 @@ import { useParams } from 'next/navigation'
 import { cn, formatTo24h } from '@/lib/utils'
 import { ChevronDown, ArrowLeft } from 'lucide-react'
 import { SuccessAnimationModal } from '@/components/ui/success-animation-modal'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
 
 const STATUS_OPTIONS = [
     { key: "", label: "Hamısı", color: "#4b5563" },
@@ -33,14 +34,50 @@ const ReservationsTab = () => {
 
     // Dropdown states
     const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false)
-    const [activeActionsDropdownId, setActiveActionsDropdownId] = useState<number | null>(null)
     const [viewMode, setViewMode] = useState<'list' | 'detail'>('list')
-    const dropdownRef = useRef<HTMLDivElement | null>(null)
     const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; message: string; type: "success" | "error" }>({
         isOpen: false,
         message: "",
         type: "success"
     })
+
+    // Resizable column state
+    const [colWidths, setColWidths] = useState<number[]>([200, 130, 130, 130, 200])
+    const startXRef = useRef<number>(0)
+    const startWidthRef = useRef<number>(0)
+    const activeColIndexRef = useRef<number>(-1)
+    const tableRef = useRef<HTMLTableElement>(null)
+    const containerWidthRef = useRef<number>(0)
+    const mouseMoveRef = useRef<(e: MouseEvent) => void>(null)
+    const mouseUpRef = useRef<() => void>(null)
+    const minWidths = [120, 90, 90, 90, 120]
+
+    mouseMoveRef.current = (e: MouseEvent) => {
+        if (activeColIndexRef.current === -1) return
+        const deltaX = e.clientX - startXRef.current
+        const minW = minWidths[activeColIndexRef.current] || 100
+        const sumOthers = colWidths.reduce((acc, w, idx) => idx !== activeColIndexRef.current ? acc + w : acc, 0)
+        const maxW = Math.max(minW, containerWidthRef.current - sumOthers - 90)
+        const newWidth = Math.min(maxW, Math.max(minW, startWidthRef.current + deltaX))
+        setColWidths((prev) => { const copy = [...prev]; copy[activeColIndexRef.current] = newWidth; return copy; })
+    }
+
+    mouseUpRef.current = () => {
+        activeColIndexRef.current = -1
+        if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current)
+        if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current)
+    }
+
+    const handleMouseDown = (index: number, e: React.MouseEvent) => {
+        e.preventDefault(); e.stopPropagation()
+        activeColIndexRef.current = index
+        startXRef.current = e.clientX
+        startWidthRef.current = colWidths[index]
+        if (tableRef.current) containerWidthRef.current = tableRef.current.getBoundingClientRect().width
+        else containerWidthRef.current = 800
+        if (mouseMoveRef.current) document.addEventListener("mousemove", mouseMoveRef.current)
+        if (mouseUpRef.current) document.addEventListener("mouseup", mouseUpRef.current)
+    }
 
     const { data: stats } = useGymReservationStats(gymId as string)
     const { data: reservationsData, isLoading } = useGymReservations(gymId as string, {
@@ -53,14 +90,9 @@ const ReservationsTab = () => {
     const updateStatusMutation = useUpdateReservationStatus()
 
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setActiveActionsDropdownId(null)
-            }
-        }
-        document.addEventListener('mousedown', handleClickOutside)
         return () => {
-            document.removeEventListener('mousedown', handleClickOutside)
+            if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current)
+            if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current)
         }
     }, [])
 
@@ -76,7 +108,6 @@ const ReservationsTab = () => {
             status: 'APPROVED'
         }, {
             onSuccess: () => {
-                setActiveActionsDropdownId(null)
                 setModalConfig({
                     isOpen: true,
                     message: "Rezervasiya uğurla təsdiq edildi",
@@ -435,154 +466,106 @@ const ReservationsTab = () => {
                     </div>
                 </div>
 
-                <div className="w-full overflow-visible rounded-[12px] border border-[#cecfd2] bg-white">
-                    <div className="w-full min-w-[1000px] flex flex-col bg-white">
-                        {/* Header */}
-                        <div className="w-full h-[48px] bg-[rgba(0,180,204,0.15)] flex items-center px-[20px] text-[14px] font-bold text-[#101828] border-b border-[#cecfd2]">
-                            <div className="flex-1 min-w-[200px] opacity-80 uppercase text-[12px] tracking-wider">Ad / Soyad</div>
-                            <div className="w-[140px] shrink-0 opacity-80 uppercase text-[12px] tracking-wider">Tarix</div>
-                            <div className="w-[140px] shrink-0 opacity-80 uppercase text-[12px] tracking-wider">Saat</div>
-                            <div className="w-[140px] shrink-0 opacity-80 uppercase text-[12px] tracking-wider">Status</div>
-                            <div className="flex-1 min-w-[200px] opacity-80 uppercase text-[12px] tracking-wider">Məşqçi</div>
-                            <div className="w-[100px] shrink-0 opacity-80 uppercase text-[12px] tracking-wider text-center">Əməliyyatlar</div>
-                        </div>
-
-                        {/* List Items */}
-                        <div className="flex flex-col bg-white divide-y divide-[#ececed] min-h-[220px]">
+                <div className="w-full overflow-auto rounded-[12px] border border-[#cecfd2] bg-white">
+                    <table ref={tableRef} className="w-full min-w-[1000px] bg-white border-collapse" style={{ tableLayout: 'fixed' }}>
+                        <colgroup>
+                            <col style={{ width: colWidths[0] }} />
+                            <col style={{ width: colWidths[1] }} />
+                            <col style={{ width: colWidths[2] }} />
+                            <col style={{ width: colWidths[3] }} />
+                            <col style={{ width: colWidths[4] }} />
+                            <col style={{ width: 90 }} />
+                        </colgroup>
+                        <thead>
+                            <tr className="h-[48px] bg-[rgba(0,180,204,0.15)] text-[14px] font-bold text-[#101828] border-b border-[#cecfd2]">
+                                {['Ad / Soyad', 'Tarix', 'Saat', 'Status', 'Məşqçi'].map((label, i) => (
+                                    <th key={label} className="relative text-left px-[20px] opacity-80 uppercase text-[12px] tracking-wider font-bold select-none" style={{ width: colWidths[i] }}>
+                                        {label}
+                                        <div
+                                            onMouseDown={(e) => handleMouseDown(i, e)}
+                                            className="absolute right-0 top-0 h-full w-[6px] cursor-col-resize z-10 hover:bg-[rgba(0,180,204,0.35)] transition-colors"
+                                        />
+                                    </th>
+                                ))}
+                                <th className="text-center px-[20px] opacity-80 uppercase text-[12px] tracking-wider font-bold" style={{ width: 90 }}>Əməliyyatlar</th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white min-h-[220px]">
                             {isLoading ? (
-                                <div className="w-full h-[64px] flex items-center justify-center text-[14px] text-slate-400">Yüklənir...</div>
+                                <tr><td colSpan={6} className="h-[64px] text-center text-[14px] text-slate-400">Yüklənir...</td></tr>
                             ) : reservationsData?.items?.length === 0 ? (
-                                <div className="w-full h-[64px] flex items-center justify-center text-[14px] text-slate-400">Rezervasiya tapılmadı</div>
-                            ) : reservationsData?.items?.map((res: any, index: number) => {
-                                const isNearBottom = index >= (reservationsData?.items?.length - 2);
-                                return (
-                                    <React.Fragment key={res.id}>
-                                        <div className={cn(
-                                            "w-full h-[64px] flex items-center px-[20px] text-[14px] hover:bg-slate-50 transition-colors group",
-                                            activeActionsDropdownId === res.id ? "relative z-30" : "relative z-0"
-                                        )}>
-                                            <div className="flex-1 min-w-[200px] font-bold text-[#101828] group-hover:text-[#00B4CC] transition-colors truncate">
-                                                {res.userFullName}
+                                <tr><td colSpan={6} className="h-[64px] text-center text-[14px] text-slate-400">Rezervasiya tapılmadı</td></tr>
+                            ) : reservationsData?.items?.map((res: any) => (
+                                <React.Fragment key={res.id}>
+                                    <tr
+                                        className="h-[64px] text-[14px] hover:bg-slate-50 transition-colors group cursor-pointer border-b border-[#ececed]"
+                                        onClick={() => { setSelectedReservationId(res.id); setViewMode('detail'); }}
+                                    >
+                                        <td className="px-[20px] font-bold text-[#101828] group-hover:text-[#00B4CC] transition-colors truncate">
+                                            {res.userFullName}
+                                        </td>
+                                        <td className="px-[20px] text-slate-600 font-medium">
+                                            {res.date}
+                                        </td>
+                                        <td className="px-[20px] text-slate-600 font-medium">
+                                            {formatTo24h(res.timeRange)}
+                                        </td>
+                                        <td className="px-[20px]">
+                                            <div className={cn(
+                                                "h-[26px] min-w-[90px] w-fit rounded-[20px] flex items-center justify-center gap-1.5 px-3 text-[12px] font-bold text-white shadow-xs",
+                                                res.status === 'PENDING' && "bg-[#ec972f]",
+                                                res.status === 'APPROVED' && "bg-[#166728]",
+                                                res.status === 'CANCELLED' && "bg-[#c9373a]",
+                                                res.status === 'REJECTED' && "bg-[#8a38f5]"
+                                            )}>
+                                                <div className="h-1.5 w-1.5 rounded-full bg-white shadow-sm" />
+                                                <span className="uppercase tracking-tight text-[10px]">{getStatusText(res.status)}</span>
                                             </div>
-                                            <div className="w-[140px] shrink-0 text-slate-600 font-medium">
-                                                {res.date}
-                                            </div>
-                                            <div className="w-[140px] shrink-0 text-slate-600 font-medium">
-                                                {formatTo24h(res.timeRange)}
-                                            </div>
-                                            <div className="w-[140px] shrink-0 flex items-center">
-                                                <div className={cn(
-                                                    "h-[26px] min-w-[90px] rounded-[20px] flex items-center justify-center gap-1.5 px-3 text-[12px] font-bold text-white shadow-xs",
-                                                    res.status === 'PENDING' && "bg-[#ec972f]",
-                                                    res.status === 'APPROVED' && "bg-[#166728]",
-                                                    res.status === 'CANCELLED' && "bg-[#c9373a]",
-                                                    res.status === 'REJECTED' && "bg-[#8a38f5]"
-                                                )}>
-                                                    <div className="h-1.5 w-1.5 rounded-full bg-white shadow-sm" />
-                                                    <span className="uppercase tracking-tight text-[10px]">{getStatusText(res.status)}</span>
-                                                </div>
-                                            </div>
-                                            <div className="flex-1 min-w-[200px] text-slate-600 font-medium truncate">
-                                                {res.trainerName || 'N/A'}
-                                            </div>
-                                            <div className="w-[100px] shrink-0 flex justify-center relative">
-                                                <div className="cursor-pointer p-1.5 hover:bg-slate-100 rounded-md transition-colors" onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setActiveActionsDropdownId(activeActionsDropdownId === res.id ? null : res.id);
-                                                }}>
-                                                    <Image src="/more.svg" width={20} height={20} alt="More" className="opacity-70 group-hover:opacity-100 transition-opacity" />
-                                                </div>
-                                                {activeActionsDropdownId === res.id && (
-                                                    <div 
-                                                        ref={dropdownRef} 
-                                                        className={cn(styles.popoverMenu, res.status !== 'PENDING' && styles.popoverMenuShort)} 
-                                                        onClick={(e) => e.stopPropagation()} 
-                                                        style={{ 
-                                                            right: 'auto', 
-                                                            left: '50%', 
-                                                            transform: 'translateX(-50%)', 
-                                                            top: isNearBottom ? 'auto' : '100%', 
-                                                            bottom: isNearBottom ? '100%' : 'auto',
-                                                            marginBottom: isNearBottom ? '5px' : '0px',
-                                                            marginTop: isNearBottom ? '0px' : '5px'
-                                                        }}
-                                                    >
-                                                        <button className={styles.popoverBtn} onClick={() => {
-                                                            setSelectedReservationId(res.id);
-                                                            setViewMode('detail');
-                                                            setActiveActionsDropdownId(null);
-                                                        }}>
-                                                            <div className={styles.popoverFrameParent}>
-                                                                <div className={styles.popoverEyeWrapper}>
-                                                                    <div className={styles.popoverEye}>
-                                                                        <div className={styles.popoverEye2}>
-                                                                            <svg className={styles.popoverVectorIcon} width="15" height="10" viewBox="0 0 15 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                                <path d="M7.5 0.5C4.0625 0.5 1.15625 2.58125 0 5.5C1.15625 8.41875 4.0625 10.5 7.5 10.5C10.9375 10.5 13.8438 8.41875 15 5.5C13.8438 2.58125 10.9375 0.5 7.5 0.5ZM7.5 8.83333C5.65625 8.83333 4.16667 7.34375 4.16667 5.5C4.16667 3.65625 5.65625 2.16667 7.5 2.16667C9.34375 2.16667 10.8333 3.65625 10.8333 5.5C10.8333 7.34375 9.34375 8.83333 7.5 8.83333ZM7.5 3.5C6.39583 3.5 5.5 4.39583 5.5 5.5C5.5 6.60417 6.39583 7.5 7.5 7.5C8.60417 7.5 9.5 6.60417 9.5 5.5C9.5 4.39583 8.60417 3.5 7.5 3.5Z" fill="#364153"/>
-                                                                            </svg>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                                <div className={styles.popoverBax}>Bax</div>
-                                                            </div>
-                                                        </button>
-                                                        {res.status === 'PENDING' && (
-                                                            <>
-                                                                <button className={styles.popoverBtn2} onClick={() => {
-                                                                    handleApprove(res.id);
-                                                                    setActiveActionsDropdownId(null);
-                                                                }}>
-                                                                    <div className={styles.popoverCheckWrapper}>
-                                                                        <div className={styles.popoverEye}>
-                                                                            <div className={styles.popoverEye2}>
-                                                                                <svg className={styles.popoverVectorIcon2} width="13" height="10" viewBox="0 0 13 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                                    <path d="M1.5 5L4.5 8L11.5 1.5" stroke="#364153" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                                                                </svg>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className={styles.popoverTsdiqEt}>Təsdiq et</div>
-                                                                </button>
-                                                                <button className={styles.popoverBtn3} onClick={() => {
-                                                                    setSelectedReservationId(res.id);
-                                                                    setViewMode('detail');
-                                                                    setActiveActionsDropdownId(null);
-                                                                    setTimeout(() => {
-                                                                        const textarea = document.getElementById('rejectionReasonTextarea');
-                                                                        if (textarea) textarea.focus();
-                                                                    }, 150);
-                                                                }}>
-                                                                    <div className={styles.popoverCheckWrapper}>
-                                                                        <div className={styles.popoverEye}>
-                                                                            <div className={styles.popoverEye2}>
-                                                                                <svg className={styles.popoverVectorIcon3} width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                                    <path d="M1 1L9 9M9 1L1 9" stroke="#364153" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                                                                </svg>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className={styles.popoverTsdiqEt}>Ləğv et</div>
-                                                                </button>
-                                                            </>
-                                                        )}
-                                                        {res.status === 'PENDING' && <div className={styles.popoverLine} />}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                        {/* Sub row showing cancellation reason */}
-                                        {(res.status === 'REJECTED' || res.status === 'CANCELLED') && res.reason && (
-                                            <div className="w-full bg-[#fafafa] border-t border-[#ececed] px-[20px] py-[10px] text-[13px] text-slate-500">
+                                        </td>
+                                        <td className="px-[20px] text-slate-600 font-medium truncate">
+                                            {res.trainerName || 'N/A'}
+                                        </td>
+                                        <td className="px-[20px] text-center">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <button onClick={(e) => e.stopPropagation()} className="cursor-pointer p-1.5 hover:bg-slate-100 rounded-md transition-colors">
+                                                        <Image src="/more.svg" width={20} height={20} alt="More" className="opacity-70 group-hover:opacity-100 transition-opacity" />
+                                                    </button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end" className="w-[160px]">
+                                                    <DropdownMenuItem onClick={() => { setSelectedReservationId(res.id); setViewMode('detail'); }}>Bax</DropdownMenuItem>
+                                                    {res.status === 'PENDING' && (
+                                                        <>
+                                                            <DropdownMenuItem onClick={() => handleApprove(res.id)}>Təsdiq et</DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => {
+                                                                setSelectedReservationId(res.id);
+                                                                setViewMode('detail');
+                                                                setTimeout(() => {
+                                                                    const textarea = document.getElementById('rejectionReasonTextarea');
+                                                                    if (textarea) textarea.focus();
+                                                                }, 150);
+                                                            }}>İmtina et</DropdownMenuItem>
+                                                        </>
+                                                    )}
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </td>
+                                    </tr>
+                                    {/* Sub row showing cancellation reason */}
+                                    {(res.status === 'REJECTED' || res.status === 'CANCELLED') && res.reason && (
+                                        <tr className="bg-[#fafafa] border-b border-[#ececed]">
+                                            <td colSpan={6} className="px-[20px] py-[10px] text-[13px] text-slate-500">
                                                 <div className="flex gap-2">
                                                     <span className="font-bold text-red-500">Ləğv etmə səbəbi:</span>
                                                     <span>{res.reason}</span>
                                                 </div>
-                                            </div>
-                                        )}
-                                    </React.Fragment>
-                                );
-                            })}
-                        </div>
-                    </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </React.Fragment>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
 
                 {/* Pagination Section */}

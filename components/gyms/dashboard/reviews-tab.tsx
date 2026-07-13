@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { Loader2, Search, ChevronDown, Star, X } from "lucide-react";
+import { Loader2, Search, ChevronDown, Star, X, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGymStore } from "@/lib/store/gym-store";
 import { useGymReviews, useApproveReview, useRejectReview } from "@/lib/query/gym-query";
@@ -63,6 +63,51 @@ export function ReviewsTab({ gymName }: { gymName?: string }) {
     message: "",
     type: "success",
   });
+
+  // Resize state/refs
+  const [colWidths, setColWidths] = useState<number[]>([200, 150, 150, 140]);
+  const startXRef = useRef<number>(0);
+  const startWidthRef = useRef<number>(0);
+  const activeColIndexRef = useRef<number>(-1);
+  const tableRef = useRef<HTMLTableElement>(null);
+  const containerWidthRef = useRef<number>(0);
+  const mouseMoveRef = useRef<(e: MouseEvent) => void>(null);
+  const mouseUpRef = useRef<() => void>(null);
+  const minWidths = [120, 100, 100, 100];
+
+  mouseMoveRef.current = (e: MouseEvent) => {
+    if (activeColIndexRef.current === -1) return;
+    const deltaX = e.clientX - startXRef.current;
+    const minW = minWidths[activeColIndexRef.current] || 100;
+    const sumOthers = colWidths.reduce((acc, w, idx) => idx !== activeColIndexRef.current ? acc + w : acc, 0);
+    const maxW = Math.max(minW, containerWidthRef.current - sumOthers - 90);
+    const newWidth = Math.min(maxW, Math.max(minW, startWidthRef.current + deltaX));
+    setColWidths((prev) => { const copy = [...prev]; copy[activeColIndexRef.current] = newWidth; return copy; });
+  };
+
+  mouseUpRef.current = () => {
+    activeColIndexRef.current = -1;
+    if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current);
+    if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current);
+  };
+
+  const handleMouseDown = (index: number, e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    activeColIndexRef.current = index;
+    startXRef.current = e.clientX;
+    startWidthRef.current = colWidths[index];
+    if (tableRef.current) containerWidthRef.current = tableRef.current.getBoundingClientRect().width;
+    else containerWidthRef.current = 800;
+    if (mouseMoveRef.current) document.addEventListener("mousemove", mouseMoveRef.current);
+    if (mouseUpRef.current) document.addEventListener("mouseup", mouseUpRef.current);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current);
+      if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current);
+    };
+  }, []);
 
   // Debounce search input
   useEffect(() => {
@@ -195,74 +240,94 @@ export function ReviewsTab({ gymName }: { gymName?: string }) {
 
       {/* Table Content */}
       <div className="w-full bg-white rounded-xl border border-[#ececed] overflow-hidden shadow-sm">
-        <div className="grid grid-cols-[1fr_180px_180px_180px_60px] items-center bg-[#00B4CC]/10 border-b border-[#ececed] px-6 py-3.5">
-          <div className="text-[14px] font-bold text-black uppercase tracking-wider">Müştəri</div>
-          <div className="text-[14px] font-bold text-black uppercase tracking-wider">Tarix</div>
-          <div className="text-[14px] font-bold text-black uppercase tracking-wider">Zalın adı</div>
-          <div className="text-[14px] font-bold text-black uppercase tracking-wider">Status</div>
-          <div className="text-[14px] font-bold text-black uppercase tracking-wider text-center">Detallı</div>
-        </div>
-
-        <div className="flex flex-col">
-          {reviews.length === 0 ? (
-            <div className="py-20 text-center text-slate-400">Rəy tapılmadı</div>
-          ) : (
-            reviews.map((review: any) => (
-              <div key={review.id} className="grid grid-cols-[1fr_180px_180px_180px_60px] items-center px-6 py-3 border-b border-[#ececed] last:border-0 hover:bg-slate-50 transition-colors">
-                {/* Customer */}
-                <div className="flex items-center gap-3">
-                  {review.author?.avatar_url ? (
-                    <div className="w-9 h-9 rounded-full overflow-hidden border border-[#ececed] relative shrink-0">
-                      <Image
-                        src={review.author.avatar_url}
-                        alt={review.author.full_name}
-                        fill
-                        sizes="36px"
-                        className="object-cover"
-                      />
+        <table ref={tableRef} className="w-full border-collapse" style={{ tableLayout: "fixed" }}>
+          <colgroup>
+            <col style={{ width: colWidths[0] }} />
+            <col style={{ width: colWidths[1] }} />
+            <col style={{ width: colWidths[2] }} />
+            <col style={{ width: colWidths[3] }} />
+            <col style={{ width: 60 }} />
+          </colgroup>
+          <thead>
+            <tr className="bg-[#00B4CC]/10 border-b border-[#ececed]">
+              {["Müştəri", "Tarix", "Zalın adı", "Status"].map((label, idx) => (
+                <th key={label} className="text-[14px] font-bold text-black uppercase tracking-wider text-left px-6 py-3.5 relative select-none">
+                  {label}
+                  <div
+                    onMouseDown={(e) => handleMouseDown(idx, e)}
+                    className="absolute right-0 top-0 bottom-0 w-[5px] cursor-col-resize hover:bg-[#00B4CC]/30 transition-colors"
+                  />
+                </th>
+              ))}
+              <th className="text-[14px] font-bold text-black uppercase tracking-wider text-center px-6 py-3.5">Detallı</th>
+            </tr>
+          </thead>
+          <tbody>
+            {reviews.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="py-20 text-center text-slate-400">Rəy tapılmadı</td>
+              </tr>
+            ) : (
+              reviews.map((review: any) => (
+                <tr
+                  key={review.id}
+                  onClick={() => setSelectedReview(review)}
+                  className="border-b border-[#ececed] last:border-0 hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  {/* Customer */}
+                  <td className="px-6 py-3">
+                    <div className="flex items-center gap-3">
+                      {review.author?.avatar_url ? (
+                        <div className="w-9 h-9 rounded-full overflow-hidden border border-[#ececed] relative shrink-0">
+                          <Image
+                            src={review.author.avatar_url}
+                            alt={review.author.full_name}
+                            fill
+                            sizes="36px"
+                            className="object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-9 h-9 rounded-full bg-[#d5f0f3] border border-[#ececed] flex items-center justify-center text-[15px] font-bold shrink-0">
+                          {review.author?.full_name?.[0] || "N"}
+                        </div>
+                      )}
+                      <span className="text-[13px] font-semibold">{review.author?.full_name}</span>
                     </div>
-                  ) : (
-                    <div className="w-9 h-9 rounded-full bg-[#d5f0f3] border border-[#ececed] flex items-center justify-center text-[15px] font-bold shrink-0">
-                      {review.author?.full_name?.[0] || "N"}
+                  </td>
+
+                  {/* Date */}
+                  <td className="px-6 py-3 text-[14px] font-medium">
+                    {review.created_at ? format(new Date(review.created_at), "dd MMM, yyyy", { locale: az }) : "—"}
+                  </td>
+
+                  {/* Gym Name */}
+                  <td className="px-6 py-3 text-[14px] font-medium text-[#535353] truncate pr-4 uppercase">
+                    {gymName || review.gym_name || "FIT CLUB"}
+                  </td>
+
+                  {/* Status */}
+                  <td className="px-6 py-3">
+                    <div 
+                      className="w-fit rounded-[20px] px-3 py-1.5 flex items-center gap-2 text-[12px] font-bold"
+                      style={{ backgroundColor: STATUS_BADGE_MAP[review.status]?.bgColor, color: STATUS_BADGE_MAP[review.status]?.color }}
+                    >
+                      <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: STATUS_BADGE_MAP[review.status]?.dotColor }} />
+                      {STATUS_BADGE_MAP[review.status]?.label}
                     </div>
-                  )}
-                  <span className="text-[13px] font-semibold">{review.author?.full_name}</span>
-                </div>
+                  </td>
 
-                {/* Date */}
-                <div className="text-[14px] font-medium">
-                  {review.created_at ? format(new Date(review.created_at), "dd MMM, yyyy", { locale: az }) : "—"}
-                </div>
-
-                {/* Gym Name */}
-                <div className="text-[14px] font-medium text-[#535353] truncate pr-4 uppercase">
-                  {gymName || review.gym_name || "FIT CLUB"}
-                </div>
-
-                {/* Status */}
-                <div>
-                  <div 
-                    className="w-fit rounded-[20px] px-3 py-1.5 flex items-center gap-2 text-[12px] font-bold"
-                    style={{ backgroundColor: STATUS_BADGE_MAP[review.status]?.bgColor, color: STATUS_BADGE_MAP[review.status]?.color }}
-                  >
-                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: STATUS_BADGE_MAP[review.status]?.dotColor }} />
-                    {STATUS_BADGE_MAP[review.status]?.label}
-                  </div>
-                </div>
-
-                {/* Detail */}
-                <div className="flex justify-center">
-                  <button 
-                    onClick={() => setSelectedReview(review)}
-                    className="p-2 text-slate-400 hover:text-[#00B4CC] transition-colors"
-                  >
-                    <Image src="/more.png" width={28} height={18} alt="View" className="opacity-60 hover:opacity-100 transition-opacity" />
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+                  {/* Detail */}
+                  <td className="px-6 py-3 text-center">
+                    <button onClick={(e) => { e.stopPropagation(); setSelectedReview(review); }} className="p-2 text-slate-400 hover:text-[#00B4CC] transition-colors">
+                      <Eye size={18} />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
 
       {/* Review Detail Modal (Container UI) */}

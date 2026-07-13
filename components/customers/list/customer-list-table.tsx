@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import { Check, Eye, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -107,6 +108,60 @@ export function CustomerTable({
   const t = useT()
   const allOnPage = customers.length > 0 && customers.every((customer) => selected.has(customer.id))
 
+  // --- Resize state/refs ---
+  const [colWidths, setColWidths] = useState<number[]>([60, 180, 140, 180, 90])
+  const startXRef = useRef<number>(0)
+  const startWidthRef = useRef<number>(0)
+  const activeColIndexRef = useRef<number>(-1)
+  const tableRef = useRef<HTMLTableElement>(null)
+  const containerWidthRef = useRef<number>(0)
+  const mouseMoveRef = useRef<(e: MouseEvent) => void>(null)
+  const mouseUpRef = useRef<() => void>(null)
+  const minWidths = [40, 100, 80, 100, 60]
+
+  mouseMoveRef.current = (e: MouseEvent) => {
+    if (activeColIndexRef.current === -1) return
+    const deltaX = e.clientX - startXRef.current
+    const minW = minWidths[activeColIndexRef.current] || 100
+    const sumOthers = colWidths.reduce((acc, w, idx) => idx !== activeColIndexRef.current ? acc + w : acc, 0)
+    const maxW = Math.max(minW, containerWidthRef.current - sumOthers - 90)
+    const newWidth = Math.min(maxW, Math.max(minW, startWidthRef.current + deltaX))
+    setColWidths((prev) => { const copy = [...prev]; copy[activeColIndexRef.current] = newWidth; return copy })
+  }
+
+  mouseUpRef.current = () => {
+    activeColIndexRef.current = -1
+    if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current)
+    if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current)
+  }
+
+  const handleMouseDown = (index: number, e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation()
+    activeColIndexRef.current = index
+    startXRef.current = e.clientX
+    startWidthRef.current = colWidths[index]
+    if (tableRef.current) containerWidthRef.current = tableRef.current.getBoundingClientRect().width
+    else containerWidthRef.current = 800
+    if (mouseMoveRef.current) document.addEventListener("mousemove", mouseMoveRef.current)
+    if (mouseUpRef.current) document.addEventListener("mouseup", mouseUpRef.current)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current)
+      if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current)
+    }
+  }, [])
+
+  // --- Header column definitions (resizable ones) ---
+  const resizableHeaders = [
+    { label: t.lists.colId, centerAlign: false },
+    { label: t.lists.colName, centerAlign: false },
+    { label: t.lists.colPhone, centerAlign: false },
+    { label: t.lists.colEmail, centerAlign: false },
+    { label: t.lists.colStatus, centerAlign: true },
+  ]
+
   if (isLoading) {
     return (
       <div className="overflow-hidden rounded-xl border border-border bg-card px-4 py-16 text-center text-sm text-muted-foreground">
@@ -120,79 +175,120 @@ export function CustomerTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-      <div className="grid grid-cols-[3rem_3.5rem_1.5fr_1fr_1fr_6rem_7rem] items-center gap-3 border-b border-[#cecfd2]/60 dark:border-border bg-[#00B4CC]/[0.15] dark:bg-[#00B4CC]/10 px-4 py-3 rounded-t-lg">
-        <div className="flex justify-center">
-          {isSelectingAll ? (
-            <Loader2 className="h-4 w-4 animate-spin text-[#00B4CC]" />
-          ) : (
-            <input type="checkbox" checked={allOnPage} onChange={onToggleAll} className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded" />
-          )}
-        </div>
-        <span className="text-[11px] font-bold uppercase text-foreground/80">{t.lists.colId}</span>
-        <span className="text-[11px] font-bold uppercase text-foreground/80">{t.lists.colName}</span>
-        <span className="text-[11px] font-bold uppercase text-foreground/80">{t.lists.colPhone}</span>
-        <span className="text-[11px] font-bold uppercase text-foreground/80">{t.lists.colEmail}</span>
-        <span className="text-[11px] font-bold uppercase text-foreground/80 text-center">{t.lists.colStatus}</span>
-        <span className="text-[11px] font-bold uppercase text-foreground/80">{t.lists.colSubscription}</span>
-      </div>
-      {customers.map((customer) => {
-        const customerStatus = normalizeCustomerStatus(customer.userStatus)
-        const subscriptionStatus = normalizeSubscriptionStatus(customer.subscriptionStatus)
-
-        // Account Status Badge Logic
-        const badgeBg = customerStatus === 'active' ? 'bg-[#166728]' : customerStatus === 'inactive' ? 'bg-[#94979c]' : 'bg-[#c9373a]'
-        const badgeText = customerStatus === 'active' ? t.lists.statusActive : customerStatus === 'inactive' ? t.lists.statusInactive : t.lists.statusBlocked
-
-        return (
-          <div
-            key={customer.id}
-            onClick={() => onView(customer.id)}
-            className={cn(
-              'grid grid-cols-[3rem_3.5rem_1.5fr_1fr_1fr_6rem_7rem] items-center gap-3 border-b border-border px-4 py-3 last:border-0 hover:bg-secondary/40 transition-all duration-200 cursor-pointer',
-              subscriptionStatus === 'changed' ? 'bg-[#f0fdff]' : 'bg-card',
-            )}
-          >
-            <div className="flex justify-center">
-              <input
-                type="checkbox"
-                checked={selected.has(customer.id)}
-                onChange={() => onToggleOne(customer.id)}
-                onClick={(event) => event.stopPropagation()}
-                className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded"
-              />
-            </div>
-            <span className="text-sm font-normal text-black truncate">{customer.id}</span>
-            <span className="text-sm font-normal text-black truncate">
-              {customer.fullName}
-            </span>
-            <span className="text-sm font-normal text-black truncate">{customer.phoneNumber}</span>
-            <span className="text-sm font-normal text-black truncate">{customer.email}</span>
-            <div className="flex justify-center">
-              <div className={cn('inline-flex h-[22px] w-fit items-center justify-center gap-1.5 rounded-full px-3 text-[10px] font-medium uppercase shadow-xs', badgeBg)}>
-                <div className="w-1 h-1 rounded-full bg-white shrink-0" />
-                <span>{badgeText}</span>
+    <div className="overflow-x-auto rounded-lg border border-border bg-card shadow-sm">
+      <table ref={tableRef} className="w-full border-separate border-spacing-0" style={{ tableLayout: "fixed", minWidth: "700px" }}>
+        <colgroup>
+          <col style={{ width: "48px" }} /> {/* checkbox - fixed, no resize */}
+          {colWidths.map((w, i) => <col key={i} style={{ width: `${w}px` }} />)}
+          <col /> {/* subscription - takes remaining space */}
+        </colgroup>
+        <thead>
+          <tr className="bg-[#00B4CC]/[0.15] dark:bg-[#00B4CC]/10 text-left border-b border-[#cecfd2]/60 dark:border-border">
+            {/* Checkbox header */}
+            <th className="px-4 py-3">
+              <div className="flex justify-center">
+                {isSelectingAll ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-[#00B4CC]" />
+                ) : (
+                  <input type="checkbox" checked={allOnPage} onChange={onToggleAll} className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded" />
+                )}
               </div>
-            </div>
-            <div className="flex items-center gap-1.5">
-              {subscriptionStatus === 'expired' ? (
-                <Image src="/bitmis-status.svg" width={16} height={16} alt="" className="shrink-0" />
-              ) : subscriptionStatus === 'last7days' ? (
-                <Image src="/abunelikde-7-gun.svg" width={16} height={16} alt="" className="shrink-0" />
-              ) : subscriptionStatus === 'frozen' ? (
-                <Image src="/dondurulmus-status.svg" width={16} height={16} alt="" className="shrink-0" />
-              ) : subscriptionStatus === 'active' || subscriptionStatus === 'changed' ? (
-                <div className="flex h-4 w-4 items-center justify-center rounded-full bg-[#00b4cc]/10 text-[#00B4CC]">
-                  <Check size={10} strokeWidth={2.5} />
+            </th>
+            {/* Resizable columns: ID(0), Name(1), Phone(2), Email(3), Status(4) */}
+            {resizableHeaders.map((header, index) => (
+              <th
+                key={index}
+                className={cn(
+                  "px-4 py-3 text-[11px] font-bold uppercase text-foreground/80 relative",
+                  header.centerAlign && "text-center",
+                )}
+              >
+                {header.label}
+                <div
+                  onMouseDown={(e) => handleMouseDown(index, e)}
+                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
+                >
+                  <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
                 </div>
-              ) : null}
-              <span className="text-xs font-normal text-black truncate">
-                {getSubscriptionStatusLabel(subscriptionStatus, t.lists)}
-              </span>
-            </div>
-          </div>
-        )
-      })}
+              </th>
+            ))}
+            {/* Subscription header - no resize handle */}
+            <th className="px-4 py-3 text-[11px] font-bold uppercase text-foreground/80">
+              {t.lists.colSubscription}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {customers.map((customer) => {
+            const customerStatus = normalizeCustomerStatus(customer.userStatus)
+            const subscriptionStatus = normalizeSubscriptionStatus(customer.subscriptionStatus)
+
+            // Account Status Badge Logic
+            const badgeBg = customerStatus === 'active' ? 'bg-[#166728]' : customerStatus === 'inactive' ? 'bg-[#94979c]' : 'bg-[#c9373a]'
+            const badgeText = customerStatus === 'active' ? t.lists.statusActive : customerStatus === 'inactive' ? t.lists.statusInactive : t.lists.statusBlocked
+
+            return (
+              <tr
+                key={customer.id}
+                onClick={() => onView(customer.id)}
+                className={cn(
+                  'border-b border-border last:border-0 hover:bg-secondary/40 transition-all duration-200 cursor-pointer',
+                  subscriptionStatus === 'changed' ? 'bg-[#f0fdff]' : 'bg-card',
+                )}
+              >
+                {/* Checkbox */}
+                <td className="px-4 py-3">
+                  <div className="flex justify-center">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(customer.id)}
+                      onChange={() => onToggleOne(customer.id)}
+                      onClick={(event) => event.stopPropagation()}
+                      className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded"
+                    />
+                  </div>
+                </td>
+                {/* ID */}
+                <td className="px-4 py-3 text-sm font-normal text-black truncate">{customer.id}</td>
+                {/* Name */}
+                <td className="px-4 py-3 text-sm font-normal text-black truncate">{customer.fullName}</td>
+                {/* Phone */}
+                <td className="px-4 py-3 text-sm font-normal text-black truncate">{customer.phoneNumber}</td>
+                {/* Email */}
+                <td className="px-4 py-3 text-sm font-normal text-black truncate">{customer.email}</td>
+                {/* Status */}
+                <td className="px-4 py-3">
+                  <div className="flex justify-center">
+                    <div className={cn('inline-flex h-[22px] w-fit items-center justify-center gap-1.5 rounded-full px-3 text-[10px] font-medium uppercase shadow-xs', badgeBg)}>
+                      <div className="w-1 h-1 rounded-full bg-white shrink-0" />
+                      <span>{badgeText}</span>
+                    </div>
+                  </div>
+                </td>
+                {/* Subscription */}
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-1.5">
+                    {subscriptionStatus === 'expired' ? (
+                      <Image src="/bitmis-status.svg" width={16} height={16} alt="" className="shrink-0" />
+                    ) : subscriptionStatus === 'last7days' ? (
+                      <Image src="/abunelikde-7-gun.svg" width={16} height={16} alt="" className="shrink-0" />
+                    ) : subscriptionStatus === 'frozen' ? (
+                      <Image src="/dondurulmus-status.svg" width={16} height={16} alt="" className="shrink-0" />
+                    ) : subscriptionStatus === 'active' || subscriptionStatus === 'changed' ? (
+                      <div className="flex h-4 w-4 items-center justify-center rounded-full bg-[#00b4cc]/10 text-[#00B4CC]">
+                        <Check size={10} strokeWidth={2.5} />
+                      </div>
+                    ) : null}
+                    <span className="text-xs font-normal text-black truncate">
+                      {getSubscriptionStatusLabel(subscriptionStatus, t.lists)}
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
     </div>
   )
 }

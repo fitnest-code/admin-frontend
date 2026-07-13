@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import { ChevronDown, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -31,6 +31,51 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
   
   const [startDate, setStartDate] = useState<string>('')
   const [endDate, setEndDate] = useState<string>('')
+
+  // Resizable column state & refs
+  const [colWidths, setColWidths] = useState<number[]>([60, 160, 130, 110, 110, 80])
+  const startXRef = useRef<number>(0)
+  const startWidthRef = useRef<number>(0)
+  const activeColIndexRef = useRef<number>(-1)
+  const tableRef = useRef<HTMLTableElement>(null)
+  const containerWidthRef = useRef<number>(0)
+  const mouseMoveRef = useRef<((e: MouseEvent) => void) | null>(null)
+  const mouseUpRef = useRef<(() => void) | null>(null)
+  const minWidths = [40, 100, 80, 80, 80, 60]
+
+  mouseMoveRef.current = (e: MouseEvent) => {
+    if (activeColIndexRef.current === -1) return
+    const deltaX = e.clientX - startXRef.current
+    const minW = minWidths[activeColIndexRef.current] || 100
+    const sumOthers = colWidths.reduce((acc, w, idx) => idx !== activeColIndexRef.current ? acc + w : acc, 0)
+    const maxW = Math.max(minW, containerWidthRef.current - sumOthers - 90)
+    const newWidth = Math.min(maxW, Math.max(minW, startWidthRef.current + deltaX))
+    setColWidths((prev) => { const copy = [...prev]; copy[activeColIndexRef.current] = newWidth; return copy })
+  }
+
+  mouseUpRef.current = () => {
+    activeColIndexRef.current = -1
+    if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current)
+    if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current)
+  }
+
+  const handleMouseDown = (index: number, e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation()
+    activeColIndexRef.current = index
+    startXRef.current = e.clientX
+    startWidthRef.current = colWidths[index]
+    if (tableRef.current) containerWidthRef.current = tableRef.current.getBoundingClientRect().width
+    else containerWidthRef.current = 800
+    if (mouseMoveRef.current) document.addEventListener("mousemove", mouseMoveRef.current)
+    if (mouseUpRef.current) document.addEventListener("mouseup", mouseUpRef.current)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current)
+      if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current)
+    }
+  }, [])
 
   const handleDateRangeSelect = (range: string) => {
     if (range === 'custom') {
@@ -360,24 +405,39 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
 
               {/* Table Container */}
               <div className="w-full overflow-x-auto rounded-[12px] border border-[#cecfd2] shadow-sm bg-white">
-                <div className="min-w-[1000px] flex flex-col bg-white">
-                  {/* Table Header */}
-                  <div className="w-full h-[48px] bg-[rgba(0,180,204,0.1)] flex items-center px-[20px] gap-[32px] text-[13px] font-bold text-[#101828]">
-                    <div className="w-[60px] shrink-0 opacity-70 uppercase tracking-wider">ID</div>
-                    <div className="w-[160px] shrink-0 opacity-70 uppercase tracking-wider">Ad / Soyad</div>
-                    <div className="w-[130px] shrink-0 opacity-70 uppercase tracking-wider">Telefon</div>
-                    <div className="w-[110px] shrink-0 opacity-70 uppercase tracking-wider">Tarix / Saat</div>
-                    <div className="w-[110px] shrink-0 opacity-70 uppercase tracking-wider text-center">Məbləğ</div>
-                    <div className="w-[80px] shrink-0 opacity-70 uppercase tracking-wider text-center">Nəticə</div>
-                    <div className="w-[100px] flex-1 opacity-70 uppercase tracking-wider text-center">Səbəb</div>
-                  </div>
-
-                  {/* Rows */}
-                  <div className="flex flex-col w-full divide-y divide-[#ececed]">
+                <table ref={tableRef} className="w-full border-separate border-spacing-0" style={{ tableLayout: "fixed", minWidth: "750px" }}>
+                  <colgroup>
+                    {colWidths.map((w, i) => <col key={i} style={{ width: `${w}px` }} />)}
+                    <col />
+                  </colgroup>
+                  <thead>
+                    <tr className="bg-[rgba(0,180,204,0.1)] text-left">
+                      <th className="px-5 py-3 text-[13px] font-bold text-[#101828] opacity-70 uppercase tracking-wider relative">ID
+                        <div onMouseDown={(e) => handleMouseDown(0, e)} className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"><div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" /></div>
+                      </th>
+                      <th className="px-5 py-3 text-[13px] font-bold text-[#101828] opacity-70 uppercase tracking-wider relative">Ad / Soyad
+                        <div onMouseDown={(e) => handleMouseDown(1, e)} className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"><div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" /></div>
+                      </th>
+                      <th className="px-5 py-3 text-[13px] font-bold text-[#101828] opacity-70 uppercase tracking-wider relative">Telefon
+                        <div onMouseDown={(e) => handleMouseDown(2, e)} className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"><div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" /></div>
+                      </th>
+                      <th className="px-5 py-3 text-[13px] font-bold text-[#101828] opacity-70 uppercase tracking-wider relative">Tarix / Saat
+                        <div onMouseDown={(e) => handleMouseDown(3, e)} className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"><div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" /></div>
+                      </th>
+                      <th className="px-5 py-3 text-[13px] font-bold text-[#101828] opacity-70 uppercase tracking-wider text-center relative">Məbləğ
+                        <div onMouseDown={(e) => handleMouseDown(4, e)} className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"><div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" /></div>
+                      </th>
+                      <th className="px-5 py-3 text-[13px] font-bold text-[#101828] opacity-70 uppercase tracking-wider text-center relative">Nəticə
+                        <div onMouseDown={(e) => handleMouseDown(5, e)} className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"><div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" /></div>
+                      </th>
+                      <th className="px-5 py-3 text-[13px] font-bold text-[#101828] opacity-70 uppercase tracking-wider text-center">Səbəb</th>
+                    </tr>
+                  </thead>
+                  <tbody>
                     {isLoading ? (
-                      <div className="p-20 flex justify-center items-center"><Loader2 className="animate-spin text-[#00B4CC]" /></div>
+                      <tr><td colSpan={7} className="p-20 text-center"><Loader2 className="animate-spin text-[#00B4CC] mx-auto" /></td></tr>
                     ) : filteredItems.length === 0 ? (
-                      <div className="p-20 text-center text-slate-400 italic">Məlumat tapılmadı</div>
+                      <tr><td colSpan={7} className="p-20 text-center text-slate-400 italic">Məlumat tapılmadı</td></tr>
                     ) : (
                       filteredItems.map((item, i) => {
                         const s = item.status?.toUpperCase();
@@ -385,56 +445,62 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
                         const [date, time] = item.scanDateTime ? item.scanDateTime.split(' ') : ['---', '---'];
 
                         return (
-                          <div key={item.id || i} className="w-full h-[64px] flex items-center px-[20px] gap-[32px] text-[14px] hover:bg-slate-50/80 transition-colors group">
-                            <div className="w-[60px] shrink-0 text-slate-400 font-medium">#{item.id || '---'}</div>
-                            <div className="w-[160px] shrink-0 flex items-center gap-2 group-hover:text-[#00B4CC] transition-colors truncate">
-                              {item.profilePhotoUrl ? (
-                                <div className="w-8 h-8 rounded-full overflow-hidden border border-[#ececed] relative shrink-0">
-                                  <Image
-                                    src={item.profilePhotoUrl}
-                                    alt={`${item.firstName} ${item.lastName}`}
-                                    fill
-                                    sizes="32px"
-                                    className="object-cover"
-                                  />
-                                </div>
-                              ) : (
-                                <div className="w-8 h-8 rounded-full bg-[#d5f0f3] border border-[#ececed] flex items-center justify-center text-[11px] font-bold shrink-0">
-                                  {item.firstName?.[0] || 'U'}
-                                </div>
-                              )}
-                              <span className="font-bold text-[#101828] group-hover:text-[#00B4CC] transition-colors truncate">
-                                {item.firstName} {item.lastName}
-                              </span>
-                            </div>
-                            <div className="w-[130px] shrink-0 text-slate-600 font-medium">{item.phone || '---'}</div>
-                            <div className="w-[110px] shrink-0 flex flex-col justify-center">
-                              <span className="font-bold text-slate-700">{date}</span>
-                              <span className="text-[12px] text-slate-400">{time}</span>
-                            </div>
-                            <div className="w-[110px] shrink-0 font-bold text-[#101828] text-center">{item.amount?.toFixed(2) || '0.00'} AZN</div>
-                            <div className="w-[80px] shrink-0 flex justify-center">
-                              <div className={cn(
-                                "h-[24px] w-[73px] rounded-[20px] flex items-center justify-center gap-1.5 px-3 text-[10px] font-bold text-white shadow-xs",
-                                isSuccess ? "bg-[#166728]" : "bg-[#c9373a]"
-                              )}>
-                                <div className="h-1 w-1 rounded-full bg-white shadow-sm" />
-                                <span className="uppercase tracking-tight">{isSuccess ? 'Uğurlu' : 'Xəta'}</span>
+                          <tr key={item.id || i} className="border-b border-[#ececed] last:border-0 hover:bg-slate-50/80 transition-colors group">
+                            <td className="px-5 py-3 text-[14px] text-slate-400 font-medium">#{item.id || '---'}</td>
+                            <td className="px-5 py-3 text-[14px]">
+                              <div className="flex items-center gap-2 group-hover:text-[#00B4CC] transition-colors truncate">
+                                {item.profilePhotoUrl ? (
+                                  <div className="w-8 h-8 rounded-full overflow-hidden border border-[#ececed] relative shrink-0">
+                                    <Image
+                                      src={item.profilePhotoUrl}
+                                      alt={`${item.firstName} ${item.lastName}`}
+                                      fill
+                                      sizes="32px"
+                                      className="object-cover"
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="w-8 h-8 rounded-full bg-[#d5f0f3] border border-[#ececed] flex items-center justify-center text-[11px] font-bold shrink-0">
+                                    {item.firstName?.[0] || 'U'}
+                                  </div>
+                                )}
+                                <span className="font-bold text-[#101828] group-hover:text-[#00B4CC] transition-colors truncate">
+                                  {item.firstName} {item.lastName}
+                                </span>
                               </div>
-                            </div>
-                            <div className="w-[100px] flex-1 text-center text-slate-400 font-medium truncate text-[13px]">
+                            </td>
+                            <td className="px-5 py-3 text-[14px] text-slate-600 font-medium">{item.phone || '---'}</td>
+                            <td className="px-5 py-3 text-[14px]">
+                              <div className="flex flex-col justify-center">
+                                <span className="font-bold text-slate-700">{date}</span>
+                                <span className="text-[12px] text-slate-400">{time}</span>
+                              </div>
+                            </td>
+                            <td className="px-5 py-3 text-[14px] font-bold text-[#101828] text-center">{item.amount?.toFixed(2) || '0.00'} AZN</td>
+                            <td className="px-5 py-3 text-[14px]">
+                              <div className="flex justify-center">
+                                <div className={cn(
+                                  "h-[24px] w-[73px] rounded-[20px] flex items-center justify-center gap-1.5 px-3 text-[10px] font-bold text-white shadow-xs",
+                                  isSuccess ? "bg-[#166728]" : "bg-[#c9373a]"
+                                )}>
+                                  <div className="h-1 w-1 rounded-full bg-white shadow-sm" />
+                                  <span className="uppercase tracking-tight">{isSuccess ? 'Uğurlu' : 'Xəta'}</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-5 py-3 text-center text-slate-400 font-medium truncate text-[13px]">
                               {isSuccess ? (
                                 <div className="flex justify-center">
                                   <div className="h-[1px] w-[16px] bg-[#cecfd2]" />
                                 </div>
                               ) : item.reason || '—'}
-                            </div>
-                          </div>
+                            </td>
+                          </tr>
                         );
                       })
                     )}
-                  </div>
-                </div>
+                  </tbody>
+                </table>
               </div>
 
               {/* Pagination */}

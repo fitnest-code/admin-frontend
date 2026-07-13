@@ -122,11 +122,56 @@ export function AdminsList() {
   const [sortBy, setSortBy] = useState<AdminSortValue | null>(null)
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [page, setPage] = useState(1)
-  
+
   const [pushOpen, setPushOpen] = useState(false)
   const [smsOpen, setSmsOpen] = useState(false)
   const [emailOpen, setEmailOpen] = useState(false)
   const [blockOpen, setBlockOpen] = useState(false)
+
+  // --- Resizable column state ---
+  const [colWidths, setColWidths] = useState<number[]>([60, 200, 150])
+  const startXRef = useRef<number>(0)
+  const startWidthRef = useRef<number>(0)
+  const activeColIndexRef = useRef<number>(-1)
+  const tableRef = useRef<HTMLTableElement>(null)
+  const containerWidthRef = useRef<number>(0)
+  const mouseMoveRef = useRef<(e: MouseEvent) => void>(null)
+  const mouseUpRef = useRef<() => void>(null)
+  const minWidths = [40, 120, 80]
+
+  mouseMoveRef.current = (e: MouseEvent) => {
+    if (activeColIndexRef.current === -1) return
+    const deltaX = e.clientX - startXRef.current
+    const minW = minWidths[activeColIndexRef.current] || 100
+    const sumOthers = colWidths.reduce((acc, w, idx) => idx !== activeColIndexRef.current ? acc + w : acc, 0)
+    const maxW = Math.max(minW, containerWidthRef.current - sumOthers - 90)
+    const newWidth = Math.min(maxW, Math.max(minW, startWidthRef.current + deltaX))
+    setColWidths((prev) => { const copy = [...prev]; copy[activeColIndexRef.current] = newWidth; return copy })
+  }
+
+  mouseUpRef.current = () => {
+    activeColIndexRef.current = -1
+    if (mouseMoveRef.current) document.removeEventListener('mousemove', mouseMoveRef.current)
+    if (mouseUpRef.current) document.removeEventListener('mouseup', mouseUpRef.current)
+  }
+
+  const handleMouseDown = (index: number, e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation()
+    activeColIndexRef.current = index
+    startXRef.current = e.clientX
+    startWidthRef.current = colWidths[index]
+    if (tableRef.current) containerWidthRef.current = tableRef.current.getBoundingClientRect().width
+    else containerWidthRef.current = 800
+    if (mouseMoveRef.current) document.addEventListener('mousemove', mouseMoveRef.current)
+    if (mouseUpRef.current) document.addEventListener('mouseup', mouseUpRef.current)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (mouseMoveRef.current) document.removeEventListener('mousemove', mouseMoveRef.current)
+      if (mouseUpRef.current) document.removeEventListener('mouseup', mouseUpRef.current)
+    }
+  }, [])
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -225,16 +270,27 @@ export function AdminsList() {
         </div>
       ) : sorted.length === 0 ? (
         <div className="overflow-hidden rounded-xl border border-border bg-card">
-          <div className="grid grid-cols-[3rem_3.5rem_1.5fr_1.2fr_1.5fr] items-center gap-3 border-b border-border bg-[#00B4CC14] px-4 py-3">
-            <div className="flex justify-center">
-              <input type="checkbox" disabled className="h-4 w-4 opacity-40" />
-            </div>
-            {['ID', 'Ad / Soyad', 'Rol', 'Telefon'].map((header) => (
-              <span key={header} className="text-[11px] font-medium uppercase text-foreground/80">
-                {header}
-              </span>
-            ))}
-          </div>
+          <table className="w-full table-fixed border-collapse">
+            <colgroup>
+              <col style={{ width: 48 }} />
+              <col style={{ width: colWidths[0] }} />
+              <col style={{ width: colWidths[1] }} />
+              <col style={{ width: colWidths[2] }} />
+              <col />
+            </colgroup>
+            <thead>
+              <tr className="border-b border-border bg-[#00B4CC14]">
+                <th className="px-4 py-3 text-center">
+                  <input type="checkbox" disabled className="h-4 w-4 opacity-40" />
+                </th>
+                {['ID', 'Ad / Soyad', 'Rol', 'Telefon'].map((header) => (
+                  <th key={header} className="px-2 py-3 text-left text-[11px] font-medium uppercase text-foreground/80">
+                    {header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+          </table>
           <div className="flex flex-col items-center gap-3 py-20 text-center">
             <p className="text-base font-semibold text-foreground">{t.lists.adminsEmpty}</p>
             <p className="text-sm text-muted-foreground max-w-xs">
@@ -244,52 +300,70 @@ export function AdminsList() {
         </div>
       ) : (
         <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-          <div className="grid grid-cols-[3rem_3.5rem_1.5fr_1.2fr_1.5fr] items-center gap-3 border-b border-[#cecfd2]/60 dark:border-border bg-[#00B4CC]/[0.15] dark:bg-[#00B4CC]/10 px-4 py-3 rounded-t-lg">
-            <div className="flex justify-center">
-              <input type="checkbox" checked={allOnPage} onChange={toggleAll} className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded" />
-            </div>
-            <span className="text-[11px] font-bold uppercase text-foreground/80">ID</span>
-            <span className="text-[11px] font-bold uppercase text-foreground/80">Ad / Soyad</span>
-            <span className="text-[11px] font-bold uppercase text-foreground/80">Rol</span>
-            <span className="text-[11px] font-bold uppercase text-foreground/80">Telefon</span>
-          </div>
-
-          {sorted.map((admin) => {
-            return (
-              <div key={admin.id} className="grid grid-cols-[3rem_3.5rem_1.5fr_1.2fr_1.5fr] items-center gap-3 border-b border-border px-4 py-3 last:border-0 hover:bg-secondary/40 transition-all duration-200 bg-card cursor-pointer" onClick={() => router.push(`/admins/${admin.id}`)}>
-                <div className="flex justify-center">
-                  <input
-                    type="checkbox"
-                    checked={selected.has(admin.id)}
-                    onChange={() => toggleOne(admin.id)}
-                    onClick={(event) => event.stopPropagation()}
-                    className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded"
-                  />
-                </div>
-                <span className="text-sm font-normal text-black truncate">{admin.id}</span>
-                <span className="text-sm font-normal text-black truncate" title={admin.fullName || ''}>
-                  {admin.fullName}
-                </span>
-                
-                <div className="flex items-center">
-                  <div className="flex h-[22px] w-fit items-center justify-center gap-1.5 rounded-full bg-[#00B4CC]/10 px-3 text-[10px] font-medium uppercase text-[#00B4CC]">
-                    <Image 
-                      src="/admin.svg" 
-                      width={12} 
-                      height={12} 
-                      alt="" 
-                      className="shrink-0"
+          <table ref={tableRef} className="w-full table-fixed border-collapse" style={{ userSelect: activeColIndexRef.current !== -1 ? 'none' : undefined }}>
+            <colgroup>
+              <col style={{ width: 48 }} />
+              <col style={{ width: colWidths[0] }} />
+              <col style={{ width: colWidths[1] }} />
+              <col style={{ width: colWidths[2] }} />
+              <col />
+            </colgroup>
+            <thead>
+              <tr className="border-b border-[#cecfd2]/60 dark:border-border bg-[#00B4CC]/[0.15] dark:bg-[#00B4CC]/10 rounded-t-lg">
+                <th className="px-4 py-3 text-center">
+                  <input type="checkbox" checked={allOnPage} onChange={toggleAll} className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded" />
+                </th>
+                {['ID', 'Ad / Soyad', 'Rol'].map((header, idx) => (
+                  <th key={header} className="relative px-2 py-3 text-left text-[11px] font-bold uppercase text-foreground/80">
+                    {header}
+                    <span
+                      onMouseDown={(e) => handleMouseDown(idx, e)}
+                      className="absolute right-0 top-0 bottom-0 w-[5px] cursor-col-resize select-none hover:bg-[#00B4CC]/30 transition-colors"
                     />
-                    <span>{getRoleLabel(admin.role)}</span>
-                  </div>
-                </div>
-
-                <span className="text-sm font-normal text-black truncate">
-                  {admin.phoneNumber || '+994 00 000 00 00'}
-                </span>
-              </div>
-            )
-          })}
+                  </th>
+                ))}
+                <th className="px-2 py-3 text-left text-[11px] font-bold uppercase text-foreground/80">
+                  Telefon
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((admin) => (
+                <tr key={admin.id} className="border-b border-border last:border-0 hover:bg-secondary/40 transition-all duration-200 bg-card cursor-pointer" onClick={() => router.push(`/admins/${admin.id}`)}>
+                  <td className="px-4 py-3 text-center">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(admin.id)}
+                      onChange={() => toggleOne(admin.id)}
+                      onClick={(event) => event.stopPropagation()}
+                      className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded"
+                    />
+                  </td>
+                  <td className="px-2 py-3 text-sm font-normal text-black truncate">{admin.id}</td>
+                  <td className="px-2 py-3 text-sm font-normal text-black truncate" title={admin.fullName || ''}>
+                    {admin.fullName}
+                  </td>
+                  <td className="px-2 py-3">
+                    <div className="flex items-center">
+                      <div className="flex h-[22px] w-fit items-center justify-center gap-1.5 rounded-full bg-[#00B4CC]/10 px-3 text-[10px] font-medium uppercase text-[#00B4CC]">
+                        <Image
+                          src="/admin.svg"
+                          width={12}
+                          height={12}
+                          alt=""
+                          className="shrink-0"
+                        />
+                        <span>{getRoleLabel(admin.role)}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-2 py-3 text-sm font-normal text-black truncate">
+                    {admin.phoneNumber || '+994 00 000 00 00'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 

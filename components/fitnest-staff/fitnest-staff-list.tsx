@@ -115,6 +115,59 @@ export function FitnestStaffList() {
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [page, setPage] = useState(1)
 
+  // ── Resizable columns state ──
+  const [colWidths, setColWidths] = useState<number[]>([60, 200, 150])
+  const startXRef = useRef<number>(0)
+  const startWidthRef = useRef<number>(0)
+  const activeColIndexRef = useRef<number>(-1)
+  const tableRef = useRef<HTMLTableElement>(null)
+  const containerWidthRef = useRef<number>(0)
+  const mouseMoveRef = useRef<((e: MouseEvent) => void) | null>(null)
+  const mouseUpRef = useRef<(() => void) | null>(null)
+  const minWidths = [40, 120, 80]
+
+  mouseMoveRef.current = (e: MouseEvent) => {
+    if (activeColIndexRef.current === -1) return
+    const deltaX = e.clientX - startXRef.current
+    const minW = minWidths[activeColIndexRef.current] || 100
+    const sumOthers = colWidths.reduce(
+      (acc, w, idx) => (idx !== activeColIndexRef.current ? acc + w : acc),
+      0,
+    )
+    const maxW = Math.max(minW, containerWidthRef.current - sumOthers - 90)
+    const newWidth = Math.min(maxW, Math.max(minW, startWidthRef.current + deltaX))
+    setColWidths((prev) => {
+      const copy = [...prev]
+      copy[activeColIndexRef.current] = newWidth
+      return copy
+    })
+  }
+
+  mouseUpRef.current = () => {
+    activeColIndexRef.current = -1
+    if (mouseMoveRef.current) document.removeEventListener('mousemove', mouseMoveRef.current)
+    if (mouseUpRef.current) document.removeEventListener('mouseup', mouseUpRef.current)
+  }
+
+  const handleMouseDown = (index: number, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    activeColIndexRef.current = index
+    startXRef.current = e.clientX
+    startWidthRef.current = colWidths[index]
+    if (tableRef.current) containerWidthRef.current = tableRef.current.getBoundingClientRect().width
+    else containerWidthRef.current = 800
+    if (mouseMoveRef.current) document.addEventListener('mousemove', mouseMoveRef.current)
+    if (mouseUpRef.current) document.addEventListener('mouseup', mouseUpRef.current)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (mouseMoveRef.current) document.removeEventListener('mousemove', mouseMoveRef.current)
+      if (mouseUpRef.current) document.removeEventListener('mouseup', mouseUpRef.current)
+    }
+  }, [])
+
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setDebouncedSearch(search.trim())
@@ -168,6 +221,16 @@ export function FitnestStaffList() {
   const total = staffQuery.data?.total ?? 0
   const allOnPage = sorted.length > 0 && sorted.every((s) => selected.has(s.id))
 
+  // Resize handle element shared across resizable headers
+  const resizeHandle = (colIndex: number) => (
+    <div
+      onMouseDown={(e) => handleMouseDown(colIndex, e)}
+      className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
+    >
+      <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
+    </div>
+  )
+
   return (
     <div className="flex flex-col gap-5 font-sans">
       <h1 className="text-xl font-bold text-foreground">{t.lists.staffTitle}</h1>
@@ -196,15 +259,25 @@ export function FitnestStaffList() {
         </div>
       ) : sorted.length === 0 ? (
         <div className="overflow-hidden rounded-xl border border-border bg-card">
-          <div className="grid grid-cols-[3rem_3.5rem_1.5fr_1fr_1.5fr] items-center gap-3 border-b border-border bg-[#00B4CC14] px-4 py-3">
-            <div className="flex justify-center">
-              <input type="checkbox" disabled className="h-4 w-4 opacity-40" />
-            </div>
-            {['ID', 'Ad / Soyad', 'Rol', 'Telefon'].map((header) => (
-              <span key={header} className="text-[11px] font-medium uppercase text-foreground/80">
-                {header}
-              </span>
-            ))}
+          <div className="overflow-x-auto">
+            <table className="w-full border-separate border-spacing-0" style={{ tableLayout: 'fixed', minWidth: '500px' }}>
+              <colgroup>
+                <col style={{ width: '48px' }} />
+                {colWidths.map((w, i) => <col key={i} style={{ width: `${w}px` }} />)}
+                <col />
+              </colgroup>
+              <thead>
+                <tr className="bg-[#00B4CC]/[0.15] dark:bg-[#00B4CC]/10 text-left border-b border-border">
+                  <th className="px-4 py-3">
+                    <input type="checkbox" disabled className="h-4 w-4 opacity-40" />
+                  </th>
+                  <th className="px-4 py-3 text-[11px] font-medium uppercase text-foreground/80">ID</th>
+                  <th className="px-4 py-3 text-[11px] font-medium uppercase text-foreground/80">Ad / Soyad</th>
+                  <th className="px-4 py-3 text-[11px] font-medium uppercase text-foreground/80">Rol</th>
+                  <th className="px-4 py-3 text-[11px] font-medium uppercase text-foreground/80">Telefon</th>
+                </tr>
+              </thead>
+            </table>
           </div>
           <div className="flex flex-col items-center gap-3 py-20 text-center">
             <p className="text-base font-semibold text-foreground">{t.lists.staffEmpty}</p>
@@ -214,57 +287,76 @@ export function FitnestStaffList() {
           </div>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-          <div className="grid grid-cols-[3rem_3.5rem_1.5fr_1fr_1.5fr] items-center gap-3 border-b border-[#cecfd2]/60 dark:border-border bg-[#00B4CC]/[0.15] dark:bg-[#00B4CC]/10 px-4 py-3 rounded-t-lg">
-            <div className="flex justify-center">
-              <input type="checkbox" checked={allOnPage} onChange={toggleAll} className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded" />
-            </div>
-            <span className="text-[11px] font-bold uppercase text-foreground/80">{t.lists.colId}</span>
-            <span className="text-[11px] font-bold uppercase text-foreground/80">{t.lists.colName}</span>
-            <span className="text-[11px] font-bold uppercase text-foreground/80">{t.lists.colRole}</span>
-            <span className="text-[11px] font-bold uppercase text-foreground/80">{t.lists.colPhone}</span>
-          </div>
-
-          {sorted.map((member) => {
-            return (
-              <div
-                key={member.id}
-                className="grid grid-cols-[3rem_3.5rem_1.5fr_1fr_1.5fr] items-center gap-3 border-b border-border px-4 py-3 last:border-0 hover:bg-secondary/40 transition-all duration-200 bg-card cursor-pointer"
-                onClick={() => router.push(`/fitnest-staff/${member.id}`)}
-              >
-                <div className="flex justify-center">
-                  <input
-                    type="checkbox"
-                    checked={selected.has(member.id)}
-                    onChange={() => toggleOne(member.id)}
-                    onClick={(event) => event.stopPropagation()}
-                    className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded"
-                  />
-                </div>
-                <span className="text-sm font-normal text-black truncate">{member.id}</span>
-                <span className="text-sm font-normal text-black truncate" title={member.fullName || ''}>
-                  {member.fullName}
-                </span>
-                
-                <div className="flex items-center">
-                  <div className="flex h-[22px] w-fit items-center justify-center gap-1.5 rounded-full bg-[#00B4CC]/10 px-3 text-[10px] font-medium uppercase text-[#00B4CC]">
-                    <Image 
-                      src="/admin.svg" 
-                      width={12} 
-                      height={12} 
-                      alt="" 
-                      className="shrink-0"
+        <div className="overflow-x-auto rounded-lg border border-border bg-card shadow-sm">
+          <table ref={tableRef} className="w-full border-separate border-spacing-0" style={{ tableLayout: 'fixed', minWidth: '500px' }}>
+            <colgroup>
+              <col style={{ width: '48px' }} />
+              {colWidths.map((w, i) => <col key={i} style={{ width: `${w}px` }} />)}
+              <col />
+            </colgroup>
+            <thead>
+              <tr className="bg-[#00B4CC]/[0.15] dark:bg-[#00B4CC]/10 text-left border-b border-[#cecfd2]/60 dark:border-border">
+                <th className="px-4 py-3">
+                  <input type="checkbox" checked={allOnPage} onChange={toggleAll} className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded" />
+                </th>
+                <th className="px-4 py-3 text-[11px] font-bold uppercase text-foreground/80 relative">
+                  {t.lists.colId}
+                  {resizeHandle(0)}
+                </th>
+                <th className="px-4 py-3 text-[11px] font-bold uppercase text-foreground/80 relative">
+                  {t.lists.colName}
+                  {resizeHandle(1)}
+                </th>
+                <th className="px-4 py-3 text-[11px] font-bold uppercase text-foreground/80 relative">
+                  {t.lists.colRole}
+                  {resizeHandle(2)}
+                </th>
+                <th className="px-4 py-3 text-[11px] font-bold uppercase text-foreground/80">
+                  {t.lists.colPhone}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((member) => (
+                <tr
+                  key={member.id}
+                  className="border-b border-border last:border-0 hover:bg-secondary/40 transition-all duration-200 bg-card cursor-pointer"
+                  onClick={() => router.push(`/fitnest-staff/${member.id}`)}
+                >
+                  <td className="px-4 py-3 text-center">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(member.id)}
+                      onChange={() => toggleOne(member.id)}
+                      onClick={(event) => event.stopPropagation()}
+                      className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded"
                     />
-                    <span>{t.lists.staffRoleLabel}</span>
-                  </div>
-                </div>
-
-                <span className="text-sm font-normal text-black truncate">
-                  {member.phoneNumber || '+994 00 000 00 00'}
-                </span>
-              </div>
-            )
-          })}
+                  </td>
+                  <td className="px-4 py-3 text-sm font-normal text-black truncate">{member.id}</td>
+                  <td className="px-4 py-3 text-sm font-normal text-black truncate" title={member.fullName || ''}>
+                    {member.fullName}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center">
+                      <div className="flex h-[22px] w-fit items-center justify-center gap-1.5 rounded-full bg-[#00B4CC]/10 px-3 text-[10px] font-medium uppercase text-[#00B4CC]">
+                        <Image
+                          src="/admin.svg"
+                          width={12}
+                          height={12}
+                          alt=""
+                          className="shrink-0"
+                        />
+                        <span>{t.lists.staffRoleLabel}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-sm font-normal text-black truncate">
+                    {member.phoneNumber || '+994 00 000 00 00'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
