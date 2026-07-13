@@ -84,6 +84,39 @@ export function TrainersTab() {
   });
   const pageSize = 10;
   const menuRef = useRef<HTMLDivElement>(null);
+  
+  const [colWidths, setColWidths] = useState<number[]>([280, 180, 220, 100]);
+  const startXRef = useRef<number>(0);
+  const startWidthRef = useRef<number>(0);
+  const activeColIndexRef = useRef<number>(-1);
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (activeColIndexRef.current === -1) return;
+    const deltaX = e.clientX - startXRef.current;
+    const newWidth = Math.max(80, startWidthRef.current + deltaX);
+    setColWidths((prev) => {
+      const copy = [...prev];
+      copy[activeColIndexRef.current] = newWidth;
+      return copy;
+    });
+  };
+
+  const handleMouseUp = () => {
+    activeColIndexRef.current = -1;
+    document.removeEventListener("mousemove", handleMouseMove);
+    document.removeEventListener("mouseup", handleMouseUp);
+  };
+
+  const handleMouseDown = (index: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    activeColIndexRef.current = index;
+    startXRef.current = e.clientX;
+    startWidthRef.current = colWidths[index];
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+  };
 
   const locale = useI18nStore((s) => s.locale);
   const lt = LOCAL_TRANSLATIONS[locale] || LOCAL_TRANSLATIONS.AZ;
@@ -97,7 +130,11 @@ export function TrainersTab() {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
   }, []);
 
   const { data: apiData, isLoading: apiLoading } = useGymTrainers(
@@ -167,15 +204,50 @@ export function TrainersTab() {
             </div>
           </div>
         ) : (
-          <div className="w-full">
-            <table className="w-full border-separate border-spacing-0">
+          <div className="w-full overflow-x-auto">
+            <table className="w-full border-separate border-spacing-0" style={{ tableLayout: "fixed", minWidth: "750px" }}>
+              <colgroup>
+                <col style={{ width: `${colWidths[0]}px` }} />
+                <col style={{ width: `${colWidths[1]}px` }} />
+                <col style={{ width: `${colWidths[2]}px` }} />
+                <col style={{ width: `${colWidths[3]}px` }} />
+              </colgroup>
               {/* Header */}
               <thead>
                 <tr className="bg-[#00B4CC]/[0.15] dark:bg-[#00B4CC]/10 h-[40px] text-[11px] font-bold uppercase text-foreground/80 font-sans">
-                  <th className="border-b border-[#cecfd2]/60 dark:border-border pl-[84px] text-left whitespace-nowrap py-3">{lt.nameSurname}</th>
-                  <th className="border-b border-[#cecfd2]/60 dark:border-border px-10 text-left whitespace-nowrap py-3">{lt.phone}</th>
-                  <th className="border-b border-[#cecfd2]/60 dark:border-border px-10 text-left whitespace-nowrap py-3">{lt.email}</th>
-                  <th className="border-b border-[#cecfd2]/60 dark:border-border px-10 text-center whitespace-nowrap py-3">{lt.details}</th>
+                  <th className="border-b border-[#cecfd2]/60 dark:border-border pl-[84px] text-left whitespace-nowrap py-3 relative">
+                    {lt.nameSurname}
+                    <div
+                      onMouseDown={(e) => handleMouseDown(0, e)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
+                    >
+                      <div className="w-[2px] h-4 bg-[#cecfd2] dark:bg-border group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
+                    </div>
+                  </th>
+                  <th className="border-b border-[#cecfd2]/60 dark:border-border px-10 text-left whitespace-nowrap py-3 relative">
+                    {lt.phone}
+                    <div
+                      onMouseDown={(e) => handleMouseDown(1, e)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
+                    >
+                      <div className="w-[2px] h-4 bg-[#cecfd2] dark:bg-border group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
+                    </div>
+                  </th>
+                  <th className="border-b border-[#cecfd2]/60 dark:border-border px-10 text-left whitespace-nowrap py-3 relative">
+                    {lt.email}
+                    <div
+                      onMouseDown={(e) => handleMouseDown(2, e)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
+                    >
+                      <div className="w-[2px] h-4 bg-[#cecfd2] dark:bg-border group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
+                    </div>
+                  </th>
+                  <th className="border-b border-[#cecfd2]/60 dark:border-border px-10 text-center whitespace-nowrap py-3 relative">
+                    {lt.details}
+                  </th>
                 </tr>
               </thead>
 
