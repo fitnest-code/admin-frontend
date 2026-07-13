@@ -85,12 +85,15 @@ export function TrainersTab() {
   const pageSize = 10;
   const menuRef = useRef<HTMLDivElement>(null);
   
-  const [colWidths, setColWidths] = useState<number[]>([280, 180, 220, 100]);
+  const [colWidths, setColWidths] = useState<number[]>([280, 180, 220]);
   const startXRef = useRef<number>(0);
   const startWidthRef = useRef<number>(0);
   const activeColIndexRef = useRef<number>(-1);
 
-  const handleMouseMove = (e: MouseEvent) => {
+  const mouseMoveRef = useRef<(e: MouseEvent) => void>(null);
+  const mouseUpRef = useRef<() => void>(null);
+
+  mouseMoveRef.current = (e: MouseEvent) => {
     if (activeColIndexRef.current === -1) return;
     const deltaX = e.clientX - startXRef.current;
     const newWidth = Math.max(80, startWidthRef.current + deltaX);
@@ -101,10 +104,10 @@ export function TrainersTab() {
     });
   };
 
-  const handleMouseUp = () => {
+  mouseUpRef.current = () => {
     activeColIndexRef.current = -1;
-    document.removeEventListener("mousemove", handleMouseMove);
-    document.removeEventListener("mouseup", handleMouseUp);
+    if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current);
+    if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current);
   };
 
   const handleMouseDown = (index: number, e: React.MouseEvent) => {
@@ -114,8 +117,8 @@ export function TrainersTab() {
     startXRef.current = e.clientX;
     startWidthRef.current = colWidths[index];
 
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
+    if (mouseMoveRef.current) document.addEventListener("mousemove", mouseMoveRef.current);
+    if (mouseUpRef.current) document.addEventListener("mouseup", mouseUpRef.current);
   };
 
   const locale = useI18nStore((s) => s.locale);
@@ -132,8 +135,8 @@ export function TrainersTab() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
+      if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current);
+      if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current);
     };
   }, []);
 
@@ -210,7 +213,7 @@ export function TrainersTab() {
                 <col style={{ width: `${colWidths[0]}px` }} />
                 <col style={{ width: `${colWidths[1]}px` }} />
                 <col style={{ width: `${colWidths[2]}px` }} />
-                <col style={{ width: `${colWidths[3]}px` }} />
+                <col />
               </colgroup>
               {/* Header */}
               <thead>
