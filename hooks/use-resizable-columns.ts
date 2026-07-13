@@ -14,34 +14,15 @@ export function useResizableColumns(initialWidths: number[], minWidths: number[]
     if (activeColIndexRef.current === -1) return
     const deltaX = e.clientX - startXRef.current
     const currentIndex = activeColIndexRef.current
-    const nextIndex = currentIndex + 1
     const minW = minWidths[currentIndex] || 100
 
     setColWidths((prev) => {
       const copy = [...prev]
-      if (nextIndex < copy.length) {
-        const nextMinW = minWidths[nextIndex] || 100
-        const combinedWidth = startWidthsRef.current[currentIndex] + startWidthsRef.current[nextIndex]
-        
-        let newCurrentWidth = startWidthsRef.current[currentIndex] + deltaX
-        if (newCurrentWidth < minW) {
-          newCurrentWidth = minW
-        }
-        let newNextWidth = combinedWidth - newCurrentWidth
-        if (newNextWidth < nextMinW) {
-          newNextWidth = nextMinW
-          newCurrentWidth = combinedWidth - newNextWidth
-        }
-        
-        copy[currentIndex] = newCurrentWidth
-        copy[nextIndex] = newNextWidth
-      } else {
-        let newCurrentWidth = startWidthsRef.current[currentIndex] + deltaX
-        if (newCurrentWidth < minW) {
-          newCurrentWidth = minW
-        }
-        copy[currentIndex] = newCurrentWidth
+      let newCurrentWidth = startWidthsRef.current[currentIndex] + deltaX
+      if (newCurrentWidth < minW) {
+        newCurrentWidth = minW
       }
+      copy[currentIndex] = newCurrentWidth
       return copy
     })
   }
