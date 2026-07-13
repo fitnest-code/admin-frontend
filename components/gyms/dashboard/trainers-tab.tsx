@@ -93,10 +93,15 @@ export function TrainersTab() {
   const mouseMoveRef = useRef<(e: MouseEvent) => void>(null);
   const mouseUpRef = useRef<() => void>(null);
 
+  const minWidths = [150, 120, 120];
+  const maxWidths = [500, 300, 350];
+
   mouseMoveRef.current = (e: MouseEvent) => {
     if (activeColIndexRef.current === -1) return;
     const deltaX = e.clientX - startXRef.current;
-    const newWidth = Math.max(80, startWidthRef.current + deltaX);
+    const minW = minWidths[activeColIndexRef.current] || 100;
+    const maxW = maxWidths[activeColIndexRef.current] || 400;
+    const newWidth = Math.min(maxW, Math.max(minW, startWidthRef.current + deltaX));
     setColWidths((prev) => {
       const copy = [...prev];
       copy[activeColIndexRef.current] = newWidth;
@@ -289,10 +294,10 @@ export function TrainersTab() {
                               )}
                             </div>
                             <div className="flex flex-col justify-center overflow-hidden">
-                              <div className="text-black leading-[20px] group-hover:text-[#00B4CC] transition-colors whitespace-nowrap font-medium text-sm">
+                              <div className="text-black leading-[20px] group-hover:text-[#00B4CC] transition-colors whitespace-nowrap font-medium text-sm truncate">
                                 {firstName} {lastName}
                               </div>
-                              <div className="text-[12px] leading-[18px] text-[#94979c] whitespace-nowrap">
+                              <div className="text-[12px] leading-[18px] text-[#94979c] whitespace-nowrap truncate">
                                 {role}
                               </div>
                             </div>
@@ -300,15 +305,15 @@ export function TrainersTab() {
                         </td>
 
                         {/* Phone */}
-                        <td className="border-b border-border px-10 py-3">
-                          <span className="text-sm font-normal text-black whitespace-nowrap">
+                        <td className="border-b border-border px-10 py-3 overflow-hidden">
+                          <span className="text-sm font-normal text-black whitespace-nowrap truncate block">
                             {phone || "—"}
                           </span>
                         </td>
 
                         {/* Email */}
-                        <td className="border-b border-border px-10 py-3">
-                          <span className="text-sm font-normal text-black whitespace-nowrap">
+                        <td className="border-b border-border px-10 py-3 overflow-hidden">
+                          <span className="text-sm font-normal text-black whitespace-nowrap truncate block">
                             {email || "—"}
                           </span>
                         </td>
