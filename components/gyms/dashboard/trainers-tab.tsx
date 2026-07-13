@@ -149,7 +149,7 @@ export function TrainersTab() {
       </div>
 
       {/* Table / Empty State */}
-      <div className="w-full rounded-[12px] bg-white border border-[#ececed] min-h-[350px] flex flex-col shadow-sm">
+      <div className="w-full overflow-hidden rounded-lg border border-border bg-card shadow-sm min-h-[350px] flex flex-col">
         {apiLoading ? (
           <div className="flex-1 py-20 flex justify-center items-center text-slate-400">
             <Loader2 className="animate-spin mr-2" /> {lt.loading}
@@ -171,11 +171,11 @@ export function TrainersTab() {
             <table className="w-full border-separate border-spacing-0">
               {/* Header */}
               <thead>
-                <tr className="bg-[rgba(0,180,204,0.1)] h-[48px] text-[14px] font-bold text-black font-sans">
-                  <th className="border-y border-l border-[#ececed] rounded-tl-[12px] pl-[84px] text-left whitespace-nowrap">{lt.nameSurname}</th>
-                  <th className="border-y border-[#ececed] px-10 text-left whitespace-nowrap">{lt.phone}</th>
-                  <th className="border-y border-[#ececed] px-10 text-left whitespace-nowrap">{lt.email}</th>
-                  <th className="border-y border-r border-[#ececed] rounded-tr-[12px] px-10 text-center whitespace-nowrap">{lt.details}</th>
+                <tr className="bg-[#00B4CC]/[0.15] dark:bg-[#00B4CC]/10 h-[40px] text-[11px] font-bold uppercase text-foreground/80 font-sans">
+                  <th className="border-b border-[#cecfd2]/60 dark:border-border pl-[84px] text-left whitespace-nowrap py-3">{lt.nameSurname}</th>
+                  <th className="border-b border-[#cecfd2]/60 dark:border-border px-10 text-left whitespace-nowrap py-3">{lt.phone}</th>
+                  <th className="border-b border-[#cecfd2]/60 dark:border-border px-10 text-left whitespace-nowrap py-3">{lt.email}</th>
+                  <th className="border-b border-[#cecfd2]/60 dark:border-border px-10 text-center whitespace-nowrap py-3">{lt.details}</th>
                 </tr>
               </thead>
 
@@ -196,24 +196,25 @@ export function TrainersTab() {
                       : null;
 
                     return (
-                      <tr key={trainerUid} className="h-[72px] hover:bg-slate-50/80 transition-colors group font-sans text-[14px]">
+                      <tr 
+                        key={trainerUid} 
+                        onClick={() => setShowDetails(t)}
+                        className="hover:bg-secondary/40 transition-all duration-200 cursor-pointer group font-sans text-sm"
+                      >
                         {/* Name Section */}
-                        <td className={cn(
-                          "border-b border-l border-[#ececed] pl-6",
-                          i === trainers.length - 1 && "rounded-bl-[12px]"
-                        )}>
+                        <td className="border-b border-border pl-6 py-3">
                           <div className="flex items-center gap-[12px]">
-                            <div className="h-[44px] w-[44px] relative rounded-full overflow-hidden shrink-0 bg-[#00B4CC10] flex items-center justify-center">
+                            <div className="h-[40px] w-[40px] relative rounded-full overflow-hidden shrink-0 bg-[#00B4CC10] flex items-center justify-center">
                               {fullPicUrl ? (
                                 <img src={fullPicUrl} className="object-cover w-full h-full" alt="Trainer" />
                               ) : (
-                                <div className="text-[#00B4CC] font-bold text-lg italic uppercase">
+                                <div className="text-[#00B4CC] font-bold text-base italic uppercase">
                                   {firstName[0]}
                                 </div>
                               )}
                             </div>
                             <div className="flex flex-col justify-center overflow-hidden">
-                              <div className="text-black leading-[20px] group-hover:text-[#00B4CC] transition-colors whitespace-nowrap font-semibold">
+                              <div className="text-black leading-[20px] group-hover:text-[#00B4CC] transition-colors whitespace-nowrap font-medium text-sm">
                                 {firstName} {lastName}
                               </div>
                               <div className="text-[12px] leading-[18px] text-[#94979c] whitespace-nowrap">
@@ -224,68 +225,57 @@ export function TrainersTab() {
                         </td>
 
                         {/* Phone */}
-                        <td className="border-b border-[#ececed] px-10">
-                          <div className="text-black leading-[24px] whitespace-nowrap">
+                        <td className="border-b border-border px-10 py-3">
+                          <span className="text-sm font-normal text-black whitespace-nowrap">
                             {phone || "—"}
-                          </div>
+                          </span>
                         </td>
 
                         {/* Email */}
-                        <td className="border-b border-[#ececed] px-10">
-                          <div className="text-black leading-[24px] whitespace-nowrap">
+                        <td className="border-b border-border px-10 py-3">
+                          <span className="text-sm font-normal text-black whitespace-nowrap">
                             {email || "—"}
-                          </div>
+                          </span>
                         </td>
 
                         {/* Actions */}
-                      <td className={cn(
-                        "border-b border-r border-[#ececed] px-10 text-center",
-                        i === trainers.length - 1 && "rounded-br-[12px]"
-                      )}>
-                        <div className="flex justify-center relative">
-                          <button
-                            onClick={() => setOpenMenuId(openMenuId === trainerUid ? null : trainerUid)}
-                            className="w-8 h-8 flex items-center justify-center transition-opacity hover:opacity-70"
-                          >
-                            <Image src="/more.png" width={24} height={24} alt="more" />
-                          </button>
-
-                          {openMenuId === trainerUid && (
-                            <div 
-                              ref={menuRef} 
-                              className={cn(
-                                "absolute right-0 z-[100] w-[180px] bg-white rounded-xl shadow-2xl border border-slate-100 py-2 animate-in fade-in zoom-in duration-200",
-                                (i === trainers.length - 1 && trainers.length > 1) ? "bottom-full mb-2" : "top-10"
-                              )}
+                        <td className="border-b border-border px-10 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex justify-center relative">
+                            <button
+                              onClick={() => setOpenMenuId(openMenuId === trainerUid ? null : trainerUid)}
+                              className="w-8 h-8 flex items-center justify-center transition-opacity hover:opacity-70"
                             >
-                              <button
-                                onClick={() => { setShowDetails(t); setOpenMenuId(null); }}
-                                className="w-full h-11 flex items-center px-4 hover:bg-slate-50 transition-colors gap-3 font-medium text-slate-700 whitespace-nowrap"
+                              <Image src="/more.png" width={24} height={24} alt="more" />
+                            </button>
+
+                            {openMenuId === trainerUid && (
+                              <div 
+                                ref={menuRef} 
+                                className={cn(
+                                  "absolute right-0 z-[100] w-[180px] bg-white rounded-[12px] border border-[#ECECED] p-3 shadow-lg animate-in fade-in zoom-in duration-200",
+                                  (i === trainers.length - 1 && trainers.length > 1) ? "bottom-full mb-2" : "top-10"
+                                )}
                               >
-                                <Image src="/Eye.png" width={18} height={18} alt="View" />
-                                <span>{lt.viewDetails}</span>
-                              </button>
-                              <div className="h-px bg-slate-100 mx-2" />
-                              <button
-                                onClick={() => {
-                                  setDeleteTrainerId(t.trainer_id || t.id);
-                                  setOpenMenuId(null);
-                                }}
-                                className="w-full h-11 flex items-center px-4 text-red-600 hover:bg-red-50 transition-colors gap-3 font-medium whitespace-nowrap"
-                              >
-                                <Image src="/trash.png" width={18} height={18} alt="Delete" />
-                                <span>{lt.deleteTrainer}</span>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
+                                <button
+                                  onClick={() => {
+                                    setDeleteTrainerId(t.trainer_id || t.id);
+                                    setOpenMenuId(null);
+                                  }}
+                                  className="flex w-full items-center gap-2 text-base font-normal text-[#F10303] hover:opacity-70 transition-opacity"
+                                >
+                                  <Image src="/trash.png" width={16} height={16} alt="Delete" />
+                                  <span className="leading-none">{lt.deleteTrainer}</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
                     );
                   })
                 ) : (
                   <tr>
-                    <td colSpan={4} className="h-[200px] text-center border-b border-x border-[#ececed] rounded-b-[12px]">
+                    <td colSpan={4} className="h-[200px] text-center border-b border-border rounded-b-lg">
                       <div className="flex flex-col items-center justify-center gap-2 text-slate-400">
                         <Loader2 className="w-8 h-8 animate-spin opacity-20" />
                         <p className="text-[16px] font-medium">{lt.noTrainerFound}</p>
