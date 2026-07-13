@@ -95,10 +95,12 @@ export function PaymentsTab({ userId }: { userId: string }) {
   const [selected, setSelected]     = useState<UserPaymentHistoryItem | null>(null)
   const [modalState, setModalState] = useState<ModalState>(null)
   const [copied, setCopied]         = useState(false)
+  const [copiedTx, setCopiedTx]     = useState(false)
+  const [copiedOrder, setCopiedOrder] = useState(false)
 
   const { data = [], isLoading, isError } = useCustomerPaymentsQuery(userId)
 
-  const [colWidths, setColWidths] = useState<number[]>([160, 180, 120, 180, 150]);
+  const [colWidths, setColWidths] = useState<number[]>([220, 180, 120, 180, 150]);
   const startXRef = useRef<number>(0);
   const startWidthRef = useRef<number>(0);
   const activeColIndexRef = useRef<number>(-1);
@@ -172,6 +174,20 @@ export function PaymentsTab({ userId }: { userId: string }) {
     setTimeout(() => setCopied(false), 1500)
   }
 
+  function copyTx(id: string) {
+    if (!id) return
+    navigator.clipboard.writeText(id).catch(() => {})
+    setCopiedTx(true)
+    setTimeout(() => setCopiedTx(false), 1500)
+  }
+
+  function copyOrder(id: string) {
+    if (!id) return
+    navigator.clipboard.writeText(id).catch(() => {})
+    setCopiedOrder(true)
+    setTimeout(() => setCopiedOrder(false), 1500)
+  }
+
   function closeModal() {
     setModalState(null)
     setSelected(null)
@@ -208,7 +224,7 @@ export function PaymentsTab({ userId }: { userId: string }) {
           <thead>
             <tr className="bg-[#00b4cc]/15 text-left text-[14px] font-medium text-[#4a5565]">
               <th className="px-4 py-3 font-semibold text-foreground relative pl-6 border-b border-[#cecfd2]">
-                Əməliyyat ID
+                Tranzaksiya / Sifariş ID
                 <div
                   onMouseDown={(e) => handleMouseDown(0, e)}
                   className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
@@ -291,9 +307,16 @@ export function PaymentsTab({ userId }: { userId: string }) {
                   key={row.transactionId || idx} 
                   className="hover:bg-[#fafafa] transition-colors duration-150"
                 >
-                  {/* Transaction ID */}
+                  {/* Transaction & Order IDs */}
                   <td className="px-4 py-3 text-left pl-6 text-xs font-medium text-black overflow-hidden">
-                    <span className="truncate block" title={row.transactionId}>{row.transactionId}</span>
+                    <div className="flex flex-col gap-1 py-1">
+                      <span className="truncate block font-semibold text-black" title={`Tranzaksiya ID: ${row.transactionId}`}>
+                        <span className="text-muted-foreground font-normal">Tx:</span> {row.transactionId || '—'}
+                      </span>
+                      <span className="truncate block font-semibold text-black" title={`Sifariş ID: ${row.orderId || '—'}`}>
+                        <span className="text-muted-foreground font-normal">Ord:</span> {row.orderId || '—'}
+                      </span>
+                    </div>
                   </td>
 
                   {/* Date Time */}
@@ -353,12 +376,23 @@ export function PaymentsTab({ userId }: { userId: string }) {
 
                           {/* Item 2: Tranzaksiya ID- ni kopyala */}
                           <DropdownMenuItem
-                            onClick={() => copyId(row.transactionId)}
+                            onClick={() => copyTx(row.transactionId)}
                             className="w-full text-left text-[16px] leading-[24px] text-black hover:text-[#00b4cc] focus:text-[#00b4cc] transition-colors font-medium cursor-pointer flex items-center justify-between border-b border-[#ececed] pb-2 rounded-none focus:bg-transparent px-0 py-0"
                           >
-                            <span>Tranzaksiya ID- ni kopyala</span>
-                            {copied && <Check size={14} className="text-[#00b4cc] shrink-0 ml-1" />}
+                            <span>Tranzaksiya ID-ni kopyala</span>
+                            {copiedTx && <Check size={14} className="text-[#00b4cc] shrink-0 ml-1" />}
                           </DropdownMenuItem>
+
+                          {/* Item 2b: Sifariş ID-ni kopyala */}
+                          {row.orderId && (
+                            <DropdownMenuItem
+                              onClick={() => copyOrder(row.orderId!)}
+                              className="w-full text-left text-[16px] leading-[24px] text-black hover:text-[#00b4cc] focus:text-[#00b4cc] transition-colors font-medium cursor-pointer flex items-center justify-between border-b border-[#ececed] pb-2 rounded-none focus:bg-transparent px-0 py-0"
+                            >
+                              <span>Sifariş ID-ni kopyala</span>
+                              {copiedOrder && <Check size={14} className="text-[#00b4cc] shrink-0 ml-1" />}
+                            </DropdownMenuItem>
+                          )}
 
                           {/* Item 3: Qəbzi yüklə */}
                           <DropdownMenuItem
@@ -440,10 +474,16 @@ function PaymentDetailModal({
         <div className="w-full flex flex-col gap-10 text-[18px]">
           {/* Rows List Container */}
           <div className="w-full flex flex-col gap-5">
-            {/* Row 1: ID */}
+            {/* Row 1a: Tranzaksiya ID */}
             <div className="w-full h-[60px] flex items-center justify-between px-3 box-border gap-2.5 bg-[#fafafa]/50 rounded-lg border border-gray-100/60">
-              <div className="leading-[28px] font-medium text-gray-500">ID:</div>
-              <span className="leading-[28px] text-black text-base font-medium">{payment.transactionId || '0000000'}</span>
+              <div className="leading-[28px] font-medium text-gray-500">Tranzaksiya ID:</div>
+              <span className="leading-[28px] text-black text-base font-medium">{payment.transactionId || '—'}</span>
+            </div>
+
+            {/* Row 1b: Sifariş ID */}
+            <div className="w-full h-[60px] flex items-center justify-between px-3 box-border gap-2.5 bg-[#fafafa]/50 rounded-lg border border-gray-100/60">
+              <div className="leading-[28px] font-medium text-gray-500">Sifariş ID:</div>
+              <span className="leading-[28px] text-black text-base font-medium">{payment.orderId || '—'}</span>
             </div>
 
             {/* Row 2: Tarix */}

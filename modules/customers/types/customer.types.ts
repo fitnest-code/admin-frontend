@@ -81,6 +81,7 @@ export interface QrHistoryItem {
 
 export interface UserPaymentHistoryItem {
   transactionId: string
+  orderId?: string
   dateTime: string
   amount: string
   paymentMethod: string
