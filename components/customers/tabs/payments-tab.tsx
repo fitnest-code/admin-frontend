@@ -100,7 +100,7 @@ export function PaymentsTab({ userId }: { userId: string }) {
 
   const { data = [], isLoading, isError } = useCustomerPaymentsQuery(userId)
 
-  const [colWidths, setColWidths] = useState<number[]>([220, 180, 120, 180, 150]);
+  const [colWidths, setColWidths] = useState<number[]>([160, 160, 160, 100, 160, 130]);
   const startXRef = useRef<number>(0);
   const startWidthRef = useRef<number>(0);
   const activeColIndexRef = useRef<number>(-1);
@@ -110,7 +110,7 @@ export function PaymentsTab({ userId }: { userId: string }) {
   const mouseMoveRef = useRef<(e: MouseEvent) => void>(null);
   const mouseUpRef = useRef<() => void>(null);
 
-  const minWidths = [120, 120, 90, 140, 120];
+  const minWidths = [120, 120, 120, 90, 140, 120];
 
   mouseMoveRef.current = (e: MouseEvent) => {
     if (activeColIndexRef.current === -1) return;
@@ -219,12 +219,13 @@ export function PaymentsTab({ userId }: { userId: string }) {
             <col style={{ width: `${colWidths[2]}px` }} />
             <col style={{ width: `${colWidths[3]}px` }} />
             <col style={{ width: `${colWidths[4]}px` }} />
+            <col style={{ width: `${colWidths[5]}px` }} />
             <col />
           </colgroup>
           <thead>
             <tr className="bg-[#00b4cc]/15 text-left text-[14px] font-medium text-[#4a5565]">
               <th className="px-4 py-3 font-semibold text-foreground relative pl-6 border-b border-[#cecfd2]">
-                Tranzaksiya / Sifariş ID
+                Tranzaksiya ID
                 <div
                   onMouseDown={(e) => handleMouseDown(0, e)}
                   className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
@@ -232,8 +233,8 @@ export function PaymentsTab({ userId }: { userId: string }) {
                   <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
                 </div>
               </th>
-              <th className="px-4 py-3 font-semibold text-foreground text-center relative border-b border-[#cecfd2]">
-                Tarix
+              <th className="px-4 py-3 font-semibold text-foreground relative border-b border-[#cecfd2]">
+                Sifariş ID
                 <div
                   onMouseDown={(e) => handleMouseDown(1, e)}
                   className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
@@ -242,7 +243,7 @@ export function PaymentsTab({ userId }: { userId: string }) {
                 </div>
               </th>
               <th className="px-4 py-3 font-semibold text-foreground text-center relative border-b border-[#cecfd2]">
-                Məbləğ
+                Tarix
                 <div
                   onMouseDown={(e) => handleMouseDown(2, e)}
                   className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
@@ -251,7 +252,7 @@ export function PaymentsTab({ userId }: { userId: string }) {
                 </div>
               </th>
               <th className="px-4 py-3 font-semibold text-foreground text-center relative border-b border-[#cecfd2]">
-                Ödəniş metodu
+                Məbləğ
                 <div
                   onMouseDown={(e) => handleMouseDown(3, e)}
                   className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
@@ -260,9 +261,18 @@ export function PaymentsTab({ userId }: { userId: string }) {
                 </div>
               </th>
               <th className="px-4 py-3 font-semibold text-foreground text-center relative border-b border-[#cecfd2]">
-                Status
+                Ödəniş metodu
                 <div
                   onMouseDown={(e) => handleMouseDown(4, e)}
+                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
+                >
+                  <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
+                </div>
+              </th>
+              <th className="px-4 py-3 font-semibold text-foreground text-center relative border-b border-[#cecfd2]">
+                Status
+                <div
+                  onMouseDown={(e) => handleMouseDown(5, e)}
                   className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
                 >
                   <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
@@ -275,7 +285,7 @@ export function PaymentsTab({ userId }: { userId: string }) {
             {isLoading && (
               Array.from({ length: 4 }).map((_, i) => (
                 <tr key={i}>
-                  <td colSpan={6} className="px-4 py-4">
+                  <td colSpan={7} className="px-4 py-4">
                     <div className="h-4 w-full animate-pulse rounded bg-secondary" />
                   </td>
                 </tr>
@@ -284,7 +294,7 @@ export function PaymentsTab({ userId }: { userId: string }) {
             
             {isError && (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-sm text-red-500">
+                <td colSpan={7} className="p-8 text-center text-sm text-red-500">
                   Ödəniş məlumatları yüklənmədi.
                 </td>
               </tr>
@@ -292,7 +302,7 @@ export function PaymentsTab({ userId }: { userId: string }) {
 
             {!isLoading && !isError && rows.length === 0 && (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-sm text-muted-foreground italic">
+                <td colSpan={7} className="p-8 text-center text-sm text-muted-foreground italic">
                   Bu müştəri üçün heç bir ödəniş əməliyyatı tapılmadı.
                 </td>
               </tr>
@@ -307,16 +317,14 @@ export function PaymentsTab({ userId }: { userId: string }) {
                   key={row.transactionId || idx} 
                   className="hover:bg-[#fafafa] transition-colors duration-150"
                 >
-                  {/* Transaction & Order IDs */}
+                  {/* Transaction ID */}
                   <td className="px-4 py-3 text-left pl-6 text-xs font-medium text-black overflow-hidden">
-                    <div className="flex flex-col gap-1 py-1">
-                      <span className="truncate block font-semibold text-black" title={`Tranzaksiya ID: ${row.transactionId}`}>
-                        <span className="text-muted-foreground font-normal">Tx:</span> {row.transactionId || '—'}
-                      </span>
-                      <span className="truncate block font-semibold text-black" title={`Sifariş ID: ${row.orderId || '—'}`}>
-                        <span className="text-muted-foreground font-normal">Ord:</span> {row.orderId || '—'}
-                      </span>
-                    </div>
+                    <span className="truncate block" title={row.transactionId}>{row.transactionId || '—'}</span>
+                  </td>
+
+                  {/* Order ID */}
+                  <td className="px-4 py-3 text-left text-xs font-medium text-black overflow-hidden">
+                    <span className="truncate block" title={row.orderId}>{row.orderId || '—'}</span>
                   </td>
 
                   {/* Date Time */}
