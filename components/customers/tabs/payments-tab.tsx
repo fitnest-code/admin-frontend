@@ -98,20 +98,78 @@ export function PaymentsTab({ userId }: { userId: string }) {
 
   const { data = [], isLoading, isError } = useCustomerPaymentsQuery(userId)
 
+  const [colWidths, setColWidths] = useState<number[]>([160, 180, 120, 180, 150]);
+  const startXRef = useRef<number>(0);
+  const startWidthRef = useRef<number>(0);
+  const activeColIndexRef = useRef<number>(-1);
+  const tableRef = useRef<HTMLTableElement>(null);
+  const containerWidthRef = useRef<number>(0);
+
+  const mouseMoveRef = useRef<(e: MouseEvent) => void>(null);
+  const mouseUpRef = useRef<() => void>(null);
+
+  const minWidths = [120, 120, 90, 140, 120];
+
+  mouseMoveRef.current = (e: MouseEvent) => {
+    if (activeColIndexRef.current === -1) return;
+    const deltaX = e.clientX - startXRef.current;
+    const minW = minWidths[activeColIndexRef.current] || 100;
+
+    const sumOthers = colWidths.reduce((acc, w, idx) => {
+      return idx !== activeColIndexRef.current ? acc + w : acc;
+    }, 0);
+
+    const maxW = Math.max(minW, containerWidthRef.current - sumOthers - 80);
+    const newWidth = Math.min(maxW, Math.max(minW, startWidthRef.current + deltaX));
+    setColWidths((prev) => {
+      const copy = [...prev];
+      copy[activeColIndexRef.current] = newWidth;
+      return copy;
+    });
+  };
+
+  mouseUpRef.current = () => {
+    activeColIndexRef.current = -1;
+    if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current);
+    if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current);
+  };
+
+  const handleMouseDown = (index: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    activeColIndexRef.current = index;
+    startXRef.current = e.clientX;
+    startWidthRef.current = colWidths[index];
+
+    if (tableRef.current) {
+      containerWidthRef.current = tableRef.current.getBoundingClientRect().width;
+    } else {
+      containerWidthRef.current = 800;
+    }
+
+    if (mouseMoveRef.current) document.addEventListener("mousemove", mouseMoveRef.current);
+    if (mouseUpRef.current) document.addEventListener("mouseup", mouseUpRef.current);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current);
+      if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current);
+    };
+  }, []);
+
   const totalPages = Math.max(1, Math.ceil(data.length / PAGE_SIZE))
   const rows = data.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   function openDetail(row: UserPaymentHistoryItem) {
     setSelected(row)
     setModalState('detail')
-    setMenuOpen(null)
   }
 
   function copyId(id: string) {
     navigator.clipboard.writeText(id).catch(() => {})
     setCopied(true)
     setTimeout(() => setCopied(false), 1500)
-    setMenuOpen(null)
   }
 
   function closeModal() {
@@ -138,37 +196,90 @@ export function PaymentsTab({ userId }: { userId: string }) {
 
       {/* Responsive Table Tracks Wrapper */}
       <div className="w-full overflow-x-auto pb-2">
-        <div className="w-full min-w-[900px] flex flex-col items-stretch">
-          {/* Custom Track Header matching exact user spacing requirements */}
-        <div className="w-full bg-[#00b4cc]/15 border-t border-r border-l border-[#cecfd2] rounded-t-xl flex items-center justify-between p-4 gap-4 text-[14px] font-medium text-[#4a5565]">
-          <div className="w-[140px] shrink-0 text-left pl-2">Əməliyyat ID</div>
-          <div className="w-[150px] shrink-0 text-center">Tarix</div>
-          <div className="w-[100px] shrink-0 text-center">Məbləğ</div>
-          <div className="w-[160px] shrink-0 text-center">Ödəniş metodu</div>
-          <div className="w-[130px] shrink-0 text-center">Status</div>
-          <div className="w-[60px] shrink-0 text-center">Ətraflı</div>
-        </div>
-
-          {/* Table Rows Body List */}
-          <div className="w-full flex flex-col items-stretch border-b border-[#cecfd2]">
+        <table ref={tableRef} className="w-full border-separate border-spacing-0 border border-[#cecfd2] rounded-xl text-sm" style={{ tableLayout: "fixed", minWidth: "900px" }}>
+          <colgroup>
+            <col style={{ width: `${colWidths[0]}px` }} />
+            <col style={{ width: `${colWidths[1]}px` }} />
+            <col style={{ width: `${colWidths[2]}px` }} />
+            <col style={{ width: `${colWidths[3]}px` }} />
+            <col style={{ width: `${colWidths[4]}px` }} />
+            <col />
+          </colgroup>
+          <thead>
+            <tr className="bg-[#00b4cc]/15 text-left text-[14px] font-medium text-[#4a5565]">
+              <th className="px-4 py-3 font-semibold text-foreground relative pl-6 border-b border-[#cecfd2]">
+                Əməliyyat ID
+                <div
+                  onMouseDown={(e) => handleMouseDown(0, e)}
+                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
+                >
+                  <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
+                </div>
+              </th>
+              <th className="px-4 py-3 font-semibold text-foreground text-center relative border-b border-[#cecfd2]">
+                Tarix
+                <div
+                  onMouseDown={(e) => handleMouseDown(1, e)}
+                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
+                >
+                  <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
+                </div>
+              </th>
+              <th className="px-4 py-3 font-semibold text-foreground text-center relative border-b border-[#cecfd2]">
+                Məbləğ
+                <div
+                  onMouseDown={(e) => handleMouseDown(2, e)}
+                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
+                >
+                  <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
+                </div>
+              </th>
+              <th className="px-4 py-3 font-semibold text-foreground text-center relative border-b border-[#cecfd2]">
+                Ödəniş metodu
+                <div
+                  onMouseDown={(e) => handleMouseDown(3, e)}
+                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
+                >
+                  <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
+                </div>
+              </th>
+              <th className="px-4 py-3 font-semibold text-foreground text-center relative border-b border-[#cecfd2]">
+                Status
+                <div
+                  onMouseDown={(e) => handleMouseDown(4, e)}
+                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
+                >
+                  <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
+                </div>
+              </th>
+              <th className="px-4 py-3 font-semibold text-foreground text-center border-b border-[#cecfd2]">Ətraflı</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#cecfd2] bg-white">
             {isLoading && (
               Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="w-full bg-white border-t border-r border-l border-[#cecfd2] flex items-center justify-between p-4 gap-4">
-                  <div className="h-4 w-full animate-pulse rounded bg-secondary" />
-                </div>
+                <tr key={i}>
+                  <td colSpan={6} className="px-4 py-4">
+                    <div className="h-4 w-full animate-pulse rounded bg-secondary" />
+                  </td>
+                </tr>
               ))
             )}
             
             {isError && (
-              <div className="w-full bg-white border-t border-r border-l border-[#cecfd2] p-8 text-center text-sm text-red-500">
-                Ödəniş məlumatları yüklənmədi.
-              </div>
+              <tr>
+                <td colSpan={6} className="p-8 text-center text-sm text-red-500">
+                  Ödəniş məlumatları yüklənmədi.
+                </td>
+              </tr>
             )}
 
             {!isLoading && !isError && rows.length === 0 && (
-              <div className="w-full bg-white border-t border-r border-l border-[#cecfd2] p-8 text-center text-sm text-muted-foreground italic">
-                Bu müştəri üçün heç bir ödəniş əməliyyatı tapılmadı.
-              </div>
+              <tr>
+                <td colSpan={6} className="p-8 text-center text-sm text-muted-foreground italic">
+                  Bu müştəri üçün heç bir ödəniş əməliyyatı tapılmadı.
+                </td>
+              </tr>
             )}
 
             {!isLoading && !isError && rows.map((row, idx) => {
@@ -176,87 +287,95 @@ export function PaymentsTab({ userId }: { userId: string }) {
               const formattedDate = row.dateTime ? row.dateTime.replace('T', ' / ').slice(0, 16) : '20.08.26 / 13:00'
               
               return (
-                <div 
+                <tr 
                   key={row.transactionId || idx} 
-                  className="w-full bg-white border-t border-r border-l border-[#cecfd2] flex items-center justify-between p-4 gap-4 hover:bg-[#fafafa] transition-colors duration-150 relative"
+                  className="hover:bg-[#fafafa] transition-colors duration-150"
                 >
                   {/* Transaction ID */}
-                  <div className="w-[140px] shrink-0 text-left pl-2 text-xs font-medium text-black truncate" title={row.transactionId}>
-                    {row.transactionId}
-                  </div>
+                  <td className="px-4 py-3 text-left pl-6 text-xs font-medium text-black overflow-hidden">
+                    <span className="truncate block" title={row.transactionId}>{row.transactionId}</span>
+                  </td>
 
                   {/* Date Time */}
-                  <div className="w-[150px] shrink-0 text-center text-sm font-medium text-black whitespace-nowrap">
-                    {formattedDate}
-                  </div>
+                  <td className="px-4 py-3 text-center text-sm font-medium text-black overflow-hidden">
+                    <span className="whitespace-nowrap truncate block" title={formattedDate}>{formattedDate}</span>
+                  </td>
 
                   {/* Amount Value */}
-                  <div className="w-[100px] shrink-0 text-center text-sm font-medium text-black whitespace-nowrap">
-                    {row.amount ? (row.amount.includes('AZN') ? row.amount : `${row.amount} AZN`) : ''}
-                  </div>
+                  <td className="px-4 py-3 text-center text-sm font-medium text-black overflow-hidden">
+                    <span className="whitespace-nowrap truncate block">
+                      {row.amount ? (row.amount.includes('AZN') ? row.amount : `${row.amount} AZN`) : ''}
+                    </span>
+                  </td>
 
                   {/* Payment Method component */}
-                  <div className="w-[160px] shrink-0 flex items-center justify-center">
-                    <PaymentMethodBadge method={row.paymentMethod} />
-                  </div>
+                  <td className="px-4 py-3 text-center overflow-hidden">
+                    <div className="flex items-center justify-center truncate">
+                      <PaymentMethodBadge method={row.paymentMethod} />
+                    </div>
+                  </td>
 
                   {/* Status Badging Strip */}
-                  <div className="w-[130px] shrink-0 flex items-center justify-center">
-                    <div className={cn(
-                      "h-6.5 rounded-[20px] flex items-center justify-center px-3.5 py-1 gap-1.5 text-[12px] font-medium text-white shadow-2xs tracking-wide",
-                      pill.bg
-                    )}>
-                      <div className="w-1.5 h-1.5 rounded-full bg-white shrink-0 animate-pulse" />
-                      <span className="leading-[18px] font-medium">{pill.label}</span>
+                  <td className="px-4 py-3 text-center overflow-hidden">
+                    <div className="flex items-center justify-center">
+                      <div className={cn(
+                        "h-6.5 rounded-[20px] flex items-center justify-center px-3.5 py-1 gap-1.5 text-[12px] font-medium text-white shadow-2xs tracking-wide w-fit truncate",
+                        pill.bg
+                      )}>
+                        <div className="w-1.5 h-1.5 rounded-full bg-white shrink-0 animate-pulse" />
+                        <span className="leading-[18px] font-medium">{pill.label}</span>
+                      </div>
                     </div>
-                  </div>
+                  </td>
 
                   {/* Actions column using exact requested Image visual token */}
-                  <div className="w-[60px] shrink-0 flex items-center justify-center">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button
-                          type="button"
-                          className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-secondary/80 transition-all cursor-pointer outline-none"
-                          aria-label="Ətraflı"
-                        >
-                          <Image src="/more.png" width={24} height={24} alt="Ətraflı" className="object-contain" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      
-                      <DropdownMenuContent align="end" className="w-[200px] rounded-[12px] bg-white border border-[#ececed] p-3 flex flex-col gap-3 shadow-2xl font-sans text-black">
-                        {/* Item 1: Bax */}
-                        <DropdownMenuItem
-                          onClick={() => openDetail(row)}
-                          className="w-full text-left text-[16px] leading-[24px] text-black hover:text-[#00b4cc] focus:text-[#00b4cc] transition-colors font-medium cursor-pointer block border-b border-[#00b4cc] pb-2 rounded-none focus:bg-transparent px-0 py-0"
-                        >
-                          Bax
-                        </DropdownMenuItem>
+                  <td className="px-4 py-3 text-center">
+                    <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-secondary/80 transition-all cursor-pointer outline-none"
+                            aria-label="Ətraflı"
+                          >
+                            <Image src="/more.png" width={24} height={24} alt="Ətraflı" className="object-contain" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        
+                        <DropdownMenuContent align="end" className="w-[200px] rounded-[12px] bg-white border border-[#ececed] p-3 flex flex-col gap-3 shadow-2xl font-sans text-black">
+                          {/* Item 1: Bax */}
+                          <DropdownMenuItem
+                            onClick={() => openDetail(row)}
+                            className="w-full text-left text-[16px] leading-[24px] text-black hover:text-[#00b4cc] focus:text-[#00b4cc] transition-colors font-medium cursor-pointer block border-b border-[#00b4cc] pb-2 rounded-none focus:bg-transparent px-0 py-0"
+                          >
+                            Bax
+                          </DropdownMenuItem>
 
-                        {/* Item 2: Tranzaksiya ID- ni kopyala */}
-                        <DropdownMenuItem
-                          onClick={() => copyId(row.transactionId)}
-                          className="w-full text-left text-[16px] leading-[24px] text-black hover:text-[#00b4cc] focus:text-[#00b4cc] transition-colors font-medium cursor-pointer flex items-center justify-between border-b border-[#ececed] pb-2 rounded-none focus:bg-transparent px-0 py-0"
-                        >
-                          <span>Tranzaksiya ID- ni kopyala</span>
-                          {copied && <Check size={14} className="text-[#00b4cc] shrink-0 ml-1" />}
-                        </DropdownMenuItem>
+                          {/* Item 2: Tranzaksiya ID- ni kopyala */}
+                          <DropdownMenuItem
+                            onClick={() => copyId(row.transactionId)}
+                            className="w-full text-left text-[16px] leading-[24px] text-black hover:text-[#00b4cc] focus:text-[#00b4cc] transition-colors font-medium cursor-pointer flex items-center justify-between border-b border-[#ececed] pb-2 rounded-none focus:bg-transparent px-0 py-0"
+                          >
+                            <span>Tranzaksiya ID- ni kopyala</span>
+                            {copied && <Check size={14} className="text-[#00b4cc] shrink-0 ml-1" />}
+                          </DropdownMenuItem>
 
-                        {/* Item 3: Qəbzi yüklə */}
-                        <DropdownMenuItem
-                          onClick={() => downloadDirectReceipt(row)}
-                          className="w-full text-left text-[16px] leading-[24px] text-black hover:text-[#00b4cc] focus:text-[#00b4cc] transition-colors font-medium cursor-pointer block pt-0.5 focus:bg-transparent px-0 py-0"
-                        >
-                          Qəbzi yüklə
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
+                          {/* Item 3: Qəbzi yüklə */}
+                          <DropdownMenuItem
+                            onClick={() => downloadDirectReceipt(row)}
+                            className="w-full text-left text-[16px] leading-[24px] text-black hover:text-[#00b4cc] focus:text-[#00b4cc] transition-colors font-medium cursor-pointer block pt-0.5 focus:bg-transparent px-0 py-0"
+                          >
+                            Qəbzi yüklə
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </td>
+                </tr>
               )
             })}
-          </div>
-        </div>
+          </tbody>
+        </table>
       </div>
 
       {/* Pagination Container Component */}

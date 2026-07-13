@@ -57,6 +57,66 @@ export function StoresList() {
   const stores = data?.items ?? []
   const total = data?.total ?? 0
 
+  const [colWidths, setColWidths] = useState<number[]>([220, 300, 220]);
+  const startXRef = useRef<number>(0);
+  const startWidthRef = useRef<number>(0);
+  const activeColIndexRef = useRef<number>(-1);
+  const tableRef = useRef<HTMLTableElement>(null);
+  const containerWidthRef = useRef<number>(0);
+
+  const mouseMoveRef = useRef<(e: MouseEvent) => void>(null);
+  const mouseUpRef = useRef<() => void>(null);
+
+  const minWidths = [150, 150, 150];
+
+  mouseMoveRef.current = (e: MouseEvent) => {
+    if (activeColIndexRef.current === -1) return;
+    const deltaX = e.clientX - startXRef.current;
+    const minW = minWidths[activeColIndexRef.current] || 100;
+
+    const sumOthers = colWidths.reduce((acc, w, idx) => {
+      return idx !== activeColIndexRef.current ? acc + w : acc;
+    }, 0);
+
+    const maxW = Math.max(minW, containerWidthRef.current - sumOthers - 100);
+    const newWidth = Math.min(maxW, Math.max(minW, startWidthRef.current + deltaX));
+    setColWidths((prev) => {
+      const copy = [...prev];
+      copy[activeColIndexRef.current] = newWidth;
+      return copy;
+    });
+  };
+
+  mouseUpRef.current = () => {
+    activeColIndexRef.current = -1;
+    if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current);
+    if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current);
+  };
+
+  const handleMouseDown = (index: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    activeColIndexRef.current = index;
+    startXRef.current = e.clientX;
+    startWidthRef.current = colWidths[index];
+
+    if (tableRef.current) {
+      containerWidthRef.current = tableRef.current.getBoundingClientRect().width;
+    } else {
+      containerWidthRef.current = 800;
+    }
+
+    if (mouseMoveRef.current) document.addEventListener("mousemove", mouseMoveRef.current);
+    if (mouseUpRef.current) document.addEventListener("mouseup", mouseUpRef.current);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current);
+      if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current);
+    };
+  }, []);
+
   function handleDelete() {
     if (!deleteId) return
     deleteStoreMutation.mutate(deleteId, {
@@ -101,52 +161,92 @@ export function StoresList() {
       </div>
 
       {/* Cədvəl Bölməsi - menyunun kəsilməməsi üçün overflow-hidden çıxarıldı */}
-      <div className="rounded-xl border border-border bg-card shadow-sm">
-        {/* Header - Swagger-dəki parametrlərə uyğun */}
-        <div className="grid grid-cols-[1fr_1.5fr_1fr_4rem] items-center gap-3 border-b border-border bg-[#00B4CC]/10 px-4 py-3 rounded-t-xl">
-          <span className="text-xs font-bold text-[#111827] uppercase tracking-wider">Mağaza adı</span>
-          <span className="text-xs font-bold text-[#111827] uppercase tracking-wider">Ünvan</span>
-          <span className="text-xs font-bold text-[#111827] uppercase tracking-wider">Telefon nömrəsi</span>
-          <span className="text-xs font-bold text-[#111827] uppercase tracking-wider text-center">Ətraflı</span>
-        </div>
+      <div className="overflow-x-auto rounded-xl border border-border bg-card">
+        <table ref={tableRef} className="w-full border-separate border-spacing-0" style={{ tableLayout: "fixed", minWidth: "750px" }}>
+          <colgroup>
+            <col style={{ width: `${colWidths[0]}px` }} />
+            <col style={{ width: `${colWidths[1]}px` }} />
+            <col style={{ width: `${colWidths[2]}px` }} />
+            <col />
+          </colgroup>
+          <thead>
+            <tr className="bg-[#00B4CC]/10 text-left">
+              <th className="px-4 py-3 text-xs font-bold text-[#111827] uppercase tracking-wider relative">
+                Mağaza adı
+                <div
+                  onMouseDown={(e) => handleMouseDown(0, e)}
+                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
+                >
+                  <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
+                </div>
+              </th>
+              <th className="px-4 py-3 text-xs font-bold text-[#111827] uppercase tracking-wider relative">
+                Ünvan
+                <div
+                  onMouseDown={(e) => handleMouseDown(1, e)}
+                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
+                >
+                  <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
+                </div>
+              </th>
+              <th className="px-4 py-3 text-xs font-bold text-[#111827] uppercase tracking-wider relative">
+                Telefon nömrəsi
+                <div
+                  onMouseDown={(e) => handleMouseDown(2, e)}
+                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
+                >
+                  <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
+                </div>
+              </th>
+              <th className="px-4 py-3 text-xs font-bold text-[#111827] uppercase tracking-wider text-center">Ətraflı</th>
+            </tr>
+          </thead>
 
-        {/* Body */}
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-32 gap-3">
-            <Loader2 size={32} className="animate-spin text-[#00B4CC]" />
-            <p className="text-sm text-muted-foreground animate-pulse">Mağazalar yüklənir...</p>
-          </div>
-        ) : stores.length === 0 ? (
-          <div className="flex items-center justify-center py-32 text-sm text-muted-foreground italic">
-            {debouncedSearch ? "Axtarışa uyğun mağaza tapılmadı." : "Siyahı boşdur."}
-          </div>
-        ) : (
-          <>
-            {stores.map((s) => (
-              <StoreRow
-                key={s.id}
-                store={s}
-                onView={() => router.push(`/stores/${s.id}`)}
-                onDelete={() => setDeleteId(s.id)}
-              />
-            ))}
-            {total > PAGE_SIZE && (
-              <div className="flex items-center justify-center gap-1 border-t border-border px-4 py-4">
-                {Array.from({ length: Math.ceil(total / PAGE_SIZE) }, (_, i) => i + 1).map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => setPage(p)}
-                    className={cn(
-                      'flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors',
-                      p === page ? 'bg-[#00B4CC] text-white shadow-sm' : 'text-foreground hover:bg-secondary',
-                    )}
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
+          {/* Body */}
+          <tbody>
+            {isLoading ? (
+              <tr>
+                <td colSpan={4} className="py-32 text-center">
+                  <div className="flex flex-col items-center justify-center gap-3">
+                    <Loader2 size={32} className="animate-spin text-[#00B4CC]" />
+                    <p className="text-sm text-muted-foreground animate-pulse">Mağazalar yüklənir...</p>
+                  </div>
+                </td>
+              </tr>
+            ) : stores.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="py-32 text-center text-sm text-muted-foreground italic">
+                  {debouncedSearch ? "Axtarışa uyğun mağaza tapılmadı." : "Siyahı boşdur."}
+                </td>
+              </tr>
+            ) : (
+              stores.map((s) => (
+                <StoreRow
+                  key={s.id}
+                  store={s}
+                  onView={() => router.push(`/stores/${s.id}`)}
+                  onDelete={() => setDeleteId(s.id)}
+                />
+              ))
             )}
-          </>
+          </tbody>
+        </table>
+
+        {total > PAGE_SIZE && !isLoading && (
+          <div className="flex items-center justify-center gap-1 border-t border-border px-4 py-4">
+            {Array.from({ length: Math.ceil(total / PAGE_SIZE) }, (_, i) => i + 1).map((p) => (
+              <button
+                key={p}
+                onClick={() => setPage(p)}
+                className={cn(
+                  'flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors',
+                  p === page ? 'bg-[#00B4CC] text-white shadow-sm' : 'text-foreground hover:bg-secondary',
+                )}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
         )}
       </div>
 
@@ -158,10 +258,11 @@ export function StoresList() {
 
       {deleteId !== null && (
         <ConfirmDeleteModal
-          name={stores.find((s) => s.id === deleteId)?.name ?? ''}
+          isOpen={true}
+          onClose={() => setDeleteId(null)}
           onConfirm={handleDelete}
-          onCancel={() => setDeleteId(null)}
-          isLoading={deleteStoreMutation.isPending}
+          title="Mağazanı sil"
+          description="Bu mağazanı silmək istədiyinizə əminsiniz? Bu əməliyyat geri qaytarıla bilməz."
         />
       )}
 
@@ -186,47 +287,52 @@ function StoreRow({
   onDelete: () => void
 }) {
   return (
-    <div
+    <tr
       onClick={onView}
-      className="grid grid-cols-[1fr_1.5fr_1fr_4rem] items-center gap-3 border-b border-border px-4 py-3.5 last:border-0 hover:bg-secondary/40 transition-colors relative cursor-pointer"
+      className="hover:bg-secondary/40 border-b border-border transition-colors relative cursor-pointer"
     >
-      <span className="text-sm font-normal text-black truncate">{store.name}</span>
-      <span className="text-sm text-black line-clamp-1" title={store.fullAddress}>
-        {store.fullAddress}
-      </span>
-      <span className="text-sm text-black truncate">{store.phone}</span>
-      
-      {/* Action menu */}
-      <div className="relative flex justify-center" onClick={(e) => e.stopPropagation()}>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200 outline-none"
-              aria-label="Ətraflı seçimlər"
-            >
-              <MoreVertical size={20} />
-            </button>
-          </DropdownMenuTrigger>
+      <td className="px-4 py-3.5 text-sm font-normal text-black overflow-hidden">
+        <span className="truncate block" title={store.name}>{store.name}</span>
+      </td>
+      <td className="px-4 py-3.5 text-sm text-black overflow-hidden">
+        <span className="line-clamp-1 block" title={store.fullAddress}>{store.fullAddress}</span>
+      </td>
+      <td className="px-4 py-3.5 text-sm text-black overflow-hidden">
+        <span className="truncate block" title={store.phone}>{store.phone}</span>
+      </td>
+      <td className="px-4 py-3.5 text-center">
+        {/* Action menu */}
+        <div className="relative flex justify-center" onClick={(e) => e.stopPropagation()}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200 outline-none"
+                aria-label="Ətraflı seçimlər"
+              >
+                <MoreVertical size={20} />
+              </button>
+            </DropdownMenuTrigger>
 
-          <DropdownMenuContent align="end" className="w-[180px] flex flex-col gap-3 rounded-[12px] border border-[#ECECED] bg-white p-3 shadow-lg">
-            <DropdownMenuItem
-              onClick={onView}
-              className="flex w-full items-center gap-2 border-b border-[#ECECED] pb-3 text-base font-normal text-black hover:opacity-70 transition-opacity cursor-pointer focus:bg-transparent px-0 py-0 rounded-none"
-            >
-              <Eye size={16} className="text-[#333333]" />
-              <span className="leading-none">Detallı bax</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={onDelete}
-              className="flex w-full items-center gap-2 text-base font-normal text-[#F10303] hover:opacity-70 transition-opacity cursor-pointer focus:bg-transparent px-0 py-0"
-            >
-              <Trash2 size={16} />
-              <span className="leading-none">Sil</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </div>
+            <DropdownMenuContent align="end" className="w-[180px] flex flex-col gap-3 rounded-[12px] border border-[#ECECED] bg-white p-3 shadow-lg">
+              <DropdownMenuItem
+                onClick={onView}
+                className="flex w-full items-center gap-2 border-b border-[#ECECED] pb-3 text-base font-normal text-black hover:opacity-70 transition-opacity cursor-pointer focus:bg-transparent px-0 py-0 rounded-none"
+              >
+                <Eye size={16} className="text-[#333333]" />
+                <span className="leading-none">Detallı bax</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={onDelete}
+                className="flex w-full items-center gap-2 text-base font-normal text-[#F10303] hover:opacity-70 transition-opacity cursor-pointer focus:bg-transparent px-0 py-0"
+              >
+                <Trash2 size={16} />
+                <span className="leading-none">Sil</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </td>
+    </tr>
   )
 }
 

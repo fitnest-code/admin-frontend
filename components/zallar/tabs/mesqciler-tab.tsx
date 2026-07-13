@@ -35,6 +35,66 @@ export function MesqcilerTab({ gymId, zalName }: MesqcilerTabProps) {
   const [showAdd, setShowAdd] = useState(false);
   const [editingTrainer, setEditingTrainer] = useState<{ trainer: any; index: number } | null>(null);
 
+  const [colWidths, setColWidths] = useState<number[]>([220, 150, 280]);
+  const startXRef = useRef<number>(0);
+  const startWidthRef = useRef<number>(0);
+  const activeColIndexRef = useRef<number>(-1);
+  const tableRef = useRef<HTMLTableElement>(null);
+  const containerWidthRef = useRef<number>(0);
+
+  const mouseMoveRef = useRef<(e: MouseEvent) => void>(null);
+  const mouseUpRef = useRef<() => void>(null);
+
+  const minWidths = [150, 100, 180];
+
+  mouseMoveRef.current = (e: MouseEvent) => {
+    if (activeColIndexRef.current === -1) return;
+    const deltaX = e.clientX - startXRef.current;
+    const minW = minWidths[activeColIndexRef.current] || 100;
+
+    const sumOthers = colWidths.reduce((acc, w, idx) => {
+      return idx !== activeColIndexRef.current ? acc + w : acc;
+    }, 0);
+
+    const maxW = Math.max(minW, containerWidthRef.current - sumOthers - 80);
+    const newWidth = Math.min(maxW, Math.max(minW, startWidthRef.current + deltaX));
+    setColWidths((prev) => {
+      const copy = [...prev];
+      copy[activeColIndexRef.current] = newWidth;
+      return copy;
+    });
+  };
+
+  mouseUpRef.current = () => {
+    activeColIndexRef.current = -1;
+    if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current);
+    if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current);
+  };
+
+  const handleMouseDown = (index: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    activeColIndexRef.current = index;
+    startXRef.current = e.clientX;
+    startWidthRef.current = colWidths[index];
+
+    if (tableRef.current) {
+      containerWidthRef.current = tableRef.current.getBoundingClientRect().width;
+    } else {
+      containerWidthRef.current = 750;
+    }
+
+    if (mouseMoveRef.current) document.addEventListener("mousemove", mouseMoveRef.current);
+    if (mouseUpRef.current) document.addEventListener("mouseup", mouseUpRef.current);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current);
+      if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current);
+    };
+  }, []);
+
   const handleDelete = async (trainerId: string) => {
     try {
       await deleteTrainerMutation.mutateAsync({ gymId: parsedGymId, trainerId });
@@ -75,91 +135,126 @@ export function MesqcilerTab({ gymId, zalName }: MesqcilerTabProps) {
           <p className="text-[15px] font-medium">Hələ ki məşqçi əlavə edilməyib</p>
         </div>
       ) : (
-        <div className="flex flex-col w-full border border-[#ececed] rounded-xl overflow-visible bg-white shadow-sm">
-          {/* Table Head */}
-          <div className="grid grid-cols-[220px_150px_1fr_80px] items-center bg-[#00B4CC]/10 border-b border-[#ececed] px-6 py-3">
-            <div className="text-[13px] font-bold text-[#101828]">Ad / Soyad</div>
-            <div className="text-[13px] font-bold text-[#101828]">Telefon</div>
-            <div className="text-[13px] font-bold text-[#101828]">E-poçt</div>
-            <div className="text-[13px] font-bold text-[#101828] text-center">Ətraflı</div>
-          </div>
-
-          {/* Table Body */}
-          <div className="flex flex-col">
-            {trainersList.map((t: any, idx: number) => {
-              const profileImage = t.picture 
-                ? (t.picture.startsWith("http") || t.picture.startsWith("/") ? t.picture : `/api/v1/media/stream/${t.picture}`) 
-                : null;
-
-              return (
-                <div 
-                  key={t.trainer_id || idx} 
-                  className="grid grid-cols-[220px_150px_1fr_80px] items-center px-6 py-3 border-b border-[#ececed] last:border-0 hover:bg-slate-50 transition-colors"
-                >
-                  {/* Name / Profile */}
-                  <div className="flex items-center gap-3 overflow-hidden mr-4">
-                    <div className="w-10 h-10 rounded-full bg-[#00B4CC]/10 text-[#00B4CC] flex-shrink-0 relative overflow-hidden flex items-center justify-center font-bold text-xs shadow-sm">
-                      {profileImage ? (
-                        <img src={profileImage} className="w-full h-full object-cover" alt={t.name} />
-                      ) : (
-                        <span>{t.name?.[0]}{t.surname?.[0]}</span>
-                      )}
-                    </div>
-                    <div className="flex flex-col overflow-hidden">
-                      <span className="text-[13px] font-semibold text-black truncate">{t.name} {t.surname}</span>
-                      <span className="text-[11px] text-[#6a7282] truncate">{t.profession?.name || "Məşqçi"}</span>
-                    </div>
+        <div className="overflow-x-auto border border-[#ececed] rounded-xl bg-white shadow-sm">
+          <table ref={tableRef} className="w-full border-separate border-spacing-0" style={{ tableLayout: "fixed", minWidth: "750px" }}>
+            <colgroup>
+              <col style={{ width: `${colWidths[0]}px` }} />
+              <col style={{ width: `${colWidths[1]}px` }} />
+              <col style={{ width: `${colWidths[2]}px` }} />
+              <col />
+            </colgroup>
+            <thead>
+              <tr className="bg-[#00B4CC]/10 border-b border-[#ececed] text-left">
+                <th className="px-6 py-3 text-[13px] font-bold text-[#101828] relative">
+                  Ad / Soyad
+                  <div
+                    onMouseDown={(e) => handleMouseDown(0, e)}
+                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
+                  >
+                    <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
                   </div>
-
-                  {/* Phone */}
-                  <div className="text-[13px] font-medium text-black">
-                    {t.phone || "—"}
+                </th>
+                <th className="px-6 py-3 text-[13px] font-bold text-[#101828] relative">
+                  Telefon
+                  <div
+                    onMouseDown={(e) => handleMouseDown(1, e)}
+                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
+                  >
+                    <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
                   </div>
-
-                  {/* Email */}
-                  <div className="text-[13px] font-medium text-black truncate pr-4">
-                    {t.email || "—"}
+                </th>
+                <th className="px-6 py-3 text-[13px] font-bold text-[#101828] relative">
+                  E-poçt
+                  <div
+                    onMouseDown={(e) => handleMouseDown(2, e)}
+                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
+                  >
+                    <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
                   </div>
+                </th>
+                <th className="px-6 py-3 text-[13px] font-bold text-[#101828] text-center">Ətraflı</th>
+              </tr>
+            </thead>
+            <tbody>
+              {trainersList.map((t: any, idx: number) => {
+                const profileImage = t.picture 
+                  ? (t.picture.startsWith("http") || t.picture.startsWith("/") ? t.picture : `/api/v1/media/stream/${t.picture}`) 
+                  : null;
 
-                  {/* Action Menu */}
-                  <div className="relative flex items-center justify-center">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button 
-                          className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-full transition-colors group outline-none"
-                        >
-                          <Image 
-                            src="/more.png" 
-                            width={24} 
-                            height={24} 
-                            alt="More" 
-                            className="opacity-60 group-hover:opacity-100 transition-opacity" 
-                          />
-                        </button>
-                      </DropdownMenuTrigger>
-                      
-                      <DropdownMenuContent align="end" className="w-[160px] bg-white border border-[#E5E7EB] rounded-lg shadow-lg p-1 flex flex-col gap-1 overflow-hidden">
-                        <DropdownMenuItem
-                          onClick={() => setEditingTrainer({ trainer: t, index: idx })}
-                          className="flex w-full items-center gap-2 px-3 py-2 text-[13px] text-foreground hover:bg-slate-50 transition-colors cursor-pointer focus:bg-transparent px-0 py-0"
-                        >
-                          <Eye size={15} className="text-[#364153] shrink-0" />
-                          <span className="text-[13px] text-[#364153] font-medium">Düzəliş et</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDelete(t.trainer_id)}
-                          className="flex w-full items-center gap-2 px-3 py-2 text-[13px] text-red-500 hover:bg-red-50 transition-colors cursor-pointer focus:bg-transparent px-0 py-0"
-                        >
-                          <Trash2 size={15} className="text-[#E7000B] shrink-0" />
-                          <span className="text-[13px] text-[#E7000B] font-medium">Sil</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                return (
+                  <tr 
+                    key={t.trainer_id || idx} 
+                    className="border-b border-[#ececed] last:border-0 hover:bg-slate-50 transition-colors"
+                  >
+                    {/* Name / Profile */}
+                    <td className="px-6 py-3 overflow-hidden">
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <div className="w-10 h-10 rounded-full bg-[#00B4CC]/10 text-[#00B4CC] flex-shrink-0 relative overflow-hidden flex items-center justify-center font-bold text-xs shadow-sm">
+                          {profileImage ? (
+                            <img src={profileImage} className="w-full h-full object-cover" alt={t.name} />
+                          ) : (
+                            <span>{t.name?.[0]}{t.surname?.[0]}</span>
+                          )}
+                        </div>
+                        <div className="flex flex-col overflow-hidden">
+                          <span className="text-[13px] font-semibold text-black truncate">{t.name} {t.surname}</span>
+                          <span className="text-[11px] text-[#6a7282] truncate">{t.profession?.name || "Məşqçi"}</span>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Phone */}
+                    <td className="px-6 py-3 text-[13px] font-medium text-black overflow-hidden">
+                      <span className="truncate block" title={t.phone || ""}>{t.phone || "—"}</span>
+                    </td>
+
+                    {/* Email */}
+                    <td className="px-6 py-3 text-[13px] font-medium text-black overflow-hidden">
+                      <span className="truncate block" title={t.email || ""}>{t.email || "—"}</span>
+                    </td>
+
+                    {/* Action Menu */}
+                    <td className="px-6 py-3 text-center">
+                      <div className="relative flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button 
+                              className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-full transition-colors group outline-none"
+                            >
+                              <Image 
+                                src="/more.png" 
+                                width={24} 
+                                height={24} 
+                                alt="More" 
+                                className="opacity-60 group-hover:opacity-100 transition-opacity" 
+                              />
+                            </button>
+                          </DropdownMenuTrigger>
+                          
+                          <DropdownMenuContent align="end" className="w-[160px] bg-white border border-[#E5E7EB] rounded-lg shadow-lg p-1 flex flex-col gap-1 overflow-hidden">
+                            <DropdownMenuItem
+                              onClick={() => setEditingTrainer({ trainer: t, index: idx })}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-[13px] text-foreground hover:bg-slate-50 transition-colors cursor-pointer focus:bg-transparent px-0 py-0"
+                            >
+                              <Eye size={15} className="text-[#364153] shrink-0" />
+                              <span className="text-[13px] text-[#364153] font-medium">Düzəliş et</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDelete(t.trainer_id)}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-[13px] text-red-500 hover:bg-red-50 transition-colors cursor-pointer focus:bg-transparent px-0 py-0"
+                            >
+                              <Trash2 size={15} className="text-[#E7000B] shrink-0" />
+                              <span className="text-[13px] text-[#E7000B] font-medium">Sil</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
 
