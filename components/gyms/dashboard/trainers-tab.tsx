@@ -89,18 +89,24 @@ export function TrainersTab() {
   const startXRef = useRef<number>(0);
   const startWidthRef = useRef<number>(0);
   const activeColIndexRef = useRef<number>(-1);
+  const tableRef = useRef<HTMLTableElement>(null);
+  const containerWidthRef = useRef<number>(0);
 
   const mouseMoveRef = useRef<(e: MouseEvent) => void>(null);
   const mouseUpRef = useRef<() => void>(null);
 
   const minWidths = [150, 120, 120];
-  const maxWidths = [500, 300, 350];
 
   mouseMoveRef.current = (e: MouseEvent) => {
     if (activeColIndexRef.current === -1) return;
     const deltaX = e.clientX - startXRef.current;
     const minW = minWidths[activeColIndexRef.current] || 100;
-    const maxW = maxWidths[activeColIndexRef.current] || 400;
+
+    const sumOthers = colWidths.reduce((acc, w, idx) => {
+      return idx !== activeColIndexRef.current ? acc + w : acc;
+    }, 0);
+
+    const maxW = Math.max(minW, containerWidthRef.current - sumOthers - 100);
     const newWidth = Math.min(maxW, Math.max(minW, startWidthRef.current + deltaX));
     setColWidths((prev) => {
       const copy = [...prev];
@@ -121,6 +127,12 @@ export function TrainersTab() {
     activeColIndexRef.current = index;
     startXRef.current = e.clientX;
     startWidthRef.current = colWidths[index];
+
+    if (tableRef.current) {
+      containerWidthRef.current = tableRef.current.getBoundingClientRect().width;
+    } else {
+      containerWidthRef.current = 750;
+    }
 
     if (mouseMoveRef.current) document.addEventListener("mousemove", mouseMoveRef.current);
     if (mouseUpRef.current) document.addEventListener("mouseup", mouseUpRef.current);
@@ -213,7 +225,7 @@ export function TrainersTab() {
           </div>
         ) : (
           <div className="w-full overflow-x-auto">
-            <table className="w-full border-separate border-spacing-0" style={{ tableLayout: "fixed", minWidth: "750px" }}>
+            <table ref={tableRef} className="w-full border-separate border-spacing-0" style={{ tableLayout: "fixed", minWidth: "750px" }}>
               <colgroup>
                 <col style={{ width: `${colWidths[0]}px` }} />
                 <col style={{ width: `${colWidths[1]}px` }} />
