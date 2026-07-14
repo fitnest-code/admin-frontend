@@ -124,7 +124,7 @@ const LessonHoursTab = () => {
         activeColIndexRef.current = index;
         startXRef.current = e.clientX;
         startWidthRef.current = colWidths[index];
-        if (tableRef.current) containerWidthRef.current = tableRef.current.getBoundingClientRect().width;
+        if (tableRef.current) containerWidthRef.current = tableRef.current.parentElement?.getBoundingClientRect().width || tableRef.current.getBoundingClientRect().width;
         else containerWidthRef.current = 800;
         if (mouseMoveRef.current) document.addEventListener("mousemove", mouseMoveRef.current);
         if (mouseUpRef.current) document.addEventListener("mouseup", mouseUpRef.current);

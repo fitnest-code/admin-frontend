@@ -79,7 +79,8 @@ export function MesqcilerTab({ gymId, zalName }: MesqcilerTabProps) {
     startWidthRef.current = colWidths[index];
 
     if (tableRef.current) {
-      containerWidthRef.current = tableRef.current.getBoundingClientRect().width;
+      containerWidthRef.current = tableRef.current.parentElement?.getBoundingClientRect().width 
+        || tableRef.current.getBoundingClientRect().width;
     } else {
       containerWidthRef.current = 750;
     }

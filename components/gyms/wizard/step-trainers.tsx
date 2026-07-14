@@ -67,7 +67,8 @@ export function StepTrainers({ onNext }: { onNext: () => void }) {
     startWidthRef.current = colWidths[index];
 
     if (tableRef.current) {
-      containerWidthRef.current = tableRef.current.getBoundingClientRect().width;
+      containerWidthRef.current = tableRef.current.parentElement?.getBoundingClientRect().width 
+        || tableRef.current.getBoundingClientRect().width;
     } else {
       containerWidthRef.current = 750;
     }

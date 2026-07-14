@@ -7,6 +7,8 @@ export function useResizableColumns(initialWidths: number[], minWidths: number[]
   const activeColIndexRef = useRef<number>(-1)
   const tableRef = useRef<HTMLTableElement>(null)
 
+  const containerWidthRef = useRef<number>(0)
+
   const mouseMoveRef = useRef<(e: MouseEvent) => void>(null)
   const mouseUpRef = useRef<() => void>(null)
 
@@ -16,11 +18,33 @@ export function useResizableColumns(initialWidths: number[], minWidths: number[]
     const currentIndex = activeColIndexRef.current
     const minW = minWidths[currentIndex] || 100
 
+    let hasCheckbox = false
+    if (tableRef.current) {
+      const colGroup = tableRef.current.querySelector('colgroup')
+      const firstCol = colGroup?.querySelector('col')
+      if (firstCol) {
+        const wStr = (firstCol as HTMLElement).style.width
+        if (wStr === '48px' || wStr === '48') {
+          hasCheckbox = true
+        }
+      }
+    }
+    const fixedWidth = hasCheckbox ? 48 : 0
+
+    const sumOthers = startWidthsRef.current.reduce((acc, w, idx) => {
+      return idx !== currentIndex ? acc + w : acc
+    }, 0)
+
+    const maxW = Math.max(minW, containerWidthRef.current - fixedWidth - sumOthers - 100)
+
     setColWidths((prev) => {
       const copy = [...prev]
       let newCurrentWidth = startWidthsRef.current[currentIndex] + deltaX
       if (newCurrentWidth < minW) {
         newCurrentWidth = minW
+      }
+      if (newCurrentWidth > maxW) {
+        newCurrentWidth = maxW
       }
       copy[currentIndex] = newCurrentWidth
       return copy
@@ -39,6 +63,13 @@ export function useResizableColumns(initialWidths: number[], minWidths: number[]
     activeColIndexRef.current = index
     startXRef.current = e.clientX
     startWidthsRef.current = [...colWidths]
+
+    if (tableRef.current) {
+      containerWidthRef.current = tableRef.current.parentElement?.getBoundingClientRect().width 
+        || tableRef.current.getBoundingClientRect().width
+    } else {
+      containerWidthRef.current = 750
+    }
 
     if (mouseMoveRef.current) document.addEventListener("mousemove", mouseMoveRef.current)
     if (mouseUpRef.current) document.addEventListener("mouseup", mouseUpRef.current)
