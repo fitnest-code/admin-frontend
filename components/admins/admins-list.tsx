@@ -129,7 +129,7 @@ export function AdminsList() {
   const [emailOpen, setEmailOpen] = useState(false)
   const [blockOpen, setBlockOpen] = useState(false)
 
-  const { colWidths, tableRef, handleMouseDown } = useResizableColumns(
+  const { colWidths, tableRef, handleMouseDown, activeColIndexRef } = useResizableColumns(
     [60, 200, 150],
     [40, 120, 80]
   )

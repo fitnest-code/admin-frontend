@@ -204,10 +204,9 @@ export function StoresList() {
 
       {deleteId !== null && (
         <ConfirmDeleteModal
-          isOpen={true}
-          onClose={() => setDeleteId(null)}
+          name="Mağazanı sil"
+          onCancel={() => setDeleteId(null)}
           onConfirm={handleDelete}
-          title="Mağazanı sil"
           description="Bu mağazanı silmək istədiyinizə əminsiniz? Bu əməliyyat geri qaytarıla bilməz."
         />
       )}

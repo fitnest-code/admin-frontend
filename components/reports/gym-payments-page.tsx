@@ -34,7 +34,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useT, useI18nStore } from '@/lib/i18n'
 import { az, enUS, ru } from 'date-fns/locale'
-import { apiGet } from '@/lib/api/client'
+import { apiGet, apiDelete } from '@/lib/api/client'
 
 type PresetKey = 'today' | 'last7' | 'lastMonth' | 'allTime' | 'custom'
 
@@ -96,6 +96,8 @@ export function GymPaymentsPage() {
   
   const [tableData, setTableData] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
+  const [selected, setSelected] = useState<Map<string, any>>(new Map())
 
   const yearOptions = Array.from({ length: 10 }, (_, i) => getYear(new Date()) - 5 + i)
 
@@ -105,6 +107,11 @@ export function GymPaymentsPage() {
       setView(selectedPreset === 'custom' ? 'calendar' : 'presets')
     }
   }, [periodOpen, selectedPreset])
+
+  // Clear selection on period range changes
+  useEffect(() => {
+    setSelected(new Map())
+  }, [periodRange])
 
   // Fetch report data from backend
   useEffect(() => {
@@ -125,7 +132,64 @@ export function GymPaymentsPage() {
       }
     }
     fetchGymPayments()
-  }, [periodRange])
+  }, [periodRange, refreshKey])
+
+  const allOnPage = tableData.length > 0 && tableData.every((row) => selected.has(`${row.gymId}_${row.packageId}`))
+
+  const toggleAll = () => {
+    if (allOnPage) {
+      setSelected((prev) => {
+        const next = new Map(prev)
+        tableData.forEach((row) => next.delete(`${row.gymId}_${row.packageId}`))
+        return next
+      })
+    } else {
+      setSelected((prev) => {
+        const next = new Map(prev)
+        tableData.forEach((row) => {
+          next.set(`${row.gymId}_${row.packageId}`, row)
+        })
+        return next
+      })
+    }
+  }
+
+  const toggleOne = (row: any) => {
+    const key = `${row.gymId}_${row.packageId}`
+    setSelected((prev) => {
+      const next = new Map(prev)
+      if (next.has(key)) {
+        next.delete(key)
+      } else {
+        next.set(key, row)
+      }
+      return next
+    })
+  }
+
+  const handleResetHistory = async () => {
+    const confirmed = window.confirm("Seçilmiş idman zallarının giriş tarixçəsini sıfırlamaq istədiyinizdən əminsiniz?")
+    if (!confirmed) return
+
+    setLoading(true)
+    try {
+      const selectedList = Array.from(selected.values())
+      await Promise.all(
+        selectedList.map((item) => {
+          const gymId = item.gymId
+          const packageId = item.packageId || 0
+          return apiDelete(`/admin/gyms/${gymId}/packages/${packageId}/history`)
+        })
+      )
+      setSelected(new Map())
+      setRefreshKey((prev) => prev + 1)
+    } catch (err) {
+      console.error("Failed to delete history", err)
+      alert("Xəta baş verdi. Giriş tarixçəsi silinə bilmədi.")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleSelectPreset = (preset: PresetKey) => {
     if (preset === 'custom') {
@@ -316,6 +380,25 @@ export function GymPaymentsPage() {
         </Popover>
       </div>
 
+      {/* Bulk actions */}
+      {selected.size > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-4 w-full transition-all duration-300 animate-in fade-in-50 bg-[#00B4CC]/[0.02] p-3 rounded-[12px] border border-dashed border-[#00B4CC]/20">
+          <div className="flex items-center px-2">
+            <span className="text-[14px] font-medium text-black">
+              Seçilib: {selected.size}
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-[13.4px]">
+            <button
+              onClick={handleResetHistory}
+              className="flex h-[40px] min-w-[110px] w-fit items-center justify-center gap-2 rounded-lg border border-red-200 bg-white text-red-600 hover:bg-red-50 hover:border-red-300 px-4 text-sm font-medium transition-all duration-200 active:scale-[0.98] shadow-xs cursor-pointer whitespace-nowrap"
+            >
+              <span>Sıfırla</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Table Section */}
       <div className="w-full overflow-hidden rounded-[12px] border border-[#ececed] bg-white shadow-3xs">
         {loading ? (
@@ -326,6 +409,14 @@ export function GymPaymentsPage() {
           <Table className="w-full border-collapse">
             <TableHeader>
               <TableRow className="bg-[#00B4CC]/5 hover:bg-[#00B4CC]/5 border-b border-[#ececed]">
+                <TableHead className="h-[48px] w-[50px] px-4 text-center border-r border-[#ececed]">
+                  <input
+                    type="checkbox"
+                    checked={allOnPage}
+                    onChange={toggleAll}
+                    className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded"
+                  />
+                </TableHead>
                 <TableHead className="h-[48px] px-6 text-left text-[14px] font-semibold text-black border-r border-[#ececed]">
                   {t.reports.gymName}
                 </TableHead>
@@ -343,7 +434,7 @@ export function GymPaymentsPage() {
             <TableBody>
               {tableData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center text-gray-500 text-[14px] font-medium">
+                  <TableCell colSpan={5} className="h-24 text-center text-gray-500 text-[14px] font-medium">
                     {t.common.noData}
                   </TableCell>
                 </TableRow>
@@ -353,6 +444,14 @@ export function GymPaymentsPage() {
                     key={row.id} 
                     className="border-b border-[#ececed] last:border-0 hover:bg-[#00B4CC]/2 transition-colors h-[56px]"
                   >
+                    <TableCell className="px-4 text-center border-r border-[#ececed] w-[50px]">
+                      <input
+                        type="checkbox"
+                        checked={selected.has(`${row.gymId}_${row.packageId}`)}
+                        onChange={() => toggleOne(row)}
+                        className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded"
+                      />
+                    </TableCell>
                     <TableCell className="px-6 text-left text-[14px] font-medium text-black border-r border-[#ececed]">
                       {row.gymName}
                     </TableCell>

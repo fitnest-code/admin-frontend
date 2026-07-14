@@ -55,6 +55,7 @@ export function useResizableColumns(initialWidths: number[], minWidths: number[]
     colWidths,
     setColWidths,
     tableRef,
-    handleMouseDown
+    handleMouseDown,
+    activeColIndexRef
   }
 }

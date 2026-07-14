@@ -172,7 +172,6 @@ export function TrainersTab() {
         setModalConfig({ isOpen: true, message: err?.response?.data?.message || err?.message || lt.errorOccurred, type: "error" });
       }
     });
-    setOpenMenuId(null);
   };
 
   const trainers = apiData?.items ?? [];
