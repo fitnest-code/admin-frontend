@@ -381,23 +381,25 @@ export function GymPaymentsPage() {
       </div>
 
       {/* Bulk actions */}
-      {selected.size > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-4 w-full transition-all duration-300 animate-in fade-in-50 bg-[#00B4CC]/[0.02] p-3 rounded-[12px] border border-dashed border-[#00B4CC]/20">
-          <div className="flex items-center px-2">
-            <span className="text-[14px] font-medium text-black">
-              Seçilib: {selected.size}
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-[13.4px]">
-            <button
-              onClick={handleResetHistory}
-              className="flex h-[40px] min-w-[110px] w-fit items-center justify-center gap-2 rounded-lg border border-red-200 bg-white text-red-600 hover:bg-red-50 hover:border-red-300 px-4 text-sm font-medium transition-all duration-200 active:scale-[0.98] shadow-xs cursor-pointer whitespace-nowrap"
-            >
-              <span>Sıfırla</span>
-            </button>
-          </div>
+      <div className="flex flex-wrap items-center justify-between gap-4 w-full transition-all duration-300 animate-in fade-in-50 bg-[#00B4CC]/[0.02] p-3 rounded-[12px] border border-dashed border-[#00B4CC]/20">
+        <div className="flex items-center px-2">
+          <span className="text-[14px] font-medium text-black">
+            Seçilib: {selected.size}
+          </span>
         </div>
-      )}
+        <div className="flex flex-wrap items-center gap-[13.4px]">
+          <button
+            onClick={handleResetHistory}
+            disabled={selected.size === 0}
+            className={cn(
+              "flex h-[40px] min-w-[110px] w-fit items-center justify-center gap-2 rounded-lg border border-red-200 bg-white text-red-600 hover:bg-red-50 hover:border-red-300 px-4 text-sm font-medium transition-all duration-200 active:scale-[0.98] shadow-xs cursor-pointer whitespace-nowrap",
+              selected.size === 0 && "opacity-40 cursor-not-allowed active:scale-100 hover:bg-white hover:border-red-200"
+            )}
+          >
+            <span>Sıfırla</span>
+          </button>
+        </div>
+      </div>
 
       {/* Table Section */}
       <div className="w-full overflow-hidden rounded-[12px] border border-[#ececed] bg-white shadow-3xs">
