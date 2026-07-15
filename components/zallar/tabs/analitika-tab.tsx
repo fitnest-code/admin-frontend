@@ -6,6 +6,7 @@ import { Check, ChevronDown, Loader2, Pencil, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useGymAnalytics, useUpdateGymAnalytics } from '@/lib/query/gym-query'
+import { useAuthStore } from '@/lib/store/auth-store'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -151,6 +152,10 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
   const [draftFailed, setDraftFailed] = useState('')
   const updateAnalytics = useUpdateGymAnalytics(gymId)
 
+  // Only the system admin (ROLE_ADMIN) may edit analytics overrides — not gym / super admins.
+  const userRole = useAuthStore((s) => s.user?.role)?.toUpperCase()
+  const isAdmin = userRole === 'ROLE_ADMIN' || userRole === 'ADMIN'
+
   useEffect(() => {
     if (!isEditing && data) {
       setDraftProfit((data.totalProfit ?? 0).toString())
@@ -211,7 +216,7 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
         {/* Zal analitikas Section Header */}
         <div className="self-stretch border-b border-[#ececed] flex items-center justify-between pb-2">
           <div className="text-[18px] leading-[28px] font-bold text-black tracking-tight">Zal analitikası</div>
-          {isEditing ? (
+          {!isAdmin ? null : isEditing ? (
             <div className="flex items-center gap-2.5">
               <button
                 type="button"

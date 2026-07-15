@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Calendar, Check, Clock, Minus, Pencil, Plus, ShieldCheck, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCustomerCurrentSubscriptionQuery, useUpdateEntryLimitMutation } from '@/modules/customers/hooks/use-customers-query'
+import { useAuthStore } from '@/lib/store/auth-store'
 import { cn } from '@/lib/utils'
 
 const AZ_MONTHS = [
@@ -45,6 +46,10 @@ export function SubscriptionTab({ userId }: { userId: string }) {
   const [draftRemaining, setDraftRemaining] = useState(0)
   const { data, isLoading, isError } = useCustomerCurrentSubscriptionQuery(userId)
   const updateLimit = useUpdateEntryLimitMutation(userId)
+
+  // Only the system admin (ROLE_ADMIN) may edit the entry limit — not gym / super admins.
+  const userRole = useAuthStore((s) => s.user?.role)?.toUpperCase()
+  const isAdmin = userRole === 'ROLE_ADMIN' || userRole === 'ADMIN'
 
   const serverRemaining = data?.userRemainingLimit ?? 0
 
@@ -128,7 +133,7 @@ export function SubscriptionTab({ userId }: { userId: string }) {
       {/* Container Header */}
       <div className="flex items-center justify-between border-b border-border pb-3.5">
         <h2 className="text-lg font-bold text-foreground tracking-tight">Abunəlik məlumatları</h2>
-        {!isEditing && (
+        {isAdmin && !isEditing && (
           <button
             type="button"
             onClick={handleStartEdit}
