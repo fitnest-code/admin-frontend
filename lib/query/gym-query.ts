@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiGet, apiPost, apiDelete, apiPut } from "@/lib/api/client" 
+import { apiGet, apiPost, apiDelete, apiPut, apiPatch } from "@/lib/api/client"
 import { useI18nStore } from '@/lib/i18n' 
 import { 
   CategoriesResponse, 
@@ -330,6 +330,24 @@ export function useGymAnalytics(
     },
     enabled: !!gymId,
     staleTime: 60 * 1000,
+  })
+}
+
+// 8.1 Analitika xülasə göstəricilərini əl ilə yeniləmək üçün (Admin)
+export interface UpdateGymAnalyticsRequest {
+  totalProfit?: number
+  successfulScans?: number
+  failedScans?: number
+}
+
+export function useUpdateGymAnalytics(gymId: number | string | null | undefined) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (body: UpdateGymAnalyticsRequest) =>
+      apiPatch<GymAnalyticsResponse>(`/admin/gyms/${gymId}/analytics`, body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gym-analytics', gymId ? Number(gymId) : null] })
+    },
   })
 }
 

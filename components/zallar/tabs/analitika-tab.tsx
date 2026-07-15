@@ -2,9 +2,10 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
-import { ChevronDown, Loader2 } from 'lucide-react'
+import { Check, ChevronDown, Loader2, Pencil, X } from 'lucide-react'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { useGymAnalytics } from '@/lib/query/gym-query'
+import { useGymAnalytics, useUpdateGymAnalytics } from '@/lib/query/gym-query'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -143,6 +144,56 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
     pageSize
   })
 
+  // Edit mode for the analytics summary cards (manual override)
+  const [isEditing, setIsEditing] = useState(false)
+  const [draftProfit, setDraftProfit] = useState('')
+  const [draftSuccessful, setDraftSuccessful] = useState('')
+  const [draftFailed, setDraftFailed] = useState('')
+  const updateAnalytics = useUpdateGymAnalytics(gymId)
+
+  useEffect(() => {
+    if (!isEditing && data) {
+      setDraftProfit((data.totalProfit ?? 0).toString())
+      setDraftSuccessful((data.successfulScans ?? 0).toString())
+      setDraftFailed((data.failedScans ?? 0).toString())
+    }
+  }, [data, isEditing])
+
+  const handleStartEdit = () => {
+    setDraftProfit((data?.totalProfit ?? 0).toString())
+    setDraftSuccessful((data?.successfulScans ?? 0).toString())
+    setDraftFailed((data?.failedScans ?? 0).toString())
+    setIsEditing(true)
+  }
+
+  const handleCancelEdit = () => setIsEditing(false)
+
+  const handleSaveAnalytics = () => {
+    const profit = Number(draftProfit)
+    const successful = Number(draftSuccessful)
+    const failed = Number(draftFailed)
+    if ([profit, successful, failed].some((n) => !Number.isFinite(n) || n < 0)) {
+      toast.error('Dəyərlər mənfi olmayan rəqəm olmalıdır')
+      return
+    }
+    updateAnalytics.mutate(
+      {
+        totalProfit: profit,
+        successfulScans: Math.round(successful),
+        failedScans: Math.round(failed),
+      },
+      {
+        onSuccess: () => {
+          toast.success('Analitika göstəriciləri yeniləndi')
+          setIsEditing(false)
+        },
+        onError: (err) => {
+          toast.error(err instanceof Error ? err.message : 'Göstəricilər yenilənmədi')
+        },
+      },
+    )
+  }
+
   const historyItems = data?.history?.items || []
   
   const filteredItems = query 
@@ -160,6 +211,36 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
         {/* Zal analitikas Section Header */}
         <div className="self-stretch border-b border-[#ececed] flex items-center justify-between pb-2">
           <div className="text-[18px] leading-[28px] font-bold text-black tracking-tight">Zal analitikası</div>
+          {isEditing ? (
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                disabled={updateAnalytics.isPending}
+                className="flex items-center gap-1.5 rounded-lg border border-[#ececed] bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-50"
+              >
+                <X size={14} /> Ləğv et
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveAnalytics}
+                disabled={updateAnalytics.isPending}
+                className="flex items-center gap-1.5 rounded-lg bg-[#00B4CC] px-3.5 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#009DB3] disabled:opacity-50"
+              >
+                {updateAnalytics.isPending ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                {updateAnalytics.isPending ? 'Yadda saxlanılır...' : 'Yadda saxla'}
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleStartEdit}
+              disabled={isLoading || !data}
+              className="flex items-center gap-1.5 rounded-lg border border-[#ececed] bg-white px-3.5 py-2 text-[13px] font-semibold text-black transition-colors hover:border-[#00B4CC] hover:shadow-sm disabled:opacity-50"
+            >
+              <Pencil size={14} /> Düzəliş et
+            </button>
+          )}
         </div>
 
         <div className="self-stretch flex flex-col items-start gap-10">
@@ -320,11 +401,25 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
               <div className="h-12 w-12 rounded-lg bg-[rgba(0,180,204,0.15)] flex items-center justify-center shrink-0">
                 <Image src="/vuesax/linear/dollar-square.png" width={24} height={24} alt="Profit" />
               </div>
-              <div className="flex flex-col items-start justify-center">
+              <div className="flex flex-1 flex-col items-start justify-center">
                 <div className="text-slate-500 font-medium text-xs">Ümumi gəlir</div>
-                <b className="text-[22px] leading-[30px] text-[#001028] font-bold">
-                  {isLoading ? '...' : `${data?.totalProfit?.toFixed(2) || '0.00'} AZN`}
-                </b>
+                {isEditing ? (
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={draftProfit}
+                      onChange={(e) => setDraftProfit(e.target.value)}
+                      className="w-[110px] rounded-md border border-[#00B4CC] bg-white px-2 py-1 text-[18px] font-bold text-[#001028] outline-none focus:ring-2 focus:ring-[#00B4CC]/30"
+                    />
+                    <span className="text-[14px] font-bold text-slate-400">AZN</span>
+                  </div>
+                ) : (
+                  <b className="text-[22px] leading-[30px] text-[#001028] font-bold">
+                    {isLoading ? '...' : `${data?.totalProfit?.toFixed(2) || '0.00'} AZN`}
+                  </b>
+                )}
               </div>
             </div>
 
@@ -333,11 +428,22 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
               <div className="h-12 w-12 rounded-lg bg-[#e7f8f2] flex items-center justify-center shrink-0">
                 <Image src="/QrCode.png" width={24} height={24} alt="Success" />
               </div>
-              <div className="flex flex-col items-start justify-center">
+              <div className="flex flex-1 flex-col items-start justify-center">
                 <div className="text-slate-500 font-medium text-xs">Uğurlu girişlər</div>
-                <b className="text-[22px] leading-[30px] text-black font-bold">
-                  {isLoading ? '...' : data?.successfulScans || 0}
-                </b>
+                {isEditing ? (
+                  <input
+                    type="number"
+                    min={0}
+                    step="1"
+                    value={draftSuccessful}
+                    onChange={(e) => setDraftSuccessful(e.target.value)}
+                    className="w-[90px] rounded-md border border-[#00B4CC] bg-white px-2 py-1 text-[18px] font-bold text-black outline-none focus:ring-2 focus:ring-[#00B4CC]/30"
+                  />
+                ) : (
+                  <b className="text-[22px] leading-[30px] text-black font-bold">
+                    {isLoading ? '...' : data?.successfulScans || 0}
+                  </b>
+                )}
               </div>
             </div>
 
@@ -346,11 +452,22 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
               <div className="h-12 w-12 rounded-lg bg-[#feebef] flex items-center justify-center shrink-0">
                 <Image src="/vuesax/linear/info-circle.png" width={24} height={24} alt="Failed" />
               </div>
-              <div className="flex flex-col items-start justify-center">
+              <div className="flex flex-1 flex-col items-start justify-center">
                 <div className="text-slate-500 font-medium text-xs">Uğursuz girişlər</div>
-                <b className="text-[22px] leading-[30px] text-black font-bold">
-                  {isLoading ? '...' : data?.failedScans || 0}
-                </b>
+                {isEditing ? (
+                  <input
+                    type="number"
+                    min={0}
+                    step="1"
+                    value={draftFailed}
+                    onChange={(e) => setDraftFailed(e.target.value)}
+                    className="w-[90px] rounded-md border border-[#00B4CC] bg-white px-2 py-1 text-[18px] font-bold text-black outline-none focus:ring-2 focus:ring-[#00B4CC]/30"
+                  />
+                ) : (
+                  <b className="text-[22px] leading-[30px] text-black font-bold">
+                    {isLoading ? '...' : data?.failedScans || 0}
+                  </b>
+                )}
               </div>
             </div>
           </div>
