@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { Calendar, Clock, ShieldCheck } from 'lucide-react'
-import { useCustomerCurrentSubscriptionQuery } from '@/modules/customers/hooks/use-customers-query'
+import { useEffect, useState } from 'react'
+import { Calendar, Check, Clock, Minus, Pencil, Plus, ShieldCheck, X } from 'lucide-react'
+import { toast } from 'sonner'
+import { useCustomerCurrentSubscriptionQuery, useUpdateEntryLimitMutation } from '@/modules/customers/hooks/use-customers-query'
 import { cn } from '@/lib/utils'
 
 const AZ_MONTHS = [
@@ -40,7 +41,18 @@ function SkeletonRow() {
 
 export function SubscriptionTab({ userId }: { userId: string }) {
   const [isFrozen, setIsFrozen] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [draftRemaining, setDraftRemaining] = useState(0)
   const { data, isLoading, isError } = useCustomerCurrentSubscriptionQuery(userId)
+  const updateLimit = useUpdateEntryLimitMutation(userId)
+
+  const serverRemaining = data?.userRemainingLimit ?? 0
+
+  useEffect(() => {
+    if (!isEditing) {
+      setDraftRemaining(serverRemaining)
+    }
+  }, [serverRemaining, isEditing])
 
   if (isLoading) {
     return (
@@ -73,13 +85,58 @@ export function SubscriptionTab({ userId }: { userId: string }) {
 
   const effectivePrice = data.discountedPrice < data.price ? data.discountedPrice : data.price
   const daysLeft = getDaysRemaining(data.endDate)
-  const pct = data.totalEntryLimit > 0 ? Math.min(100, Math.max(0, Math.round((data.userRemainingLimit / data.totalEntryLimit) * 100))) : 0
+
+  const displayedRemaining = isEditing ? draftRemaining : serverRemaining
+  const serverTotal = data.totalEntryLimit ?? 0
+  const displayedTotal = Math.max(serverTotal, displayedRemaining)
+  const pct = displayedTotal > 0
+    ? Math.min(100, Math.max(0, Math.round((displayedRemaining / displayedTotal) * 100)))
+    : 0
+  const isDirty = draftRemaining !== serverRemaining
+
+  const handleStartEdit = () => {
+    setDraftRemaining(serverRemaining)
+    setIsEditing(true)
+  }
+
+  const handleCancel = () => {
+    setDraftRemaining(serverRemaining)
+    setIsEditing(false)
+  }
+
+  const handleSave = () => {
+    if (!isDirty) {
+      setIsEditing(false)
+      return
+    }
+    updateLimit.mutate(
+      { remainingLimit: draftRemaining },
+      {
+        onSuccess: () => {
+          toast.success('Giriş limiti yeniləndi')
+          setIsEditing(false)
+        },
+        onError: (err) => {
+          toast.error(err instanceof Error ? err.message : 'Giriş limiti yenilənmədi')
+        },
+      },
+    )
+  }
 
   return (
     <div className="flex flex-col rounded-2xl bg-white border border-border p-7 shadow-xs gap-6 animate-in fade-in-50 duration-300">
       {/* Container Header */}
-      <div className="border-b border-border pb-3.5">
+      <div className="flex items-center justify-between border-b border-border pb-3.5">
         <h2 className="text-lg font-bold text-foreground tracking-tight">Abunəlik məlumatları</h2>
+        {!isEditing && (
+          <button
+            type="button"
+            onClick={handleStartEdit}
+            className="flex items-center gap-1.5 rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-[#FAFAFA] focus:outline-none focus:ring-2 focus:ring-[#00B4CC]/30"
+          >
+            <Pencil size={13} /> Düzəliş et
+          </button>
+        )}
       </div>
 
       {/* Subscription Tier Banner Container */}
@@ -94,7 +151,7 @@ export function SubscriptionTab({ userId }: { userId: string }) {
               {data.packageName || 'Bronze'}
             </h3>
           </div>
-          
+
           {/* Real-time Expiration Counter Indicator */}
           {daysLeft <= 7 && daysLeft >= 0 && (
             <div className="flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600 animate-pulse">
@@ -138,11 +195,37 @@ export function SubscriptionTab({ userId }: { userId: string }) {
         <div className="flex flex-col gap-2.5 border-t border-border/40 pt-4">
           <div className="flex items-center justify-between text-sm">
             <span className="font-medium text-muted-foreground">Qalıq Limit:</span>
-            <strong className="font-bold text-foreground">
-              {data.userRemainingLimit ?? 8}/{data.totalEntryLimit ?? 20}
-            </strong>
+            {isEditing ? (
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setDraftRemaining((v) => Math.max(0, v - 1))}
+                  disabled={draftRemaining <= 0 || updateLimit.isPending}
+                  aria-label="Azalt"
+                  className="flex h-7 w-7 items-center justify-center rounded-lg border border-border bg-white text-foreground transition-colors hover:bg-[#FAFAFA] disabled:cursor-not-allowed disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-[#00B4CC]/30"
+                >
+                  <Minus size={14} />
+                </button>
+                <strong className="min-w-[3.5rem] text-center font-bold text-foreground tabular-nums">
+                  {draftRemaining}/{displayedTotal}
+                </strong>
+                <button
+                  type="button"
+                  onClick={() => setDraftRemaining((v) => v + 1)}
+                  disabled={updateLimit.isPending}
+                  aria-label="Artır"
+                  className="flex h-7 w-7 items-center justify-center rounded-lg border border-border bg-white text-foreground transition-colors hover:bg-[#FAFAFA] disabled:cursor-not-allowed disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-[#00B4CC]/30"
+                >
+                  <Plus size={14} />
+                </button>
+              </div>
+            ) : (
+              <strong className="font-bold text-foreground">
+                {serverRemaining}/{serverTotal}
+              </strong>
+            )}
           </div>
-          
+
           {/* Custom Track */}
           <div className="h-2.5 w-full rounded-full bg-secondary overflow-hidden p-0.5">
             <div
@@ -172,6 +255,28 @@ export function SubscriptionTab({ userId }: { userId: string }) {
             />
           </button>
         </div>
+
+        {/* Edit Actions */}
+        {isEditing && (
+          <div className="flex items-center justify-end gap-3 border-t border-border/40 pt-4">
+            <button
+              type="button"
+              onClick={handleCancel}
+              disabled={updateLimit.isPending}
+              className="flex items-center gap-1.5 rounded-lg border border-border bg-white px-4 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-[#FAFAFA] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-border"
+            >
+              <X size={15} /> Ləğv et
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={updateLimit.isPending || !isDirty}
+              className="flex items-center gap-1.5 rounded-lg bg-[#00B4CC] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#00a2b8] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[#00B4CC]/40"
+            >
+              <Check size={15} /> {updateLimit.isPending ? 'Yadda saxlanılır...' : 'Yadda saxla'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

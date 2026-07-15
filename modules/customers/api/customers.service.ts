@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiDelete } from '@/lib/api/client'
+import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api/client'
 import type {
   CustomerCurrentSubscription,
   CustomerDetailApiResponse,
@@ -33,6 +33,18 @@ export function getUserPaymentHistory(userId: string) {
 
 export function getCustomerCurrentSubscription(userId: string) {
   return apiGet<CustomerCurrentSubscription>(`/api/v1/admin/subscriptions/users/${userId}/current`)
+}
+
+export interface UpdateEntryLimitBody {
+  remainingLimit: number
+  totalLimit?: number
+}
+
+export function updateCustomerEntryLimit(userId: string, body: UpdateEntryLimitBody) {
+  return apiPatch<CustomerCurrentSubscription>(
+    `/api/v1/admin/subscriptions/users/${userId}/current/entry-limit`,
+    body,
+  )
 }
 
 export async function getCustomerById(id: string): Promise<CustomerProfile> {
