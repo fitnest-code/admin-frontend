@@ -422,7 +422,9 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
                       }}
                     >
                       <option value="">Paket seçin</option>
-                      {allPackages?.map(p => (
+                      {allPackages
+                        ?.filter(p => !discounts.some((dOther, oIdx) => oIdx !== idx && String(dOther.packageId) === String(p.id)))
+                        .map(p => (
                         <option key={p.id} value={p.id}>{p.name}</option>
                       ))}
                     </select>

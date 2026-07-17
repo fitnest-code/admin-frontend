@@ -137,15 +137,17 @@ export default function StoreDiscountsTab({
                       sideOffset={4}
                     >
                       <Select.Viewport className="p-1">
-                        {packagesList.map((pkg) => (
-                          <Select.Item
-                            key={pkg.id}
-                            value={String(pkg.id)}
-                            className="flex items-center px-3 py-2 text-sm rounded-lg cursor-pointer outline-none hover:bg-[#00B4CC]/10 data-highlighted:bg-[#00B4CC]/10 text-gray-800"
-                          >
-                            <Select.ItemText>{pkg.name}</Select.ItemText>
-                          </Select.Item>
-                        ))}
+                        {packagesList
+                          .filter((pkg) => !rows.some((rOther) => rOther.id !== row.id && String(rOther.packageId) === String(pkg.id)))
+                          .map((pkg) => (
+                            <Select.Item
+                              key={pkg.id}
+                              value={String(pkg.id)}
+                              className="flex items-center px-3 py-2 text-sm rounded-lg cursor-pointer outline-none hover:bg-[#00B4CC]/10 data-highlighted:bg-[#00B4CC]/10 text-gray-800"
+                            >
+                              <Select.ItemText>{pkg.name}</Select.ItemText>
+                            </Select.Item>
+                          ))}
                       </Select.Viewport>
                     </Select.Content>
                   </Select.Portal>
