@@ -23,10 +23,13 @@ import { format } from 'date-fns'
 import { az } from 'date-fns/locale'
 import { DateRange } from 'react-day-picker'
 import { ChevronDown } from 'lucide-react'
+import { useAuthStore } from '@/lib/store/auth-store'
 
 const LessonHoursTab = () => {
     const t = useT()
     const { id: gymId } = useParams()
+    const userRole = useAuthStore((s) => s.user?.role)?.toUpperCase()
+    const isAdmin = userRole === 'ROLE_ADMIN' || userRole === 'ADMIN'
     const [isAddModalOpen, setIsAddModalOpen] = useState(false)
     const [isRulesModalOpen, setIsRulesModalOpen] = useState(false)
     const [deleteLessonId, setDeleteLessonId] = useState<number | null>(null)
@@ -178,12 +181,14 @@ const LessonHoursTab = () => {
             <div className={styles.header}>
                 <h2 className={styles.title}>{t.lessonHours.title}</h2>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-                    <button 
-                        className={cn(styles.addBtn, "bg-white border border-[#00B4CC] text-[#00B4CC] hover:bg-slate-50")} 
-                        onClick={() => setIsRulesModalOpen(true)}
-                    >
-                        {t.lessonHours.addRulesBtn}
-                    </button>
+                    {isAdmin && (
+                        <button 
+                            className={cn(styles.addBtn, "bg-white border border-[#00B4CC] text-[#00B4CC] hover:bg-slate-50")} 
+                            onClick={() => setIsRulesModalOpen(true)}
+                        >
+                            {t.lessonHours.addRulesBtn}
+                        </button>
+                    )}
                     <button className={styles.addBtn} onClick={() => setIsAddModalOpen(true)}>
                         {t.lessonHours.addBtn}
                     </button>
@@ -542,7 +547,7 @@ const LessonHoursTab = () => {
                     onClose={() => setIsAddModalOpen(false)} 
                 />
             )}
-            {isRulesModalOpen && (
+            {isAdmin && isRulesModalOpen && (
                 <EditGymRulesModal
                     gymId={Number(gymId)}
                     onClose={() => setIsRulesModalOpen(false)}
