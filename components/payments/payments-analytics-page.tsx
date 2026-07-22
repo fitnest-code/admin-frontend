@@ -307,6 +307,43 @@ function DateField({ value }: { value: string }) {
   )
 }
 
+function DateFieldPicker({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value?: Date
+  onChange: (date?: Date) => void
+  placeholder: string
+}) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="flex h-10 sm:h-11 items-center justify-between rounded-lg sm:rounded-xl border border-[#ececed] bg-[#fafafa] px-3.5 text-sm font-medium text-[#101828] cursor-pointer hover:bg-white hover:border-[#00b4cc] transition-colors"
+        >
+          <span>{value ? format(value, 'dd.MM.yyyy') : placeholder}</span>
+          <Calendar size={18} className="text-[#00b4cc] shrink-0 ml-2" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-auto p-2 rounded-xl border-[#e5e7eb] bg-white shadow-xl">
+        <DatePicker
+          mode="single"
+          selected={value}
+          onSelect={(d) => {
+            onChange(d)
+            setOpen(false)
+          }}
+          initialFocus
+        />
+      </PopoverContent>
+    </Popover>
+  )
+}
+
 function SearchField({ placeholder = 'Axtarış' }: { placeholder?: string }) {
   return (
     <input
@@ -755,13 +792,16 @@ function ReportTabContent({
 }
 
 function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
-  const [showFilter, setShowFilter] = useState(true)
+  const [showFilter, setShowFilter] = useState(false)
   const [status, setStatus] = useState(STATUS_OPTIONS[0].value)
   const [kind, setKind] = useState(PAYMENT_KIND_OPTIONS[0].value)
   const [source, setSource] = useState(SOURCE_OPTIONS[0].value)
   const [searchQuery, setSearchQuery] = useState('')
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined)
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined)
   const [expanded, setExpanded] = useState<number | null>(null)
-  const { from, to } = getRangeDateValues(periodRange)
+  const [currentPage, setCurrentPage] = useState(1)
+  const PER_PAGE = 10
 
   const { data: paymentsList, isLoading } = useAdminPaymentsHistory()
 
@@ -778,9 +818,25 @@ function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
         const matchDesc = item.description?.toLowerCase().includes(q)
         if (!matchOwner && !matchRrn && !matchPan && !matchDesc) return false
       }
+      if (startDate && item.occurredAt) {
+        if (new Date(item.occurredAt) < startDate) return false
+      }
+      if (endDate && item.occurredAt) {
+        const end = new Date(endDate)
+        end.setHours(23, 59, 59, 999)
+        if (new Date(item.occurredAt) > end) return false
+      }
       return true
     })
-  }, [rows, kind, status, searchQuery])
+  }, [rows, kind, status, searchQuery, startDate, endDate])
+
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / PER_PAGE))
+  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
+
+  const paginatedRows = useMemo(() => {
+    const start = (currentPage - 1) * PER_PAGE
+    return filteredRows.slice(start, start + PER_PAGE)
+  }, [filteredRows, currentPage])
 
   const totalSum = useMemo(() => {
     return filteredRows.reduce((acc, curr) => acc + (curr.amount || 0), 0)
@@ -798,16 +854,42 @@ function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
             <input
               placeholder="Axtarış"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                setCurrentPage(1)
+              }}
               className="h-10 sm:h-11 rounded-lg sm:rounded-xl border border-[#ececed] bg-[#fafafa] px-3.5 text-sm text-[#101828] outline-none placeholder:text-[#9ca3af] focus:border-[#00b4cc] focus:bg-white transition-all"
             />
-            <DateField value={from} />
-            <DateField value={to} />
-            <SelectFilter value={kind} onChange={setKind} options={PAYMENT_KIND_OPTIONS} />
+            <DateFieldPicker value={startDate} onChange={setStartDate} placeholder="Başlanğıc tarixi" />
+            <DateFieldPicker value={endDate} onChange={setEndDate} placeholder="Bitiş tarixi" />
+            <SelectFilter
+              value={kind}
+              onChange={(v) => {
+                setKind(v)
+                setCurrentPage(1)
+              }}
+              options={PAYMENT_KIND_OPTIONS}
+            />
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <SelectFilter value={status} onChange={setStatus} options={STATUS_OPTIONS} className="w-[220px]" />
-            <SelectFilter value={source} onChange={setSource} options={SOURCE_OPTIONS} className="min-w-[220px]" />
+            <SelectFilter
+              value={status}
+              onChange={(v) => {
+                setStatus(v)
+                setCurrentPage(1)
+              }}
+              options={STATUS_OPTIONS}
+              className="w-[220px]"
+            />
+            <SelectFilter
+              value={source}
+              onChange={(v) => {
+                setSource(v)
+                setCurrentPage(1)
+              }}
+              options={SOURCE_OPTIONS}
+              className="min-w-[220px]"
+            />
             <ApplyButton />
           </div>
         </div>
@@ -837,8 +919,8 @@ function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
               <Loader2 className="animate-spin" size={24} />
               <span>Yüklənir...</span>
             </div>
-          ) : filteredRows.length > 0 ? (
-            filteredRows.map((row) => {
+          ) : paginatedRows.length > 0 ? (
+            paginatedRows.map((row) => {
               const isOpen = expanded === row.paymentId
               const dateStr = row.occurredAt ? format(new Date(row.occurredAt), 'dd.MM.yyyy HH:mm') : '-'
               return (
@@ -902,6 +984,24 @@ function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
           ) : (
             <div className="px-3 py-10 text-center text-[15px] text-[#7a7a7a]">
               Seçilmiş dövr üçün heç bir məlumat tapılmadı.
+            </div>
+          )}
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-1 border-t border-[#ececed] px-4 py-3 bg-white">
+              {pages.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setCurrentPage(p)}
+                  className={cn(
+                    'flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors cursor-pointer',
+                    p === currentPage ? 'bg-[#00b4cc] text-white font-semibold' : 'text-[#4b5563] hover:bg-[#f3f4f6]',
+                  )}
+                >
+                  {p}
+                </button>
+              ))}
             </div>
           )}
 
