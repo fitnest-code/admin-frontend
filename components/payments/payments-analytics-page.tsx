@@ -367,7 +367,10 @@ function generatePathFromValues(values: number[] = [], width = 439, height = 160
   const range = maxVal - minVal
 
   const step = maxVal / 5
-  const yLabels = Array.from({ length: 6 }, (_, i) => ((5 - i) * step).toFixed(1))
+  const yLabels = Array.from({ length: 6 }, (_, i) => {
+    const val = (5 - i) * step
+    return maxVal >= 10 ? Math.round(val).toLocaleString() : val.toFixed(1)
+  })
 
   const points = values.map((val, idx) => {
     const x = values.length === 1 ? width / 2 : (idx / (values.length - 1)) * width
@@ -397,10 +400,10 @@ function ChartGraphic({ withCurve = false, values = [] }: { withCurve?: boolean;
 
   return (
     <div className="mt-6 w-full">
-      <div className="grid grid-cols-[28px_1fr] gap-4 items-stretch">
-        <div className="flex flex-col justify-between py-0.5 text-[16px] font-medium text-[#7d94a0] leading-[24px] select-none">
+      <div className="grid grid-cols-[52px_1fr] gap-3 items-stretch">
+        <div className="flex flex-col justify-between py-0.5 text-[15px] font-medium text-[#7d94a0] leading-[24px] select-none text-right pr-1">
           {yLabels.map((lbl, idx) => (
-            <span key={idx}>{lbl}</span>
+            <span key={idx} className="truncate">{lbl}</span>
           ))}
         </div>
 
@@ -659,7 +662,7 @@ function ReportTabContent({
           </div>
         </div>
 
-        <ChartGraphic withCurve={false} />
+        <ChartGraphic withCurve={true} values={analytics?.paymentTrendPoints ?? []} />
       </section>
 
       {/* 2 Charts Side by Side */}
@@ -676,10 +679,10 @@ function ReportTabContent({
           title={t.paymentsPage.operationLogs}
           value={analyticsLoading ? '...' : t.paymentsPage.operationsShort.replace('{count}', String(opsCount))}
           trend={`${opsTrend >= 0 ? '+' : ''}${opsTrend.toFixed(0)}%`}
-          ops="0"
+          ops={String(opsCount)}
           positive={opsPositive}
           withCurve={true}
-          chartValues={opsCount > 0 ? [opsCount] : []}
+          chartValues={analytics?.operationLogsTrendPoints ?? []}
         />
       </div>
 

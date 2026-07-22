@@ -16,6 +16,8 @@ export interface PaymentsAnalyticsResponse {
   operationLogsCount: number
   operationLogsTrendPct: number
   isOperationLogsPositive: boolean
+  paymentTrendPoints?: number[]
+  operationLogsTrendPoints?: number[]
 }
 
 export interface TransferRequestPayload {
