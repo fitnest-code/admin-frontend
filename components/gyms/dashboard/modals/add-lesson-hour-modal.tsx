@@ -11,7 +11,7 @@ import {
 } from '@/lib/query/gym-query'
 import { CustomCalendar } from '@/components/ui/custom-calendar'
 import { format, parse } from 'date-fns'
-import { Calendar as CalendarIcon, Loader2, Clock, Sparkles } from 'lucide-react'
+import { Calendar as CalendarIcon, Loader2, Clock, Sparkles, Info } from 'lucide-react'
 import { SuccessAnimationModal } from '@/components/ui/success-animation-modal'
 import { useT } from '@/lib/i18n'
 
@@ -259,6 +259,14 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                                 }}
                             />
                         </div>
+                    </div>
+
+                    {/* Informative Hint Banner for Multi-Date Selection */}
+                    <div className="bg-[#00B4CC]/10 border border-[#00B4CC]/20 rounded-xl p-3 text-xs text-[#00B4CC] flex items-center gap-2">
+                        <Info size={16} className="shrink-0 text-[#00B4CC]" />
+                        <span>
+                            {((t.lessonHours as any).multiDateHint || 'Təqvimdə eyni anda bir neçə tarix seçərək toplu dərs saatı yarada bilərsiniz.')}
+                        </span>
                     </div>
 
                     {/* Times */}

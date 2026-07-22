@@ -369,6 +369,7 @@ const ru: TranslationKeys = {
     endDateLabel: "Дата окончания",
     daysOfWeekLabel: "Дни недели для применения",
     totalHoursBadge: "Всего будет создано занятий: {count}",
+    multiDateHint: "Вы можете выбрать несколько дат одновременно в календаре для массового создания занятий.",
     deleteConfirmTitle: "Вы уверены, что хотите удалить?",
     deleteConfirmYes: "Да",
     deleteConfirmCancel: "Отмена",

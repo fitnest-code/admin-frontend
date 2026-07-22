@@ -369,6 +369,7 @@ const en: TranslationKeys = {
     endDateLabel: "End Date",
     daysOfWeekLabel: "Days of week to apply",
     totalHoursBadge: "Total {count} lesson hours will be created",
+    multiDateHint: "You can select multiple dates at once in the calendar to create lesson hours in bulk.",
     deleteConfirmTitle: "Are you sure you want to delete?",
     deleteConfirmYes: "Yes",
     deleteConfirmCancel: "Cancel",

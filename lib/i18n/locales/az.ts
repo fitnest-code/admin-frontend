@@ -378,6 +378,7 @@ const az = {
     endDateLabel: "Bitmə tarixi",
     daysOfWeekLabel: "Tətbiq ediləcək günlər",
     totalHoursBadge: "Toplam {count} dərs saatı yaradılacaq",
+    multiDateHint: "Təqvimdə eyni anda bir neçə tarix seçərək toplu dərs saatı yarada bilərsiniz.",
     deleteConfirmTitle: "Silmək istədiyinizə əminsiniz?",
     deleteConfirmYes: "Bəli",
     deleteConfirmCancel: "Ləğv et",
