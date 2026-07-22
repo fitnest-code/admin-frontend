@@ -223,7 +223,7 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                                 {showCalendar && (
                                     <>
                                         <div className="fixed inset-0 z-40" onClick={() => setShowCalendar(false)} />
-                                        <div className="absolute top-full left-0 z-[60] mt-1">
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 sm:left-0 sm:translate-x-0 z-[60] mt-1 max-w-[90vw]">
                                             <CustomCalendar 
                                                 multiSelect={true}
                                                 selectedDates={selectedDates.map((dStr) => parse(dStr, 'yyyy-MM-dd', new Date()))}
@@ -293,7 +293,7 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                                 {showStartPicker && (
                                     <>
                                         <div className="fixed inset-0 z-40" onClick={() => setShowStartPicker(false)} />
-                                        <div className="absolute top-full left-0 z-[60] mt-1 w-full max-w-[286px] bg-white border border-[#E5E7EB] rounded-xl shadow-xl p-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 sm:left-0 sm:translate-x-0 z-[60] mt-1 w-full max-w-[286px] bg-white border border-[#E5E7EB] rounded-xl shadow-xl p-3 animate-in fade-in slide-in-from-top-1 duration-200">
                                             <TimePicker 
                                                 value={startTime}
                                                 onChange={(val) => {
@@ -327,7 +327,7 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                                 {showEndPicker && (
                                     <>
                                         <div className="fixed inset-0 z-40" onClick={() => setShowEndPicker(false)} />
-                                        <div className="absolute top-full left-0 z-[60] mt-1 w-full max-w-[286px] bg-white border border-[#E5E7EB] rounded-xl shadow-xl p-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 sm:left-0 sm:translate-x-0 z-[60] mt-1 w-full max-w-[286px] bg-white border border-[#E5E7EB] rounded-xl shadow-xl p-3 animate-in fade-in slide-in-from-top-1 duration-200">
                                             <TimePicker 
                                                 value={endTime}
                                                 onChange={(val) => {

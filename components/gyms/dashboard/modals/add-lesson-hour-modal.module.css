@@ -9,66 +9,118 @@
     align-items: center;
     justify-content: center;
     z-index: 1000;
-    padding: 20px;
+    padding: 16px;
+    box-sizing: border-box;
+    overflow-y: auto;
 }
 
 .modal {
     background: #FFFFFF;
     width: 100%;
-    max-width: 700px;
-    border-radius: 24px;
-    padding: 32px;
+    max-width: 680px;
+    max-height: 90vh;
+    max-height: 90dvh;
+    border-radius: 20px;
+    padding: 20px;
     display: flex;
     flex-direction: column;
-    gap: 32px;
-    overflow: visible;
+    gap: 20px;
+    overflow-y: auto;
+    box-sizing: border-box;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+@media (min-width: 640px) {
+    .modal {
+        padding: 28px;
+        border-radius: 24px;
+        gap: 24px;
+    }
 }
 
 .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position: sticky;
+    top: 0;
+    background: #FFFFFF;
+    z-index: 20;
+    padding-bottom: 4px;
 }
 
 .title {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 600;
     color: #101828;
+}
+
+@media (min-width: 640px) {
+    .title {
+        font-size: 24px;
+    }
 }
 
 .closeBtn {
     background: none;
     border: none;
     cursor: pointer;
+    padding: 4px;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+.closeBtn:hover {
+    background-color: #F3F4F6;
 }
 
 .body {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 20px;
 }
 
 .sectionTitle {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
+}
+
+@media (min-width: 640px) {
+    .sectionTitle {
+        font-size: 18px;
+        margin-bottom: 16px;
+    }
 }
 
 .lessonTypesList {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 8px;
+}
+
+@media (min-width: 640px) {
+    .lessonTypesList {
+        gap: 12px;
+    }
 }
 
 .lessonTypeCard {
-    padding: 12px 24px;
+    padding: 10px 18px;
     background: #FAFAFA;
     border: 1px solid #ECECED;
     border-radius: 8px;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
+}
+
+@media (min-width: 640px) {
+    .lessonTypeCard {
+        padding: 12px 24px;
+        font-size: 14px;
+    }
 }
 
 .lessonTypeCard.selected {
@@ -80,24 +132,30 @@
 .trainersList {
     display: flex;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: 12px;
 }
 
 .trainerCard {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 8px;
+    padding: 10px;
     background: #F9FAFB;
     border: 1px solid #E5E7EB;
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s;
-    width: calc(50% - 8px);
+    width: 100%;
     box-sizing: border-box;
     text-align: left;
-    font-size: 16px;
+    font-size: 15px;
     color: #000;
+}
+
+@media (min-width: 640px) {
+    .trainerCard {
+        width: calc(50% - 6px);
+    }
 }
 
 .trainerCard.selected {
@@ -106,11 +164,19 @@
 }
 
 .trainerAvatar {
-    width: 54px;
-    height: 54px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     position: relative;
     overflow: hidden;
+    shrink: 0;
+}
+
+@media (min-width: 640px) {
+    .trainerAvatar {
+        width: 54px;
+        height: 54px;
+    }
 }
 
 .avatarImg {
@@ -125,22 +191,53 @@
     flex-direction: column;
     align-items: flex-start;
     justify-content: center;
+    min-width: 0;
 }
 
 .trainerName {
-    font-size: 16px;
-    line-height: 24px;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 500;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (min-width: 640px) {
+    .trainerName {
+        font-size: 16px;
+        line-height: 24px;
+    }
 }
 
 .trainerRole {
-    font-size: 14px;
-    line-height: 24px;
+    font-size: 12px;
+    line-height: 18px;
     color: #94979C;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (min-width: 640px) {
+    .trainerRole {
+        font-size: 14px;
+        line-height: 24px;
+    }
 }
 
 .row {
     display: flex;
+    flex-direction: column;
     gap: 16px;
+}
+
+@media (min-width: 640px) {
+    .row {
+        flex-direction: row;
+    }
 }
 
 .inputGroup {
@@ -148,26 +245,50 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    min-width: 0;
 }
 
 .label {
-    font-size: 16px;
-    color: #000;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+}
+
+@media (min-width: 640px) {
+    .label {
+        font-size: 16px;
+    }
 }
 
 .input {
     width: 100%;
-    padding: 16px;
+    padding: 12px 14px;
     background: #FAFAFA;
     border: 1px solid #ECECED;
     border-radius: 12px;
-    font-size: 18px;
+    font-size: 15px;
     outline: none;
+    box-sizing: border-box;
+    min-height: 48px;
+}
+
+@media (min-width: 640px) {
+    .input {
+        padding: 14px 16px;
+        font-size: 16px;
+    }
 }
 
 .footer {
     display: flex;
-    gap: 16px;
+    gap: 12px;
+    position: sticky;
+    bottom: 0;
+    background: #FFFFFF;
+    z-index: 20;
+    padding-top: 12px;
+    border-top: 1px solid #F3F4F6;
+    margin-top: 4px;
 }
 
 .cancelBtn {
@@ -175,10 +296,17 @@
     background: #FFFFFF;
     border: 1px solid #00B4CC;
     padding: 12px;
-    border-radius: 10px;
+    border-radius: 12px;
     color: #00B4CC;
     font-weight: 500;
+    font-size: 14px;
     cursor: pointer;
+    transition: background-color 0.2s;
+    min-height: 44px;
+}
+
+.cancelBtn:hover {
+    background-color: rgba(0, 180, 204, 0.05);
 }
 
 .saveBtn {
@@ -187,9 +315,21 @@
     color: #FFFFFF;
     border: none;
     padding: 12px;
-    border-radius: 10px;
+    border-radius: 12px;
     font-weight: 500;
+    font-size: 14px;
     cursor: pointer;
+    transition: background-color 0.2s;
+    min-height: 44px;
+}
+
+.saveBtn:hover {
+    background-color: #009DB3;
+}
+
+.saveBtn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
 }
 
 .emptyText {
@@ -237,11 +377,11 @@
 
 .timePickerItem {
     width: 100%;
-    height: 24px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    font-size: 13px;
     border: none;
     background: transparent;
     cursor: pointer;
@@ -261,51 +401,9 @@
 .timePickerItemActive {
     color: #00B4CC;
     border: 0.5px solid #00B4CC;
-    border-radius: 2px;
+    border-radius: 4px;
     font-weight: 600;
     background-color: rgba(0, 180, 204, 0.04);
-}
-
-@media (max-width: 640px) {
-    .modal {
-        padding: 20px;
-        gap: 20px;
-        border-radius: 16px;
-        max-height: 95vh;
-        overflow-y: auto;
-    }
-    
-    .title {
-        font-size: 20px;
-    }
-    
-    .body {
-        gap: 16px;
-    }
-    
-    .sectionTitle {
-        font-size: 16px;
-        margin-bottom: 12px;
-    }
-    
-    .trainerCard {
-        width: 100% !important;
-    }
-    
-    .row {
-        flex-direction: column;
-        gap: 16px;
-    }
-    
-    .input {
-        padding: 12px;
-        font-size: 16px;
-    }
-    
-    .footer {
-        flex-direction: column;
-        gap: 8px;
-    }
 }
 
 
