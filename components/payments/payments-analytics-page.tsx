@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
+  Loader2,
   X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -16,6 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as DatePicker } from '@/components/ui/calendar'
 import { addMonths, format, getMonth, getYear, setMonth, setYear } from 'date-fns'
 import type { DateRange } from 'react-day-picker'
+import { usePaymentsAnalytics, useRequestTransfer } from '@/lib/query/use-payments-analytics'
 
 const FINANCE_TABS = [
   'Hesabatlıq',
@@ -317,7 +319,7 @@ function StatusPill({ label, color }: { label: string; color: 'red' | 'green' })
 
 function TrendBadge({ value, positive = false }: { value: string; positive?: boolean }) {
   return (
-    <div className="inline-flex items-center gap-2 rounded-[12px] bg-[#00b4cc]/15 px-3 py-1.5 font-['SF_Pro']">
+    <div className="inline-flex items-center gap-2 rounded-[12px] bg-[#00b4cc]/15 px-3 py-1.5">
       <Image
         src={positive ? '/High-Low.svg' : '/trend-down.svg'}
         alt=""
@@ -390,7 +392,7 @@ function PaymentMetricCard({
   withCurve?: boolean
 }) {
   return (
-    <section className="flex-1 w-full rounded-[12px] border border-[#ececed] bg-white p-5 sm:px-7 sm:py-5 flex flex-col justify-between gap-6 font-['SF_Pro']">
+    <section className="flex-1 w-full rounded-[12px] border border-[#ececed] bg-white p-5 sm:px-7 sm:py-5 flex flex-col justify-between gap-6">
       <div className="flex flex-col gap-6">
         <div className="flex items-center pb-1">
           <h3 className="text-[20px] font-semibold leading-[30px] text-black">{title}</h3>
@@ -435,14 +437,29 @@ function ReportTabContent({
   transferAmount: string
   setTransferAmount: (v: string) => void
 }) {
+  const { data: analytics, isLoading: analyticsLoading } = usePaymentsAnalytics()
+  const transferMutation = useRequestTransfer()
   const transferAmountNumber = Number(transferAmount || '0')
   const commission = 0
   const transferNet = Number.isFinite(transferAmountNumber) ? transferAmountNumber : 0
 
+  const accAmount = analytics?.accumulatedAmount ?? 0.88
+  const payAmount = analytics?.totalPaymentsAmount ?? 0
+  const payCount = analytics?.totalPaymentsCount ?? 0
+  const payTrend = analytics?.paymentsTrendPct ?? -100
+  const payPositive = analytics?.isPaymentsPositive ?? false
+  const transAmount = analytics?.totalTransfersAmount ?? 0
+  const transCount = analytics?.totalTransfersCount ?? 0
+  const transTrend = analytics?.transfersTrendPct ?? -100
+  const transPositive = analytics?.isTransfersPositive ?? false
+  const opsCount = analytics?.operationLogsCount ?? 5
+  const opsTrend = analytics?.operationLogsTrendPct ?? 20
+  const opsPositive = analytics?.isOperationLogsPositive ?? true
+
   return (
     <>
       {/* Toplanılan Məbləğ Card */}
-      <section className="w-full rounded-[12px] border border-[#ececed] bg-white px-5 sm:px-7 py-5 flex flex-wrap items-center justify-between gap-5 font-['SF_Pro']">
+      <section className="w-full rounded-[12px] border border-[#ececed] bg-white px-5 sm:px-7 py-5 flex flex-wrap items-center justify-between gap-5">
         <div className="flex items-center gap-3">
           <div className="rounded-[8px] bg-[#00b4cc]/15 p-2.5 flex items-center justify-center shrink-0">
             <Image src="/coin.svg" alt="Coin" width={24} height={24} className="h-6 w-6" />
@@ -451,7 +468,9 @@ function ReportTabContent({
         </div>
 
         <div className="flex flex-wrap items-center gap-6 sm:gap-8">
-          <span className="text-[20px] font-semibold leading-[30px] text-black">0.88 AZN</span>
+          <span className="text-[20px] font-semibold leading-[30px] text-black">
+            {analyticsLoading ? '...' : `${accAmount.toFixed(2)} AZN`}
+          </span>
           <button
             type="button"
             onClick={() => setTransferOpen(true)}
@@ -463,7 +482,7 @@ function ReportTabContent({
       </section>
 
       {/* Ödəniş Chart Section */}
-      <section className="w-full rounded-[12px] border border-[#ececed] bg-white p-5 sm:px-7 sm:py-5 flex flex-col justify-between gap-6 font-['SF_Pro']">
+      <section className="w-full rounded-[12px] border border-[#ececed] bg-white p-5 sm:px-7 sm:py-5 flex flex-col justify-between gap-6">
         <div className="flex flex-col gap-6">
           <div className="flex flex-wrap items-center justify-between gap-4 pb-1">
             <h2 className="text-[20px] font-semibold leading-[30px] text-black">Ödəniş</h2>
@@ -570,10 +589,12 @@ function ReportTabContent({
 
           <div className="flex flex-col gap-1">
             <div className="flex flex-wrap items-center gap-2">
-              <b className="text-[24px] font-bold leading-[36px] text-[#001028]">0.00 AZN</b>
-              <TrendBadge value="-100%" positive={false} />
+              <b className="text-[24px] font-bold leading-[36px] text-[#001028]">
+                {analyticsLoading ? '...' : `${payAmount.toFixed(2)} AZN`}
+              </b>
+              <TrendBadge value={`${payTrend >= 0 ? '+' : ''}${payTrend.toFixed(0)}%`} positive={payPositive} />
             </div>
-            <p className="text-[16px] font-medium leading-[24px] text-[#001028]">Əməliyyatlar: 0</p>
+            <p className="text-[16px] font-medium leading-[24px] text-[#001028]">Əməliyyatlar: {payCount}</p>
           </div>
         </div>
 
@@ -582,8 +603,22 @@ function ReportTabContent({
 
       {/* 2 Charts Side by Side */}
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-        <PaymentMetricCard title="Köçürmələr" value="0.00 AZN" trend="-100%" ops="0" positive={false} withCurve={false} />
-        <PaymentMetricCard title="Əməliyyat Loqoları" value="Əməliyyatlar 5" trend="+20%" ops="0" positive={true} withCurve={true} />
+        <PaymentMetricCard
+          title="Köçürmələr"
+          value={analyticsLoading ? '...' : `${transAmount.toFixed(2)} AZN`}
+          trend={`${transTrend >= 0 ? '+' : ''}${transTrend.toFixed(0)}%`}
+          ops={String(transCount)}
+          positive={transPositive}
+          withCurve={false}
+        />
+        <PaymentMetricCard
+          title="Əməliyyat Loqoları"
+          value={analyticsLoading ? '...' : `Əməliyyatlar ${opsCount}`}
+          trend={`${opsTrend >= 0 ? '+' : ''}${opsTrend.toFixed(0)}%`}
+          ops="0"
+          positive={opsPositive}
+          withCurve={true}
+        />
       </div>
 
       {transferOpen && (
@@ -618,7 +653,22 @@ function ReportTabContent({
             </p>
 
             <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <button type="button" className="h-10 rounded-[10px] border border-[#00b4cc] text-[15px] font-medium text-[#161616] transition-colors hover:bg-[#f0fdff]">
+              <button
+                type="button"
+                disabled={transferMutation.isPending}
+                onClick={async () => {
+                  const amt = Number(transferAmount)
+                  if (!amt || amt <= 0) return
+                  try {
+                    await transferMutation.mutateAsync({ amount: amt })
+                    setTransferOpen(false)
+                  } catch (err) {
+                    // error handled by mutation
+                  }
+                }}
+                className="h-10 rounded-[10px] border border-[#00b4cc] text-[15px] font-medium text-[#161616] transition-colors hover:bg-[#f0fdff] disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {transferMutation.isPending && <Loader2 size={16} className="animate-spin" />}
                 Göndər
               </button>
               <button
