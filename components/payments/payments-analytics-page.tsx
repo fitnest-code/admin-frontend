@@ -196,7 +196,7 @@ function FinanceTabs({ active, onChange }: { active: FinanceTab; onChange: (tab:
   }
 
   return (
-    <div className="w-full flex items-center justify-between gap-0 text-[18px] sm:text-[20px] text-[#7c7c7c] overflow-x-auto">
+    <div className="w-full flex items-center justify-between gap-0 text-sm font-semibold sm:text-base text-[#71717a] border-b border-[#e4e4e7] overflow-x-auto">
       {FINANCE_TABS.map((tab) => {
         const isActive = active === tab
         return (
@@ -205,10 +205,10 @@ function FinanceTabs({ active, onChange }: { active: FinanceTab; onChange: (tab:
             type="button"
             onClick={() => onChange(tab)}
             className={cn(
-              'flex-1 flex items-center justify-center py-2.5 px-3 border-b text-center font-semibold transition-colors shrink-0 sm:shrink',
+              'flex-1 flex items-center justify-center py-2.5 px-3 border-b-2 text-center transition-all shrink-0 sm:shrink cursor-pointer',
               isActive
-                ? 'border-b-2 border-black text-black'
-                : 'border-b border-[#7c7c7c] text-[#7c7c7c] hover:text-black',
+                ? 'border-black text-black font-semibold'
+                : 'border-transparent text-[#71717a] hover:text-black hover:border-[#d4d4d4]',
             )}
           >
             <span className="truncate">{getTabTitle(tab)}</span>
@@ -225,17 +225,17 @@ function FilterToggleButton({ open, onClick }: { open: boolean; onClick: () => v
       type="button"
       onClick={onClick}
       className={cn(
-        'inline-flex h-[48px] items-center gap-2.5 rounded-[12px] px-5 text-[16px] font-medium transition-all duration-300 ease-in-out cursor-pointer select-none',
+        'inline-flex h-10 sm:h-11 items-center gap-2 rounded-lg sm:rounded-xl px-4 text-sm font-semibold transition-all duration-300 ease-in-out cursor-pointer select-none',
         open
-          ? 'bg-gradient-to-r from-[#00b4cc] to-[#009fb4] text-white shadow-lg shadow-[#00b4cc]/30 scale-[1.02] border border-[#00b4cc]'
+          ? 'bg-gradient-to-r from-[#00b4cc] to-[#009fb4] text-white shadow-md shadow-[#00b4cc]/20 scale-[1.01] border border-[#00b4cc]'
           : 'bg-[#fafafa] text-[#001028] border border-[#ececed] hover:bg-[#f0fdff] hover:border-[#00b4cc] hover:text-[#00b4cc]',
       )}
     >
       <Image
         src="/filter.svg"
         alt="Filter"
-        width={20}
-        height={20}
+        width={18}
+        height={18}
         className={cn(
           'transition-transform duration-300 ease-in-out',
           open ? 'brightness-0 invert rotate-180 scale-110' : 'rotate-0 scale-100 opacity-80',
@@ -266,16 +266,16 @@ function SelectFilter({
         <button
           type="button"
           className={cn(
-            'flex h-[60px] items-center justify-between rounded-[12px] border border-[#ececed] bg-[#fafafa] px-3.5 text-[18px] text-[#001028]',
+            'flex h-10 sm:h-11 items-center justify-between rounded-lg sm:rounded-xl border border-[#ececed] bg-[#fafafa] px-3.5 text-sm font-medium text-[#101828]',
             className,
           )}
         >
           <span className="truncate">{selected.label}</span>
-          <ChevronDown size={24} className="shrink-0 text-[#3f4853]" />
+          <ChevronDown size={18} className="shrink-0 text-[#6b7280]" />
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-[320px] rounded-xl border-[#e5e7eb] p-2 sm:w-[380px]">
-        <div className="max-h-[420px] overflow-y-auto">
+        <div className="max-h-[380px] overflow-y-auto">
           {options.map((option) => (
             <button
               key={option.value}
@@ -285,11 +285,11 @@ function SelectFilter({
                 setOpen(false)
               }}
               className={cn(
-                'flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-[15px] text-[#1a1a1a] hover:bg-[#edf8fb]',
-                value === option.value && 'bg-[#edf8fb]',
+                'flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-[#1a1a1a] hover:bg-[#edf8fb]',
+                value === option.value && 'bg-[#edf8fb] font-medium text-[#00b4cc]',
               )}
             >
-              {value === option.value ? <Check size={18} /> : <span className="h-[18px] w-[18px]" />}
+              {value === option.value ? <Check size={16} /> : <span className="h-[16px] w-[16px]" />}
               {option.label}
             </button>
           ))}
@@ -301,7 +301,7 @@ function SelectFilter({
 
 function DateField({ value }: { value: string }) {
   return (
-    <div className="flex h-[60px] items-center rounded-[12px] border border-[#ececed] bg-[#fafafa] px-3.5 text-[18px] text-[#001028]">
+    <div className="flex h-10 sm:h-11 items-center rounded-lg sm:rounded-xl border border-[#ececed] bg-[#fafafa] px-3.5 text-sm font-medium text-[#101828]">
       {value}
     </div>
   )
@@ -311,7 +311,7 @@ function SearchField({ placeholder = 'Axtarış' }: { placeholder?: string }) {
   return (
     <input
       placeholder={placeholder}
-      className="h-[60px] rounded-[12px] border border-[#ececed] bg-[#fafafa] px-3.5 text-[18px] text-[#001028] outline-none placeholder:text-[#001028]"
+      className="h-10 sm:h-11 rounded-lg sm:rounded-xl border border-[#ececed] bg-[#fafafa] px-3.5 text-sm text-[#101828] outline-none placeholder:text-[#9ca3af] focus:border-[#00b4cc] focus:bg-white transition-all"
     />
   )
 }
@@ -320,7 +320,7 @@ function ApplyButton() {
   return (
     <button
       type="button"
-      className="h-[48px] w-[193px] rounded-[10px] bg-[#00b4cc] px-4 text-[16px] font-medium text-white flex items-center justify-center"
+      className="h-10 sm:h-11 px-5 rounded-lg sm:rounded-xl bg-[#00b4cc] text-sm font-semibold text-white hover:bg-[#009fb4] transition-colors flex items-center justify-center cursor-pointer"
     >
       Tətbiq edin
     </button>
@@ -787,34 +787,34 @@ function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
   }, [filteredRows])
 
   return (
-    <section className="w-full rounded-[12px] bg-white border border-[#ececed] p-5 sm:p-[20px_28px] flex flex-col gap-[28px]">
-      <div className="h-[48px] flex items-center justify-between gap-5">
+    <section className="w-full rounded-xl bg-white border border-[#ececed] p-4 sm:p-5 flex flex-col gap-5">
+      <div className="flex items-center justify-between gap-4">
         <FilterToggleButton open={showFilter} onClick={() => setShowFilter((v) => !v)} />
       </div>
 
       {showFilter && (
-        <div className="flex flex-col gap-[20px] text-[18px] text-[#001028]">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[12px]">
+        <div className="flex flex-col gap-3 text-sm text-[#101828]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <input
               placeholder="Axtarış"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-[60px] rounded-[12px] border border-[#ececed] bg-[#fafafa] px-3.5 text-[18px] text-[#001028] outline-none placeholder:text-[#001028]"
+              className="h-10 sm:h-11 rounded-lg sm:rounded-xl border border-[#ececed] bg-[#fafafa] px-3.5 text-sm text-[#101828] outline-none placeholder:text-[#9ca3af] focus:border-[#00b4cc] focus:bg-white transition-all"
             />
             <DateField value={from} />
             <DateField value={to} />
             <SelectFilter value={kind} onChange={setKind} options={PAYMENT_KIND_OPTIONS} />
           </div>
-          <div className="flex flex-wrap items-center gap-[12px]">
-            <SelectFilter value={status} onChange={setStatus} options={STATUS_OPTIONS} className="w-[243px]" />
-            <SelectFilter value={source} onChange={setSource} options={SOURCE_OPTIONS} className="min-w-[250px]" />
+          <div className="flex flex-wrap items-center gap-3">
+            <SelectFilter value={status} onChange={setStatus} options={STATUS_OPTIONS} className="w-[220px]" />
+            <SelectFilter value={source} onChange={setSource} options={SOURCE_OPTIONS} className="min-w-[220px]" />
             <ApplyButton />
           </div>
         </div>
       )}
 
-      <div className="overflow-x-auto">
-        <div className="min-w-[1200px] rounded-[12px] bg-[#00b4cc]/15 p-3.5 text-[16px] font-medium text-[#7c7c7c]">
+      <div className="overflow-x-auto rounded-lg border border-[#ececed]">
+        <div className="min-w-[1200px] bg-[#00b4cc]/15 dark:bg-[#00b4cc]/10 px-4 py-3 text-xs font-bold uppercase text-foreground/80">
           <div className="grid grid-cols-[1.1fr_1fr_1fr_1.6fr_1fr_0.9fr_1.1fr_0.9fr_1.1fr_1fr_1fr_34px] items-center gap-3">
             <span>Kart sahibi</span>
             <span>Ödəniş növü</span>
@@ -831,7 +831,7 @@ function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
           </div>
         </div>
 
-        <div className="min-w-[1200px] border-x border-b border-[#ececed] rounded-b-[12px]">
+        <div className="min-w-[1200px]">
           {isLoading ? (
             <div className="flex items-center justify-center py-12 text-[#00b4cc] gap-2">
               <Loader2 className="animate-spin" size={24} />
