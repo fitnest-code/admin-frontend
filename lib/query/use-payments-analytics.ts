@@ -33,6 +33,21 @@ export interface TransferRequestResponse {
   createdAt: string
 }
 
+export interface PaymentRecordResponse {
+  paymentId: number
+  amount: number
+  currency: string
+  occurredAt?: string
+  cardBrand?: string
+  maskedPan?: string
+  type?: string
+  status?: string
+  failureCode?: string
+  transactionId?: string
+  owner?: string
+  description?: string
+}
+
 export function usePaymentsAnalytics() {
   return useQuery<PaymentsAnalyticsResponse>({
     queryKey: ['admin', 'payments', 'analytics'],
@@ -40,6 +55,16 @@ export function usePaymentsAnalytics() {
       return apiRequest<PaymentsAnalyticsResponse>('/api/v1/admin/reports/analytics')
     },
     staleTime: 60 * 1000,
+  })
+}
+
+export function useAdminPaymentsHistory() {
+  return useQuery<PaymentRecordResponse[]>({
+    queryKey: ['admin', 'payments', 'history'],
+    queryFn: async () => {
+      return apiRequest<PaymentRecordResponse[]>('/api/v1/admin/payments')
+    },
+    staleTime: 30 * 1000,
   })
 }
 
@@ -54,6 +79,7 @@ export function useRequestTransfer() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'payments', 'analytics'] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'payments', 'history'] })
     },
   })
 }

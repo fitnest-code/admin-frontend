@@ -17,7 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as DatePicker } from '@/components/ui/calendar'
 import { addMonths, format, getMonth, getYear, setMonth, setYear } from 'date-fns'
 import type { DateRange } from 'react-day-picker'
-import { usePaymentsAnalytics, useRequestTransfer } from '@/lib/query/use-payments-analytics'
+import { usePaymentsAnalytics, useRequestTransfer, useAdminPaymentsHistory } from '@/lib/query/use-payments-analytics'
 
 const FINANCE_TABS = [
   'Hesabatlıq',
@@ -225,10 +225,22 @@ function FilterToggleButton({ open, onClick }: { open: boolean; onClick: () => v
       type="button"
       onClick={onClick}
       className={cn(
-        'inline-flex h-[48px] items-center gap-2 rounded-[12px] px-4 text-[16px] font-normal transition-colors bg-[#00b4cc] text-white',
+        'inline-flex h-[48px] items-center gap-2.5 rounded-[12px] px-5 text-[16px] font-medium transition-all duration-300 ease-in-out cursor-pointer select-none',
+        open
+          ? 'bg-gradient-to-r from-[#00b4cc] to-[#009fb4] text-white shadow-lg shadow-[#00b4cc]/30 scale-[1.02] border border-[#00b4cc]'
+          : 'bg-[#fafafa] text-[#001028] border border-[#ececed] hover:bg-[#f0fdff] hover:border-[#00b4cc] hover:text-[#00b4cc]',
       )}
     >
-      <Image src="/filter.svg" alt="Filter" width={20} height={20} className="brightness-0 invert" />
+      <Image
+        src="/filter.svg"
+        alt="Filter"
+        width={20}
+        height={20}
+        className={cn(
+          'transition-transform duration-300 ease-in-out',
+          open ? 'brightness-0 invert rotate-180 scale-110' : 'rotate-0 scale-100 opacity-80',
+        )}
+      />
       Filtr
     </button>
   )
@@ -747,8 +759,32 @@ function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
   const [status, setStatus] = useState(STATUS_OPTIONS[0].value)
   const [kind, setKind] = useState(PAYMENT_KIND_OPTIONS[0].value)
   const [source, setSource] = useState(SOURCE_OPTIONS[0].value)
+  const [searchQuery, setSearchQuery] = useState('')
   const [expanded, setExpanded] = useState<number | null>(null)
   const { from, to } = getRangeDateValues(periodRange)
+
+  const { data: paymentsList, isLoading } = useAdminPaymentsHistory()
+
+  const rows = paymentsList ?? []
+  const filteredRows = useMemo(() => {
+    return rows.filter((item) => {
+      if (kind !== 'all' && item.cardBrand && !item.cardBrand.toLowerCase().includes(kind.toLowerCase())) return false
+      if (status !== 'all' && item.status && !item.status.toLowerCase().includes(status.toLowerCase())) return false
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase()
+        const matchOwner = item.owner?.toLowerCase().includes(q)
+        const matchRrn = item.transactionId?.toLowerCase().includes(q)
+        const matchPan = item.maskedPan?.toLowerCase().includes(q)
+        const matchDesc = item.description?.toLowerCase().includes(q)
+        if (!matchOwner && !matchRrn && !matchPan && !matchDesc) return false
+      }
+      return true
+    })
+  }, [rows, kind, status, searchQuery])
+
+  const totalSum = useMemo(() => {
+    return filteredRows.reduce((acc, curr) => acc + (curr.amount || 0), 0)
+  }, [filteredRows])
 
   return (
     <section className="w-full rounded-[12px] bg-white border border-[#ececed] p-5 sm:p-[20px_28px] flex flex-col gap-[28px]">
@@ -759,7 +795,12 @@ function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
       {showFilter && (
         <div className="flex flex-col gap-[20px] text-[18px] text-[#001028]">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[12px]">
-            <SearchField />
+            <input
+              placeholder="Axtarış"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-[60px] rounded-[12px] border border-[#ececed] bg-[#fafafa] px-3.5 text-[18px] text-[#001028] outline-none placeholder:text-[#001028]"
+            />
             <DateField value={from} />
             <DateField value={to} />
             <SelectFilter value={kind} onChange={setKind} options={PAYMENT_KIND_OPTIONS} />
@@ -791,26 +832,32 @@ function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
         </div>
 
         <div className="min-w-[1200px] border-x border-b border-[#ececed] rounded-b-[12px]">
-          {PAYMENT_HISTORY_ROWS.length > 0 ? (
-            PAYMENT_HISTORY_ROWS.map((row) => {
-              const isOpen = expanded === row.id
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12 text-[#00b4cc] gap-2">
+              <Loader2 className="animate-spin" size={24} />
+              <span>Yüklənir...</span>
+            </div>
+          ) : filteredRows.length > 0 ? (
+            filteredRows.map((row) => {
+              const isOpen = expanded === row.paymentId
+              const dateStr = row.occurredAt ? format(new Date(row.occurredAt), 'dd.MM.yyyy HH:mm') : '-'
               return (
-                <div key={row.id}>
+                <div key={row.paymentId}>
                   <div className="grid grid-cols-[1.1fr_1fr_1fr_1.6fr_1fr_0.9fr_1.1fr_0.9fr_1.1fr_1fr_1fr_34px] items-center gap-3 border-b border-[#ececed] px-3.5 py-3.5 text-[15px] text-[#4b5563]">
-                    <span>{row.owner}</span>
-                    <span>{row.paymentType}</span>
-                    <span>{row.method}</span>
-                    <span className="whitespace-pre-line truncate">{row.desc}</span>
-                    <span>{row.rrn}</span>
-                    <span>{row.amount}</span>
-                    <span>{row.date}</span>
+                    <span>{row.owner || 'Fitnest MMC'}</span>
+                    <span>{row.cardBrand || 'Google Pay'}</span>
+                    <span>{row.type || 'API qoşulma'}</span>
+                    <span className="whitespace-pre-line truncate">{row.description || 'Abunəlik Ödənişi'}</span>
+                    <span>{row.transactionId || '-'}</span>
+                    <span>{row.amount ? `${row.amount.toFixed(2)} ${row.currency || 'AZN'}` : '0.00 AZN'}</span>
+                    <span>{dateStr}</span>
                     <span>₼ 0.00</span>
                     <span>₼ 0.00</span>
-                    <span>**** 4127</span>
+                    <span>{row.maskedPan || '**** 4127'}</span>
                     <div>
                       <button
                         type="button"
-                        className="inline-flex items-center gap-1.5 rounded-[8px] border border-[#00b4cc] px-2.5 py-1 text-[13px] font-medium text-[#00b4cc] hover:bg-[#00b4cc]/10 transition-colors"
+                        className="inline-flex items-center gap-1.5 rounded-[8px] border border-[#00b4cc] px-2.5 py-1 text-[13px] font-medium text-[#00b4cc] hover:bg-[#00b4cc]/10 transition-colors cursor-pointer"
                       >
                         <Image src="/Downloadİcon.svg" alt="" width={14} height={14} />
                         Yüklə
@@ -818,8 +865,8 @@ function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
                     </div>
                     <button
                       type="button"
-                      className="flex items-center justify-center text-[#8a8a8a]"
-                      onClick={() => setExpanded(isOpen ? null : row.id)}
+                      className="flex items-center justify-center text-[#8a8a8a] cursor-pointer"
+                      onClick={() => setExpanded(isOpen ? null : row.paymentId)}
                     >
                       {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                     </button>
@@ -828,16 +875,16 @@ function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
                   {isOpen && (
                     <div className="border-b border-[#ececed] bg-[#fafafa] px-5 py-4 text-[14px] text-[#4b5563]">
                       <div className="grid grid-cols-1 gap-2.5 md:max-w-[460px]">
-                        <InfoLine label="RRN" value={row.rrn} />
-                        <InfoLine label="Tarix" value={row.date} />
+                        <InfoLine label="RRN" value={row.transactionId || '-'} />
+                        <InfoLine label="Tarix" value={dateStr} />
                         <InfoLine label="Komissiya" value="₼ 0.00" />
                         <InfoLine label="Əməliyyat komissiyası" value="₼ 0.00" />
-                        <InfoLine label="Kartın nömrəsi" value="**** **** **** 4127" />
+                        <InfoLine label="Kartın nömrəsi" value={row.maskedPan || '**** **** **** 4127'} />
                         <div className="flex items-center justify-between py-1">
                           <span className="text-[13px] text-[#4b5563]">Ödəniş qəbzi</span>
                           <button
                             type="button"
-                            className="inline-flex items-center gap-1.5 rounded-[8px] border border-[#00b4cc] px-3 py-1 text-[13px] font-medium text-[#00b4cc] hover:bg-[#00b4cc]/10 transition-colors"
+                            className="inline-flex items-center gap-1.5 rounded-[8px] border border-[#00b4cc] px-3 py-1 text-[13px] font-medium text-[#00b4cc] hover:bg-[#00b4cc]/10 transition-colors cursor-pointer"
                           >
                             <Image src="/Downloadİcon.svg" alt="" width={14} height={14} />
                             Yüklə
@@ -847,12 +894,6 @@ function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
                         <InfoLine label="Operator" value="-//-" />
                         <InfoLine label="Ödəniş mənbəyi" value="-//-" />
                       </div>
-                      <button
-                        type="button"
-                        className="mt-4 h-9 rounded-[10px] border border-[#00b4cc] px-4 text-[14px] font-medium text-[#00b4cc] hover:bg-[#f0fdff] transition-colors"
-                      >
-                        Geri qaytar
-                      </button>
                     </div>
                   )}
                 </div>
@@ -865,7 +906,7 @@ function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
           )}
 
           <div className="flex items-center justify-end px-4 py-3 text-[18px] font-medium text-[#001028]">
-            Cəmi: 0.00 AZN
+            Cəmi: {totalSum.toFixed(2)} AZN
           </div>
         </div>
       </div>
