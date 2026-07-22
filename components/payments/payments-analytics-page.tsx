@@ -794,6 +794,19 @@ function ReportTabContent({
   )
 }
 
+function getPaginationPages(currentPage: number, totalPages: number): (number | 'ellipsis')[] {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1)
+  }
+  if (currentPage <= 4) {
+    return [1, 2, 3, 4, 5, 'ellipsis', totalPages]
+  }
+  if (currentPage >= totalPages - 3) {
+    return [1, 'ellipsis', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages]
+  }
+  return [1, 'ellipsis', currentPage - 1, currentPage, currentPage + 1, 'ellipsis', totalPages]
+}
+
 function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
   const [showFilter, setShowFilter] = useState(false)
   const [status, setStatus] = useState(STATUS_OPTIONS[0].value)
@@ -806,8 +819,8 @@ function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
   const [currentPage, setCurrentPage] = useState(1)
   const PER_PAGE = 10
 
-  const initialWidths = useMemo(() => [140, 120, 130, 170, 130, 110, 140, 110, 150, 130, 120, 40], [])
-  const minWidths = useMemo(() => [100, 90, 90, 120, 90, 80, 100, 80, 100, 90, 90, 40], [])
+  const initialWidths = useMemo(() => [140, 120, 130, 170, 130, 110, 140, 110, 150, 130, 40], [])
+  const minWidths = useMemo(() => [100, 90, 90, 120, 90, 80, 100, 80, 100, 90, 40], [])
   const { colWidths, tableRef, handleMouseDown } = useResizableColumns(initialWidths, minWidths)
 
   const headers = [
@@ -821,7 +834,6 @@ function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
     'Komissiya ↑',
     'Əməliyyat Komissiyası ↑',
     'Kartın nömrəsi',
-    'Ödəniş qəbzi',
   ]
 
   const { data: paymentsList, isLoading } = useAdminPaymentsHistory()
@@ -852,7 +864,7 @@ function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
   }, [rows, kind, status, searchQuery, startDate, endDate])
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / PER_PAGE))
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
+  const paginationPages = useMemo(() => getPaginationPages(currentPage, totalPages), [currentPage, totalPages])
 
   const paginatedRows = useMemo(() => {
     const start = (currentPage - 1) * PER_PAGE
@@ -917,7 +929,7 @@ function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
       )}
 
       <div className="overflow-x-auto rounded-lg border border-[#ececed] bg-white shadow-sm">
-        <table ref={tableRef} className="w-full border-separate border-spacing-0" style={{ tableLayout: 'fixed', minWidth: '1400px' }}>
+        <table ref={tableRef} className="w-full border-separate border-spacing-0" style={{ tableLayout: 'fixed', minWidth: '1300px' }}>
           <colgroup>
             {colWidths.map((w, i) => (
               <col key={i} style={{ width: `${w}px` }} />
@@ -942,7 +954,7 @@ function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={12} className="py-12 text-center text-[#00b4cc]">
+                <td colSpan={11} className="py-12 text-center text-[#00b4cc]">
                   <div className="flex items-center justify-center gap-2">
                     <Loader2 className="animate-spin" size={24} />
                     <span>Yüklənir...</span>
@@ -970,15 +982,6 @@ function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
                       <td className="px-3.5 py-3.5 truncate">₼ 0.00</td>
                       <td className="px-3.5 py-3.5 truncate">₼ 0.00</td>
                       <td className="px-3.5 py-3.5 truncate">{row.maskedPan || '**** 4127'}</td>
-                      <td className="px-3.5 py-3.5">
-                        <button
-                          type="button"
-                          className="inline-flex items-center gap-1.5 rounded-[8px] border border-[#00b4cc] px-2.5 py-1 text-xs font-medium text-[#00b4cc] hover:bg-[#00b4cc]/10 transition-colors cursor-pointer"
-                        >
-                          <Image src="/Downloadİcon.svg" alt="" width={14} height={14} />
-                          Yüklə
-                        </button>
-                      </td>
                       <td className="px-2 py-3.5 text-center">
                         <button
                           type="button"
@@ -992,7 +995,7 @@ function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
 
                     {isOpen && (
                       <tr>
-                        <td colSpan={12} className="border-b border-[#ececed] bg-[#fafafa] px-5 py-4 text-xs sm:text-sm text-[#4b5563]">
+                        <td colSpan={11} className="border-b border-[#ececed] bg-[#fafafa] px-5 py-4 text-xs sm:text-sm text-[#4b5563]">
                           <div className="grid grid-cols-1 gap-2 md:max-w-[460px]">
                             <InfoLine label="RRN" value={row.transactionId || '-'} />
                             <InfoLine label="Tarix" value={dateStr} />
@@ -1021,7 +1024,7 @@ function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
               })
             ) : (
               <tr>
-                <td colSpan={12} className="px-3 py-10 text-center text-sm text-[#7a7a7a]">
+                <td colSpan={11} className="px-3 py-10 text-center text-sm text-[#7a7a7a]">
                   Seçilmiş dövr üçün heç bir məlumat tapılmadı.
                 </td>
               </tr>
@@ -1030,27 +1033,49 @@ function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
         </table>
       </div>
 
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-1 border-t border-[#ececed] px-4 py-3 bg-white">
-              {pages.map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setCurrentPage(p)}
-                  className={cn(
-                    'flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors cursor-pointer',
-                    p === currentPage ? 'bg-[#00b4cc] text-white font-semibold' : 'text-[#4b5563] hover:bg-[#f3f4f6]',
-                  )}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-1 border-t border-[#ececed] px-4 py-3 bg-white">
+          <button
+            type="button"
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-sm text-[#4b5563] hover:bg-[#f3f4f6] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer mr-1"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          {paginationPages.map((item, idx) =>
+            item === 'ellipsis' ? (
+              <span key={`ellipsis-${idx}`} className="px-2 text-sm text-[#9ca3af] font-bold select-none">
+                ...
+              </span>
+            ) : (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setCurrentPage(item)}
+                className={cn(
+                  'flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors cursor-pointer',
+                  item === currentPage ? 'bg-[#00b4cc] text-white font-semibold' : 'text-[#4b5563] hover:bg-[#f3f4f6]',
+                )}
+              >
+                {item}
+              </button>
+            ),
           )}
+          <button
+            type="button"
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-sm text-[#4b5563] hover:bg-[#f3f4f6] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer ml-1"
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
+      )}
 
-          <div className="flex items-center justify-end px-4 py-3 text-[18px] font-medium text-[#001028]">
-            Cəmi: {totalSum.toFixed(2)} AZN
-          </div>
+      <div className="flex items-center justify-end px-4 py-3 text-[18px] font-medium text-[#001028]">
+        Cəmi: {totalSum.toFixed(2)} AZN
+      </div>
     </section>
   )
 }
