@@ -10,8 +10,8 @@ import {
     useGymLessonTypes
 } from '@/lib/query/gym-query'
 import { CustomCalendar } from '@/components/ui/custom-calendar'
-import { format, parse } from 'date-fns'
-import { Calendar as CalendarIcon, Loader2, Clock } from 'lucide-react'
+import { format, parse, addDays, eachDayOfInterval, endOfMonth, getDay } from 'date-fns'
+import { Calendar as CalendarIcon, Loader2, Clock, Sparkles } from 'lucide-react'
 import { SuccessAnimationModal } from '@/components/ui/success-animation-modal'
 import { useT } from '@/lib/i18n'
 
@@ -20,18 +20,39 @@ interface Props {
     onClose: () => void
 }
 
+type ScheduleMode = 'single' | 'week' | 'month' | 'custom'
+
+const DAYS_OF_WEEK = [
+    { label: 'B.E', value: 1 },
+    { label: 'Ç.Ə', value: 2 },
+    { label: 'Ç.',  value: 3 },
+    { label: 'Ç.A', value: 4 },
+    { label: 'C.',  value: 5 },
+    { label: 'C.Ə', value: 6 },
+    { label: 'B.',  value: 0 },
+]
+
 export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
     const t = useT()
     const [selectedLessonType, setSelectedLessonType] = useState<number | null>(null)
     const [selectedTrainer, setSelectedTrainer] = useState<string | null>(null)
+    
+    // Schedule Mode: single date, whole week, whole month, custom range
+    const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('single')
     const [date, setDate] = useState('')
+    const [endDate, setEndDate] = useState('')
+    const [selectedDaysOfWeek, setSelectedDaysOfWeek] = useState<number[]>([1, 2, 3, 4, 5, 6, 0])
+
     const [showCalendar, setShowCalendar] = useState(false)
+    const [showEndCalendar, setShowEndCalendar] = useState(false)
     const [showStartPicker, setShowStartPicker] = useState(false)
     const [showEndPicker, setShowEndPicker] = useState(false)
     const [startTime, setStartTime] = useState('09:00')
     const [endTime, setEndTime] = useState('10:00')
     const [maxSlots, setMaxSlots] = useState<number | ''>('')
     const [showSuccess, setShowSuccess] = useState(false)
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [submitProgress, setSubmitProgress] = useState<{ current: number; total: number } | null>(null)
 
     // Lesson types come from the gym's categories: every lesson type of every
     // category assigned to the gym is available (ids are global lesson type ids)
@@ -68,13 +89,48 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
         }
     }
 
-    const handleSubmit = () => {
+    const getDatesToCreate = (): string[] => {
+        if (scheduleMode === 'single') {
+            return date ? [date] : []
+        }
+
+        if (!date) return []
+
+        const startObj = parse(date, 'yyyy-MM-dd', new Date())
+        if (isNaN(startObj.getTime())) return []
+
+        let endObj: Date
+        if (scheduleMode === 'week') {
+            endObj = addDays(startObj, 6)
+        } else if (scheduleMode === 'month') {
+            endObj = endOfMonth(startObj)
+        } else if (scheduleMode === 'custom') {
+            if (!endDate) return []
+            endObj = parse(endDate, 'yyyy-MM-dd', new Date())
+            if (isNaN(endObj.getTime()) || endObj < startObj) return []
+        } else {
+            return []
+        }
+
+        try {
+            const intervalDays = eachDayOfInterval({ start: startObj, end: endObj })
+            return intervalDays
+                .filter((d) => selectedDaysOfWeek.includes(getDay(d)))
+                .map((d) => format(d, 'yyyy-MM-dd'))
+        } catch {
+            return []
+        }
+    }
+
+    const datesToCreate = getDatesToCreate()
+
+    const handleSubmit = async () => {
         if (!selectedLessonType) {
             alert('Zəhmət olmasa dərs növünü seçin')
             return
         }
-        if (!date) {
-            alert(t.lessonHours.dateRequiredAlert)
+        if (datesToCreate.length === 0) {
+            alert(t.lessonHours.dateRequiredAlert || 'Zəhmət olmasa tarixi seçin')
             return
         }
         if (maxSlots === '') {
@@ -82,26 +138,37 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
             return
         }
 
-        addMutation.mutate({
-            gymId,
-            payload: {
-                trainerId: selectedTrainer ? Number(selectedTrainer) : null,
-                lessonTypeId: selectedLessonType || null,
-                date,
-                startTime,
-                endTime,
-                maxSlots
+        setIsSubmitting(true)
+        try {
+            for (let i = 0; i < datesToCreate.length; i++) {
+                setSubmitProgress({ current: i + 1, total: datesToCreate.length })
+                await addMutation.mutateAsync({
+                    gymId,
+                    payload: {
+                        trainerId: selectedTrainer ? Number(selectedTrainer) : null,
+                        lessonTypeId: selectedLessonType || null,
+                        date: datesToCreate[i],
+                        startTime,
+                        endTime,
+                        maxSlots
+                    }
+                })
             }
-        }, {
-            onSuccess: () => setShowSuccess(true)
-        })
+            setShowSuccess(true)
+        } catch (err: any) {
+            alert(err?.message || 'Dərs saatı yaradılarkən xəta baş verdi')
+        } finally {
+            setIsSubmitting(false)
+            setSubmitProgress(null)
+        }
     }
 
     const selectedDateObj = date ? parse(date, 'yyyy-MM-dd', new Date()) : undefined
+    const selectedEndDateObj = endDate ? parse(endDate, 'yyyy-MM-dd', new Date()) : undefined
 
     return (
         <div className={styles.overlay} onClick={(e) => e.target === e.currentTarget && onClose()}>
-            <div className={styles.modal}>
+            <div className={cn(styles.modal, "max-h-[92vh] overflow-y-auto")}>
                 <div className={styles.header}>
                     <h2 className={styles.title}>{t.lessonHours.addModalTitle}</h2>
                     <button className={styles.closeBtn} onClick={onClose}>
@@ -171,14 +238,83 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                         </div>
                     </div>
 
+                    {/* Schedule Templates / Date Mode Selector */}
+                    <div className={styles.section}>
+                        <h3 className={styles.sectionTitle}>{(t.lessonHours as any).templateLabel || 'Tarix şablonu'}</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {[
+                                { id: 'single', label: (t.lessonHours as any).modeSingle || 'Tək gün' },
+                                { id: 'week', label: (t.lessonHours as any).modeWeek || 'Bütöv həftə (7 gün)' },
+                                { id: 'month', label: (t.lessonHours as any).modeMonth || 'Bütöv ay' },
+                                { id: 'custom', label: (t.lessonHours as any).modeCustom || 'Xüsusi interval' }
+                            ].map((m) => (
+                                <button
+                                    key={m.id}
+                                    type="button"
+                                    className={cn(
+                                        "px-4 py-2 text-sm font-medium rounded-xl border transition-all cursor-pointer",
+                                        scheduleMode === m.id
+                                            ? "bg-[#00B4CC]/10 border-[#00B4CC] text-[#00B4CC] font-semibold"
+                                            : "bg-[#FAFAFA] border-[#ECECED] text-slate-700 hover:bg-slate-100"
+                                    )}
+                                    onClick={() => setScheduleMode(m.id as ScheduleMode)}
+                                >
+                                    {m.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Days of Week Filter (when template mode is week/month/custom) */}
+                    {scheduleMode !== 'single' && (
+                        <div className={styles.section}>
+                            <h4 className="text-sm font-semibold text-slate-700 mb-2">
+                                {(t.lessonHours as any).daysOfWeekLabel || 'Tətbiq ediləcək günlər'}
+                            </h4>
+                            <div className="flex flex-wrap gap-2">
+                                {DAYS_OF_WEEK.map((day) => {
+                                    const isSelected = selectedDaysOfWeek.includes(day.value);
+                                    return (
+                                        <button
+                                            key={day.value}
+                                            type="button"
+                                            className={cn(
+                                                "w-10 h-10 rounded-lg border text-xs font-bold transition-all flex items-center justify-center cursor-pointer",
+                                                isSelected
+                                                    ? "bg-[#00B4CC] border-[#00B4CC] text-white shadow-sm"
+                                                    : "bg-[#FAFAFA] border-[#ECECED] text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                                            )}
+                                            onClick={() => {
+                                                if (isSelected) {
+                                                    if (selectedDaysOfWeek.length > 1) {
+                                                        setSelectedDaysOfWeek(selectedDaysOfWeek.filter((d) => d !== day.value));
+                                                    }
+                                                } else {
+                                                    setSelectedDaysOfWeek([...selectedDaysOfWeek, day.value]);
+                                                }
+                                            }}
+                                        >
+                                            {day.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Date and Slots */}
-                    <div className={cn(styles.row, "relative", showCalendar ? "z-30" : "z-20")}>
+                    <div className={cn(styles.row, "relative", (showCalendar || showEndCalendar) ? "z-30" : "z-20")}>
                         <div className={cn(styles.inputGroup, "relative")}>
-                            <label className={styles.label}>{t.lessonHours.date}</label>
+                            <label className={styles.label}>
+                                {scheduleMode === 'single'
+                                    ? t.lessonHours.date
+                                    : (t.lessonHours as any).startDateLabel || 'Başlama tarixi'}
+                            </label>
                             <div className="relative">
                                 <button 
                                     onClick={() => {
                                         setShowCalendar(!showCalendar);
+                                        setShowEndCalendar(false);
                                         setShowStartPicker(false);
                                         setShowEndPicker(false);
                                     }}
@@ -210,6 +346,51 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                                 )}
                             </div>
                         </div>
+
+                        {/* End Date (Only for Custom Interval) */}
+                        {scheduleMode === 'custom' && (
+                            <div className={cn(styles.inputGroup, "relative")}>
+                                <label className={styles.label}>
+                                    {(t.lessonHours as any).endDateLabel || 'Bitmə tarixi'}
+                                </label>
+                                <div className="relative">
+                                    <button 
+                                        onClick={() => {
+                                            setShowEndCalendar(!showEndCalendar);
+                                            setShowCalendar(false);
+                                            setShowStartPicker(false);
+                                            setShowEndPicker(false);
+                                        }}
+                                        className={cn(
+                                            styles.input,
+                                            "flex items-center justify-between gap-2 text-left bg-white"
+                                        )}
+                                    >
+                                        <span className={cn(!endDate && "text-slate-400")}>
+                                            {endDate ? format(selectedEndDateObj!, 'dd.MM.yyyy') : t.lessonHours.datePlaceholder}
+                                        </span>
+                                        <CalendarIcon size={18} className="text-slate-400" />
+                                    </button>
+
+                                    {showEndCalendar && (
+                                        <>
+                                            <div className="fixed inset-0 z-40" onClick={() => setShowEndCalendar(false)} />
+                                            <div className="absolute top-full left-0 z-[60] mt-1">
+                                                <CustomCalendar 
+                                                    selectedDate={selectedEndDateObj}
+                                                    onSelect={(d) => {
+                                                        setEndDate(format(d, 'yyyy-MM-dd'))
+                                                        setShowEndCalendar(false)
+                                                    }}
+                                                    onClose={() => setShowEndCalendar(false)}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
                         <div className={styles.inputGroup}>
                             <label className={styles.label}>{t.lessonHours.places} ( max. 12 )</label>
                             <input 
@@ -242,6 +423,7 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                                         setShowStartPicker(!showStartPicker);
                                         setShowEndPicker(false);
                                         setShowCalendar(false);
+                                        setShowEndCalendar(false);
                                     }}
                                     className={cn(
                                         styles.input,
@@ -276,6 +458,7 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                                         setShowEndPicker(!showEndPicker);
                                         setShowStartPicker(false);
                                         setShowCalendar(false);
+                                        setShowEndCalendar(false);
                                     }}
                                     className={cn(
                                         styles.input,
@@ -302,12 +485,26 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                             </div>
                         </div>
                     </div>
+
+                    {/* Live Preview Badge for Bulk Creation */}
+                    {scheduleMode !== 'single' && datesToCreate.length > 0 && (
+                        <div className="bg-[#00B4CC]/10 border border-[#00B4CC]/30 rounded-xl p-3 text-sm text-[#00B4CC] font-medium flex items-center gap-2">
+                            <Sparkles size={16} className="shrink-0" />
+                            <span>
+                                {((t.lessonHours as any).totalHoursBadge || 'Toplam {count} dərs saatı yaradılacaq').replace('{count}', String(datesToCreate.length))}
+                            </span>
+                        </div>
+                    )}
                 </div>
 
                 <div className={styles.footer}>
-                    <button className={styles.cancelBtn} onClick={onClose}>{t.lessonHours.cancelBtn}</button>
-                    <button className={styles.saveBtn} onClick={handleSubmit}>
-                        {addMutation.isPending ? t.lessonHours.waiting : t.lessonHours.saveBtn}
+                    <button className={styles.cancelBtn} onClick={onClose} disabled={isSubmitting}>
+                        {t.lessonHours.cancelBtn}
+                    </button>
+                    <button className={styles.saveBtn} onClick={handleSubmit} disabled={isSubmitting}>
+                        {isSubmitting
+                            ? `Yaradılır (${submitProgress?.current}/${submitProgress?.total})...`
+                            : t.lessonHours.saveBtn}
                     </button>
                 </div>
             </div>
