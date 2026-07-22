@@ -23,7 +23,7 @@ const FINANCE_TABS = [
   'Hesabatlıq',
   'Ödəniş tarixçəsi',
   'Köçürmələrin tarixçəsi',
-  'Əməyiyyat loqları',
+  'Əməliyyat loqları',
   'Balans tarixçəsi',
 ] as const
 
@@ -186,7 +186,7 @@ function FinanceTabs({ active, onChange }: { active: FinanceTab; onChange: (tab:
         return t.paymentsPage.tabs.paymentHistory
       case 'Köçürmələrin tarixçəsi':
         return t.paymentsPage.tabs.transferHistory
-      case 'Əməyiyyat loqları':
+      case 'Əməliyyat loqları':
         return t.paymentsPage.tabs.operationLogs
       case 'Balans tarixçəsi':
         return t.paymentsPage.tabs.balanceHistory
@@ -1087,7 +1087,7 @@ export function PaymentsAnalyticsPage() {
 
       {activeTab === 'Ödəniş tarixçəsi' && <PaymentHistoryTab periodRange={periodRange} />}
       {activeTab === 'Köçürmələrin tarixçəsi' && <TransferHistoryTab periodRange={periodRange} />}
-      {activeTab === 'Əməyiyyat loqları' && <OperationLogsTab periodRange={periodRange} />}
+      {activeTab === 'Əməliyyat loqları' && <OperationLogsTab periodRange={periodRange} />}
       {activeTab === 'Balans tarixçəsi' && <BalanceHistoryTab periodRange={periodRange} />}
     </div>
   )
