@@ -379,24 +379,24 @@ function StatusPill({ label, color }: { label: string; color: 'red' | 'green' })
 
 function TrendBadge({ value, positive = false }: { value: string; positive?: boolean }) {
   return (
-    <div className="inline-flex items-center gap-2 rounded-[12px] bg-[#00b4cc]/15 px-3 py-1.5">
+    <div className="inline-flex items-center gap-1.5 rounded-md bg-[#00b4cc]/15 px-2 py-0.5">
       <Image
         src={positive ? '/High-Low.svg' : '/trend-down.svg'}
         alt=""
-        width={16}
-        height={16}
-        className="h-4 w-4 shrink-0"
+        width={14}
+        height={14}
+        className="h-3.5 w-3.5 shrink-0"
       />
-      <span className="text-[16px] font-medium leading-[24px] text-black">{value}</span>
+      <span className="text-xs font-medium text-[#101828]">{value}</span>
     </div>
   )
 }
 
-function generatePathFromValues(values: number[] = [], width = 439, height = 160) {
+function generatePathFromValues(values: number[] = [], width = 439, height = 110) {
   if (!values || values.length === 0 || values.every((v) => v === 0)) {
     return {
       pathD: `M 0 ${height} L ${width} ${height}`,
-      areaD: `M 0 ${height} L ${width} ${height} L ${width} 171.5 L 0 171.5 Z`,
+      areaD: `M 0 ${height} L ${width} ${height} L ${width} ${height} L 0 ${height} Z`,
       yLabels: ['1.0', '0.8', '0.6', '0.4', '0.2', '0'],
     }
   }
@@ -414,7 +414,7 @@ function generatePathFromValues(values: number[] = [], width = 439, height = 160
   const points = values.map((val, idx) => {
     const x = values.length === 1 ? width / 2 : (idx / (values.length - 1)) * width
     const norm = range === 0 ? 0 : (val - minVal) / range
-    const y = height - norm * (height - 20)
+    const y = height - norm * (height - 15)
     return { x, y }
   })
 
@@ -429,7 +429,7 @@ function generatePathFromValues(values: number[] = [], width = 439, height = 160
     pathD += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${next.x} ${next.y}`
   }
 
-  const areaD = `${pathD} L ${width} 171.5 L 0 171.5 Z`
+  const areaD = `${pathD} L ${width} ${height} L 0 ${height} Z`
 
   return { pathD, areaD, yLabels }
 }
@@ -438,17 +438,17 @@ function ChartGraphic({ withCurve = false, values = [] }: { withCurve?: boolean;
   const { pathD, areaD, yLabels } = useMemo(() => generatePathFromValues(values), [values])
 
   return (
-    <div className="mt-6 w-full">
-      <div className="grid grid-cols-[52px_1fr] gap-3 items-stretch">
-        <div className="flex flex-col justify-between py-0.5 text-[15px] font-medium text-[#7d94a0] leading-[24px] select-none text-right pr-1">
+    <div className="mt-4 w-full">
+      <div className="grid grid-cols-[44px_1fr] gap-2 items-stretch">
+        <div className="flex flex-col justify-between text-xs font-medium text-[#7d94a0] select-none text-right pr-1">
           {yLabels.map((lbl, idx) => (
             <span key={idx} className="truncate">{lbl}</span>
           ))}
         </div>
 
-        <div className="relative h-[171.5px] w-full flex items-end">
+        <div className="relative h-[110px] w-full flex items-end">
           {withCurve ? (
-            <svg viewBox="0 0 439 171.5" className="h-full w-full" preserveAspectRatio="none">
+            <svg viewBox="0 0 439 110" className="h-full w-full" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#00B4CC" stopOpacity="0.25" />
@@ -460,13 +460,13 @@ function ChartGraphic({ withCurve = false, values = [] }: { withCurve?: boolean;
                 d={pathD}
                 fill="none"
                 stroke="#00B4CC"
-                strokeWidth="4"
+                strokeWidth="3"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
             </svg>
           ) : (
-            <div className="w-full h-[4px] bg-[#00b4cc] rounded-full mb-1" />
+            <div className="w-full h-[3px] bg-[#00b4cc] rounded-full mb-1" />
           )}
         </div>
       </div>
@@ -493,18 +493,18 @@ function PaymentMetricCard({
 }) {
   const t = useT()
   return (
-    <section className="flex-1 w-full rounded-[12px] border border-[#ececed] bg-white p-5 sm:px-7 sm:py-5 flex flex-col justify-between gap-6">
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center pb-1">
-          <h3 className="text-[20px] font-semibold leading-[30px] text-black">{title}</h3>
+    <section className="flex-1 w-full rounded-xl border border-[#ececed] bg-white p-4 sm:p-5 flex flex-col justify-between gap-3">
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center">
+          <h3 className="text-sm font-semibold text-[#101828] sm:text-base">{title}</h3>
         </div>
 
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-0.5">
           <div className="flex flex-wrap items-center gap-2">
-            <b className="text-[24px] font-bold leading-[36px] text-[#001028]">{value}</b>
+            <b className="text-lg sm:text-xl font-bold text-[#001028]">{value}</b>
             <TrendBadge value={trend} positive={positive} />
           </div>
-          <p className="text-[16px] font-medium leading-[24px] text-[#001028]">
+          <p className="text-xs font-medium text-[#6b7280]">
             {t.paymentsPage.operationsCount.replace('{count}', ops)}
           </p>
         </div>
@@ -563,22 +563,22 @@ function ReportTabContent({
   return (
     <>
       {/* Toplanılan Məbləğ Card */}
-      <section className="w-full rounded-[12px] border border-[#ececed] bg-white px-5 sm:px-7 py-5 flex flex-wrap items-center justify-between gap-5">
+      <section className="w-full rounded-xl border border-[#ececed] bg-white p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="rounded-[8px] bg-[#00b4cc]/15 p-2.5 flex items-center justify-center shrink-0">
-            <Image src="/coin.svg" alt="Coin" width={24} height={24} className="h-6 w-6" />
+          <div className="rounded-lg bg-[#00b4cc]/15 p-2 flex items-center justify-center shrink-0">
+            <Image src="/coin.svg" alt="Coin" width={20} height={20} className="h-5 w-5" />
           </div>
-          <h2 className="text-[20px] font-semibold leading-[30px] text-black">{t.paymentsPage.accumulatedAmount}</h2>
+          <h2 className="text-sm font-semibold text-[#101828] sm:text-base">{t.paymentsPage.accumulatedAmount}</h2>
         </div>
 
-        <div className="flex flex-wrap items-center gap-6 sm:gap-8">
-          <span className="text-[20px] font-semibold leading-[30px] text-black">
+        <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+          <span className="text-lg sm:text-xl font-bold text-[#101828]">
             {analyticsLoading ? '...' : `${accAmount.toFixed(2)} AZN`}
           </span>
           <button
             type="button"
             onClick={() => setTransferOpen(true)}
-            className="h-[36px] min-w-[141px] rounded-[12px] bg-[#00b4cc] px-4 text-[14px] font-normal leading-[18px] text-[#fafafa] flex items-center justify-center transition-colors hover:bg-[#009fb4] cursor-pointer"
+            className="h-9 rounded-lg bg-[#00b4cc] px-4 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-[#009fb4] cursor-pointer"
           >
             {t.paymentsPage.transferRequest}
           </button>
@@ -586,38 +586,38 @@ function ReportTabContent({
       </section>
 
       {/* Ödəniş Chart Section */}
-      <section className="w-full rounded-[12px] border border-[#ececed] bg-white p-5 sm:px-7 sm:py-5 flex flex-col justify-between gap-6">
-        <div className="flex flex-col gap-6">
-          <div className="flex flex-wrap items-center justify-between gap-4 pb-1">
-            <h2 className="text-[20px] font-semibold leading-[30px] text-black">{t.paymentsPage.payment}</h2>
-            <div className="flex items-center gap-4">
+      <section className="w-full rounded-xl border border-[#ececed] bg-white p-4 sm:p-5 flex flex-col justify-between gap-3">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-1">
+            <h2 className="text-sm font-semibold text-[#101828] sm:text-base">{t.paymentsPage.payment}</h2>
+            <div className="flex items-center gap-3">
               <Popover open={periodOpen} onOpenChange={setPeriodOpen}>
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className="flex h-9 min-w-[210px] items-center gap-2 rounded-[10px] border border-[#cecfd2] px-3 text-[13px] font-normal leading-none text-[#191919]"
+                    className="flex h-8 sm:h-9 items-center gap-2 rounded-lg border border-[#ececed] bg-[#fafafa] px-3 text-xs sm:text-sm font-medium text-[#3f3f46] hover:bg-white transition-colors cursor-pointer"
                   >
-                    <Calendar size={14} className="shrink-0 text-[#555]" />
+                    <Calendar size={14} className="shrink-0 text-[#00b4cc]" />
                     <span className="flex-1 text-left">{formatPeriodLabel(periodRange)}</span>
-                    <ChevronDown size={14} className={cn('shrink-0 text-[#555] transition-transform', periodOpen && 'rotate-180')} />
+                    <ChevronDown size={14} className={cn('shrink-0 text-[#71717a] transition-transform', periodOpen && 'rotate-180')} />
                   </button>
                 </PopoverTrigger>
-                <PopoverContent align="end" sideOffset={10} className="w-auto rounded-2xl border-[#d9d9d9] p-0 shadow-xl">
-                  <div className="rounded-2xl bg-white p-3">
+                <PopoverContent align="end" sideOffset={10} className="w-auto rounded-xl border-[#d9d9d9] p-0 shadow-xl">
+                  <div className="rounded-xl bg-white p-3">
                     <div className="mb-2 flex items-center justify-between gap-2 px-2 pt-1">
                       <button
                         type="button"
                         onClick={() => setCalendarMonth(addMonths(calendarMonth, -1))}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-[#f5f5f5]"
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-[#f5f5f5]"
                       >
-                        <ChevronLeft size={18} />
+                        <ChevronLeft size={16} />
                       </button>
 
                       <div className="flex items-center gap-2">
                         <select
                           value={getMonth(calendarMonth)}
                           onChange={(e) => setCalendarMonth(setMonth(calendarMonth, Number(e.target.value)))}
-                          className="h-8 rounded-[10px] border border-[#d9d9d9] bg-white px-2 text-[13px]"
+                          className="h-7 rounded-md border border-[#d9d9d9] bg-white px-2 text-xs"
                         >
                           {MONTHS.map((m, idx) => (
                             <option key={m} value={idx}>
@@ -629,7 +629,7 @@ function ReportTabContent({
                         <select
                           value={getYear(calendarMonth)}
                           onChange={(e) => setCalendarMonth(setYear(calendarMonth, Number(e.target.value)))}
-                          className="h-8 rounded-[10px] border border-[#d9d9d9] bg-white px-2 text-[13px]"
+                          className="h-7 rounded-md border border-[#d9d9d9] bg-white px-2 text-xs"
                         >
                           {yearOptions.map((y) => (
                             <option key={y} value={y}>
@@ -642,9 +642,9 @@ function ReportTabContent({
                       <button
                         type="button"
                         onClick={() => setCalendarMonth(addMonths(calendarMonth, 1))}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-[#f5f5f5]"
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-[#f5f5f5]"
                       >
-                        <ChevronRight size={18} />
+                        <ChevronRight size={16} />
                       </button>
                     </div>
 
@@ -665,7 +665,7 @@ function ReportTabContent({
                         week: 'mt-1',
                         day: 'aspect-square p-0',
                         day_button:
-                          'h-10 w-10 rounded-[10px] text-[16px] font-normal text-[#2b2b2b] hover:bg-[#f5f5f5] data-[selected-single=true]:bg-[#11aec2] data-[selected-single=true]:text-white data-[range-start=true]:bg-[#11aec2] data-[range-start=true]:text-white data-[range-end=true]:bg-[#11aec2] data-[range-end=true]:text-white data-[range-middle=true]:bg-[#efefef] data-[range-middle=true]:text-[#2b2b2b]',
+                          'h-8 w-8 rounded-md text-xs font-normal text-[#2b2b2b] hover:bg-[#f5f5f5] data-[selected-single=true]:bg-[#00b4cc] data-[selected-single=true]:text-white data-[range-start=true]:bg-[#00b4cc] data-[range-start=true]:text-white data-[range-end=true]:bg-[#00b4cc] data-[range-end=true]:text-white data-[range-middle=true]:bg-[#efefef] data-[range-middle=true]:text-[#2b2b2b]',
                         outside: 'text-[#b8b8b8]',
                         today: 'bg-transparent text-[#2b2b2b]',
                       }}
@@ -677,7 +677,7 @@ function ReportTabContent({
                           setPeriodRange(undefined)
                           setPeriodOpen(false)
                         }}
-                        className="text-sm font-medium text-[#00b4cc] hover:opacity-80"
+                        className="text-xs font-medium text-[#00b4cc] hover:opacity-80"
                       >
                         Təmizlə
                       </button>
@@ -688,14 +688,14 @@ function ReportTabContent({
             </div>
           </div>
 
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-0.5">
             <div className="flex flex-wrap items-center gap-2">
-              <b className="text-[24px] font-bold leading-[36px] text-[#001028]">
+              <b className="text-lg sm:text-xl font-bold text-[#001028]">
                 {analyticsLoading ? '...' : `${payAmount.toFixed(2)} AZN`}
               </b>
               <TrendBadge value={`${payTrend >= 0 ? '+' : ''}${payTrend.toFixed(0)}%`} positive={payPositive} />
             </div>
-            <p className="text-[16px] font-medium leading-[24px] text-[#001028]">
+            <p className="text-xs font-medium text-[#6b7280]">
               {t.paymentsPage.operationsCount.replace('{count}', String(payCount))}
             </p>
           </div>
