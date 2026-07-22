@@ -317,40 +317,57 @@ function StatusPill({ label, color }: { label: string; color: 'red' | 'green' })
 
 function TrendBadge({ value, positive = false }: { value: string; positive?: boolean }) {
   return (
-    <div className="inline-flex items-center gap-1 rounded-[10px] bg-[#c6e5eb] px-2 py-1">
-      <Image src={positive ? '/High-Low.svg' : '/trend-down.svg'} alt="" width={12} height={12} className="h-3 w-3" />
-      <span className="text-[12px] font-medium leading-none text-black">{value}</span>
+    <div className="inline-flex items-center gap-2 rounded-[12px] bg-[#00b4cc]/15 px-3 py-1.5 font-['SF_Pro']">
+      <Image
+        src={positive ? '/High-Low.svg' : '/trend-down.svg'}
+        alt=""
+        width={16}
+        height={16}
+        className="h-4 w-4 shrink-0"
+      />
+      <span className="text-[16px] font-medium leading-[24px] text-black">{value}</span>
     </div>
   )
 }
 
-function ChartPlaceholder({ withCurve = false }: { withCurve?: boolean }) {
+function ChartGraphic({ withCurve = false }: { withCurve?: boolean }) {
   return (
-    <div className="mt-4 w-full">
-      <div className="grid grid-cols-[28px_1fr] gap-2">
-        <div className="flex flex-col justify-between text-[11px] leading-[1.1] text-[#607d91]">
-          {AXIS_LABELS.map((label) => (
-            <span key={label}>{label}</span>
-          ))}
+    <div className="mt-6 w-full">
+      <div className="grid grid-cols-[28px_1fr] gap-4 items-stretch">
+        <div className="flex flex-col justify-between py-0.5 text-[16px] font-medium text-[#7d94a0] leading-[24px] select-none">
+          <span>1.0</span>
+          <span>0.8</span>
+          <span>0.6</span>
+          <span>0.4</span>
+          <span>0.2</span>
+          <span>0</span>
         </div>
-        <div className="relative h-[164px]">
+
+        <div className="relative h-[171.5px] w-full flex items-end">
           {withCurve ? (
-            <svg viewBox="0 0 640 220" className="h-full w-full" preserveAspectRatio="none">
+            <svg viewBox="0 0 439 171.5" className="h-full w-full" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#00B4CC" stopOpacity="0.25" />
+                  <stop offset="100%" stopColor="#00B4CC" stopOpacity="0.0" />
+                </linearGradient>
+              </defs>
               <path
-                d="M0 212 C40 212, 75 92, 125 84 C160 80, 170 210, 205 210 C258 210, 286 20, 332 20 C368 20, 350 158, 395 158 C425 158, 430 210, 470 210 L640 210"
-                fill="rgba(0,180,204,0.18)"
+                d="M 0 160 C 40 160, 60 70, 100 60 C 140 50, 160 150, 200 150 C 250 150, 280 20, 330 20 C 370 20, 390 130, 420 130 C 430 130, 435 160, 439 160 L 439 171.5 L 0 171.5 Z"
+                fill="url(#chartGrad)"
               />
               <path
-                d="M0 212 C40 212, 75 92, 125 84 C160 80, 170 210, 205 210 C258 210, 286 20, 332 20 C368 20, 350 158, 395 158 C425 158, 430 210, 470 210 L640 210"
+                d="M 0 160 C 40 160, 60 70, 100 60 C 140 50, 160 150, 200 150 C 250 150, 280 20, 330 20 C 370 20, 390 130, 420 130 C 430 130, 435 160, 439 160"
                 fill="none"
-                stroke="#18c4d8"
-                strokeWidth="6"
+                stroke="#00B4CC"
+                strokeWidth="4"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
             </svg>
-          ) : null}
-          <div className={cn('absolute bottom-0 left-0 h-[4px] w-full bg-[#00b4cc]', withCurve && 'hidden')} />
+          ) : (
+            <div className="w-full h-[4px] bg-[#00b4cc] rounded-full mb-1" />
+          )}
         </div>
       </div>
     </div>
@@ -373,16 +390,22 @@ function PaymentMetricCard({
   withCurve?: boolean
 }) {
   return (
-    <section className="rounded-2xl border border-[#cecfd2] bg-white p-4">
-      <h3 className="text-[16px] font-semibold leading-tight text-black">{title}</h3>
+    <section className="flex-1 w-full rounded-[12px] border border-[#ececed] bg-white p-5 sm:px-7 sm:py-5 flex flex-col justify-between gap-6 font-['SF_Pro']">
+      <div className="flex flex-col gap-6">
+        <div className="flex items-center pb-1">
+          <h3 className="text-[20px] font-semibold leading-[30px] text-black">{title}</h3>
+        </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <p className="text-[20px] font-semibold leading-none text-[#001233]">{value}</p>
-        <TrendBadge value={trend} positive={positive} />
+        <div className="flex flex-col gap-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <b className="text-[24px] font-bold leading-[36px] text-[#001028]">{value}</b>
+            <TrendBadge value={trend} positive={positive} />
+          </div>
+          <p className="text-[16px] font-medium leading-[24px] text-[#001028]">Əməliyyatlar: {ops}</p>
+        </div>
       </div>
 
-      <p className="mt-2 text-[13px] font-medium leading-tight text-[#001233]">Əməliyyatlar: {ops}</p>
-      <ChartPlaceholder withCurve={withCurve} />
+      <ChartGraphic withCurve={withCurve} />
     </section>
   )
 }
@@ -418,142 +441,149 @@ function ReportTabContent({
 
   return (
     <>
-      <section className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#cecfd2] bg-white p-4">
-        <div className="flex items-center gap-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#c6e5eb]">
-            <Image src="/coin.svg" alt="" width={24} height={24} />
+      {/* Toplanılan Məbləğ Card */}
+      <section className="w-full rounded-[12px] border border-[#ececed] bg-white px-5 sm:px-7 py-5 flex flex-wrap items-center justify-between gap-5 font-['SF_Pro']">
+        <div className="flex items-center gap-3">
+          <div className="rounded-[8px] bg-[#00b4cc]/15 p-2.5 flex items-center justify-center shrink-0">
+            <Image src="/coin.svg" alt="Coin" width={24} height={24} className="h-6 w-6" />
           </div>
-          <h2 className="text-[15px] font-semibold text-black">Toplanılan məbləğ</h2>
+          <h2 className="text-[20px] font-semibold leading-[30px] text-black">Toplanılan məbləğ</h2>
         </div>
 
-        <div className="flex items-center gap-4">
-          <p className="text-[15px] font-semibold text-black">0.88 AZN</p>
+        <div className="flex flex-wrap items-center gap-6 sm:gap-8">
+          <span className="text-[20px] font-semibold leading-[30px] text-black">0.88 AZN</span>
           <button
             type="button"
             onClick={() => setTransferOpen(true)}
-            className="h-7 rounded-[10px] bg-[#00b4cc] px-3 text-[11px] font-medium text-white transition-colors hover:bg-[#009fb4]"
+            className="h-[36px] min-w-[141px] rounded-[12px] bg-[#00b4cc] px-4 text-[14px] font-normal leading-[18px] text-[#fafafa] flex items-center justify-center transition-colors hover:bg-[#009fb4] cursor-pointer"
           >
             Köçürmə sorğusu
           </button>
         </div>
       </section>
 
-      <section className="rounded-2xl border border-[#cecfd2] bg-white p-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <h2 className="text-[16px] font-semibold leading-tight text-black">Ödəniş</h2>
-          <div className="flex items-center gap-4">
-            <button type="button" className="h-7 rounded-[10px] border border-[#00b4cc] px-3 text-xs font-medium leading-none text-black">
-              Yenilə
-            </button>
-            <Popover open={periodOpen} onOpenChange={setPeriodOpen}>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  className="flex h-9 min-w-[210px] items-center gap-2 rounded-[10px] border border-[#cecfd2] px-3 text-[13px] font-normal leading-none text-[#191919]"
-                >
-                  <Calendar size={14} className="shrink-0 text-[#555]" />
-                  <span className="flex-1 text-left">{formatPeriodLabel(periodRange)}</span>
-                  <ChevronDown size={14} className={cn('shrink-0 text-[#555] transition-transform', periodOpen && 'rotate-180')} />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent align="end" sideOffset={10} className="w-auto rounded-2xl border-[#d9d9d9] p-0 shadow-xl">
-                <div className="rounded-2xl bg-white p-3">
-                  <div className="mb-2 flex items-center justify-between gap-2 px-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setCalendarMonth(addMonths(calendarMonth, -1))}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-[#f5f5f5]"
-                    >
-                      <ChevronLeft size={18} />
-                    </button>
-
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={getMonth(calendarMonth)}
-                        onChange={(e) => setCalendarMonth(setMonth(calendarMonth, Number(e.target.value)))}
-                        className="h-8 rounded-[10px] border border-[#d9d9d9] bg-white px-2 text-[13px]"
+      {/* Ödəniş Chart Section */}
+      <section className="w-full rounded-[12px] border border-[#ececed] bg-white p-5 sm:px-7 sm:py-5 flex flex-col justify-between gap-6 font-['SF_Pro']">
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-wrap items-center justify-between gap-4 pb-1">
+            <h2 className="text-[20px] font-semibold leading-[30px] text-black">Ödəniş</h2>
+            <div className="flex items-center gap-4">
+              <button type="button" className="h-8 rounded-[10px] border border-[#00b4cc] px-3 text-xs font-medium text-black hover:bg-[#00b4cc]/5 transition-colors">
+                Yenilə
+              </button>
+              <Popover open={periodOpen} onOpenChange={setPeriodOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex h-9 min-w-[210px] items-center gap-2 rounded-[10px] border border-[#cecfd2] px-3 text-[13px] font-normal leading-none text-[#191919]"
+                  >
+                    <Calendar size={14} className="shrink-0 text-[#555]" />
+                    <span className="flex-1 text-left">{formatPeriodLabel(periodRange)}</span>
+                    <ChevronDown size={14} className={cn('shrink-0 text-[#555] transition-transform', periodOpen && 'rotate-180')} />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="end" sideOffset={10} className="w-auto rounded-2xl border-[#d9d9d9] p-0 shadow-xl">
+                  <div className="rounded-2xl bg-white p-3">
+                    <div className="mb-2 flex items-center justify-between gap-2 px-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setCalendarMonth(addMonths(calendarMonth, -1))}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-[#f5f5f5]"
                       >
-                        {MONTHS.map((m, idx) => (
-                          <option key={m} value={idx}>
-                            {m}
-                          </option>
-                        ))}
-                      </select>
+                        <ChevronLeft size={18} />
+                      </button>
 
-                      <select
-                        value={getYear(calendarMonth)}
-                        onChange={(e) => setCalendarMonth(setYear(calendarMonth, Number(e.target.value)))}
-                        className="h-8 rounded-[10px] border border-[#d9d9d9] bg-white px-2 text-[13px]"
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={getMonth(calendarMonth)}
+                          onChange={(e) => setCalendarMonth(setMonth(calendarMonth, Number(e.target.value)))}
+                          className="h-8 rounded-[10px] border border-[#d9d9d9] bg-white px-2 text-[13px]"
+                        >
+                          {MONTHS.map((m, idx) => (
+                            <option key={m} value={idx}>
+                              {m}
+                            </option>
+                          ))}
+                        </select>
+
+                        <select
+                          value={getYear(calendarMonth)}
+                          onChange={(e) => setCalendarMonth(setYear(calendarMonth, Number(e.target.value)))}
+                          className="h-8 rounded-[10px] border border-[#d9d9d9] bg-white px-2 text-[13px]"
+                        >
+                          {yearOptions.map((y) => (
+                            <option key={y} value={y}>
+                              {y}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setCalendarMonth(addMonths(calendarMonth, 1))}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-[#f5f5f5]"
                       >
-                        {yearOptions.map((y) => (
-                          <option key={y} value={y}>
-                            {y}
-                          </option>
-                        ))}
-                      </select>
+                        <ChevronRight size={18} />
+                      </button>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setCalendarMonth(addMonths(calendarMonth, 1))}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-[#f5f5f5]"
-                    >
-                      <ChevronRight size={18} />
-                    </button>
-                  </div>
-
-                  <DatePicker
-                    mode="range"
-                    month={calendarMonth}
-                    onMonthChange={setCalendarMonth}
-                    selected={periodRange}
-                    onSelect={setPeriodRange}
-                    className="bg-white p-2"
-                    classNames={{
-                      months: 'flex flex-col',
-                      month: 'gap-3',
-                      month_caption: 'hidden',
-                      nav: 'hidden',
-                      weekdays: 'mt-1',
-                      weekday: 'text-xs font-normal text-[#7a7a7a]',
-                      week: 'mt-1',
-                      day: 'aspect-square p-0',
-                      day_button:
-                        'h-10 w-10 rounded-[10px] text-[16px] font-normal text-[#2b2b2b] hover:bg-[#f5f5f5] data-[selected-single=true]:bg-[#11aec2] data-[selected-single=true]:text-white data-[range-start=true]:bg-[#11aec2] data-[range-start=true]:text-white data-[range-end=true]:bg-[#11aec2] data-[range-end=true]:text-white data-[range-middle=true]:bg-[#efefef] data-[range-middle=true]:text-[#2b2b2b]',
-                      outside: 'text-[#b8b8b8]',
-                      today: 'bg-transparent text-[#2b2b2b]',
-                    }}
-                  />
-                  <div className="pt-1 pb-2 text-center">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPeriodRange(undefined)
-                        setPeriodOpen(false)
+                    <DatePicker
+                      mode="range"
+                      month={calendarMonth}
+                      onMonthChange={setCalendarMonth}
+                      selected={periodRange}
+                      onSelect={setPeriodRange}
+                      className="bg-white p-2"
+                      classNames={{
+                        months: 'flex flex-col',
+                        month: 'gap-3',
+                        month_caption: 'hidden',
+                        nav: 'hidden',
+                        weekdays: 'mt-1',
+                        weekday: 'text-xs font-normal text-[#7a7a7a]',
+                        week: 'mt-1',
+                        day: 'aspect-square p-0',
+                        day_button:
+                          'h-10 w-10 rounded-[10px] text-[16px] font-normal text-[#2b2b2b] hover:bg-[#f5f5f5] data-[selected-single=true]:bg-[#11aec2] data-[selected-single=true]:text-white data-[range-start=true]:bg-[#11aec2] data-[range-start=true]:text-white data-[range-end=true]:bg-[#11aec2] data-[range-end=true]:text-white data-[range-middle=true]:bg-[#efefef] data-[range-middle=true]:text-[#2b2b2b]',
+                        outside: 'text-[#b8b8b8]',
+                        today: 'bg-transparent text-[#2b2b2b]',
                       }}
-                      className="text-sm font-medium text-[#00b4cc] hover:opacity-80"
-                    >
-                      Təmizlə
-                    </button>
+                    />
+                    <div className="pt-1 pb-2 text-center">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPeriodRange(undefined)
+                          setPeriodOpen(false)
+                        }}
+                        className="text-sm font-medium text-[#00b4cc] hover:opacity-80"
+                      >
+                        Təmizlə
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <b className="text-[24px] font-bold leading-[36px] text-[#001028]">0.00 AZN</b>
+              <TrendBadge value="-100%" positive={false} />
+            </div>
+            <p className="text-[16px] font-medium leading-[24px] text-[#001028]">Əməliyyatlar: 0</p>
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2.5">
-          <p className="text-[22px] font-semibold leading-none text-[#001233]">0.00 AZN</p>
-          <TrendBadge value="-100%" />
-        </div>
-        <p className="mt-2 text-[13px] font-medium leading-tight text-[#001233]">Əməliyyatlar: 0</p>
-
-        <ChartPlaceholder />
+        <ChartGraphic withCurve={false} />
       </section>
 
+      {/* 2 Charts Side by Side */}
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-        <PaymentMetricCard title="Köçürmələr" value="0.00 AZN" trend="-100%" ops="0" />
-        <PaymentMetricCard title="Əməliyyat Loqoları" value="Əməliyyatlar 5" trend="+20%" ops="0" positive withCurve />
+        <PaymentMetricCard title="Köçürmələr" value="0.00 AZN" trend="-100%" ops="0" positive={false} withCurve={false} />
+        <PaymentMetricCard title="Əməliyyat Loqoları" value="Əməliyyatlar 5" trend="+20%" ops="0" positive={true} withCurve={true} />
       </div>
 
       {transferOpen && (
