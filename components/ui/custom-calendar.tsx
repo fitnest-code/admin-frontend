@@ -25,11 +25,14 @@ import { ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
 
 interface Props {
   selectedDate?: Date
-  onSelect: (date: Date) => void
+  selectedDates?: Date[]
+  onSelect?: (date: Date) => void
+  onSelectDates?: (dates: Date[]) => void
   onClose?: () => void
+  multiSelect?: boolean
 }
 
-export function CustomCalendar({ selectedDate, onSelect, onClose }: Props) {
+export function CustomCalendar({ selectedDate, selectedDates = [], onSelect, onSelectDates, onClose, multiSelect }: Props) {
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [showMonthSelect, setShowMonthSelect] = useState(false)
   const [showYearSelect, setShowYearSelect] = useState(false)
@@ -53,6 +56,23 @@ export function CustomCalendar({ selectedDate, onSelect, onClose }: Props) {
   ]
 
   const years = Array.from({ length: 10 }, (_, i) => getYear(new Date()) + i)
+
+  const handleDayClick = (day: Date) => {
+    if (multiSelect || onSelectDates) {
+      const exists = selectedDates.some(d => isSameDay(d, day))
+      let newDates: Date[]
+      if (exists) {
+        newDates = selectedDates.filter(d => !isSameDay(d, day))
+      } else {
+        newDates = [...selectedDates, day]
+      }
+      onSelectDates?.(newDates)
+      onSelect?.(day)
+    } else {
+      onSelect?.(day)
+      onClose?.()
+    }
+  }
 
   return (
     <div className="w-[286px] rounded-[16px] bg-white border border-[#d9d9d9] flex flex-col items-center p-4 isolation-auto shadow-xl font-sans animate-in fade-in zoom-in-95 duration-200">
@@ -147,17 +167,17 @@ export function CustomCalendar({ selectedDate, onSelect, onClose }: Props) {
         {/* Tbody */}
         <div className="grid grid-cols-7 gap-1 mt-2">
           {days.map((day, idx) => {
-            const isSelected = selectedDate && isSameDay(day, selectedDate)
+            const isSelectedInMulti = selectedDates.some(d => isSameDay(d, day))
+            const isSelectedSingle = selectedDate && isSameDay(day, selectedDate)
+            const isSelected = multiSelect || onSelectDates ? isSelectedInMulti : isSelectedSingle
             const isCurrentMonth = isSameMonth(day, monthStart)
             const isToday = isSameDay(day, new Date())
 
             return (
               <button
                 key={idx}
-                onClick={() => {
-                  onSelect(day)
-                  onClose?.()
-                }}
+                type="button"
+                onClick={() => handleDayClick(day)}
                 className={cn(
                   "h-10 w-10 rounded-lg flex items-center justify-center text-[16px] transition-all duration-200 font-inter",
                   !isCurrentMonth ? "text-[#b3b3b3]" : "text-[#1e1e1e]",
@@ -173,6 +193,18 @@ export function CustomCalendar({ selectedDate, onSelect, onClose }: Props) {
             )
           })}
         </div>
+
+        {multiSelect && (
+          <div className="w-full mt-3 pt-2 border-t border-[#ececed] flex justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full h-9 rounded-lg bg-[#00B4CC] text-white text-xs font-semibold hover:bg-[#009db3] transition-colors shadow-sm"
+            >
+              Tətbiq et ({selectedDates.length})
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

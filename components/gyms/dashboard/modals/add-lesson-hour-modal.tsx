@@ -10,7 +10,7 @@ import {
     useGymLessonTypes
 } from '@/lib/query/gym-query'
 import { CustomCalendar } from '@/components/ui/custom-calendar'
-import { format, parse, addDays, eachDayOfInterval, endOfMonth, startOfWeek, endOfWeek, getDay } from 'date-fns'
+import { format, parse } from 'date-fns'
 import { Calendar as CalendarIcon, Loader2, Clock, Sparkles } from 'lucide-react'
 import { SuccessAnimationModal } from '@/components/ui/success-animation-modal'
 import { useT } from '@/lib/i18n'
@@ -20,35 +20,17 @@ interface Props {
     onClose: () => void
 }
 
-type ScheduleMode = 'single' | 'week' | 'month' | 'custom'
-
-const DAYS_OF_WEEK = [
-    { label: 'B.E', value: 1 },
-    { label: 'Ç.Ə', value: 2 },
-    { label: 'Ç.',  value: 3 },
-    { label: 'Ç.A', value: 4 },
-    { label: 'C.',  value: 5 },
-    { label: 'C.Ə', value: 6 },
-    { label: 'B.',  value: 0 },
-]
-
 export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
     const t = useT()
-    const todayObj = new Date()
-    todayObj.setHours(0, 0, 0, 0)
-    const todayStr = format(todayObj, 'yyyy-MM-dd')
+    const todayStr = format(new Date(), 'yyyy-MM-dd')
 
     const [selectedLessonType, setSelectedLessonType] = useState<number | null>(null)
     const [selectedTrainer, setSelectedTrainer] = useState<string | null>(null)
     
-    // Schedule Mode: single date, whole week, whole month, custom range
-    const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('single')
-    const [date, setDate] = useState(todayStr)
-    const [endDate, setEndDate] = useState('')
-    const [selectedDaysOfWeek, setSelectedDaysOfWeek] = useState<number[]>([1, 2, 3, 4, 5, 6, 0])
+    // Multi-select dates array
+    const [selectedDates, setSelectedDates] = useState<string[]>([todayStr])
 
     const [showCalendar, setShowCalendar] = useState(false)
-    const [showEndCalendar, setShowEndCalendar] = useState(false)
     const [showStartPicker, setShowStartPicker] = useState(false)
     const [showEndPicker, setShowEndPicker] = useState(false)
     const [startTime, setStartTime] = useState('09:00')
@@ -58,12 +40,11 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitProgress, setSubmitProgress] = useState<{ current: number; total: number } | null>(null)
 
-    // Lesson types come from the gym's categories: every lesson type of every
-    // category assigned to the gym is available (ids are global lesson type ids)
+    // Lesson types come from the gym's categories
     const { data: lessonTypesData } = useGymLessonTypes(gymId)
     const availableLessonTypes = lessonTypesData || []
 
-    // Fetch all trainers without strict pagination to filter properly client-side
+    // Fetch trainers
     const { data: trainersData, isLoading: trainersLoading } = useGymTrainers(gymId, { 
         page: 1, 
         pageSize: 100 
@@ -83,7 +64,6 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
             setSelectedLessonType(null)
         } else {
             setSelectedLessonType(ltId)
-            // Check if selectedTrainer has this lesson type, otherwise reset
             if (selectedTrainer) {
                 const tr = allTrainers.find((t: any) => String(t.trainer_id || t.id) === String(selectedTrainer))
                 if (!tr || !tr.lessonTypeIds?.includes(ltId)) {
@@ -93,55 +73,12 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
         }
     }
 
-    const currentWeekStart = startOfWeek(todayObj, { weekStartsOn: 1 })
-
-    const getDatesToCreate = (): string[] => {
-        if (scheduleMode === 'single') {
-            return [date || todayStr]
-        }
-
-        let startObj: Date
-        let endObj: Date
-
-        if (scheduleMode === 'week') {
-            startObj = todayObj
-            endObj = endOfWeek(todayObj, { weekStartsOn: 1 })
-        } else if (scheduleMode === 'month') {
-            startObj = todayObj
-            endObj = endOfMonth(todayObj)
-        } else if (scheduleMode === 'custom') {
-            const sStr = date || todayStr
-            startObj = parse(sStr, 'yyyy-MM-dd', new Date())
-            if (isNaN(startObj.getTime())) return []
-            if (!endDate) return []
-            endObj = parse(endDate, 'yyyy-MM-dd', new Date())
-            if (isNaN(endObj.getTime()) || endObj < startObj) return []
-        } else {
-            return []
-        }
-
-        try {
-            const intervalDays = eachDayOfInterval({ start: startObj, end: endObj })
-            return intervalDays
-                .filter((d) => {
-                    const dayStart = new Date(d)
-                    dayStart.setHours(0, 0, 0, 0)
-                    return dayStart >= todayObj && selectedDaysOfWeek.includes(getDay(d))
-                })
-                .map((d) => format(d, 'yyyy-MM-dd'))
-        } catch {
-            return []
-        }
-    }
-
-    const datesToCreate = getDatesToCreate()
-
     const handleSubmit = async () => {
         if (!selectedLessonType) {
             alert('Zəhmət olmasa dərs növünü seçin')
             return
         }
-        if (datesToCreate.length === 0) {
+        if (selectedDates.length === 0) {
             alert(t.lessonHours.dateRequiredAlert || 'Zəhmət olmasa tarixi seçin')
             return
         }
@@ -152,14 +89,14 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
 
         setIsSubmitting(true)
         try {
-            for (let i = 0; i < datesToCreate.length; i++) {
-                setSubmitProgress({ current: i + 1, total: datesToCreate.length })
+            for (let i = 0; i < selectedDates.length; i++) {
+                setSubmitProgress({ current: i + 1, total: selectedDates.length })
                 await addMutation.mutateAsync({
                     gymId,
                     payload: {
                         trainerId: selectedTrainer ? Number(selectedTrainer) : null,
                         lessonTypeId: selectedLessonType || null,
-                        date: datesToCreate[i],
+                        date: selectedDates[i],
                         startTime,
                         endTime,
                         maxSlots
@@ -175,8 +112,18 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
         }
     }
 
-    const selectedDateObj = date ? parse(date, 'yyyy-MM-dd', new Date()) : todayObj
-    const selectedEndDateObj = endDate ? parse(endDate, 'yyyy-MM-dd', new Date()) : undefined
+    const getDateInputLabel = () => {
+        if (selectedDates.length === 0) return t.lessonHours.datePlaceholder || 'Tarix seçin'
+        if (selectedDates.length === 1) {
+            const d = parse(selectedDates[0], 'yyyy-MM-dd', new Date())
+            return isNaN(d.getTime()) ? selectedDates[0] : format(d, 'dd.MM.yyyy')
+        }
+        const sample = selectedDates.slice(0, 3).map((dStr) => {
+            const d = parse(dStr, 'yyyy-MM-dd', new Date())
+            return isNaN(d.getTime()) ? dStr : format(d, 'dd.MM')
+        }).join(', ')
+        return `${selectedDates.length} tarix seçildi (${sample}${selectedDates.length > 3 ? '...' : ''})`
+    }
 
     return (
         <div className={styles.overlay} onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -250,225 +197,47 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                         </div>
                     </div>
 
-                    {/* Schedule Templates / Date Mode Selector */}
-                    <div className={styles.section}>
-                        <h3 className={styles.sectionTitle}>{(t.lessonHours as any).templateLabel || 'Tarix şablonu'}</h3>
-                        <div className="flex flex-wrap gap-2">
-                            {[
-                                { id: 'single', label: (t.lessonHours as any).modeSingle || 'Tək gün' },
-                                { id: 'week', label: (t.lessonHours as any).modeWeek || 'Bütöv həftə' },
-                                { id: 'month', label: (t.lessonHours as any).modeMonth || 'Bütöv ay' },
-                                { id: 'custom', label: (t.lessonHours as any).modeCustom || 'Xüsusi interval' }
-                            ].map((m) => (
-                                <button
-                                    key={m.id}
+                    {/* Date Multi-Select and Slots Row */}
+                    <div className={cn(styles.row, "relative", showCalendar ? "z-30" : "z-20")}>
+                        <div className={cn(styles.inputGroup, "relative")}>
+                            <label className={styles.label}>{t.lessonHours.date}</label>
+                            <div className="relative">
+                                <button 
                                     type="button"
+                                    onClick={() => {
+                                        setShowCalendar(!showCalendar);
+                                        setShowStartPicker(false);
+                                        setShowEndPicker(false);
+                                    }}
                                     className={cn(
-                                        "px-4 py-2 text-sm font-medium rounded-xl border transition-all cursor-pointer",
-                                        scheduleMode === m.id
-                                            ? "bg-[#00B4CC]/10 border-[#00B4CC] text-[#00B4CC] font-semibold"
-                                            : "bg-[#FAFAFA] border-[#ECECED] text-slate-700 hover:bg-slate-100"
+                                        styles.input,
+                                        "flex items-center justify-between gap-2 text-left bg-white"
                                     )}
-                                    onClick={() => setScheduleMode(m.id as ScheduleMode)}
                                 >
-                                    {m.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Days of Week Filter (when template mode is week/month/custom) */}
-                    {scheduleMode !== 'single' && (
-                        <div className={styles.section}>
-                            <h4 className="text-sm font-semibold text-slate-700 mb-2">
-                                {(t.lessonHours as any).daysOfWeekLabel || 'Tətbiq ediləcək günlər'}
-                            </h4>
-                            <div className="flex flex-wrap gap-2">
-                                {DAYS_OF_WEEK.map((day) => {
-                                    const isSelected = selectedDaysOfWeek.includes(day.value);
-                                    
-                                    // In 'week' mode, check if this day in the current week is strictly before today
-                                    const dayDateInCurrentWeek = addDays(currentWeekStart, day.value === 0 ? 6 : day.value - 1);
-                                    dayDateInCurrentWeek.setHours(0, 0, 0, 0);
-                                    const isDisabledInWeekMode = scheduleMode === 'week' && dayDateInCurrentWeek < todayObj;
-
-                                    return (
-                                        <button
-                                            key={day.value}
-                                            type="button"
-                                            disabled={isDisabledInWeekMode}
-                                            title={isDisabledInWeekMode ? 'Cari həftə üçün bu gün artıq keçib' : undefined}
-                                            className={cn(
-                                                "w-10 h-10 rounded-lg border text-xs font-bold transition-all flex items-center justify-center",
-                                                isDisabledInWeekMode
-                                                    ? "opacity-30 cursor-not-allowed bg-slate-100 text-slate-300 border-slate-200"
-                                                    : isSelected
-                                                        ? "bg-[#00B4CC] border-[#00B4CC] text-white shadow-sm cursor-pointer"
-                                                        : "bg-[#FAFAFA] border-[#ECECED] text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
-                                            )}
-                                            onClick={() => {
-                                                if (isDisabledInWeekMode) return;
-                                                if (isSelected) {
-                                                    if (selectedDaysOfWeek.length > 1) {
-                                                        setSelectedDaysOfWeek(selectedDaysOfWeek.filter((d) => d !== day.value));
-                                                    }
-                                                } else {
-                                                    setSelectedDaysOfWeek([...selectedDaysOfWeek, day.value]);
-                                                }
-                                            }}
-                                        >
-                                            {day.label}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Date and Slots Row */}
-                    <div className={cn(styles.row, "relative", (showCalendar || showEndCalendar) ? "z-30" : "z-20")}>
-                        {/* Single Date Picker */}
-                        {scheduleMode === 'single' && (
-                            <div className={cn(styles.inputGroup, "relative")}>
-                                <label className={styles.label}>{t.lessonHours.date}</label>
-                                <div className="relative">
-                                    <button 
-                                        type="button"
-                                        onClick={() => {
-                                            setShowCalendar(!showCalendar);
-                                            setShowEndCalendar(false);
-                                            setShowStartPicker(false);
-                                            setShowEndPicker(false);
-                                        }}
-                                        className={cn(
-                                            styles.input,
-                                            "flex items-center justify-between gap-2 text-left bg-white"
-                                        )}
-                                    >
-                                        <span className={cn(!date && "text-slate-400")}>
-                                            {date ? format(selectedDateObj, 'dd.MM.yyyy') : t.lessonHours.datePlaceholder}
-                                        </span>
-                                        <CalendarIcon size={18} className="text-slate-400" />
-                                    </button>
-
-                                    {showCalendar && (
-                                        <>
-                                            <div className="fixed inset-0 z-40" onClick={() => setShowCalendar(false)} />
-                                            <div className="absolute top-full left-0 z-[60] mt-1">
-                                                <CustomCalendar 
-                                                    selectedDate={selectedDateObj}
-                                                    onSelect={(d) => {
-                                                        setDate(format(d, 'yyyy-MM-dd'))
-                                                        setShowCalendar(false)
-                                                    }}
-                                                    onClose={() => setShowCalendar(false)}
-                                                />
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Custom Date Range Pickers */}
-                        {scheduleMode === 'custom' && (
-                            <>
-                                <div className={cn(styles.inputGroup, "relative")}>
-                                    <label className={styles.label}>{(t.lessonHours as any).startDateLabel || 'Başlama tarixi'}</label>
-                                    <div className="relative">
-                                        <button 
-                                            type="button"
-                                            onClick={() => {
-                                                setShowCalendar(!showCalendar);
-                                                setShowEndCalendar(false);
-                                                setShowStartPicker(false);
-                                                setShowEndPicker(false);
-                                            }}
-                                            className={cn(
-                                                styles.input,
-                                                "flex items-center justify-between gap-2 text-left bg-white"
-                                            )}
-                                        >
-                                            <span className={cn(!date && "text-slate-400")}>
-                                                {date ? format(selectedDateObj, 'dd.MM.yyyy') : t.lessonHours.datePlaceholder}
-                                            </span>
-                                            <CalendarIcon size={18} className="text-slate-400" />
-                                        </button>
-
-                                        {showCalendar && (
-                                            <>
-                                                <div className="fixed inset-0 z-40" onClick={() => setShowCalendar(false)} />
-                                                <div className="absolute top-full left-0 z-[60] mt-1">
-                                                    <CustomCalendar 
-                                                        selectedDate={selectedDateObj}
-                                                        onSelect={(d) => {
-                                                            setDate(format(d, 'yyyy-MM-dd'))
-                                                            setShowCalendar(false)
-                                                        }}
-                                                        onClose={() => setShowCalendar(false)}
-                                                    />
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className={cn(styles.inputGroup, "relative")}>
-                                    <label className={styles.label}>{(t.lessonHours as any).endDateLabel || 'Bitmə tarixi'}</label>
-                                    <div className="relative">
-                                        <button 
-                                            type="button"
-                                            onClick={() => {
-                                                setShowEndCalendar(!showEndCalendar);
-                                                setShowCalendar(false);
-                                                setShowStartPicker(false);
-                                                setShowEndPicker(false);
-                                            }}
-                                            className={cn(
-                                                styles.input,
-                                                "flex items-center justify-between gap-2 text-left bg-white"
-                                            )}
-                                        >
-                                            <span className={cn(!endDate && "text-slate-400")}>
-                                                {endDate ? format(selectedEndDateObj!, 'dd.MM.yyyy') : t.lessonHours.datePlaceholder}
-                                            </span>
-                                            <CalendarIcon size={18} className="text-slate-400" />
-                                        </button>
-
-                                        {showEndCalendar && (
-                                            <>
-                                                <div className="fixed inset-0 z-40" onClick={() => setShowEndCalendar(false)} />
-                                                <div className="absolute top-full left-0 z-[60] mt-1">
-                                                    <CustomCalendar 
-                                                        selectedDate={selectedEndDateObj}
-                                                        onSelect={(d) => {
-                                                            setEndDate(format(d, 'yyyy-MM-dd'))
-                                                            setShowEndCalendar(false)
-                                                        }}
-                                                        onClose={() => setShowEndCalendar(false)}
-                                                    />
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-                            </>
-                        )}
-
-                        {/* Week / Month Range Badge Info */}
-                        {(scheduleMode === 'week' || scheduleMode === 'month') && (
-                            <div className={cn(styles.inputGroup, "justify-center")}>
-                                <label className={styles.label}>Tarix aralığı</label>
-                                <div className="h-[52px] rounded-xl bg-[#FAFAFA] border border-[#ECECED] px-4 flex items-center gap-2 text-sm text-slate-700 font-medium">
-                                    <CalendarIcon size={18} className="text-[#00B4CC] shrink-0" />
-                                    <span>
-                                        {scheduleMode === 'week'
-                                            ? `${format(todayObj, 'dd.MM.yyyy')} - ${format(endOfWeek(todayObj, { weekStartsOn: 1 }), 'dd.MM.yyyy')}`
-                                            : `${format(todayObj, 'dd.MM.yyyy')} - ${format(endOfMonth(todayObj), 'dd.MM.yyyy')}`}
+                                    <span className={cn(selectedDates.length === 0 && "text-slate-400", "truncate")}>
+                                        {getDateInputLabel()}
                                     </span>
-                                </div>
+                                    <CalendarIcon size={18} className="text-slate-400 shrink-0" />
+                                </button>
+
+                                {showCalendar && (
+                                    <>
+                                        <div className="fixed inset-0 z-40" onClick={() => setShowCalendar(false)} />
+                                        <div className="absolute top-full left-0 z-[60] mt-1">
+                                            <CustomCalendar 
+                                                multiSelect={true}
+                                                selectedDates={selectedDates.map((dStr) => parse(dStr, 'yyyy-MM-dd', new Date()))}
+                                                onSelectDates={(newDateObjs) => {
+                                                    const newStrs = newDateObjs.map((d) => format(d, 'yyyy-MM-dd'))
+                                                    setSelectedDates(newStrs)
+                                                }}
+                                                onClose={() => setShowCalendar(false)}
+                                            />
+                                        </div>
+                                    </>
+                                )}
                             </div>
-                        )}
+                        </div>
 
                         {/* Places Input */}
                         <div className={styles.inputGroup}>
@@ -503,7 +272,6 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                                         setShowStartPicker(!showStartPicker);
                                         setShowEndPicker(false);
                                         setShowCalendar(false);
-                                        setShowEndCalendar(false);
                                     }}
                                     className={cn(
                                         styles.input,
@@ -538,7 +306,6 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                                         setShowEndPicker(!showEndPicker);
                                         setShowStartPicker(false);
                                         setShowCalendar(false);
-                                        setShowEndCalendar(false);
                                     }}
                                     className={cn(
                                         styles.input,
@@ -566,12 +333,12 @@ export const AddLessonHourModal = ({ gymId, onClose }: Props) => {
                         </div>
                     </div>
 
-                    {/* Live Preview Badge for Bulk Creation */}
-                    {scheduleMode !== 'single' && datesToCreate.length > 0 && (
+                    {/* Live Preview Badge for Multi-Date Creation */}
+                    {selectedDates.length > 1 && (
                         <div className="bg-[#00B4CC]/10 border border-[#00B4CC]/30 rounded-xl p-3 text-sm text-[#00B4CC] font-medium flex items-center gap-2">
                             <Sparkles size={16} className="shrink-0" />
                             <span>
-                                {((t.lessonHours as any).totalHoursBadge || 'Toplam {count} dərs saatı yaradılacaq').replace('{count}', String(datesToCreate.length))}
+                                {((t.lessonHours as any).totalHoursBadge || 'Toplam {count} dərs saatı yaradılacaq').replace('{count}', String(selectedDates.length))}
                             </span>
                         </div>
                     )}
