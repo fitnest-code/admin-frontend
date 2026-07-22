@@ -23,7 +23,7 @@ const FINANCE_TABS = [
   'Hesabatlıq',
   'Ödəniş tarixçəsi',
   'Köçürmələrin tarixçəsi',
-  'Əməliyyat loqoları',
+  'Əməyiyyat loqları',
   'Balans tarixçəsi',
 ] as const
 
@@ -173,7 +173,28 @@ function getRangeDateValues(range?: DateRange) {
   }
 }
 
+import { useT } from '@/lib/i18n'
+
 function FinanceTabs({ active, onChange }: { active: FinanceTab; onChange: (tab: FinanceTab) => void }) {
+  const t = useT()
+
+  const getTabTitle = (tab: FinanceTab) => {
+    switch (tab) {
+      case 'Hesabatlıq':
+        return t.paymentsPage.tabs.reporting
+      case 'Ödəniş tarixçəsi':
+        return t.paymentsPage.tabs.paymentHistory
+      case 'Köçürmələrin tarixçəsi':
+        return t.paymentsPage.tabs.transferHistory
+      case 'Əməyiyyat loqları':
+        return t.paymentsPage.tabs.operationLogs
+      case 'Balans tarixçəsi':
+        return t.paymentsPage.tabs.balanceHistory
+      default:
+        return tab
+    }
+  }
+
   return (
     <div className="overflow-x-auto border-b border-[#8e8c8c]">
       <div className="flex min-w-[900px] items-end gap-7 px-4">
@@ -187,7 +208,7 @@ function FinanceTabs({ active, onChange }: { active: FinanceTab; onChange: (tab:
               active === tab ? 'border-b-2 border-black text-black' : 'text-[#767676] hover:text-black',
             )}
           >
-            {tab}
+            {getTabTitle(tab)}
           </button>
         ))}
       </div>
@@ -332,17 +353,55 @@ function TrendBadge({ value, positive = false }: { value: string; positive?: boo
   )
 }
 
-function ChartGraphic({ withCurve = false }: { withCurve?: boolean }) {
+function generatePathFromValues(values: number[] = [], width = 439, height = 160) {
+  if (!values || values.length === 0 || values.every((v) => v === 0)) {
+    return {
+      pathD: `M 0 ${height} L ${width} ${height}`,
+      areaD: `M 0 ${height} L ${width} ${height} L ${width} 171.5 L 0 171.5 Z`,
+      yLabels: ['1.0', '0.8', '0.6', '0.4', '0.2', '0'],
+    }
+  }
+
+  const maxVal = Math.max(...values, 1)
+  const minVal = 0
+  const range = maxVal - minVal
+
+  const step = maxVal / 5
+  const yLabels = Array.from({ length: 6 }, (_, i) => ((5 - i) * step).toFixed(1))
+
+  const points = values.map((val, idx) => {
+    const x = values.length === 1 ? width / 2 : (idx / (values.length - 1)) * width
+    const norm = range === 0 ? 0 : (val - minVal) / range
+    const y = height - norm * (height - 20)
+    return { x, y }
+  })
+
+  let pathD = `M ${points[0].x} ${points[0].y}`
+  for (let i = 0; i < points.length - 1; i++) {
+    const curr = points[i]
+    const next = points[i + 1]
+    const cp1x = curr.x + (next.x - curr.x) / 2
+    const cp1y = curr.y
+    const cp2x = curr.x + (next.x - curr.x) / 2
+    const cp2y = next.y
+    pathD += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${next.x} ${next.y}`
+  }
+
+  const areaD = `${pathD} L ${width} 171.5 L 0 171.5 Z`
+
+  return { pathD, areaD, yLabels }
+}
+
+function ChartGraphic({ withCurve = false, values = [] }: { withCurve?: boolean; values?: number[] }) {
+  const { pathD, areaD, yLabels } = useMemo(() => generatePathFromValues(values), [values])
+
   return (
     <div className="mt-6 w-full">
       <div className="grid grid-cols-[28px_1fr] gap-4 items-stretch">
         <div className="flex flex-col justify-between py-0.5 text-[16px] font-medium text-[#7d94a0] leading-[24px] select-none">
-          <span>1.0</span>
-          <span>0.8</span>
-          <span>0.6</span>
-          <span>0.4</span>
-          <span>0.2</span>
-          <span>0</span>
+          {yLabels.map((lbl, idx) => (
+            <span key={idx}>{lbl}</span>
+          ))}
         </div>
 
         <div className="relative h-[171.5px] w-full flex items-end">
@@ -354,12 +413,9 @@ function ChartGraphic({ withCurve = false }: { withCurve?: boolean }) {
                   <stop offset="100%" stopColor="#00B4CC" stopOpacity="0.0" />
                 </linearGradient>
               </defs>
+              <path d={areaD} fill="url(#chartGrad)" />
               <path
-                d="M 0 160 C 40 160, 60 70, 100 60 C 140 50, 160 150, 200 150 C 250 150, 280 20, 330 20 C 370 20, 390 130, 420 130 C 430 130, 435 160, 439 160 L 439 171.5 L 0 171.5 Z"
-                fill="url(#chartGrad)"
-              />
-              <path
-                d="M 0 160 C 40 160, 60 70, 100 60 C 140 50, 160 150, 200 150 C 250 150, 280 20, 330 20 C 370 20, 390 130, 420 130 C 430 130, 435 160, 439 160"
+                d={pathD}
                 fill="none"
                 stroke="#00B4CC"
                 strokeWidth="4"
@@ -383,6 +439,7 @@ function PaymentMetricCard({
   trend,
   positive = false,
   withCurve = false,
+  chartValues = [],
 }: {
   title: string
   value: string
@@ -390,7 +447,9 @@ function PaymentMetricCard({
   trend: string
   positive?: boolean
   withCurve?: boolean
+  chartValues?: number[]
 }) {
+  const t = useT()
   return (
     <section className="flex-1 w-full rounded-[12px] border border-[#ececed] bg-white p-5 sm:px-7 sm:py-5 flex flex-col justify-between gap-6">
       <div className="flex flex-col gap-6">
@@ -403,11 +462,13 @@ function PaymentMetricCard({
             <b className="text-[24px] font-bold leading-[36px] text-[#001028]">{value}</b>
             <TrendBadge value={trend} positive={positive} />
           </div>
-          <p className="text-[16px] font-medium leading-[24px] text-[#001028]">Əməliyyatlar: {ops}</p>
+          <p className="text-[16px] font-medium leading-[24px] text-[#001028]">
+            {t.paymentsPage.operationsCount.replace('{count}', ops)}
+          </p>
         </div>
       </div>
 
-      <ChartGraphic withCurve={withCurve} />
+      <ChartGraphic withCurve={withCurve} values={chartValues} />
     </section>
   )
 }
@@ -437,24 +498,25 @@ function ReportTabContent({
   transferAmount: string
   setTransferAmount: (v: string) => void
 }) {
+  const t = useT()
   const { data: analytics, isLoading: analyticsLoading } = usePaymentsAnalytics()
   const transferMutation = useRequestTransfer()
   const transferAmountNumber = Number(transferAmount || '0')
   const commission = 0
   const transferNet = Number.isFinite(transferAmountNumber) ? transferAmountNumber : 0
 
-  const accAmount = analytics?.accumulatedAmount ?? 0.88
+  const accAmount = analytics?.accumulatedAmount ?? 0
   const payAmount = analytics?.totalPaymentsAmount ?? 0
   const payCount = analytics?.totalPaymentsCount ?? 0
-  const payTrend = analytics?.paymentsTrendPct ?? -100
+  const payTrend = analytics?.paymentsTrendPct ?? 0
   const payPositive = analytics?.isPaymentsPositive ?? false
   const transAmount = analytics?.totalTransfersAmount ?? 0
   const transCount = analytics?.totalTransfersCount ?? 0
-  const transTrend = analytics?.transfersTrendPct ?? -100
+  const transTrend = analytics?.transfersTrendPct ?? 0
   const transPositive = analytics?.isTransfersPositive ?? false
-  const opsCount = analytics?.operationLogsCount ?? 5
-  const opsTrend = analytics?.operationLogsTrendPct ?? 20
-  const opsPositive = analytics?.isOperationLogsPositive ?? true
+  const opsCount = analytics?.operationLogsCount ?? 0
+  const opsTrend = analytics?.operationLogsTrendPct ?? 0
+  const opsPositive = analytics?.isOperationLogsPositive ?? false
 
   return (
     <>
@@ -464,7 +526,7 @@ function ReportTabContent({
           <div className="rounded-[8px] bg-[#00b4cc]/15 p-2.5 flex items-center justify-center shrink-0">
             <Image src="/coin.svg" alt="Coin" width={24} height={24} className="h-6 w-6" />
           </div>
-          <h2 className="text-[20px] font-semibold leading-[30px] text-black">Toplanılan məbləğ</h2>
+          <h2 className="text-[20px] font-semibold leading-[30px] text-black">{t.paymentsPage.accumulatedAmount}</h2>
         </div>
 
         <div className="flex flex-wrap items-center gap-6 sm:gap-8">
@@ -476,7 +538,7 @@ function ReportTabContent({
             onClick={() => setTransferOpen(true)}
             className="h-[36px] min-w-[141px] rounded-[12px] bg-[#00b4cc] px-4 text-[14px] font-normal leading-[18px] text-[#fafafa] flex items-center justify-center transition-colors hover:bg-[#009fb4] cursor-pointer"
           >
-            Köçürmə sorğusu
+            {t.paymentsPage.transferRequest}
           </button>
         </div>
       </section>
@@ -485,11 +547,8 @@ function ReportTabContent({
       <section className="w-full rounded-[12px] border border-[#ececed] bg-white p-5 sm:px-7 sm:py-5 flex flex-col justify-between gap-6">
         <div className="flex flex-col gap-6">
           <div className="flex flex-wrap items-center justify-between gap-4 pb-1">
-            <h2 className="text-[20px] font-semibold leading-[30px] text-black">Ödəniş</h2>
+            <h2 className="text-[20px] font-semibold leading-[30px] text-black">{t.paymentsPage.payment}</h2>
             <div className="flex items-center gap-4">
-              <button type="button" className="h-8 rounded-[10px] border border-[#00b4cc] px-3 text-xs font-medium text-black hover:bg-[#00b4cc]/5 transition-colors">
-                Yenilə
-              </button>
               <Popover open={periodOpen} onOpenChange={setPeriodOpen}>
                 <PopoverTrigger asChild>
                   <button
@@ -594,7 +653,9 @@ function ReportTabContent({
               </b>
               <TrendBadge value={`${payTrend >= 0 ? '+' : ''}${payTrend.toFixed(0)}%`} positive={payPositive} />
             </div>
-            <p className="text-[16px] font-medium leading-[24px] text-[#001028]">Əməliyyatlar: {payCount}</p>
+            <p className="text-[16px] font-medium leading-[24px] text-[#001028]">
+              {t.paymentsPage.operationsCount.replace('{count}', String(payCount))}
+            </p>
           </div>
         </div>
 
@@ -604,7 +665,7 @@ function ReportTabContent({
       {/* 2 Charts Side by Side */}
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <PaymentMetricCard
-          title="Köçürmələr"
+          title={t.paymentsPage.transfers}
           value={analyticsLoading ? '...' : `${transAmount.toFixed(2)} AZN`}
           trend={`${transTrend >= 0 ? '+' : ''}${transTrend.toFixed(0)}%`}
           ops={String(transCount)}
@@ -612,12 +673,13 @@ function ReportTabContent({
           withCurve={false}
         />
         <PaymentMetricCard
-          title="Əməliyyat Loqoları"
-          value={analyticsLoading ? '...' : `Əməliyyatlar ${opsCount}`}
+          title={t.paymentsPage.operationLogs}
+          value={analyticsLoading ? '...' : t.paymentsPage.operationsShort.replace('{count}', String(opsCount))}
           trend={`${opsTrend >= 0 ? '+' : ''}${opsTrend.toFixed(0)}%`}
           ops="0"
           positive={opsPositive}
           withCurve={true}
+          chartValues={opsCount > 0 ? [opsCount] : []}
         />
       </div>
 
@@ -634,22 +696,23 @@ function ReportTabContent({
               </button>
             </div>
 
-            <h3 className="text-center text-[18px] font-semibold text-[#1f2937]">Köçürmə sorğusu</h3>
+            <h3 className="text-center text-[18px] font-semibold text-[#1f2937]">{t.paymentsPage.transferModalTitle}</h3>
 
             <div className="mt-4">
-              <label className="mb-1.5 block text-[14px] font-normal text-[#1f2937]">Məbləğ</label>
+              <label className="mb-1.5 block text-[14px] font-normal text-[#1f2937]">{t.paymentsPage.amount}</label>
               <input
                 value={transferAmount}
                 onChange={(e) => setTransferAmount(e.target.value)}
+                placeholder="0.00"
                 className="h-11 w-full rounded-[10px] border border-[#d9d9d9] px-3 text-[15px] text-[#212121] outline-none focus:border-[#00b4cc]"
               />
             </div>
 
             <p className="mt-3 text-[16px] font-medium text-[#1f2937]">
-              Komissiya: <span className="font-semibold">{commission.toFixed(2)} AZN</span>
+              {t.paymentsPage.commission}: <span className="font-semibold">{commission.toFixed(2)} AZN</span>
             </p>
             <p className="mt-2 text-[16px] font-medium text-[#1f2937]">
-              Ödəniş məbləği: <span className="font-semibold">{transferNet.toFixed(2)} AZN</span>
+              {t.paymentsPage.paymentAmount}: <span className="font-semibold">{transferNet.toFixed(2)} AZN</span>
             </p>
 
             <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -669,14 +732,14 @@ function ReportTabContent({
                 className="h-10 rounded-[10px] border border-[#00b4cc] text-[15px] font-medium text-[#161616] transition-colors hover:bg-[#f0fdff] disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {transferMutation.isPending && <Loader2 size={16} className="animate-spin" />}
-                Göndər
+                {t.paymentsPage.send}
               </button>
               <button
                 type="button"
                 onClick={() => setTransferOpen(false)}
                 className="h-10 rounded-[10px] bg-[#00b4cc] text-[15px] font-medium text-white transition-colors hover:bg-[#009fb4]"
               >
-                Ləğv et
+                {t.paymentsPage.cancel}
               </button>
             </div>
           </div>
@@ -989,18 +1052,19 @@ function InfoLine({ label, value }: { label: string; value: string }) {
 }
 
 export function PaymentsAnalyticsPage() {
+  const t = useT()
   const [activeTab, setActiveTab] = useState<FinanceTab>('Hesabatlıq')
   const [periodOpen, setPeriodOpen] = useState(false)
   const [periodRange, setPeriodRange] = useState<DateRange | undefined>()
   const [calendarMonth, setCalendarMonth] = useState(new Date())
   const [transferOpen, setTransferOpen] = useState(false)
-  const [transferAmount, setTransferAmount] = useState('0.89')
+  const [transferAmount, setTransferAmount] = useState('')
   const yearOptions = Array.from({ length: 16 }, (_, i) => getYear(new Date()) - 6 + i)
 
   return (
     <div className="flex flex-col gap-7">
       <div className="border-b border-[#dadada] pb-3">
-        <h1 className="text-xl font-bold text-[#1e2430]">Analitika</h1>
+        <h1 className="text-xl font-bold text-[#1e2430]">{t.paymentsPage.title}</h1>
       </div>
 
       <FinanceTabs active={activeTab} onChange={setActiveTab} />
@@ -1023,7 +1087,7 @@ export function PaymentsAnalyticsPage() {
 
       {activeTab === 'Ödəniş tarixçəsi' && <PaymentHistoryTab periodRange={periodRange} />}
       {activeTab === 'Köçürmələrin tarixçəsi' && <TransferHistoryTab periodRange={periodRange} />}
-      {activeTab === 'Əməliyyat loqoları' && <OperationLogsTab periodRange={periodRange} />}
+      {activeTab === 'Əməyiyyat loqları' && <OperationLogsTab periodRange={periodRange} />}
       {activeTab === 'Balans tarixçəsi' && <BalanceHistoryTab periodRange={periodRange} />}
     </div>
   )

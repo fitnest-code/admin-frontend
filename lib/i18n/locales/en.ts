@@ -623,6 +623,31 @@ const en: TranslationKeys = {
       endingSubscriptions: "Expiring Subscriptions",
       renewingSubscriptions: "Renewing Subscriptions"
     }
+  },
+  paymentsPage: {
+    title: "Analytics",
+    tabs: {
+      reporting: "Reporting",
+      paymentHistory: "Payment history",
+      transferHistory: "Transfer history",
+      operationLogs: "Operation logs",
+      balanceHistory: "Balance history",
+    },
+    accumulatedAmount: "Accumulated amount",
+    transferRequest: "Transfer request",
+    payment: "Payment",
+    transfers: "Transfers",
+    operationLogs: "Operation logs",
+    operationsCount: "Operations: {count}",
+    operationsShort: "Operations {count}",
+    reportPeriod: "Report period",
+    selectDateRange: "Select date range",
+    transferModalTitle: "Transfer request",
+    amount: "Amount",
+    commission: "Commission",
+    paymentAmount: "Payment amount",
+    send: "Send",
+    cancel: "Cancel",
   }
 } as const;
 

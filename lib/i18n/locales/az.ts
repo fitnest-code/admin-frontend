@@ -640,6 +640,31 @@ const az = {
       endingSubscriptions: "Bitən Abunəliklər",
       renewingSubscriptions: "Yenilənən Abunəliklər"
     }
+  },
+  paymentsPage: {
+    title: "Analitika",
+    tabs: {
+      reporting: "Hesabatlıq",
+      paymentHistory: "Ödəniş tarixçəsi",
+      transferHistory: "Köçürmələrin tarixçəsi",
+      operationLogs: "Əməyiyyat loqları",
+      balanceHistory: "Balans tarixçəsi",
+    },
+    accumulatedAmount: "Toplanılan məbləğ",
+    transferRequest: "Köçürmə sorğusu",
+    payment: "Ödəniş",
+    transfers: "Köçürmələr",
+    operationLogs: "Əməyiyyat loqları",
+    operationsCount: "Əməliyyatlar: {count}",
+    operationsShort: "Əməliyyatlar {count}",
+    reportPeriod: "Hesabat dövrü",
+    selectDateRange: "Tarix aralığı seçin",
+    transferModalTitle: "Köçürmə sorğusu",
+    amount: "Məbləğ",
+    commission: "Komissiya",
+    paymentAmount: "Ödəniş məbləği",
+    send: "Göndər",
+    cancel: "Ləğv et",
   }
 } as const;
 

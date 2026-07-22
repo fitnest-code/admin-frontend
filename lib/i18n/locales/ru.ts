@@ -623,6 +623,31 @@ const ru: TranslationKeys = {
       endingSubscriptions: "Истекающие Подписки",
       renewingSubscriptions: "Продлеваемые Подписки"
     }
+  },
+  paymentsPage: {
+    title: "Аналитика",
+    tabs: {
+      reporting: "Отчетность",
+      paymentHistory: "История платежей",
+      transferHistory: "История переводов",
+      operationLogs: "Логи операций",
+      balanceHistory: "История баланса",
+    },
+    accumulatedAmount: "Накопленная сумма",
+    transferRequest: "Запрос на перевод",
+    payment: "Платеж",
+    transfers: "Переводы",
+    operationLogs: "Логи операций",
+    operationsCount: "Операции: {count}",
+    operationsShort: "Операции {count}",
+    reportPeriod: "Отчетный период",
+    selectDateRange: "Выберите диапазон дат",
+    transferModalTitle: "Запрос на перевод",
+    amount: "Сумма",
+    commission: "Комиссия",
+    paymentAmount: "Сумма к оплате",
+    send: "Отправить",
+    cancel: "Отмена",
   }
 } as const;
 
