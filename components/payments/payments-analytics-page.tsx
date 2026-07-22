@@ -968,7 +968,7 @@ function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
                 return (
                   <Fragment key={row.paymentId}>
                     <tr className="hover:bg-secondary/40 border-b border-[#ececed] transition-all duration-200 text-sm text-[#4b5563]">
-                      <td className="px-3.5 py-3.5 truncate">{row.owner || 'Fitnest MMC'}</td>
+                      <td className="px-3.5 py-3.5 truncate">{row.owner || '-'}</td>
                       <td className="px-3.5 py-3.5 truncate">{row.cardBrand || 'Google Pay'}</td>
                       <td className="px-3.5 py-3.5 truncate">{row.type || 'API qoşulma'}</td>
                       <td className="px-3.5 py-3.5 truncate" title={row.description || 'Abunəlik Ödənişi'}>
