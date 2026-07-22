@@ -196,22 +196,25 @@ function FinanceTabs({ active, onChange }: { active: FinanceTab; onChange: (tab:
   }
 
   return (
-    <div className="overflow-x-auto border-b border-[#8e8c8c]">
-      <div className="flex min-w-[900px] items-end gap-7 px-4">
-        {FINANCE_TABS.map((tab) => (
+    <div className="w-full flex items-center justify-between gap-0 text-[18px] sm:text-[20px] text-[#7c7c7c] overflow-x-auto">
+      {FINANCE_TABS.map((tab) => {
+        const isActive = active === tab
+        return (
           <button
             key={tab}
             type="button"
             onClick={() => onChange(tab)}
             className={cn(
-              'pb-2 text-[14px] font-semibold transition-colors',
-              active === tab ? 'border-b-2 border-black text-black' : 'text-[#767676] hover:text-black',
+              'flex-1 flex items-center justify-center py-2.5 px-3 border-b text-center font-semibold transition-colors shrink-0 sm:shrink',
+              isActive
+                ? 'border-b-2 border-black text-black'
+                : 'border-b border-[#7c7c7c] text-[#7c7c7c] hover:text-black',
             )}
           >
-            {getTabTitle(tab)}
+            <span className="truncate">{getTabTitle(tab)}</span>
           </button>
-        ))}
-      </div>
+        )
+      })}
     </div>
   )
 }
@@ -222,24 +225,11 @@ function FilterToggleButton({ open, onClick }: { open: boolean; onClick: () => v
       type="button"
       onClick={onClick}
       className={cn(
-        'inline-flex h-10 items-center gap-2 rounded-[10px] px-4 text-[15px] font-medium transition-colors',
-        open ? 'bg-[#10adc2] text-white' : 'bg-[#10adc2] text-white',
+        'inline-flex h-[48px] items-center gap-2 rounded-[12px] px-4 text-[16px] font-normal transition-colors bg-[#00b4cc] text-white',
       )}
     >
-      <Image src="/filter.svg" alt="Filter" width={18} height={18} />
+      <Image src="/filter.svg" alt="Filter" width={20} height={20} className="brightness-0 invert" />
       Filtr
-    </button>
-  )
-}
-
-function UploadButton() {
-  return (
-    <button
-      type="button"
-      className="inline-flex h-10 items-center gap-2 rounded-[10px] border border-[#00b4cc] px-4 text-[15px] font-medium text-[#00b4cc]"
-    >
-      <Image src="/Downloadİcon.svg" alt="Yüklə" width={18} height={18} />
-      Yüklə
     </button>
   )
 }
@@ -264,12 +254,12 @@ function SelectFilter({
         <button
           type="button"
           className={cn(
-            'flex h-12 items-center justify-between rounded-xl border border-[#d9d9d9] bg-white px-3.5 text-[15px] text-[#1d2b43]',
+            'flex h-[60px] items-center justify-between rounded-[12px] border border-[#ececed] bg-[#fafafa] px-3.5 text-[18px] text-[#001028]',
             className,
           )}
         >
           <span className="truncate">{selected.label}</span>
-          <ChevronDown size={18} className="shrink-0 text-[#3f4853]" />
+          <ChevronDown size={24} className="shrink-0 text-[#3f4853]" />
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-[320px] rounded-xl border-[#e5e7eb] p-2 sm:w-[380px]">
@@ -299,7 +289,7 @@ function SelectFilter({
 
 function DateField({ value }: { value: string }) {
   return (
-    <div className="flex h-12 items-center rounded-xl border border-[#d9d9d9] bg-white px-3.5 text-[15px] text-[#4b5563]">
+    <div className="flex h-[60px] items-center rounded-[12px] border border-[#ececed] bg-[#fafafa] px-3.5 text-[18px] text-[#001028]">
       {value}
     </div>
   )
@@ -309,7 +299,7 @@ function SearchField({ placeholder = 'Axtarış' }: { placeholder?: string }) {
   return (
     <input
       placeholder={placeholder}
-      className="h-12 rounded-xl border border-[#d9d9d9] px-3.5 text-[15px] text-[#4b5563] outline-none placeholder:text-[#4b5563]"
+      className="h-[60px] rounded-[12px] border border-[#ececed] bg-[#fafafa] px-3.5 text-[18px] text-[#001028] outline-none placeholder:text-[#001028]"
     />
   )
 }
@@ -318,7 +308,7 @@ function ApplyButton() {
   return (
     <button
       type="button"
-      className="h-12 rounded-xl bg-[#10adc2] px-6 text-[15px] font-medium text-white"
+      className="h-[48px] w-[193px] rounded-[10px] bg-[#00b4cc] px-4 text-[16px] font-medium text-white flex items-center justify-center"
     >
       Tətbiq edin
     </button>
@@ -756,99 +746,127 @@ function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
   const [showFilter, setShowFilter] = useState(true)
   const [status, setStatus] = useState(STATUS_OPTIONS[0].value)
   const [kind, setKind] = useState(PAYMENT_KIND_OPTIONS[0].value)
-  const [operationKind, setOperationKind] = useState(OPERATION_OPTIONS[0].value)
-  const [channel, setChannel] = useState(CHANNEL_OPTIONS[0].value)
   const [source, setSource] = useState(SOURCE_OPTIONS[0].value)
-  const [expanded, setExpanded] = useState<number | null>(1)
+  const [expanded, setExpanded] = useState<number | null>(null)
   const { from, to } = getRangeDateValues(periodRange)
 
   return (
-    <section className="rounded-2xl border border-[#d6d6d6] bg-white p-4 sm:p-5">
-      <div className="mb-4 flex items-center justify-between">
+    <section className="w-full rounded-[12px] bg-white border border-[#ececed] p-5 sm:p-[20px_28px] flex flex-col gap-[28px]">
+      <div className="h-[48px] flex items-center justify-between gap-5">
         <FilterToggleButton open={showFilter} onClick={() => setShowFilter((v) => !v)} />
-        <UploadButton />
       </div>
 
       {showFilter && (
-        <div className="mb-4 space-y-3">
-          <div className="grid grid-cols-1 gap-3 xl:grid-cols-4">
+        <div className="flex flex-col gap-[20px] text-[18px] text-[#001028]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[12px]">
             <SearchField />
             <DateField value={from} />
             <DateField value={to} />
             <SelectFilter value={kind} onChange={setKind} options={PAYMENT_KIND_OPTIONS} />
           </div>
-          <div className="grid grid-cols-1 gap-3 xl:grid-cols-5">
-            <SelectFilter value={status} onChange={setStatus} options={STATUS_OPTIONS} />
-            <SelectFilter value={operationKind} onChange={setOperationKind} options={OPERATION_OPTIONS} />
-            <SelectFilter value={channel} onChange={setChannel} options={CHANNEL_OPTIONS} />
-            <SelectFilter value={source} onChange={setSource} options={SOURCE_OPTIONS} />
+          <div className="flex flex-wrap items-center gap-[12px]">
+            <SelectFilter value={status} onChange={setStatus} options={STATUS_OPTIONS} className="w-[243px]" />
+            <SelectFilter value={source} onChange={setSource} options={SOURCE_OPTIONS} className="min-w-[250px]" />
             <ApplyButton />
           </div>
         </div>
       )}
 
       <div className="overflow-x-auto">
-        <div className="min-w-[1100px] rounded-t-2xl bg-[#b9dbe3] px-2 py-3 text-[15px] font-medium text-[#6e6f72]">
-          <div className="grid grid-cols-[1.2fr_1fr_1fr_2.2fr_1fr_0.8fr_1fr_34px] items-center gap-3">
+        <div className="min-w-[1200px] rounded-[12px] bg-[#00b4cc]/15 p-3.5 text-[16px] font-medium text-[#7c7c7c]">
+          <div className="grid grid-cols-[1.1fr_1fr_1fr_1.6fr_1fr_0.9fr_1.1fr_0.9fr_1.1fr_1fr_1fr_34px] items-center gap-3">
             <span>Kart sahibi</span>
             <span>Ödəniş növü</span>
             <span>Ödəniş üsulu</span>
             <span>Təsvir</span>
-            <span className="text-center">RRN</span>
-            <span className="text-center">Məbləğ ↑</span>
-            <span className="text-center">Tarix ↑</span>
+            <span>RRN</span>
+            <span>Məbləğ ↑</span>
+            <span>Tarix ↑</span>
+            <span>Komissiya ↑</span>
+            <span>Əməliyyat Komissiyası ↑</span>
+            <span>Kartın nömrəsi</span>
+            <span>Ödəniş qəbzi</span>
             <span />
           </div>
         </div>
 
-        <div className="min-w-[1100px] border-x border-b border-[#d6d6d6]">
-          {PAYMENT_HISTORY_ROWS.map((row) => {
-            const isOpen = expanded === row.id
-            return (
-              <div key={row.id}>
-                <div className="grid grid-cols-[1.2fr_1fr_1fr_2.2fr_1fr_0.8fr_1fr_34px] items-start gap-3 border-b border-[#d6d6d6] px-2 py-3 text-[14px] text-[#8a8a8a]">
-                  <span>{row.owner}</span>
-                  <span>{row.paymentType}</span>
-                  <span>{row.method}</span>
-                  <span className="whitespace-pre-line">{row.desc}</span>
-                  <span className="text-center">{row.rrn}</span>
-                  <span className="text-center">{row.amount}</span>
-                  <span className="text-center">{row.date}</span>
-                  <button
-                    type="button"
-                    className="mt-0.5 flex items-center justify-center text-[#8a8a8a]"
-                    onClick={() => setExpanded(isOpen ? null : row.id)}
-                  >
-                    {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                  </button>
-                </div>
-
-                {isOpen && (
-                  <div className="border-b border-[#d6d6d6] px-4 py-3 text-[14px] text-[#8a8a8a]">
-                    <div className="grid grid-cols-1 gap-2 md:max-w-[420px]">
-                      <InfoLine label="RRN" value="424353Y63677" />
-                      <InfoLine label="Tarix" value="12.05.2026 14:41" />
-                      <InfoLine label="Komissiya" value="₼ 0.00" />
-                      <InfoLine label="Əməliyyat komissiyası" value="₼ 0.00" />
-                      <InfoLine label="**** **** **** 4127" value="₼ 0.00" />
-                      <InfoLine label="Ödəniş qəbzi" value="Yüklə" />
-                      <InfoLine label="Yerinə yetirdi" value="API" />
-                      <InfoLine label="Operator" value="-//-" />
-                      <InfoLine label="Ödəniş mənbəyi" value="-//-" />
+        <div className="min-w-[1200px] border-x border-b border-[#ececed] rounded-b-[12px]">
+          {PAYMENT_HISTORY_ROWS.length > 0 ? (
+            PAYMENT_HISTORY_ROWS.map((row) => {
+              const isOpen = expanded === row.id
+              return (
+                <div key={row.id}>
+                  <div className="grid grid-cols-[1.1fr_1fr_1fr_1.6fr_1fr_0.9fr_1.1fr_0.9fr_1.1fr_1fr_1fr_34px] items-center gap-3 border-b border-[#ececed] px-3.5 py-3.5 text-[15px] text-[#4b5563]">
+                    <span>{row.owner}</span>
+                    <span>{row.paymentType}</span>
+                    <span>{row.method}</span>
+                    <span className="whitespace-pre-line truncate">{row.desc}</span>
+                    <span>{row.rrn}</span>
+                    <span>{row.amount}</span>
+                    <span>{row.date}</span>
+                    <span>₼ 0.00</span>
+                    <span>₼ 0.00</span>
+                    <span>**** 4127</span>
+                    <div>
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1.5 rounded-[8px] border border-[#00b4cc] px-2.5 py-1 text-[13px] font-medium text-[#00b4cc] hover:bg-[#00b4cc]/10 transition-colors"
+                      >
+                        <Image src="/Downloadİcon.svg" alt="" width={14} height={14} />
+                        Yüklə
+                      </button>
                     </div>
                     <button
                       type="button"
-                      className="mt-3 h-9 rounded-[10px] border border-[#00b4cc] px-4 text-[14px] text-[#00b4cc]"
+                      className="flex items-center justify-center text-[#8a8a8a]"
+                      onClick={() => setExpanded(isOpen ? null : row.id)}
                     >
-                      Geri qaytar
+                      {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                     </button>
                   </div>
-                )}
-              </div>
-            )
-          })}
 
-          <div className="flex justify-end px-3 py-3 text-[14px] text-[#777]">Cəmi: ₼0.01</div>
+                  {isOpen && (
+                    <div className="border-b border-[#ececed] bg-[#fafafa] px-5 py-4 text-[14px] text-[#4b5563]">
+                      <div className="grid grid-cols-1 gap-2.5 md:max-w-[460px]">
+                        <InfoLine label="RRN" value={row.rrn} />
+                        <InfoLine label="Tarix" value={row.date} />
+                        <InfoLine label="Komissiya" value="₼ 0.00" />
+                        <InfoLine label="Əməliyyat komissiyası" value="₼ 0.00" />
+                        <InfoLine label="Kartın nömrəsi" value="**** **** **** 4127" />
+                        <div className="flex items-center justify-between py-1">
+                          <span className="text-[13px] text-[#4b5563]">Ödəniş qəbzi</span>
+                          <button
+                            type="button"
+                            className="inline-flex items-center gap-1.5 rounded-[8px] border border-[#00b4cc] px-3 py-1 text-[13px] font-medium text-[#00b4cc] hover:bg-[#00b4cc]/10 transition-colors"
+                          >
+                            <Image src="/Downloadİcon.svg" alt="" width={14} height={14} />
+                            Yüklə
+                          </button>
+                        </div>
+                        <InfoLine label="Yerinə yetirdi" value="API" />
+                        <InfoLine label="Operator" value="-//-" />
+                        <InfoLine label="Ödəniş mənbəyi" value="-//-" />
+                      </div>
+                      <button
+                        type="button"
+                        className="mt-4 h-9 rounded-[10px] border border-[#00b4cc] px-4 text-[14px] font-medium text-[#00b4cc] hover:bg-[#f0fdff] transition-colors"
+                      >
+                        Geri qaytar
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )
+            })
+          ) : (
+            <div className="px-3 py-10 text-center text-[15px] text-[#7a7a7a]">
+              Seçilmiş dövr üçün heç bir məlumat tapılmadı.
+            </div>
+          )}
+
+          <div className="flex items-center justify-end px-4 py-3 text-[18px] font-medium text-[#001028]">
+            Cəmi: 0.00 AZN
+          </div>
         </div>
       </div>
     </section>
@@ -863,7 +881,6 @@ function TransferHistoryTab({ periodRange }: { periodRange?: DateRange }) {
     <section className="rounded-2xl border border-[#d6d6d6] bg-white p-4 sm:p-5">
       <div className="mb-4 flex items-center justify-between">
         <FilterToggleButton open={showFilter} onClick={() => setShowFilter((v) => !v)} />
-        <UploadButton />
       </div>
 
       {showFilter && (
@@ -909,7 +926,6 @@ function OperationLogsTab({ periodRange }: { periodRange?: DateRange }) {
     <section className="rounded-2xl border border-[#d6d6d6] bg-white p-4 sm:p-5">
       <div className="mb-4 flex items-center justify-between">
         <FilterToggleButton open={showFilter} onClick={() => setShowFilter((v) => !v)} />
-        <UploadButton />
       </div>
 
       {showFilter && (
@@ -1001,7 +1017,6 @@ function BalanceHistoryTab({ periodRange }: { periodRange?: DateRange }) {
     <section className="rounded-2xl border border-[#d6d6d6] bg-white p-4 sm:p-5">
       <div className="mb-4 flex items-center justify-between">
         <FilterToggleButton open={showFilter} onClick={() => setShowFilter((v) => !v)} />
-        <UploadButton />
       </div>
 
       {showFilter && (
