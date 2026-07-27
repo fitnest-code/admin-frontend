@@ -53,7 +53,7 @@ function LoginForm() {
       await loginMutation.mutateAsync({ mobile: mobile.trim(), password: password.trim() })
 
       const from = searchParams.get('from') ?? '/'
-      router.replace(from)
+      window.location.assign(from)
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.status === 401) {

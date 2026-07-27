@@ -72,14 +72,14 @@ export function applyAuthCookies(response: NextResponse, payload: ParsedAuthPayl
   response.cookies.set(ACCESS_TOKEN_COOKIE, payload.accessToken, {
     httpOnly: true,
     secure,
-    sameSite: 'strict',
+    sameSite: 'lax',
     path: '/',
     maxAge: payload.accessMaxAge,
   })
   response.cookies.set(REFRESH_TOKEN_COOKIE, payload.refreshToken, {
     httpOnly: true,
     secure,
-    sameSite: 'strict',
+    sameSite: 'lax',
     path: '/',
     maxAge: payload.refreshMaxAge,
   })
@@ -89,14 +89,14 @@ export function clearAuthCookies(response: NextResponse) {
   response.cookies.set(ACCESS_TOKEN_COOKIE, '', {
     httpOnly: true,
     secure: IS_PROD,
-    sameSite: 'strict',
+    sameSite: 'lax',
     path: '/',
     maxAge: 0,
   })
   response.cookies.set(REFRESH_TOKEN_COOKIE, '', {
     httpOnly: true,
     secure: IS_PROD,
-    sameSite: 'strict',
+    sameSite: 'lax',
     path: '/',
     maxAge: 0,
   })
