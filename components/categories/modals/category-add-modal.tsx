@@ -45,10 +45,11 @@ export default function CategoryModal({
   const [iconPreview, setIconPreview] = useState<string | null>(null);
   const [selectedIconFile, setSelectedIconFile] = useState<File | null>(null);
   const [selectedLessonTypeIds, setSelectedLessonTypeIds] = useState<Set<number>>(new Set());
+  const [categoryLessonTypes, setCategoryLessonTypes] = useState<{ id: number; name: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const iconInputRef = useRef<HTMLInputElement>(null);
 
-  const { lessonTypes, createLessonType, deleteLessonType } = useLessonTypes(activeTab);
+  const { createLessonType, deleteLessonType } = useLessonTypes(activeTab);
 
   // Fetch languages
   useEffect(() => {
@@ -83,8 +84,10 @@ export default function CategoryModal({
       setSelectedFile(null);
       setSelectedIconFile(null);
       if (initialData?.lessonTypes) {
+        setCategoryLessonTypes(initialData.lessonTypes);
         setSelectedLessonTypeIds(new Set(initialData.lessonTypes.map((lt) => lt.id)));
       } else {
+        setCategoryLessonTypes([]);
         setSelectedLessonTypeIds(new Set());
       }
 
@@ -98,6 +101,10 @@ export default function CategoryModal({
           const match = items.find((c: any) => c.id === initialData.id);
           if (match?.name) {
             setNames((prev) => ({ ...prev, AZ: match.name }));
+          }
+          if (match?.lessonTypes) {
+            setCategoryLessonTypes(match.lessonTypes);
+            setSelectedLessonTypeIds(new Set(match.lessonTypes.map((lt: any) => lt.id)));
           }
         }).catch((err) => console.error("Error fetching categories in AZ:", err));
 
@@ -177,6 +184,10 @@ export default function CategoryModal({
     setIsSubmittingLessonType(true);
     try {
       const result = await createLessonType(trimmed);
+      setCategoryLessonTypes((prev) => {
+        if (prev.some((item) => item.id === result.id)) return prev;
+        return [...prev, { id: result.id, name: result.name }];
+      });
       setSelectedLessonTypeIds((prev) => new Set(prev).add(result.id));
       setNewLessonTypeName("");
       setIsAddingLessonType(false); // Hide the box on success
@@ -199,13 +210,15 @@ export default function CategoryModal({
   const handleDeleteLessonType = async (id: number) => {
     try {
       await deleteLessonType(id);
+    } catch (err) {
+      console.warn("Global delete note:", err);
+    } finally {
+      setCategoryLessonTypes((prev) => prev.filter((lt) => lt.id !== id));
       setSelectedLessonTypeIds((prev) => {
         const newSet = new Set(prev);
         newSet.delete(id);
         return newSet;
       });
-    } catch (err) {
-      console.error("Error deleting lesson type", err);
     }
   };
 
@@ -273,6 +286,9 @@ export default function CategoryModal({
           }
         });
       }
+      setCategoryLessonTypes((prev) =>
+        prev.map((item) => (item.id === lt.id ? { ...item, name: trimmed } : item))
+      );
       setEditingLtId(null);
       setEditingLtValue("");
       queryClient.invalidateQueries({ queryKey: ["lesson-types"] });
@@ -397,7 +413,7 @@ export default function CategoryModal({
           <div className="w-full rounded-xl bg-white border border-[#ececed] flex flex-col items-start p-3 sm:p-5 gap-4 text-[13px]">
             {/* Header */}
             <div className="w-full border-b border-[#ececed] pb-2 flex items-center justify-between text-[14px] sm:text-[16px] font-semibold text-[#000] gap-2">
-              <span className="leading-tight">{t.categories.lessonTypesLabel} ({selectedLessonTypeIds.size}/{lessonTypes?.length || 0})</span>
+              <span className="leading-tight">{t.categories.lessonTypesLabel} ({selectedLessonTypeIds.size}/{categoryLessonTypes?.length || 0})</span>
               {!isAddingLessonType && (
                 <button
                   type="button"
@@ -463,7 +479,7 @@ export default function CategoryModal({
 
             {/* List of Items Grid */}
             <div className="w-full flex flex-wrap items-center gap-2 pt-1 max-h-[160px] overflow-y-auto pr-1">
-              {lessonTypes?.map((lt) => {
+              {categoryLessonTypes?.map((lt) => {
                 const isSelected = selectedLessonTypeIds.has(lt.id);
                 const isEditing = editingLtId === lt.id;
 
