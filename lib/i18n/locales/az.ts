@@ -549,6 +549,7 @@ const az = {
     statusActive: "Aktiv",
     statusInactive: "Deaktiv",
     statusBlocked: "Blok",
+    statusPendingRegistration: "Qeydiyyat tamamlanmayıb",
     subActive: "Aktiv",
     subExpired: "Bitmiş",
     subChanged: "Dəyişdirilmiş",

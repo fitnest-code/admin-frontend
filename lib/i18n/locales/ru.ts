@@ -538,6 +538,7 @@ const ru: TranslationKeys = {
     statusActive: "Активный",
     statusInactive: "Неактивный",
     statusBlocked: "Заблокирован",
+    statusPendingRegistration: "Регистрация не завершена",
     subActive: "Активная",
     subExpired: "Истекла",
     subChanged: "Изменена",

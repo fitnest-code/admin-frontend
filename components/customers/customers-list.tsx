@@ -153,11 +153,7 @@ export function CustomersList() {
         u.fullName || '',
         u.phoneNumber || '',
         u.email || '',
-        normalizeCustomerStatus(u.userStatus) === 'active' 
-          ? 'Aktiv' 
-          : normalizeCustomerStatus(u.userStatus) === 'inactive' 
-            ? 'Deaktiv' 
-            : 'Bloklanıb',
+        getCustomerStatusLabel(normalizeCustomerStatus(u.userStatus), t.lists),
         getSubscriptionStatusLabel(normalizeSubscriptionStatus(u.subscriptionStatus), t.lists),
       ]),
     ]

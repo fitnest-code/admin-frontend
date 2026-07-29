@@ -9,13 +9,14 @@ export type CustomerSortValue =
   | 'registrationDate_desc'
   | 'registrationDate_asc'
 
-export type UiCustomerStatus = 'active' | 'inactive' | 'blocked'
+export type UiCustomerStatus = 'active' | 'inactive' | 'blocked' | 'pending_registration'
 export type UiSubscriptionStatus = 'active' | 'expired' | 'changed' | 'last7days' | 'frozen' | 'none'
 
 export const CUSTOMER_STATUS_STYLES: Record<UiCustomerStatus, string> = {
   active: 'bg-green-600 text-white',
   inactive: 'bg-[#6B7280] text-white',
   blocked: 'bg-red-600 text-white',
+  pending_registration: 'bg-amber-500 text-white',
 }
 
 export const SUBSCRIPTION_STATUS_TEXT_STYLES: Record<UiSubscriptionStatus, string> = {
@@ -30,12 +31,14 @@ export const SUBSCRIPTION_STATUS_TEXT_STYLES: Record<UiSubscriptionStatus, strin
 export function normalizeCustomerStatus(status: CustomerStatus): UiCustomerStatus {
   if (status === 'ACTIVE') return 'active'
   if (status === 'INACTIVE') return 'inactive'
+  if (status === 'PENDING_REGISTRATION') return 'pending_registration'
   return 'blocked'
 }
 
-export function getCustomerStatusLabel(status: UiCustomerStatus, t: { statusActive: string; statusInactive: string; statusBlocked: string }) {
+export function getCustomerStatusLabel(status: UiCustomerStatus, t: { statusActive: string; statusInactive: string; statusBlocked: string; statusPendingRegistration: string }) {
   if (status === 'active') return t.statusActive
   if (status === 'inactive') return t.statusInactive
+  if (status === 'pending_registration') return t.statusPendingRegistration
   return t.statusBlocked
 }
 

@@ -538,6 +538,7 @@ const en: TranslationKeys = {
     statusActive: "Active",
     statusInactive: "Inactive",
     statusBlocked: "Blocked",
+    statusPendingRegistration: "Registration Incomplete",
     subActive: "Active",
     subExpired: "Expired",
     subChanged: "Changed",

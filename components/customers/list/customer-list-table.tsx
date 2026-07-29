@@ -185,8 +185,8 @@ export function CustomerTable({
             const subscriptionStatus = normalizeSubscriptionStatus(customer.subscriptionStatus)
 
             // Account Status Badge Logic
-            const badgeBg = customerStatus === 'active' ? 'bg-[#166728]' : customerStatus === 'inactive' ? 'bg-[#94979c]' : 'bg-[#c9373a]'
-            const badgeText = customerStatus === 'active' ? t.lists.statusActive : customerStatus === 'inactive' ? t.lists.statusInactive : t.lists.statusBlocked
+            const badgeBg = customerStatus === 'active' ? 'bg-[#166728]' : customerStatus === 'inactive' ? 'bg-[#94979c]' : customerStatus === 'pending_registration' ? 'bg-[#d97706]' : 'bg-[#c9373a]'
+            const badgeText = customerStatus === 'active' ? t.lists.statusActive : customerStatus === 'inactive' ? t.lists.statusInactive : customerStatus === 'pending_registration' ? t.lists.statusPendingRegistration : t.lists.statusBlocked
 
             return (
               <tr

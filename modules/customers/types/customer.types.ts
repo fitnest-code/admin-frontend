@@ -1,4 +1,4 @@
-export type CustomerStatus = 'ACTIVE' | 'INACTIVE' | 'DELETED'
+export type CustomerStatus = 'ACTIVE' | 'INACTIVE' | 'DELETED' | 'PENDING_REGISTRATION'
 
 export type CustomerSubscriptionType = 'ALL' | 'ACTIVE' | 'FINISHED' | 'FROZEN' | 'LAST_7_DAYS' | 'CHANGED'
 
