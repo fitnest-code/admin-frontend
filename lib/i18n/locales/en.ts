@@ -90,6 +90,8 @@ const en: TranslationKeys = {
     details: "View details",
     statusUpdated: "Status updated successfully!",
     statusUpdateFailed: "Failed to update status",
+    exportModalTitle: "Export Gyms",
+    exportModalSubtitle: "Select a format to download gym data.",
     deleted: "Gym deleted successfully!",
     deleteFailed: "Failed to delete gym",
     cannotDeletePrefix: "Cannot delete gym: ",

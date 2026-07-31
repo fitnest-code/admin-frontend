@@ -2,17 +2,18 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, Plus, ChevronDown, Eye, Trash2, Check, MoreVertical } from 'lucide-react'
+import Image from 'next/image'
+import { Search, Plus, ChevronDown, Trash2, Check, MoreVertical, Upload, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { SORT_OPTIONS } from '@/lib/gyms-data'
 import { useAdminGymsQuery, useToggleGymStatus, type AdminGymListItem, type AdminGymSort } from '@/modules/gyms'
+import { getAdminGyms } from '@/modules/gyms/api/gyms.service'
 import { GymStatusToggle } from './gym-status-toggle'
 import { ConfirmDeleteModal } from './modals/confirm-delete-modal'
+import { ExportGymsModal, type ExportFormat, type ExportScope } from './modals/export-gyms-modal'
 import { useDeleteGym } from '@/lib/query/gym-query'
 import { SuccessAnimationModal } from '@/components/ui/success-animation-modal'
-import { toast } from 'sonner'
 import { useGymStore } from '@/lib/store/gym-store'
-
 import { useT } from '@/lib/i18n'
 import { useResizableColumns } from '@/hooks/use-resizable-columns'
 import {
@@ -29,13 +30,26 @@ export function GymsList() {
   const router = useRouter()
   const deleteGym = useDeleteGym()
   const toggleStatus = useToggleGymStatus()
+
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [sortValue, setSortValue] = useState<AdminGymSort>('newest')
   const [sortOpen, setSortOpen] = useState(false)
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
-  const [showSuccessModal, setShowSuccessModal] = useState(false)
+
+  // Selection states
+  const [selected, setSelected] = useState<Map<number, AdminGymListItem>>(new Map())
+  const [isSelectingAll, setIsSelectingAll] = useState(false)
+
+  // Export modal state
+  const [exportModalOpen, setExportModalOpen] = useState(false)
+
+  const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; message: string; type: 'success' | 'error' }>({
+    isOpen: false,
+    message: '',
+    type: 'success',
+  })
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQuery(query.trim()), 350)
@@ -48,6 +62,11 @@ export function GymsList() {
     page: currentPage,
     pageSize: PER_PAGE,
   })
+
+  // Clear selections when page or search/sort filters change
+  useEffect(() => {
+    setSelected(new Map())
+  }, [currentPage, debouncedQuery, sortValue])
 
   const sortRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -63,26 +82,67 @@ export function GymsList() {
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE))
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
 
+  const allOnPage = gyms.length > 0 && gyms.every((gym) => selected.has(gym.id))
+  const selectedList = Array.from(selected.values())
+
+  async function toggleAll() {
+    if (allOnPage) {
+      setSelected((prev) => {
+        const next = new Map(prev)
+        gyms.forEach((gym) => next.delete(gym.id))
+        return next
+      })
+    } else {
+      setIsSelectingAll(true)
+      try {
+        const res = await getAdminGyms({
+          query: debouncedQuery || undefined,
+          sort: sortValue,
+          page: 1,
+          pageSize: 100000,
+        })
+        const allItems = res?.items ?? []
+        setSelected((prev) => {
+          const next = new Map(prev)
+          allItems.forEach((gym) => {
+            next.set(gym.id, gym)
+          })
+          return next
+        })
+      } catch (err) {
+        console.error('Failed to select all gyms:', err)
+      } finally {
+        setIsSelectingAll(false)
+      }
+    }
+  }
+
+  function toggleOne(gym: AdminGymListItem) {
+    setSelected((prev) => {
+      const next = new Map(prev)
+      if (next.has(gym.id)) {
+        next.delete(gym.id)
+      } else {
+        next.set(gym.id, gym)
+      }
+      return next
+    })
+  }
+
   const { colWidths, tableRef, handleMouseDown } = useResizableColumns(
     [200, 250, 200, 120],
     [120, 150, 120, 90]
   )
-
-  const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; message: string; type: "success" | "error" }>({
-    isOpen: false,
-    message: "",
-    type: "success",
-  })
 
   function handleToggle(id: number, currentEnabled: boolean) {
     toggleStatus.mutate(
       { id: String(id), enabled: !currentEnabled },
       {
         onSuccess: () => {
-          setModalConfig({ isOpen: true, message: t.gyms.statusUpdated, type: "success" })
+          setModalConfig({ isOpen: true, message: t.gyms.statusUpdated, type: 'success' })
         },
         onError: () => {
-          setModalConfig({ isOpen: true, message: t.gyms.statusUpdateFailed, type: "error" })
+          setModalConfig({ isOpen: true, message: t.gyms.statusUpdateFailed, type: 'error' })
         },
       }
     )
@@ -93,30 +153,188 @@ export function GymsList() {
     deleteGym.mutate(deleteId, {
       onSuccess: () => {
         setDeleteId(null)
-        setModalConfig({ isOpen: true, message: t.gyms.deleted, type: "success" })
+        setModalConfig({ isOpen: true, message: t.gyms.deleted, type: 'success' })
       },
       onError: (error: any) => {
         let msg = error?.message || t.gyms.deleteFailed
         if (error?.response?.data?.error?.details?.dependencies?.length) {
-          const deps = error.response.data.error.details.dependencies.map((d: any) => d.reason).join(", ")
+          const deps = error.response.data.error.details.dependencies.map((d: any) => d.reason).join(', ')
           msg = `${t.gyms.cannotDeletePrefix}${deps}`
         } else if (error?.response?.data?.error?.message) {
           msg = error.response.data.error.message
         }
-        setModalConfig({ isOpen: true, message: msg, type: "error" })
+        setModalConfig({ isOpen: true, message: msg, type: 'error' })
       },
     })
   }
 
   const getSortLabel = (val: string) => {
     switch (val) {
-      case 'newest': return t.gyms.sortNewest;
-      case 'name_asc': return t.gyms.sortNameAsc;
-      case 'name_desc': return t.gyms.sortNameDesc;
-      case 'deactivated': return t.gyms.sortDeactivated;
-      case 'address_asc': return t.gyms.sortAddressAsc;
-      default: return val;
+      case 'newest':
+        return t.gyms.sortNewest
+      case 'name_asc':
+        return t.gyms.sortNameAsc
+      case 'name_desc':
+        return t.gyms.sortNameDesc
+      case 'deactivated':
+        return t.gyms.sortDeactivated
+      case 'address_asc':
+        return t.gyms.sortAddressAsc
+      default:
+        return val
     }
+  }
+
+  async function handleExecuteExport(format: ExportFormat, scope: ExportScope) {
+    let exportItems: AdminGymListItem[] = []
+    if (scope === 'selected') {
+      exportItems = selectedList
+    } else {
+      if (total > 0 && gyms.length === total) {
+        exportItems = gyms
+      } else {
+        const res = await getAdminGyms({
+          query: debouncedQuery || undefined,
+          sort: sortValue,
+          page: 1,
+          pageSize: 100000,
+        })
+        exportItems = res?.items ?? gyms
+      }
+    }
+
+    if (exportItems.length === 0) return
+
+    const dateStr = new Date().toISOString().slice(0, 10)
+
+    if (format === 'csv') {
+      const headers = ['ID', 'Zal adı', 'Ünvan', 'Məsul şəxs', 'Status']
+      const rows = exportItems.map((g) => [
+        g.id,
+        g.name || '',
+        g.fullAddress || '',
+        g.ownerName || '',
+        g.status === 'ACTIVE' ? 'Aktiv' : 'Deaktiv',
+      ])
+      const csvContent = [headers, ...rows]
+        .map((row) => row.map((val) => `"${String(val).replace(/"/g, '""')}"`).join(','))
+        .join('\n')
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', `gyms_${dateStr}.csv`)
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    } else if (format === 'json') {
+      const exportData = exportItems.map((g) => ({
+        id: g.id,
+        name: g.name,
+        address: g.fullAddress,
+        owner: g.ownerName,
+        status: g.status,
+      }))
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', `gyms_${dateStr}.json`)
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    } else if (format === 'pdf') {
+      const printWindow = window.open('', '_blank')
+      if (!printWindow) return
+
+      const formattedDate = new Date().toLocaleDateString('az-AZ')
+      const rowsHtml = exportItems
+        .map(
+          (g, idx) => `
+          <tr style="background-color: ${idx % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #e5e7eb;">
+            <td style="padding: 10px 14px; font-size: 13px; color: #111827;">${g.id}</td>
+            <td style="padding: 10px 14px; font-size: 13px; font-weight: 600; color: #111827;">${escapeHtml(g.name)}</td>
+            <td style="padding: 10px 14px; font-size: 13px; color: #374151;">${escapeHtml(g.fullAddress)}</td>
+            <td style="padding: 10px 14px; font-size: 13px; color: #374151;">${escapeHtml(g.ownerName || '-')}</td>
+            <td style="padding: 10px 14px; font-size: 13px; text-align: center;">
+              <span style="display: inline-block; padding: 3px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600; text-transform: uppercase; ${
+                g.status === 'ACTIVE'
+                  ? 'background-color: #dcfce7; color: #166534;'
+                  : 'background-color: #f3f4f6; color: #4b5563;'
+              }">
+                ${g.status === 'ACTIVE' ? 'Aktiv' : 'Deaktiv'}
+              </span>
+            </td>
+          </tr>
+        `
+        )
+        .join('')
+
+      const html = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>FitNest - Zallar Hesabatı</title>
+            <meta charset="utf-8" />
+            <style>
+              @page { size: A4 portrait; margin: 15mm; }
+              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #111827; margin: 0; padding: 20px; }
+              .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #00B4CC; padding-bottom: 16px; margin-bottom: 24px; }
+              .logo { font-size: 24px; font-weight: 800; color: #00B4CC; letter-spacing: -0.5px; }
+              .title { font-size: 18px; font-weight: 700; color: #111827; margin: 0 0 4px 0; }
+              .meta { font-size: 12px; color: #6b7280; }
+              table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+              th { background-color: rgba(0, 180, 204, 0.12); color: #008799; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 14px; text-align: left; border-bottom: 2px solid #00B4CC; }
+              .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #e5e7eb; font-size: 11px; color: #9ca3af; display: flex; justify-content: space-between; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <div>
+                <div class="logo">FitNest Admin</div>
+                <div class="meta">Tarix: ${formattedDate} | Ümumi zal sayı: ${exportItems.length}</div>
+              </div>
+              <div>
+                <h1 class="title">Zallar Hesabatı</h1>
+              </div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 60px;">ID</th>
+                  <th>Zal Adı</th>
+                  <th>Ünvan</th>
+                  <th>Məsul Şəxs</th>
+                  <th style="text-align: center; width: 90px;">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHtml}
+              </tbody>
+            </table>
+            <div class="footer">
+              <span>Məxfilik: Yalnız Daxili İstifadə Üçün</span>
+              <span>FitNest Admin Panel</span>
+            </div>
+            <script>
+              window.onload = function() { window.print(); }
+            </script>
+          </body>
+        </html>
+      `
+      printWindow.document.write(html)
+      printWindow.document.close()
+    }
+  }
+
+  function escapeHtml(str: string) {
+    return String(str ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
   }
 
   return (
@@ -130,7 +348,10 @@ export function GymsList() {
           <input
             type="search"
             value={query}
-            onChange={(e) => { setQuery(e.target.value); setCurrentPage(1) }}
+            onChange={(e) => {
+              setQuery(e.target.value)
+              setCurrentPage(1)
+            }}
             placeholder={t.gyms.searchToolbarPlaceholder}
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
           />
@@ -141,7 +362,7 @@ export function GymsList() {
             onClick={() => setSortOpen((p) => !p)}
             className={cn(
               'flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-[#00B4CC] hover:text-[#00B4CC]',
-              sortOpen && 'border-[#00B4CC] text-[#00B4CC]',
+              sortOpen && 'border-[#00B4CC] text-[#00B4CC]'
             )}
           >
             {t.gyms.sort}
@@ -152,12 +373,16 @@ export function GymsList() {
               {SORT_OPTIONS.map((opt) => (
                 <li
                   key={opt.value}
-                  onClick={() => { setSortValue(opt.value as AdminGymSort); setSortOpen(false); setCurrentPage(1) }}
+                  onClick={() => {
+                    setSortValue(opt.value as AdminGymSort)
+                    setSortOpen(false)
+                    setCurrentPage(1)
+                  }}
                   className={cn(
                     'flex cursor-pointer items-center justify-between gap-2 px-4 py-2.5 text-sm transition-colors',
                     opt.value === sortValue
                       ? 'bg-[#00B4CC26] text-[#00B4CC] font-medium'
-                      : 'text-foreground hover:bg-secondary',
+                      : 'text-foreground hover:bg-secondary'
                   )}
                 >
                   {getSortLabel(opt.value)}
@@ -168,22 +393,53 @@ export function GymsList() {
           )}
         </div>
 
+        {/* Export Button */}
+        <button
+          onClick={() => setExportModalOpen(true)}
+          className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:border-[#00B4CC] hover:text-[#00B4CC] transition-all shadow-xs cursor-pointer"
+        >
+          <Image src="/export-icon.svg" width={16} height={16} alt="" className="shrink-0" />
+          <span>Export</span>
+        </button>
+
+        {/* New Gym Button */}
         <button
           onClick={() => {
             useGymStore.getState().resetGym()
             router.push('/gyms/new')
           }}
-          className="flex items-center gap-2 rounded-lg bg-[#00B4CC] px-4 py-2 text-sm font-semibold text-white hover:bg-[#008799] transition-colors"
+          className="flex items-center gap-2 rounded-lg bg-[#00B4CC] px-4 py-2 text-sm font-semibold text-white hover:bg-[#008799] transition-colors cursor-pointer"
         >
           <Plus size={15} />
           {t.gyms.newGym}
         </button>
       </div>
 
-      {/* Table - removed overflow-hidden to prevent dropdown clipping */}
+      {/* Selected Items Bulk Actions Bar */}
+      {selected.size > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-4 w-full transition-all duration-300 animate-in fade-in-50 bg-white/50 p-2 rounded-lg border border-dashed border-[#00B4CC]/20">
+          <div className="flex items-center px-2">
+            <span className="text-[14px] font-medium text-foreground">
+              {t.modals?.selectedCount ? t.modals.selectedCount.replace('{count}', String(selected.size)) : `${selected.size} zal seçildi`}
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-[13.4px]">
+            <button
+              onClick={() => setExportModalOpen(true)}
+              className="flex h-[40px] min-w-[110px] w-fit items-center justify-center gap-2 rounded-lg border border-[#00B4CC]/40 bg-white text-foreground hover:bg-[#00B4CC]/5 hover:border-[#00B4CC] px-4 text-sm font-medium transition-all duration-200 active:scale-[0.98] shadow-xs cursor-pointer whitespace-nowrap"
+            >
+              <Image src="/export-icon.svg" width={18} height={18} alt="" className="shrink-0" />
+              <span>Export</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Table */}
       <div className="overflow-x-auto rounded-lg border border-border bg-card shadow-sm">
-        <table ref={tableRef} className="w-full border-separate border-spacing-0" style={{ tableLayout: "fixed", minWidth: "750px" }}>
+        <table ref={tableRef} className="w-full border-separate border-spacing-0" style={{ tableLayout: 'fixed', minWidth: '750px' }}>
           <colgroup>
+            <col style={{ width: '48px' }} /> {/* Checkbox column */}
             <col style={{ width: `${colWidths[0]}px` }} />
             <col style={{ width: `${colWidths[1]}px` }} />
             <col style={{ width: `${colWidths[2]}px` }} />
@@ -192,6 +448,21 @@ export function GymsList() {
           </colgroup>
           <thead>
             <tr className="bg-[#00B4CC]/[0.15] dark:bg-[#00B4CC]/10 text-left">
+              {/* Header Checkbox */}
+              <th className="px-4 py-3">
+                <div className="flex justify-center">
+                  {isSelectingAll ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-[#00B4CC]" />
+                  ) : (
+                    <input
+                      type="checkbox"
+                      checked={allOnPage}
+                      onChange={toggleAll}
+                      className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded"
+                    />
+                  )}
+                </div>
+              </th>
               <th className="px-4 py-3 text-xs font-bold uppercase text-foreground/80 relative">
                 {t.gyms.gymName}
                 <div
@@ -234,18 +505,20 @@ export function GymsList() {
           <tbody>
             {gymsQuery.isLoading ? (
               <tr>
-                <td colSpan={5} className="py-16 text-center text-sm text-muted-foreground">{t.common.loading}</td>
+                <td colSpan={6} className="py-16 text-center text-sm text-muted-foreground">
+                  {t.common.loading}
+                </td>
               </tr>
             ) : gyms.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-20 text-center">
+                <td colSpan={6} className="py-20 text-center">
                   <p className="text-sm font-semibold text-foreground mb-4">{t.common.noData}</p>
                   <button
                     onClick={() => {
                       useGymStore.getState().resetGym()
                       router.push('/gyms/new')
                     }}
-                    className="inline-flex items-center gap-2 rounded-lg bg-[#00B4CC] px-4 py-2 text-sm font-semibold text-white hover:bg-[#008799] transition-colors mx-auto"
+                    className="inline-flex items-center gap-2 rounded-lg bg-[#00B4CC] px-4 py-2 text-sm font-semibold text-white hover:bg-[#008799] transition-colors mx-auto cursor-pointer"
                   >
                     <Plus size={15} />
                     {t.gyms.addNewGym}
@@ -257,9 +530,11 @@ export function GymsList() {
                 <GymRow
                   key={gym.id}
                   gym={gym}
+                  isSelected={selected.has(gym.id)}
+                  onToggleSelect={() => toggleOne(gym)}
                   onView={() => router.push(`/gyms/${gym.id}`)}
                   onDelete={() => setDeleteId(gym.id)}
-                  onToggle={() => handleToggle(gym.id, gym.status === 'ACTIVE')}
+                  onToggleStatus={() => handleToggle(gym.id, gym.status === 'ACTIVE')}
                 />
               ))
             )}
@@ -273,8 +548,8 @@ export function GymsList() {
                 key={p}
                 onClick={() => setCurrentPage(p)}
                 className={cn(
-                  'flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors',
-                  p === currentPage ? 'bg-[#00B4CC] text-white' : 'text-foreground hover:bg-secondary',
+                  'flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors cursor-pointer',
+                  p === currentPage ? 'bg-[#00B4CC] text-white' : 'text-foreground hover:bg-secondary'
                 )}
               >
                 {p}
@@ -293,10 +568,15 @@ export function GymsList() {
         />
       )}
 
+      <ExportGymsModal
+        isOpen={exportModalOpen}
+        onClose={() => setExportModalOpen(false)}
+        selectedGyms={selectedList}
+        totalGymsCount={total}
+        onExecuteExport={handleExecuteExport}
+      />
 
-      {gymsQuery.isError && (
-        <p className="text-sm text-red-500">{t.gyms.loadFailed}</p>
-      )}
+      {gymsQuery.isError && <p className="text-sm text-red-500">{t.gyms.loadFailed}</p>}
 
       <SuccessAnimationModal
         isOpen={modalConfig.isOpen}
@@ -312,34 +592,59 @@ export function GymsList() {
 
 function GymRow({
   gym,
+  isSelected,
+  onToggleSelect,
   onView,
   onDelete,
-  onToggle,
+  onToggleStatus,
 }: {
   gym: AdminGymListItem
+  isSelected: boolean
+  onToggleSelect: () => void
   onView: () => void
   onDelete: () => void
-  onToggle: () => void
+  onToggleStatus: () => void
 }) {
   const t = useT()
 
   return (
-    <tr 
+    <tr
       onClick={onView}
-      className="hover:bg-secondary/40 border-b border-border transition-all duration-200 cursor-pointer"
+      className={cn(
+        'hover:bg-secondary/40 border-b border-border transition-all duration-200 cursor-pointer',
+        isSelected && 'bg-[#f0fdff] dark:bg-[#00B4CC]/5'
+      )}
     >
+      {/* Row Checkbox */}
+      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-center">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={onToggleSelect}
+            className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded"
+          />
+        </div>
+      </td>
+
       <td className="px-4 py-3 text-sm font-normal text-black overflow-hidden">
-        <span className="truncate block" title={gym.name}>{gym.name}</span>
+        <span className="truncate block" title={gym.name}>
+          {gym.name}
+        </span>
       </td>
       <td className="px-4 py-3 text-sm font-normal text-black overflow-hidden">
-        <span className="truncate block" title={gym.fullAddress}>{gym.fullAddress}</span>
+        <span className="truncate block" title={gym.fullAddress}>
+          {gym.fullAddress}
+        </span>
       </td>
       <td className="px-4 py-3 text-sm font-normal text-black overflow-hidden">
-        <span className="truncate block" title={gym.ownerName || ''}>{gym.ownerName || ''}</span>
+        <span className="truncate block" title={gym.ownerName || ''}>
+          {gym.ownerName || ''}
+        </span>
       </td>
       <td className="px-4 py-3 text-center overflow-hidden">
         <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
-          <GymStatusToggle active={gym.status === 'ACTIVE'} onToggle={onToggle} />
+          <GymStatusToggle active={gym.status === 'ACTIVE'} onToggle={onToggleStatus} />
         </div>
       </td>
       <td className="px-4 py-3 text-center">
@@ -348,14 +653,17 @@ function GymRow({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200 outline-none"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200 outline-none cursor-pointer"
                 aria-label={t.gyms.more}
               >
                 <MoreVertical size={20} />
               </button>
             </DropdownMenuTrigger>
 
-            <DropdownMenuContent align="end" className="w-[180px] flex flex-col gap-3 rounded-[12px] border border-[#ECECED] bg-white p-3 shadow-lg">
+            <DropdownMenuContent
+              align="end"
+              className="w-[180px] flex flex-col gap-3 rounded-[12px] border border-[#ECECED] bg-white p-3 shadow-lg"
+            >
               <DropdownMenuItem
                 onClick={onDelete}
                 className="flex w-full items-center gap-2 text-base font-normal text-[#F10303] hover:opacity-70 transition-opacity cursor-pointer focus:bg-transparent px-0 py-0"

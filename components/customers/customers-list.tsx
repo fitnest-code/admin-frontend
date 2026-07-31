@@ -20,6 +20,7 @@ import {
   type CustomerSortValue,
   normalizeCustomerStatus,
   normalizeSubscriptionStatus,
+  getCustomerStatusLabel,
   getSubscriptionStatusLabel,
 } from './list/customer-list-utils'
 

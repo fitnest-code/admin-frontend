@@ -90,6 +90,8 @@ const ru: TranslationKeys = {
     details: "Детальный просмотр",
     statusUpdated: "Статус успешно обновлен!",
     statusUpdateFailed: "Не удалось обновить статус",
+    exportModalTitle: "Экспорт Залов",
+    exportModalSubtitle: "Выберите формат для скачивания данных залов.",
     deleted: "Зал успешно удален!",
     deleteFailed: "Не удалось удалить зал",
     cannotDeletePrefix: "Невозможно удалить зал: ",

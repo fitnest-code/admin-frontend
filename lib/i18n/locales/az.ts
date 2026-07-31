@@ -92,6 +92,8 @@ const az = {
     details: "Detallı bax",
     statusUpdated: "Status uğurla yeniləndi!",
     statusUpdateFailed: "Statusu yeniləmək mümkün olmadı",
+    exportModalTitle: "Zalları İxrac Et",
+    exportModalSubtitle: "Zal məlumatlarını yükləmək üçün format seçin.",
     deleted: "Zal uğurla silindi!",
     deleteFailed: "Zalı silmək mümkün olmadı",
     cannotDeletePrefix: "Zalı silmək mümkün deyil: ",
