@@ -146,3 +146,7 @@ export function toggleGymStatus(id: string, enabled: boolean) {
     params: { enabled }
   })
 }
+
+export function getGymAdminDetails(id: string | number) {
+  return apiGet<any>(`/api/v1/admin/gyms/${id}/details`)
+}

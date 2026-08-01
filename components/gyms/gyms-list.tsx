@@ -7,7 +7,7 @@ import { Search, Plus, ChevronDown, Trash2, Check, MoreVertical, Upload, Loader2
 import { cn } from '@/lib/utils'
 import { SORT_OPTIONS } from '@/lib/gyms-data'
 import { useAdminGymsQuery, useToggleGymStatus, type AdminGymListItem, type AdminGymSort } from '@/modules/gyms'
-import { getAdminGyms } from '@/modules/gyms/api/gyms.service'
+import { getAdminGyms, getGymAdminDetails } from '@/modules/gyms/api/gyms.service'
 import { GymStatusToggle } from './gym-status-toggle'
 import { ConfirmDeleteModal } from './modals/confirm-delete-modal'
 import { ExportGymsModal, type ExportFormat, type ExportScope } from './modals/export-gyms-modal'
@@ -24,6 +24,51 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 const PER_PAGE = 10
+
+function extractGymCategories(g: AdminGymListItem, details?: any) {
+  let mainCat = '-'
+  let subCatsStr = '-'
+
+  if (details) {
+    if (details.mainCategories && details.mainCategories.length > 0) {
+      mainCat = details.mainCategories.map((c: any) => c.name).join(', ')
+    } else if (details.category?.name) {
+      mainCat = details.category.name
+    } else if (details.categoryName) {
+      mainCat = details.categoryName
+    } else if (details.categories && details.categories.length > 0) {
+      mainCat = details.categories[0].name
+    } else if (details.descriptions && details.descriptions.length > 0) {
+      mainCat = details.descriptions[0].categoryName
+    }
+
+    if (details.subCategories && details.subCategories.length > 0) {
+      subCatsStr = details.subCategories.map((c: any) => (typeof c === 'string' ? c : c.name)).join(', ')
+    } else if (details.subCategory?.name) {
+      subCatsStr = details.subCategory.name
+    } else if (details.categories && details.categories.length > 1) {
+      subCatsStr = details.categories.slice(1).map((c: any) => c.name).join(', ')
+    } else if (details.descriptions && details.descriptions.length > 1) {
+      subCatsStr = details.descriptions.slice(1).map((d: any) => d.categoryName).filter(Boolean).join(', ')
+    }
+  }
+
+  if (mainCat === '-' || !mainCat) {
+    mainCat = (g as any).mainCategoryName || (g as any).categoryName || '-'
+  }
+  if (subCatsStr === '-' || !subCatsStr) {
+    if ((g as any).subCategoryName) {
+      subCatsStr = (g as any).subCategoryName
+    } else if (Array.isArray((g as any).subCategories) && (g as any).subCategories.length > 0) {
+      subCatsStr = (g as any).subCategories.map((c: any) => (typeof c === 'string' ? c : c.name)).join(', ')
+    }
+  }
+
+  return {
+    mainCat: mainCat || '-',
+    subCats: subCatsStr || '-',
+  }
+}
 
 export function GymsList() {
   const t = useT()
@@ -205,19 +250,38 @@ export function GymsList() {
 
     if (exportItems.length === 0) return
 
+    // Fetch detailed info for each gym to populate categories, subcategories, contact info
+    const detailedGyms = await Promise.all(
+      exportItems.map(async (g) => {
+        try {
+          const details = await getGymAdminDetails(g.id)
+          return { g, details }
+        } catch {
+          return { g, details: null }
+        }
+      })
+    )
+
     const dateStr = new Date().toISOString().slice(0, 10)
 
     if (format === 'csv') {
-      const headers = ['ID', 'Zal adı', 'Ünvan', 'Məsul şəxs', 'Status']
-      const rows = exportItems.map((g) => [
-        g.id,
-        g.name || '',
-        g.fullAddress || '',
-        g.ownerName || '',
-        g.status === 'ACTIVE' ? 'Aktiv' : 'Deaktiv',
-      ])
+      const headers = ['ID', 'Zal adı', 'Ana kateqoriya', 'Alt kateqoriyalar', 'Ünvan', 'Telefon', 'Email', 'Məsul şəxs', 'Status']
+      const rows = detailedGyms.map(({ g, details }) => {
+        const { mainCat, subCats } = extractGymCategories(g, details)
+        return [
+          g.id,
+          g.name || details?.name || '',
+          mainCat,
+          subCats,
+          g.fullAddress || details?.address || '',
+          details?.phone || '',
+          details?.email || '',
+          g.ownerName || '',
+          g.status === 'ACTIVE' ? 'Aktiv' : 'Deaktiv',
+        ]
+      })
       const csvContent = [headers, ...rows]
-        .map((row) => row.map((val) => `"${String(val).replace(/"/g, '""')}"`).join(','))
+        .map((row) => row.map((val) => `"${String(val ?? '').replace(/"/g, '""')}"`).join(','))
         .join('\n')
       const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
       const url = URL.createObjectURL(blob)
@@ -229,13 +293,20 @@ export function GymsList() {
       document.body.removeChild(link)
       URL.revokeObjectURL(url)
     } else if (format === 'json') {
-      const exportData = exportItems.map((g) => ({
-        id: g.id,
-        name: g.name,
-        address: g.fullAddress,
-        owner: g.ownerName,
-        status: g.status,
-      }))
+      const exportData = detailedGyms.map(({ g, details }) => {
+        const { mainCat, subCats } = extractGymCategories(g, details)
+        return {
+          id: g.id,
+          name: g.name || details?.name,
+          mainCategory: mainCat,
+          subCategories: subCats,
+          address: g.fullAddress || details?.address,
+          phone: details?.phone || '',
+          email: details?.email || '',
+          owner: g.ownerName,
+          status: g.status,
+        }
+      })
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json;charset=utf-8;' })
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
@@ -250,16 +321,19 @@ export function GymsList() {
       if (!printWindow) return
 
       const formattedDate = new Date().toLocaleDateString('az-AZ')
-      const rowsHtml = exportItems
-        .map(
-          (g, idx) => `
+      const rowsHtml = detailedGyms
+        .map(({ g, details }, idx) => {
+          const { mainCat, subCats } = extractGymCategories(g, details)
+          return `
           <tr style="background-color: ${idx % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #e5e7eb;">
-            <td style="padding: 10px 14px; font-size: 13px; color: #111827;">${g.id}</td>
-            <td style="padding: 10px 14px; font-size: 13px; font-weight: 600; color: #111827;">${escapeHtml(g.name)}</td>
-            <td style="padding: 10px 14px; font-size: 13px; color: #374151;">${escapeHtml(g.fullAddress)}</td>
-            <td style="padding: 10px 14px; font-size: 13px; color: #374151;">${escapeHtml(g.ownerName || '-')}</td>
-            <td style="padding: 10px 14px; font-size: 13px; text-align: center;">
-              <span style="display: inline-block; padding: 3px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600; text-transform: uppercase; ${
+            <td style="padding: 10px 12px; font-size: 12px; color: #111827;">${g.id}</td>
+            <td style="padding: 10px 12px; font-size: 12px; font-weight: 600; color: #111827;">${escapeHtml(g.name || details?.name)}</td>
+            <td style="padding: 10px 12px; font-size: 12px; color: #008799; font-weight: 500;">${escapeHtml(mainCat)}</td>
+            <td style="padding: 10px 12px; font-size: 12px; color: #4b5563;">${escapeHtml(subCats)}</td>
+            <td style="padding: 10px 12px; font-size: 12px; color: #374151;">${escapeHtml(g.fullAddress || details?.address)}</td>
+            <td style="padding: 10px 12px; font-size: 12px; color: #374151;">${escapeHtml(g.ownerName || '-')}</td>
+            <td style="padding: 10px 12px; font-size: 12px; text-align: center;">
+              <span style="display: inline-block; padding: 3px 8px; border-radius: 9999px; font-size: 10px; font-weight: 600; text-transform: uppercase; ${
                 g.status === 'ACTIVE'
                   ? 'background-color: #dcfce7; color: #166534;'
                   : 'background-color: #f3f4f6; color: #4b5563;'
@@ -269,7 +343,7 @@ export function GymsList() {
             </td>
           </tr>
         `
-        )
+        })
         .join('')
 
       const html = `
@@ -279,15 +353,15 @@ export function GymsList() {
             <title>FitNest - Zallar Hesabatı</title>
             <meta charset="utf-8" />
             <style>
-              @page { size: A4 portrait; margin: 15mm; }
-              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #111827; margin: 0; padding: 20px; }
-              .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #00B4CC; padding-bottom: 16px; margin-bottom: 24px; }
+              @page { size: A4 landscape; margin: 12mm; }
+              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #111827; margin: 0; padding: 16px; }
+              .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #00B4CC; padding-bottom: 14px; margin-bottom: 20px; }
               .logo { font-size: 24px; font-weight: 800; color: #00B4CC; letter-spacing: -0.5px; }
               .title { font-size: 18px; font-weight: 700; color: #111827; margin: 0 0 4px 0; }
               .meta { font-size: 12px; color: #6b7280; }
               table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-              th { background-color: rgba(0, 180, 204, 0.12); color: #008799; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 14px; text-align: left; border-bottom: 2px solid #00B4CC; }
-              .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #e5e7eb; font-size: 11px; color: #9ca3af; display: flex; justify-content: space-between; }
+              th { background-color: rgba(0, 180, 204, 0.12); color: #008799; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 12px; text-align: left; border-bottom: 2px solid #00B4CC; }
+              .footer { margin-top: 28px; padding-top: 14px; border-top: 1px solid #e5e7eb; font-size: 11px; color: #9ca3af; display: flex; justify-content: space-between; }
             </style>
           </head>
           <body>
@@ -297,17 +371,19 @@ export function GymsList() {
                 <div class="meta">Tarix: ${formattedDate} | Ümumi zal sayı: ${exportItems.length}</div>
               </div>
               <div>
-                <h1 class="title">Zallar Hesabatı</h1>
+                <h1 class="title">Zallar Hesabatı (Kateqoriyalarla)</h1>
               </div>
             </div>
             <table>
               <thead>
                 <tr>
-                  <th style="width: 60px;">ID</th>
+                  <th style="width: 45px;">ID</th>
                   <th>Zal Adı</th>
+                  <th>Ana Kateqoriya</th>
+                  <th>Alt Kateqoriyalar</th>
                   <th>Ünvan</th>
                   <th>Məsul Şəxs</th>
-                  <th style="text-align: center; width: 90px;">Status</th>
+                  <th style="text-align: center; width: 80px;">Status</th>
                 </tr>
               </thead>
               <tbody>
