@@ -469,15 +469,6 @@ export function GymsList() {
           )}
         </div>
 
-        {/* Export Button */}
-        <button
-          onClick={() => setExportModalOpen(true)}
-          className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:border-[#00B4CC] hover:text-[#00B4CC] transition-all shadow-xs cursor-pointer"
-        >
-          <Image src="/export-icon.svg" width={16} height={16} alt="" className="shrink-0" />
-          <span>Export</span>
-        </button>
-
         {/* New Gym Button */}
         <button
           onClick={() => {
@@ -492,24 +483,22 @@ export function GymsList() {
       </div>
 
       {/* Selected Items Bulk Actions Bar */}
-      {selected.size > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-4 w-full transition-all duration-300 animate-in fade-in-50 bg-white/50 p-2 rounded-lg border border-dashed border-[#00B4CC]/20">
-          <div className="flex items-center px-2">
-            <span className="text-[14px] font-medium text-foreground">
-              {t.modals?.selectedCount ? t.modals.selectedCount.replace('{count}', String(selected.size)) : `${selected.size} zal seçildi`}
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-[13.4px]">
-            <button
-              onClick={() => setExportModalOpen(true)}
-              className="flex h-[40px] min-w-[110px] w-fit items-center justify-center gap-2 rounded-lg border border-[#00B4CC]/40 bg-white text-foreground hover:bg-[#00B4CC]/5 hover:border-[#00B4CC] px-4 text-sm font-medium transition-all duration-200 active:scale-[0.98] shadow-xs cursor-pointer whitespace-nowrap"
-            >
-              <Image src="/export-icon.svg" width={18} height={18} alt="" className="shrink-0" />
-              <span>Export</span>
-            </button>
-          </div>
+      <div className="flex flex-wrap items-center justify-between gap-4 w-full transition-all duration-300 bg-white/50 p-2 rounded-lg border border-dashed border-[#00B4CC]/20">
+        <div className="flex items-center px-2">
+          <span className="text-[14px] font-medium text-foreground">
+            {t.modals?.selectedCount ? t.modals.selectedCount.replace('{count}', String(selected.size)) : `${selected.size} zal seçildi`}
+          </span>
         </div>
-      )}
+        <div className="flex flex-wrap items-center gap-[13.4px]">
+          <button
+            onClick={() => setExportModalOpen(true)}
+            className="flex h-[40px] min-w-[110px] w-fit items-center justify-center gap-2 rounded-lg border border-[#00B4CC]/40 bg-white text-foreground hover:bg-[#00B4CC]/5 hover:border-[#00B4CC] px-4 text-sm font-medium transition-all duration-200 active:scale-[0.98] shadow-xs cursor-pointer whitespace-nowrap"
+          >
+            <Image src="/export-icon.svg" width={18} height={18} alt="" className="shrink-0" />
+            <span>Export</span>
+          </button>
+        </div>
+      </div>
 
       {/* Table */}
       <div className="overflow-x-auto rounded-lg border border-border bg-card shadow-sm">
