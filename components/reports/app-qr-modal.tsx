@@ -2,7 +2,7 @@
 
 import React from 'react'
 import Image from 'next/image'
-import { X, Download } from 'lucide-react'
+import { X } from 'lucide-react'
 import styles from './app-qr-modal.module.css'
 
 interface AppQrModalProps {
@@ -10,181 +10,55 @@ interface AppQrModalProps {
   onClose: () => void
 }
 
-const APPLE_STORE_URL = 'https://apps.apple.com/az/app/fitnest-gym-health/id6768059768'
-const GOOGLE_PLAY_URL = 'https://play.google.com/store/apps/details?id=az.fitnest&hl=en&pli=1'
-
-const getApiBaseUrl = () => {
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '')
-  }
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname
-    if (host.includes('dev') || host.includes('localhost') || host === '127.0.0.1') {
-      return 'https://api-dev.fitnest.az'
-    }
-    if (host.includes('fitnest.az')) {
-      return 'https://api.fitnest.az'
-    }
-  }
-  return 'https://api-dev.fitnest.az'
-}
-
-function StoreButtons({ variant }: { variant: 'light' | 'dark' }) {
-  const buttonClass =
-    variant === 'light' ? styles.storeButtonLight : styles.storeButtonDark
-
-  return (
-    <div className={styles.storeButtons}>
-      <a
-        href={APPLE_STORE_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={buttonClass}
-      >
-        <Image src="/apple.svg" width={22} height={22} alt="" className={styles.storeIcon} />
-        <span className={styles.storeText}>
-          <span className={styles.storeLabel}>Download on the</span>
-          <span className={styles.storeName}>App Store</span>
-        </span>
-      </a>
-      <a
-        href={GOOGLE_PLAY_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={buttonClass}
-      >
-        <Image src="/play.svg" width={20} height={22} alt="" className={styles.storeIcon} />
-        <span className={styles.storeText}>
-          <span className={styles.storeLabel}>GET IT ON</span>
-          <span className={styles.storeName}>Google Play</span>
-        </span>
-      </a>
-    </div>
-  )
-}
-
 export function AppQrModal({ isOpen, onClose }: AppQrModalProps) {
   if (!isOpen) return null
 
-  const baseUrl = getApiBaseUrl()
-  const lightQrUrl = `${baseUrl}/api/v1/public/app-qr/image/light`
-  const darkQrUrl = `${baseUrl}/api/v1/public/app-qr/image/dark`
-
-  const handleDownload = async (mode: 'light' | 'dark') => {
-    try {
-      const imageUrl = `${baseUrl}/api/v1/public/app-qr/image/${mode}`
-      const response = await fetch(imageUrl)
-      if (!response.ok) {
-        throw new Error(`Failed to fetch QR image: ${response.status}`)
-      }
-      const blob = await response.blob()
-      const blobUrl = URL.createObjectURL(blob)
-
-      const link = document.createElement('a')
-      link.href = blobUrl
-      link.download = `fitnest_app_qr_${mode}_mode.png`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(blobUrl)
-    } catch (error) {
-      console.error(`Failed to export ${mode} QR code:`, error)
-    }
-  }
-
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <div className={styles.modalTitle}>Tətbiq QR Kodları (App Store / Play Store)</div>
-          <button type="button" className={styles.closeButton} onClick={onClose}>
-            <X size={22} />
-          </button>
+    <div className={styles.overlay} onClick={onClose}>
+      <button type="button" className={styles.closeButton} onClick={onClose} aria-label="Bağla">
+        <X size={28} />
+      </button>
+
+      <div className={styles.banners} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.banner}>
+          <Image
+            src="/qr-light-background.jpg"
+            alt="Light QR background"
+            fill
+            className={styles.bannerBg}
+            sizes="(max-width: 900px) 90vw, 45vw"
+            priority
+          />
+          <div className={styles.qrSlot}>
+            <Image
+              src="/app_qr_light.png"
+              alt="Light Mode QR"
+              width={280}
+              height={280}
+              className={styles.qrImage}
+              priority
+            />
+          </div>
         </div>
 
-        <div className={styles.modalBody}>
-          {/* Light Mode — Figma Background */}
-          <div className={styles.qrCard}>
-            <div className={styles.cardHeader}>
-              <span className={styles.cardTitle}>Light Mode Design</span>
-              <span className={`${styles.badge} ${styles.badgeLight}`}>Açıq Rejim</span>
-            </div>
-
-            <div className={styles.bannerCanvasLight}>
-              <div className={styles.unionGlow} />
-              <div className={styles.subtitleGlow} />
-              <div className={styles.titleGlow} />
-
-              <div className={styles.frame}>
-                <b className={styles.title}>QR KOD</b>
-                <StoreButtons variant="light" />
-              </div>
-
-              <div className={styles.qrCodeContainer}>
-                <Image
-                  src={lightQrUrl}
-                  width={220}
-                  height={220}
-                  alt="Light Mode QR Code"
-                  className={styles.qrCodeImage}
-                  unoptimized
-                />
-              </div>
-
-              <div className={styles.backgroundChild} />
-              <div className={styles.backgroundItem} />
-            </div>
-
-            <button
-              type="button"
-              className={styles.downloadButton}
-              onClick={() => handleDownload('light')}
-            >
-              <Download size={18} />
-              <span>Export QR (Light Mode)</span>
-            </button>
-          </div>
-
-          {/* Dark Mode — Figma MainFrame */}
-          <div className={styles.qrCard}>
-            <div className={styles.cardHeader}>
-              <span className={styles.cardTitle}>Dark Mode Design</span>
-              <span className={`${styles.badge} ${styles.badgeDark}`}>Tünd Rejim</span>
-            </div>
-
-            <div className={styles.bannerCanvasDark}>
-              <div className={styles.unionGlow} />
-              <div className={styles.subtitleGlow} />
-              <div className={styles.titleGlow} />
-
-              <div className={styles.frame}>
-                <b className={styles.title}>QR KOD</b>
-                <StoreButtons variant="dark" />
-              </div>
-
-              <div className={`${styles.qrCodeContainer} ${styles.qrCodeContainerDark}`}>
-                <Image
-                  src={darkQrUrl}
-                  width={220}
-                  height={220}
-                  alt="Dark Mode QR Code"
-                  className={styles.qrCodeImage}
-                  unoptimized
-                />
-              </div>
-
-              <div className={styles.mainFrameChild} />
-              <div className={styles.mainFrameItem} />
-            </div>
-
-            <button
-              type="button"
-              className={styles.downloadButton}
-              onClick={() => handleDownload('dark')}
-            >
-              <Download size={18} />
-              <span>Export QR (Dark Mode)</span>
-            </button>
+        <div className={styles.banner}>
+          <Image
+            src="/qr-code-dark-background.jpg"
+            alt="Dark QR background"
+            fill
+            className={styles.bannerBg}
+            sizes="(max-width: 900px) 90vw, 45vw"
+            priority
+          />
+          <div className={styles.qrSlot}>
+            <Image
+              src="/app_qr_dark.png"
+              alt="Dark Mode QR"
+              width={280}
+              height={280}
+              className={styles.qrImage}
+              priority
+            />
           </div>
         </div>
       </div>

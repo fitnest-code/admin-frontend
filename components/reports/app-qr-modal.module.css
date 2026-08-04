@@ -1,442 +1,91 @@
-@import url('https://fonts.googleapis.com/css2?family=Sora:ital,wght@0,700;0,800&display=swap');
-
-.modalOverlay {
+.overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(6px);
+  inset: 0;
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-  padding: 24px;
-}
-
-.modalContent {
-  background-color: #ffffff;
-  border-radius: 24px;
-  width: 100%;
-  max-width: 1280px;
-  max-height: 92vh;
-  overflow-y: auto;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  display: flex;
-  flex-direction: column;
-}
-
-.modalHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 24px 32px;
-  border-bottom: 1px solid #ececed;
-}
-
-.modalTitle {
-  font-size: 22px;
-  font-weight: 700;
-  color: #14234b;
-  font-family: 'Sora', sans-serif;
+  padding: 40px 24px;
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .closeButton {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 50%;
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #64748b;
-  transition: all 0.2s ease;
+  padding: 10px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
 }
 
 .closeButton:hover {
-  background-color: #f1f5f9;
-  color: #0f172a;
+  background: rgba(255, 255, 255, 0.22);
 }
 
-.modalBody {
-  padding: 32px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(520px, 1fr));
-  gap: 32px;
-}
-
-@media (max-width: 1100px) {
-  .modalBody {
-    grid-template-columns: 1fr;
-  }
-}
-
-.qrCard {
-  border: 1px solid #e2e8f0;
-  border-radius: 20px;
-  padding: 24px;
+.banners {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 20px;
-  background-color: #ffffff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-}
-
-.cardHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  gap: clamp(20px, 3vw, 40px);
   width: 100%;
+  max-width: 1400px;
 }
 
-.cardTitle {
-  font-size: 18px;
-  font-weight: 700;
-  color: #14234b;
-  font-family: 'Sora', sans-serif;
-}
-
-.badge {
-  font-size: 13px;
-  font-weight: 600;
-  padding: 6px 14px;
-  border-radius: 20px;
-}
-
-.badgeLight {
-  background-color: #e0f2fe;
-  color: #0369a1;
-}
-
-.badgeDark {
-  background-color: #1e293b;
-  color: #38bdf8;
-}
-
-/* ── Light Mode Canvas (Figma Background) ── */
-.bannerCanvasLight {
-  width: 100%;
-  aspect-ratio: 1400.3 / 1104.4;
+.banner {
   position: relative;
-  text-align: center;
-  color: #14234b;
-  font-family: 'Sora', sans-serif;
-  background:
-    radial-gradient(ellipse 70% 60% at 30% 40%, rgba(0, 180, 204, 0.08) 0%, transparent 70%),
-    linear-gradient(160deg, #f4f7fb 0%, #e8eef6 45%, #dfe8f2 100%);
-  border-radius: 16px;
-  overflow: hidden;
-  border: 1px solid #cbd5e1;
-  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.02);
-}
-
-/* ── Dark Mode Canvas (Figma MainFrame) ── */
-.bannerCanvasDark {
-  width: 100%;
-  aspect-ratio: 1400.3 / 1104.4;
-  position: relative;
-  text-align: center;
-  color: #ffffff;
-  font-family: 'Sora', sans-serif;
-  background:
-    radial-gradient(ellipse 70% 60% at 30% 40%, rgba(0, 219, 219, 0.12) 0%, transparent 70%),
-    linear-gradient(160deg, #0c1838 0%, #14234b 50%, #0a1428 100%);
-  border-radius: 16px;
-  overflow: hidden;
-  border: 1px solid #1e293b;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-}
-
-/* Soft decorative glows approximating Figma union / subtitle / title layers */
-.unionGlow {
-  position: absolute;
-  top: 9%;
-  left: 9%;
-  width: 100%;
-  height: 81%;
-  background: radial-gradient(ellipse at 40% 50%, rgba(0, 180, 204, 0.1) 0%, transparent 65%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.subtitleGlow {
-  position: absolute;
-  top: 10%;
-  left: 9%;
-  width: 64%;
-  height: 72%;
-  background: radial-gradient(ellipse at center, rgba(20, 35, 75, 0.06) 0%, transparent 70%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.bannerCanvasDark .subtitleGlow {
-  background: radial-gradient(ellipse at center, rgba(0, 219, 219, 0.08) 0%, transparent 70%);
-}
-
-.titleGlow {
-  position: absolute;
-  top: 19%;
-  left: 9%;
-  width: 64%;
-  height: 67%;
-  background: radial-gradient(ellipse at 50% 40%, rgba(255, 255, 255, 0.35) 0%, transparent 60%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.bannerCanvasDark .titleGlow {
-  background: radial-gradient(ellipse at 50% 40%, rgba(0, 219, 219, 0.06) 0%, transparent 60%);
-}
-
-/* Right-side frame: title + install buttons (Figma .frame) */
-.frame {
-  position: absolute;
-  top: 30%;
-  right: 7%;
-  width: 24%;
-  min-width: 140px;
-  height: 40%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  gap: clamp(12px, 2.5vw, 28px);
-  z-index: 5;
-}
-
-.title {
-  align-self: stretch;
-  font-size: clamp(18px, 3vw, 42px);
-  font-weight: 700;
-  line-height: 1.35;
-  font-family: 'Sora', sans-serif;
-  letter-spacing: 0.02em;
-}
-
-/* Store install buttons under QR KOD */
-.storeButtons {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: clamp(8px, 1.2vw, 14px);
-  width: 100%;
-  max-width: 220px;
-}
-
-.storeButtonLight,
-.storeButtonDark {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: clamp(8px, 1vw, 12px) clamp(10px, 1.2vw, 14px);
-  border-radius: 999px;
-  text-decoration: none;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
-  cursor: pointer;
-}
-
-.storeButtonLight {
-  background-color: #14234b;
-  color: #ffffff;
-  border: 1.5px solid #14234b;
-  box-shadow: 0 4px 14px rgba(20, 35, 75, 0.2);
-}
-
-.storeButtonLight:hover {
-  background-color: #1a2d5c;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(20, 35, 75, 0.28);
-}
-
-.storeButtonDark {
-  background-color: rgba(0, 0, 0, 0.35);
-  color: #ffffff;
-  border: 1.5px solid rgba(0, 219, 219, 0.55);
-  box-shadow: 0 4px 14px rgba(0, 219, 219, 0.15);
-  backdrop-filter: blur(8px);
-}
-
-.storeButtonDark:hover {
-  background-color: rgba(0, 219, 219, 0.15);
-  border-color: #00dbdb;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(0, 219, 219, 0.25);
-}
-
-.storeIcon {
+  width: min(560px, 46vw);
+  aspect-ratio: 6106 / 4418;
   flex-shrink: 0;
-  width: clamp(18px, 2vw, 24px);
-  height: auto;
 }
 
-.storeText {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  line-height: 1.15;
-  text-align: left;
+.bannerBg {
+  object-fit: contain;
+  pointer-events: none;
 }
 
-.storeLabel {
-  font-size: clamp(7px, 0.85vw, 10px);
-  font-weight: 500;
-  opacity: 0.85;
-  font-family: system-ui, -apple-system, sans-serif;
-  letter-spacing: 0.02em;
-}
-
-.storeName {
-  font-size: clamp(11px, 1.3vw, 15px);
-  font-weight: 600;
-  font-family: system-ui, -apple-system, sans-serif;
-}
-
-/* QR placement matching Figma percentages */
-.qrCodeContainer {
+/* QR sits on the right tab, under "QR KOD" */
+.qrSlot {
   position: absolute;
-  height: 36.42%;
-  width: 28.7%;
-  top: 31.78%;
-  left: 23.32%;
-  max-width: 100%;
-  max-height: 100%;
-  z-index: 5;
+  left: 64%;
+  top: 38%;
+  width: 24%;
+  aspect-ratio: 1;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ffffff;
-  padding: clamp(8px, 1.2vw, 16px);
-  border-radius: clamp(12px, 1.5vw, 24px);
-  box-shadow: 0 12px 32px rgba(20, 35, 75, 0.12);
-  border: 2px solid rgba(255, 255, 255, 0.9);
-  overflow: hidden;
 }
 
-.qrCodeContainerDark {
-  background: #14234b;
-  border: 2px solid rgba(0, 219, 219, 0.35);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
-}
-
-.qrCodeImage {
+.qrImage {
   width: 100%;
   height: 100%;
   object-fit: contain;
   border-radius: 8px;
 }
 
-/* Light mode decorative circles (white) */
-.backgroundChild {
-  position: absolute;
-  bottom: -35%;
-  left: 40%;
-  border-radius: 50%;
-  background-color: #ffffff;
-  width: 56%;
-  height: 71%;
-  transform: rotate(-49.8deg);
-  transform-origin: 0 0;
-  opacity: 0.95;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.backgroundItem {
-  position: absolute;
-  bottom: -35%;
-  left: 36%;
-  border-radius: 50%;
-  background-color: #ffffff;
-  width: 56%;
-  height: 71%;
-  transform: rotate(-130.2deg);
-  transform-origin: 0 0;
-  opacity: 0.95;
-  z-index: 1;
-  pointer-events: none;
-}
-
-/* Dark mode decorative circles (cyan #00dbdb) */
-.mainFrameChild {
-  position: absolute;
-  bottom: -35%;
-  left: 40%;
-  border-radius: 50%;
-  background-color: #00dbdb;
-  width: 56%;
-  height: 71%;
-  transform: rotate(-49.8deg);
-  transform-origin: 0 0;
-  opacity: 0.45;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.mainFrameItem {
-  position: absolute;
-  bottom: -35%;
-  left: 36%;
-  border-radius: 50%;
-  background-color: #00dbdb;
-  width: 56%;
-  height: 71%;
-  transform: rotate(-130.2deg);
-  transform-origin: 0 0;
-  opacity: 0.45;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.downloadButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  width: 100%;
-  padding: 14px 24px;
-  border-radius: 14px;
-  background-color: #00b4cc;
-  color: #ffffff;
-  font-weight: 700;
-  font-size: 15px;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 180, 204, 0.25);
-}
-
-.downloadButton:hover {
-  background-color: #00a0b5;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(0, 180, 204, 0.35);
-}
-
-.downloadButton:active {
-  transform: translateY(0);
-}
-
-@media (max-width: 640px) {
-  .modalBody {
-    padding: 16px;
-    gap: 20px;
+@media (max-width: 900px) {
+  .overlay {
+    padding: 64px 16px 24px;
+    align-items: flex-start;
+    overflow-y: auto;
   }
 
-  .frame {
-    width: 30%;
-    right: 4%;
-    top: 28%;
+  .banners {
+    flex-direction: column;
   }
 
-  .storeButtons {
-    max-width: 100%;
-  }
-
-  .qrCodeContainer {
-    left: 12%;
-    width: 36%;
+  .banner {
+    width: min(520px, 92vw);
   }
 }
