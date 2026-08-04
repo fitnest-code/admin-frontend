@@ -641,7 +641,9 @@ const az = {
       newRegistrations: "Yeni Qeydiyyatlar",
       activeSubscriptions: "Aktiv Abunəliklər",
       endingSubscriptions: "Bitən Abunəliklər",
-      renewingSubscriptions: "Yenilənən Abunəliklər"
+      renewingSubscriptions: "Yenilənən Abunəliklər",
+      lightQrScans: "Light Mode skan",
+      darkQrScans: "Dark Mode skan"
     }
   },
   paymentsPage: {

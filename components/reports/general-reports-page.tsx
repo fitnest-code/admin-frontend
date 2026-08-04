@@ -39,6 +39,7 @@ import { cn } from '@/lib/utils'
 import { useT, useI18nStore } from '@/lib/i18n'
 import { az, enUS, ru } from 'date-fns/locale'
 import { apiGet } from '@/lib/api/client'
+import { AppQrModal } from './app-qr-modal'
 
 type PresetKey = 'today' | 'last7' | 'lastMonth' | 'allTime' | 'custom'
 
@@ -321,12 +322,12 @@ export function GeneralReportsPage() {
   const [chart2Preset, setChart2Preset] = useState<PresetKey | null>('allTime')
   const [chart2Range, setChart2Range] = useState<DateRange | undefined>(() => getPresetRange('allTime'))
   
-  // 7 cards state
+  // 9 cards state
   const [cardPresets, setCardPresets] = useState<(PresetKey | null)[]>(
-    Array(7).fill('allTime')
+    Array(9).fill('allTime')
   )
   const [cardRanges, setCardRanges] = useState<(DateRange | undefined)[]>(() => {
-    return Array.from({ length: 7 }, () => getPresetRange('allTime'))
+    return Array.from({ length: 9 }, () => getPresetRange('allTime'))
   })
 
   const setCardPreset = (index: number, val: PresetKey | null) => {
@@ -352,8 +353,8 @@ export function GeneralReportsPage() {
       return
     }
     if (mainRange) {
-      setCardRanges(Array.from({ length: 7 }, () => mainRange))
-      setCardPresets(Array(7).fill(mainPreset))
+      setCardRanges(Array.from({ length: 9 }, () => mainRange))
+      setCardPresets(Array(9).fill(mainPreset))
       setChart1Range(mainRange)
       setChart1Preset(mainPreset)
       setChart2Range(mainRange)
@@ -364,6 +365,7 @@ export function GeneralReportsPage() {
   const [selectedTier, setSelectedTier] = useState<TierKey>('bronze')
   const [tierDropdownOpen, setTierDropdownOpen] = useState(false)
   const tierDropdownRef = useRef<HTMLDivElement>(null)
+  const [isAppQrModalOpen, setIsAppQrModalOpen] = useState(false)
 
   // Click outside to close subscription tier dropdown
   useEffect(() => {
@@ -385,7 +387,28 @@ export function GeneralReportsPage() {
     active_sub: { value: 0, trend: '+ 0 %' },
     ending_sub: { value: 0, trend: '+ 0 %' },
     renew_sub: { value: 0, trend: '+ 0 %' },
+    app_qr_light: { value: 0, trend: '+ 0 %' },
+    app_qr_dark: { value: 0, trend: '+ 0 %' },
   })
+
+  // Fetch App QR scans report (Light & Dark)
+  useEffect(() => {
+    async function fetchAppQrScans() {
+      try {
+        const data = await apiGet<any>('/admin/reports/app-qr-scans')
+        if (data) {
+          setCardData(prev => ({
+            ...prev,
+            app_qr_light: { value: data.lightCount || 0, trend: '+ 0 %' },
+            app_qr_dark: { value: data.darkCount || 0, trend: '+ 0 %' }
+          }))
+        }
+      } catch (e) {
+        console.error('Failed to fetch app QR scan stats:', e)
+      }
+    }
+    fetchAppQrScans()
+  }, [])
 
   // Dynamic Chart 1 (Income Trend) data state
   const [incomeTrend, setIncomeTrend] = useState<any[]>([])
@@ -600,6 +623,8 @@ export function GeneralReportsPage() {
     { id: 'active_sub', title: t.reports.cards.activeSubscriptions, value: cardData.active_sub.value, type: 'number', trend: cardData.active_sub.trend, icon: '/Hesabatlar/active_subscriptions.svg' },
     { id: 'ending_sub', title: t.reports.cards.endingSubscriptions, value: cardData.ending_sub.value, type: 'number', trend: cardData.ending_sub.trend, icon: '/Hesabatlar/expiring_subscriptions.svg' },
     { id: 'renew_sub', title: t.reports.cards.renewingSubscriptions, value: cardData.renew_sub.value, type: 'number', trend: cardData.renew_sub.trend, icon: '/Hesabatlar/renewing_subscriptions.svg' },
+    { id: 'app_qr_light', title: t.reports.cards.lightQrScans, value: cardData.app_qr_light?.value || 0, type: 'number', trend: cardData.app_qr_light?.trend || '+ 0 %', icon: '/Hesabatlar/generalQR_code entry.svg' },
+    { id: 'app_qr_dark', title: t.reports.cards.darkQrScans, value: cardData.app_qr_dark?.value || 0, type: 'number', trend: cardData.app_qr_dark?.trend || '+ 0 %', icon: '/Hesabatlar/generalQR_code entry.svg' },
   ]
 
   const formatCardValue = (val: number, type: string) => {
@@ -654,6 +679,17 @@ export function GeneralReportsPage() {
           <h1 className="text-[24px] font-bold leading-[32px] text-black">{t.reports.generalTitle}</h1>
         </div>
         <div className="flex items-center gap-3">
+          {/* QR Code Download Button */}
+          <button
+            type="button"
+            onClick={() => setIsAppQrModalOpen(true)}
+            className="flex h-[42px] items-center gap-2 rounded-[12px] border border-[#ececed] bg-white px-5 text-[14px] font-medium leading-none text-black hover:border-gray-300 transition-colors shadow-3xs cursor-pointer"
+            title="Tətbiq QR kodları"
+          >
+            <Image src="/QrCode.svg" width={18} height={18} alt="QR" className="shrink-0" />
+            <span>QR Kod</span>
+          </button>
+
           {/* Main Date selector */}
           <DateRangeSelector
             selectedPreset={mainPreset}
@@ -714,9 +750,9 @@ export function GeneralReportsPage() {
           })}
         </div>
 
-        {/* Bottom row: 3 cards */}
+        {/* Bottom rows: remaining cards (5 cards: 3 Subscriptions + 2 App QR Cards) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {baseCardStats.slice(4, 7).map((card, idx) => {
+          {baseCardStats.slice(4, 9).map((card, idx) => {
             const globalIdx = idx + 4
             return (
               <div 
@@ -933,6 +969,9 @@ export function GeneralReportsPage() {
         </div>
         
       </div>
+
+      {/* App QR Download Modal */}
+      <AppQrModal isOpen={isAppQrModalOpen} onClose={() => setIsAppQrModalOpen(false)} />
     </div>
   )
 }
