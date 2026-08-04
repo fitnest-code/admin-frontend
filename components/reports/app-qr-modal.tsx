@@ -10,6 +10,9 @@ interface AppQrModalProps {
   onClose: () => void
 }
 
+const APPLE_STORE_URL = 'https://apps.apple.com/az/app/fitnest-gym-health/id6768059768'
+const GOOGLE_PLAY_URL = 'https://play.google.com/store/apps/details?id=az.fitnest&hl=en&pli=1'
+
 const getApiBaseUrl = () => {
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '')
@@ -24,6 +27,40 @@ const getApiBaseUrl = () => {
     }
   }
   return 'https://api-dev.fitnest.az'
+}
+
+function StoreButtons({ variant }: { variant: 'light' | 'dark' }) {
+  const buttonClass =
+    variant === 'light' ? styles.storeButtonLight : styles.storeButtonDark
+
+  return (
+    <div className={styles.storeButtons}>
+      <a
+        href={APPLE_STORE_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={buttonClass}
+      >
+        <Image src="/apple.svg" width={22} height={22} alt="" className={styles.storeIcon} />
+        <span className={styles.storeText}>
+          <span className={styles.storeLabel}>Download on the</span>
+          <span className={styles.storeName}>App Store</span>
+        </span>
+      </a>
+      <a
+        href={GOOGLE_PLAY_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={buttonClass}
+      >
+        <Image src="/play.svg" width={20} height={22} alt="" className={styles.storeIcon} />
+        <span className={styles.storeText}>
+          <span className={styles.storeLabel}>GET IT ON</span>
+          <span className={styles.storeName}>Google Play</span>
+        </span>
+      </a>
+    </div>
+  )
 }
 
 export function AppQrModal({ isOpen, onClose }: AppQrModalProps) {
@@ -58,8 +95,6 @@ export function AppQrModal({ isOpen, onClose }: AppQrModalProps) {
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-        
-        {/* Modal Header */}
         <div className={styles.modalHeader}>
           <div className={styles.modalTitle}>Tətbiq QR Kodları (App Store / Play Store)</div>
           <button type="button" className={styles.closeButton} onClick={onClose}>
@@ -67,21 +102,24 @@ export function AppQrModal({ isOpen, onClose }: AppQrModalProps) {
           </button>
         </div>
 
-        {/* Modal Body containing 2 QR banners side by side */}
         <div className={styles.modalBody}>
-          
-          {/* Light Mode Banner Card (Background Component Design) */}
+          {/* Light Mode — Figma Background */}
           <div className={styles.qrCard}>
             <div className={styles.cardHeader}>
               <span className={styles.cardTitle}>Light Mode Design</span>
               <span className={`${styles.badge} ${styles.badgeLight}`}>Açıq Rejim</span>
             </div>
 
-            {/* Canvas Container matching Figma Background component layout */}
             <div className={styles.bannerCanvasLight}>
+              <div className={styles.unionGlow} />
+              <div className={styles.subtitleGlow} />
+              <div className={styles.titleGlow} />
+
               <div className={styles.frame}>
                 <b className={styles.title}>QR KOD</b>
+                <StoreButtons variant="light" />
               </div>
+
               <div className={styles.qrCodeContainer}>
                 <Image
                   src={lightQrUrl}
@@ -92,6 +130,7 @@ export function AppQrModal({ isOpen, onClose }: AppQrModalProps) {
                   unoptimized
                 />
               </div>
+
               <div className={styles.backgroundChild} />
               <div className={styles.backgroundItem} />
             </div>
@@ -106,19 +145,24 @@ export function AppQrModal({ isOpen, onClose }: AppQrModalProps) {
             </button>
           </div>
 
-          {/* Dark Mode Banner Card (MainFrame Component Design) */}
+          {/* Dark Mode — Figma MainFrame */}
           <div className={styles.qrCard}>
             <div className={styles.cardHeader}>
               <span className={styles.cardTitle}>Dark Mode Design</span>
               <span className={`${styles.badge} ${styles.badgeDark}`}>Tünd Rejim</span>
             </div>
 
-            {/* Canvas Container matching Figma MainFrame component layout */}
             <div className={styles.bannerCanvasDark}>
+              <div className={styles.unionGlow} />
+              <div className={styles.subtitleGlow} />
+              <div className={styles.titleGlow} />
+
               <div className={styles.frame}>
                 <b className={styles.title}>QR KOD</b>
+                <StoreButtons variant="dark" />
               </div>
-              <div className={styles.qrCodeContainer}>
+
+              <div className={`${styles.qrCodeContainer} ${styles.qrCodeContainerDark}`}>
                 <Image
                   src={darkQrUrl}
                   width={220}
@@ -128,6 +172,7 @@ export function AppQrModal({ isOpen, onClose }: AppQrModalProps) {
                   unoptimized
                 />
               </div>
+
               <div className={styles.mainFrameChild} />
               <div className={styles.mainFrameItem} />
             </div>
@@ -141,7 +186,6 @@ export function AppQrModal({ isOpen, onClose }: AppQrModalProps) {
               <span>Export QR (Dark Mode)</span>
             </button>
           </div>
-
         </div>
       </div>
     </div>
