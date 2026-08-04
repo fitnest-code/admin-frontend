@@ -10,14 +10,36 @@ interface AppQrModalProps {
   onClose: () => void
 }
 
+const getApiBaseUrl = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '')
+  }
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname
+    if (host.includes('dev') || host.includes('localhost') || host === '127.0.0.1') {
+      return 'https://api-dev.fitnest.az'
+    }
+    if (host.includes('fitnest.az')) {
+      return 'https://api.fitnest.az'
+    }
+  }
+  return 'https://api-dev.fitnest.az'
+}
+
 export function AppQrModal({ isOpen, onClose }: AppQrModalProps) {
   if (!isOpen) return null
 
+  const baseUrl = getApiBaseUrl()
+  const lightQrUrl = `${baseUrl}/api/v1/public/app-qr/image/light`
+  const darkQrUrl = `${baseUrl}/api/v1/public/app-qr/image/dark`
+
   const handleDownload = async (mode: 'light' | 'dark') => {
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
-      const imageUrl = `${backendUrl}/api/v1/public/app-qr/image/${mode}`
+      const imageUrl = `${baseUrl}/api/v1/public/app-qr/image/${mode}`
       const response = await fetch(imageUrl)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch QR image: ${response.status}`)
+      }
       const blob = await response.blob()
       const blobUrl = URL.createObjectURL(blob)
 
@@ -33,42 +55,40 @@ export function AppQrModal({ isOpen, onClose }: AppQrModalProps) {
     }
   }
 
-  const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
-  const lightQrUrl = `${backendUrl}/api/v1/public/app-qr/image/light`
-  const darkQrUrl = `${backendUrl}/api/v1/public/app-qr/image/dark`
-
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         
-        {/* Header */}
+        {/* Modal Header */}
         <div className={styles.modalHeader}>
           <div className={styles.modalTitle}>Tətbiq QR Kodları (App Store / Play Store)</div>
           <button type="button" className={styles.closeButton} onClick={onClose}>
-            <X size={20} />
+            <X size={22} />
           </button>
         </div>
 
-        {/* Body containing 2 QR codes side by side */}
+        {/* Modal Body containing 2 QR banners side by side */}
         <div className={styles.modalBody}>
           
-          {/* Light Mode QR Card */}
+          {/* Light Mode Banner Card (Background Component Design) */}
           <div className={styles.qrCard}>
             <div className={styles.cardHeader}>
-              <span className={styles.cardTitle}>Light Mode</span>
+              <span className={styles.cardTitle}>Light Mode Design</span>
               <span className={`${styles.badge} ${styles.badgeLight}`}>Açıq Rejim</span>
             </div>
 
-            {/* Design Banner Container */}
-            <div className={styles.bannerPreviewLight}>
-              <b className={styles.bannerTitle}>QR KOD</b>
-              <div className={styles.qrImageContainer}>
+            {/* Canvas Container matching Figma Background component layout */}
+            <div className={styles.bannerCanvasLight}>
+              <div className={styles.frame}>
+                <b className={styles.title}>QR KOD</b>
+              </div>
+              <div className={styles.qrCodeContainer}>
                 <Image
                   src={lightQrUrl}
-                  width={150}
-                  height={150}
+                  width={220}
+                  height={220}
                   alt="Light Mode QR Code"
-                  className="rounded-lg object-contain"
+                  className={styles.qrCodeImage}
                   unoptimized
                 />
               </div>
@@ -82,27 +102,29 @@ export function AppQrModal({ isOpen, onClose }: AppQrModalProps) {
               onClick={() => handleDownload('light')}
             >
               <Download size={18} />
-              <span>Export QR (Light)</span>
+              <span>Export QR (Light Mode)</span>
             </button>
           </div>
 
-          {/* Dark Mode QR Card */}
+          {/* Dark Mode Banner Card (MainFrame Component Design) */}
           <div className={styles.qrCard}>
             <div className={styles.cardHeader}>
-              <span className={styles.cardTitle}>Dark Mode</span>
+              <span className={styles.cardTitle}>Dark Mode Design</span>
               <span className={`${styles.badge} ${styles.badgeDark}`}>Tünd Rejim</span>
             </div>
 
-            {/* Design Banner Container */}
-            <div className={styles.bannerPreviewDark}>
-              <b className={styles.bannerTitle}>QR KOD</b>
-              <div className={styles.qrImageContainer}>
+            {/* Canvas Container matching Figma MainFrame component layout */}
+            <div className={styles.bannerCanvasDark}>
+              <div className={styles.frame}>
+                <b className={styles.title}>QR KOD</b>
+              </div>
+              <div className={styles.qrCodeContainer}>
                 <Image
                   src={darkQrUrl}
-                  width={150}
-                  height={150}
+                  width={220}
+                  height={220}
                   alt="Dark Mode QR Code"
-                  className="rounded-lg object-contain"
+                  className={styles.qrCodeImage}
                   unoptimized
                 />
               </div>
@@ -116,7 +138,7 @@ export function AppQrModal({ isOpen, onClose }: AppQrModalProps) {
               onClick={() => handleDownload('dark')}
             >
               <Download size={18} />
-              <span>Export QR (Dark)</span>
+              <span>Export QR (Dark Mode)</span>
             </button>
           </div>
 
