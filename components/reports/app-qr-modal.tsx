@@ -2,7 +2,7 @@
 
 import React from 'react'
 import Image from 'next/image'
-import { X, Download } from 'lucide-react'
+import { X } from 'lucide-react'
 import styles from './app-qr-modal.module.css'
 
 interface AppQrModalProps {
@@ -32,16 +32,18 @@ function QrBanner({
   backgroundSrc,
   backgroundAlt,
   qrSrc,
+  qrDownloadSrc,
   qrAlt,
   downloadName,
-  variant,
+  downloadIconSrc,
 }: {
   backgroundSrc: string
   backgroundAlt: string
   qrSrc: string
+  qrDownloadSrc: string
   qrAlt: string
   downloadName: string
-  variant: 'light' | 'dark'
+  downloadIconSrc: string
 }) {
   return (
     <div className={styles.banner}>
@@ -56,12 +58,18 @@ function QrBanner({
 
       <button
         type="button"
-        className={`${styles.downloadBtn} ${variant === 'light' ? styles.downloadBtnLight : styles.downloadBtnDark}`}
-        onClick={() => downloadQr(qrSrc, downloadName)}
+        className={styles.downloadBtn}
+        onClick={() => downloadQr(qrDownloadSrc, downloadName)}
         aria-label="QR kodu yüklə"
         title="QR kodu yüklə"
       >
-        <Download size={18} strokeWidth={2.4} />
+        <Image
+          src={downloadIconSrc}
+          alt=""
+          width={28}
+          height={28}
+          className={styles.downloadIcon}
+        />
       </button>
 
       <div className={styles.qrSlot}>
@@ -92,17 +100,19 @@ export function AppQrModal({ isOpen, onClose }: AppQrModalProps) {
           backgroundSrc="/qr-light-background.png"
           backgroundAlt="Light QR background"
           qrSrc="/app_qr_light.png"
+          qrDownloadSrc="/app_qr_light_download.png"
           qrAlt="Light Mode QR"
           downloadName="fitnest_app_qr_light.png"
-          variant="light"
+          downloadIconSrc="/download-icon-light.png"
         />
         <QrBanner
           backgroundSrc="/qr-code-dark-background.png"
           backgroundAlt="Dark QR background"
           qrSrc="/app_qr_dark.png"
+          qrDownloadSrc="/app_qr_dark_download.png"
           qrAlt="Dark Mode QR"
           downloadName="fitnest_app_qr_dark.png"
-          variant="dark"
+          downloadIconSrc="/download-icon-dark.png"
         />
       </div>
     </div>

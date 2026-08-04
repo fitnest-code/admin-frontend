@@ -54,7 +54,7 @@
   pointer-events: none;
 }
 
-/* Download icon — right of "QR KOD" text */
+/* Transparent PNG download icon — right of "QR KOD" */
 .downloadBtn {
   position: absolute;
   left: 87%;
@@ -63,40 +63,33 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: clamp(22px, 3.6%, 36px);
-  height: clamp(22px, 3.6%, 36px);
+  width: clamp(22px, 3.8%, 36px);
+  height: clamp(22px, 3.8%, 36px);
   padding: 0;
   border: none;
-  border-radius: 50%;
+  border-radius: 0;
+  background: transparent;
   cursor: pointer;
-  transition: transform 0.15s ease, background-color 0.15s ease, opacity 0.15s ease;
+  transition: transform 0.15s ease, opacity 0.15s ease;
 }
 
-.downloadBtnLight {
-  color: #14234b;
-  background: rgba(255, 255, 255, 0.55);
+.downloadBtn:hover {
+  transform: scale(1.1);
+  opacity: 0.85;
 }
 
-.downloadBtnLight:hover {
-  background: rgba(255, 255, 255, 0.9);
-  transform: scale(1.08);
+.downloadIcon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
 }
 
-.downloadBtnDark {
-  color: #00dbdb;
-  background: rgba(0, 219, 219, 0.12);
-}
-
-.downloadBtnDark:hover {
-  background: rgba(0, 219, 219, 0.28);
-  transform: scale(1.08);
-}
-
-/* QR centered under "QR KOD" text (text center ~80.7%, bottom ~34.6%) */
+/* QR centered under "QR KOD", nudged a bit down */
 .qrSlot {
   position: absolute;
   left: 70.7%;
-  top: 35.5%;
+  top: 39%;
   width: 20%;
   aspect-ratio: 1;
   z-index: 1;
@@ -109,7 +102,6 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  border-radius: 6px;
 }
 
 @media (max-width: 900px) {
