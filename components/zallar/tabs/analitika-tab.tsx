@@ -2,19 +2,18 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
-import { Check, ChevronDown, Loader2, Pencil, X } from 'lucide-react'
+import { Check, ChevronDown, Loader2, Pencil, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { useGymAnalytics, useUpdateGymAnalytics } from '@/lib/query/gym-query'
+import { useDeleteGymEntranceHistory, useGymAnalytics, useUpdateGymAnalytics } from '@/lib/query/gym-query'
 import { useAuthStore } from '@/lib/store/auth-store'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Calendar } from '@/components/ui/calendar'
 import { format } from 'date-fns'
 import { az } from 'date-fns/locale'
 import { DateRange } from 'react-day-picker'
-import { Calendar as CalendarIcon } from 'lucide-react'
+import type { GymEntranceHistoryAdminResponse } from '@/lib/types/gym'
 
 interface AnalitikaTabProps {
   gymId?: string | number
@@ -33,8 +32,9 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
   
   const [startDate, setStartDate] = useState<string>('')
   const [endDate, setEndDate] = useState<string>('')
+  const [selected, setSelected] = useState<Map<number, GymEntranceHistoryAdminResponse>>(new Map())
 
-  // Resizable column state & refs
+  // Resizable column state & refs (ID, Ad/Soyad, Telefon, Tarix, Məbləğ, Nəticə)
   const [colWidths, setColWidths] = useState<number[]>([60, 160, 130, 110, 110, 80])
   const startXRef = useRef<number>(0)
   const startWidthRef = useRef<number>(0)
@@ -117,6 +117,7 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
         setStartDate('')
         setEndDate('')
         setPage(1)
+        setSelected(new Map())
         return
       default:
         return
@@ -125,6 +126,7 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
     setStartDate(format(start, 'yyyy-MM-dd'))
     setEndDate(format(end, 'yyyy-MM-dd'))
     setPage(1)
+    setSelected(new Map())
   }
 
   const handleCustomDateSelect = (range: DateRange | undefined) => {
@@ -133,6 +135,7 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
       setStartDate(format(range.from, 'yyyy-MM-dd'))
       setEndDate(format(range.to, 'yyyy-MM-dd'))
       setPage(1)
+      setSelected(new Map())
     }
   }
 
@@ -151,6 +154,7 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
   const [draftSuccessful, setDraftSuccessful] = useState('')
   const [draftFailed, setDraftFailed] = useState('')
   const updateAnalytics = useUpdateGymAnalytics(gymId)
+  const deleteEntranceHistory = useDeleteGymEntranceHistory(gymId)
 
   // Only the system admin (ROLE_ADMIN) may edit analytics overrides — not gym / super admins.
   const userRole = useAuthStore((s) => s.user?.role)?.toUpperCase()
@@ -163,6 +167,10 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
       setDraftFailed((data.failedScans ?? 0).toString())
     }
   }, [data, isEditing])
+
+  useEffect(() => {
+    setSelected(new Map())
+  }, [page, statusFilter, sort, query])
 
   const handleStartEdit = () => {
     setDraftProfit((data?.totalProfit ?? 0).toString())
@@ -206,6 +214,55 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
         (item.firstName + ' ' + item.lastName).toLowerCase().includes(query.toLowerCase()) || 
         item.phone?.includes(query))
     : historyItems
+
+  const selectableItems = filteredItems.filter((item) => item.id != null)
+  const allOnPage = selectableItems.length > 0 && selectableItems.every((item) => selected.has(item.id))
+  const colCount = isAdmin ? 8 : 7
+
+  const toggleAll = () => {
+    if (allOnPage) {
+      setSelected((prev) => {
+        const next = new Map(prev)
+        selectableItems.forEach((item) => next.delete(item.id))
+        return next
+      })
+    } else {
+      setSelected((prev) => {
+        const next = new Map(prev)
+        selectableItems.forEach((item) => next.set(item.id, item))
+        return next
+      })
+    }
+  }
+
+  const toggleOne = (item: GymEntranceHistoryAdminResponse) => {
+    if (item.id == null) return
+    setSelected((prev) => {
+      const next = new Map(prev)
+      if (next.has(item.id)) next.delete(item.id)
+      else next.set(item.id, item)
+      return next
+    })
+  }
+
+  const handleDeleteSelected = () => {
+    const ids = Array.from(selected.keys())
+    if (ids.length === 0) return
+    const confirmed = window.confirm(
+      `Seçilmiş ${ids.length} müştəri girişini silmək istədiyinizdən əminsiniz? Bu əməliyyat geri qaytarıla bilməz.`,
+    )
+    if (!confirmed) return
+
+    deleteEntranceHistory.mutate(ids, {
+      onSuccess: () => {
+        toast.success(`${ids.length} giriş silindi`)
+        setSelected(new Map())
+      },
+      onError: (err) => {
+        toast.error(err instanceof Error ? err.message : 'Girişlər silinə bilmədi')
+      },
+    })
+  }
 
   const totalPages = data?.history?.total ? Math.ceil(data.history.total / pageSize) : 1
 
@@ -525,15 +582,56 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
                 </div>
               </div>
 
+              {isAdmin && (
+                <div className="flex flex-wrap items-center justify-between gap-4 w-full transition-all duration-300 animate-in fade-in-50 bg-white/50 p-2 rounded-lg border border-dashed border-[#00B4CC]/20">
+                  <div className="flex items-center px-2">
+                    <span className="text-[14px] font-medium text-foreground">Seçilib: {selected.size}</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-[13.4px]">
+                    <button
+                      type="button"
+                      onClick={handleDeleteSelected}
+                      disabled={selected.size === 0 || deleteEntranceHistory.isPending}
+                      className={cn(
+                        "flex h-[40px] min-w-[110px] w-fit items-center justify-center gap-2 rounded-lg border px-4 text-sm font-medium transition-all duration-200 active:scale-[0.98] shadow-xs cursor-pointer whitespace-nowrap",
+                        selected.size === 0 || deleteEntranceHistory.isPending
+                          ? "border-[#cecfd2]/40 bg-white text-muted-foreground opacity-40 cursor-not-allowed active:scale-100"
+                          : "border-red-200 bg-white text-red-600 hover:bg-red-50 hover:border-red-300"
+                      )}
+                    >
+                      {deleteEntranceHistory.isPending ? (
+                        <Loader2 size={18} className="shrink-0 animate-spin" />
+                      ) : (
+                        <Trash2 size={18} className="shrink-0" />
+                      )}
+                      <span>Sil</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Table Container */}
               <div className="w-full overflow-x-auto rounded-[12px] border border-[#cecfd2] shadow-sm bg-white">
                 <table ref={tableRef} className="w-full border-separate border-spacing-0" style={{ tableLayout: "fixed", minWidth: "750px" }}>
                   <colgroup>
+                    {isAdmin && <col style={{ width: '48px' }} />}
                     {colWidths.map((w, i) => <col key={i} style={{ width: `${w}px` }} />)}
                     <col />
                   </colgroup>
                   <thead>
                     <tr className="bg-[rgba(0,180,204,0.1)] text-left">
+                      {isAdmin && (
+                        <th className="px-4 py-3 text-center">
+                          <input
+                            type="checkbox"
+                            checked={allOnPage}
+                            onChange={toggleAll}
+                            disabled={selectableItems.length === 0}
+                            className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded disabled:opacity-40"
+                            aria-label="Bütün girişləri seç"
+                          />
+                        </th>
+                      )}
                       <th className="px-5 py-3 text-[13px] font-bold text-[#101828] opacity-70 uppercase tracking-wider relative">ID
                         <div onMouseDown={(e) => handleMouseDown(0, e)} className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"><div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" /></div>
                       </th>
@@ -557,9 +655,9 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
                   </thead>
                   <tbody>
                     {isLoading ? (
-                      <tr><td colSpan={7} className="p-20 text-center"><Loader2 className="animate-spin text-[#00B4CC] mx-auto" /></td></tr>
+                      <tr><td colSpan={colCount} className="p-20 text-center"><Loader2 className="animate-spin text-[#00B4CC] mx-auto" /></td></tr>
                     ) : filteredItems.length === 0 ? (
-                      <tr><td colSpan={7} className="p-20 text-center text-slate-400 italic">Məlumat tapılmadı</td></tr>
+                      <tr><td colSpan={colCount} className="p-20 text-center text-slate-400 italic">Məlumat tapılmadı</td></tr>
                     ) : (
                       filteredItems.map((item, i) => {
                         const s = item.status?.toUpperCase();
@@ -568,6 +666,18 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
 
                         return (
                           <tr key={item.id || i} className="border-b border-[#ececed] last:border-0 hover:bg-slate-50/80 transition-colors group">
+                            {isAdmin && (
+                              <td className="px-4 py-3 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={item.id != null && selected.has(item.id)}
+                                  onChange={() => toggleOne(item)}
+                                  disabled={item.id == null}
+                                  className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded disabled:opacity-40"
+                                  aria-label={`Giriş #${item.id || i} seç`}
+                                />
+                              </td>
+                            )}
                             <td className="px-5 py-3 text-[14px] text-slate-400 font-medium">#{item.id || '---'}</td>
                             <td className="px-5 py-3 text-[14px]">
                               <div className="flex items-center gap-2 group-hover:text-[#00B4CC] transition-colors truncate">

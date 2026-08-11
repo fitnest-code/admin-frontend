@@ -184,5 +184,5 @@ export const apiPut = <T>(path: string, body?: unknown, options: Omit<RequestOpt
 export const apiPatch = <T>(path: string, body?: unknown, options: Omit<RequestOptions, "method" | "body"> = {}) => 
   apiRequest<T>(path, { ...options, method: "PATCH", body });
 
-export const apiDelete = <T>(path: string, options: Omit<RequestOptions, "method" | "body"> = {}) => 
+export const apiDelete = <T>(path: string, options: Omit<RequestOptions, "method"> = {}) => 
   apiRequest<T>(path, { ...options, method: "DELETE" });

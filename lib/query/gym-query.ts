@@ -351,6 +351,17 @@ export function useUpdateGymAnalytics(gymId: number | string | null | undefined)
   })
 }
 
+export function useDeleteGymEntranceHistory(gymId: number | string | null | undefined) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (ids: number[]) =>
+      apiDelete<void>(`/admin/gyms/${gymId}/history`, { body: { ids } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gym-analytics', gymId ? Number(gymId) : null] })
+    },
+  })
+}
+
 // 9. Zal məlumatlarını çəkmək üçün (Admin)
 export function useGymDetailsAdmin(gymId: number | string | null | undefined) {
   const locale = useI18nStore((s) => s.locale)
