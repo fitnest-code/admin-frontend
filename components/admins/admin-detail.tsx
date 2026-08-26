@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { ArrowLeft, UserCog, RefreshCw } from 'lucide-react'
+import { ArrowLeft, UserCog, RefreshCw, Ban, Trash2, ShieldCheck, Bell, MessageSquare, Mail, Upload } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CustomerProfile } from '@/modules/customers'
 import { resetDeviceLimit } from '@/modules/customers/api/customers.service'
@@ -70,20 +70,31 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 function OpsBtn({
-  src,
+  icon: Icon,
   label,
   onClick,
+  danger,
+  disabled,
 }: {
-  src: string
+  icon: React.ElementType
   label: string
   onClick: () => void
+  danger?: boolean
+  disabled?: boolean
 }) {
   return (
     <button
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-lg border border-border bg-white px-4 py-3 text-sm font-semibold text-foreground hover:border-[#00B4CC] hover:text-[#00B4CC] hover:bg-[#00B4CC]/5 shadow-xs transition-all duration-200 active:scale-[0.98]"
+      disabled={disabled}
+      className={cn(
+        'flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-sm font-semibold transition-all duration-200 active:scale-[0.98]',
+        danger
+          ? 'border-red-200 bg-red-50/40 text-red-600 hover:bg-red-50 hover:border-red-300'
+          : 'border-border bg-white text-foreground hover:border-[#00B4CC] hover:text-[#00B4CC] hover:bg-[#00B4CC]/5 shadow-xs',
+        disabled && 'opacity-55 cursor-not-allowed active:scale-100',
+      )}
     >
-      <Image src={src} width={18} height={18} alt="" className="shrink-0" />
+      <Icon size={18} className={cn('shrink-0', danger ? 'text-red-500' : 'text-[#00B4CC]')} /> 
       <span>{label}</span>
     </button>
   )
@@ -245,49 +256,22 @@ export function AdminDetail({ customer: initialCustomer }: { customer: CustomerP
               <h2 className="text-[16px] font-bold text-foreground tracking-tight">{t.details.operations}</h2>
             </div>
             <div className="flex flex-col gap-3">
-              <OpsBtn src="/push-notification.svg" label={t.details.sendPush} onClick={() => setPushOpen(true)} />
-              <OpsBtn src="/sms-icon.svg" label={t.details.sendSms} onClick={() => setSmsOpen(true)} />
-              <OpsBtn src="/mail-icon.svg" label={t.details.sendEmail} onClick={() => setEmailOpen(true)} />
-              <OpsBtn src="/export-icon.svg" label={t.details.export} onClick={() => {}} />
-              <button
-                onClick={() => setRoleOpen(true)}
-                className="flex w-full items-center gap-3 rounded-lg border border-border bg-white px-4 py-3 text-sm font-semibold text-foreground hover:border-[#00B4CC] hover:text-[#00B4CC] hover:bg-[#00B4CC]/5 shadow-xs transition-all duration-200 active:scale-[0.98]"
-              >
-                <UserCog size={18} className="shrink-0 text-[#00B4CC]" />
-                <span>{t.details.changeRole}</span>
-              </button>
-              <button
-                onClick={handleResetDeviceLimit}
-                className="flex w-full items-center gap-3 rounded-lg border border-border bg-white px-4 py-3 text-sm font-semibold text-foreground hover:border-[#00B4CC] hover:text-[#00B4CC] hover:bg-[#00B4CC]/5 shadow-xs transition-all duration-200 active:scale-[0.98]"
-              >
-                <RefreshCw size={18} className="shrink-0 text-[#00B4CC]" />
-                <span>{t.details.resetDeviceLimit}</span>
-              </button>
+              <OpsBtn icon={Bell} label={t.details.sendPush} onClick={() => setPushOpen(true)} />
+              <OpsBtn icon={MessageSquare} label={t.details.sendSms} onClick={() => setSmsOpen(true)} />
+              <OpsBtn icon={Mail} label={t.details.sendEmail} onClick={() => setEmailOpen(true)} />
+              <OpsBtn icon={Upload} label={t.details.export} onClick={() => {}} />
+              <OpsBtn icon={UserCog} label={t.details.changeRole} onClick={() => setRoleOpen(true)} />
+              <OpsBtn icon={RefreshCw} label={t.details.resetDeviceLimit} onClick={handleResetDeviceLimit} />
               <div className="pt-2 border-t border-border/60 flex flex-col gap-3">
-                <button
-                  onClick={() => setAssignSubOpen(true)}
-                  className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-white px-4 py-3 text-sm font-semibold text-foreground hover:border-[#00B4CC] hover:text-[#00B4CC] hover:bg-[#00B4CC]/5 transition-all duration-200 active:scale-[0.98] shadow-xs"
-                >
-                  <span>{t.modals.assignSubscriptionTitle || 'Abunəlik təyin et'}</span>
-                </button>
-                <button
-                  onClick={() => setDeleteSubOpen(true)}
-                  className="flex w-full items-center justify-center gap-3 rounded-lg border border-red-200 bg-red-50/40 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 hover:border-red-300 transition-all duration-200"
-                >
-                  <span>{t.details.deleteSubscription}</span>
-                </button>
-                <button
-                  onClick={() => setDeleteUserOpen(true)}
-                  className="flex w-full items-center justify-center gap-3 rounded-lg border border-red-200 bg-red-50/40 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 hover:border-red-300 transition-all duration-200"
-                >
-                  <span>{t.details.deleteUser}</span>
-                </button>
-                <button
-                  onClick={() => setBlockOpen(true)}
-                  className="flex w-full items-center justify-center gap-3 rounded-lg border border-red-200 bg-red-50/40 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 hover:border-red-300 transition-all duration-200"
-                >
-                  <span>{status === 'blocked' ? t.details.unblock : t.details.block}</span>
-                </button>
+                <OpsBtn icon={ShieldCheck} label={t.modals.assignSubscriptionTitle || 'Abunəlik təyin et'} onClick={() => setAssignSubOpen(true)} />
+                <OpsBtn icon={Trash2} label={t.details.deleteSubscription} onClick={() => setDeleteSubOpen(true)} danger />
+                <OpsBtn icon={Trash2} label={t.details.deleteUser} onClick={() => setDeleteUserOpen(true)} danger />
+                <OpsBtn 
+                  icon={Ban} 
+                  label={status === 'blocked' ? t.details.unblock : t.details.block} 
+                  onClick={() => setBlockOpen(true)} 
+                  danger 
+                />
               </div>
             </div>
           </div>
