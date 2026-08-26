@@ -550,7 +550,8 @@ const az = {
     // Status badges
     statusActive: "Aktiv",
     statusInactive: "Deaktiv",
-    statusBlocked: "Blok",
+    statusBlocked: "Bloklanıb",
+    statusDeleted: "Silinib",
     statusPendingRegistration: "Qeydiyyat tamamlanmayıb",
     subActive: "Aktiv",
     subExpired: "Bitmiş",

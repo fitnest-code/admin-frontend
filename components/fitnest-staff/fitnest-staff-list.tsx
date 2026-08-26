@@ -117,8 +117,8 @@ export function FitnestStaffList() {
   const [page, setPage] = useState(1)
 
   const { colWidths, tableRef, handleMouseDown } = useResizableColumns(
-    [60, 200, 150],
-    [40, 120, 80]
+    [100, 320, 240],
+    [60, 160, 120]
   )
 
   useEffect(() => {

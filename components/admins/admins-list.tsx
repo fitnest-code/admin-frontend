@@ -130,8 +130,8 @@ export function AdminsList() {
   const [blockOpen, setBlockOpen] = useState(false)
 
   const { colWidths, tableRef, handleMouseDown, activeColIndexRef } = useResizableColumns(
-    [60, 200, 150],
-    [40, 120, 80]
+    [100, 320, 240],
+    [60, 160, 120]
   )
 
   useEffect(() => {

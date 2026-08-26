@@ -540,6 +540,7 @@ const ru: TranslationKeys = {
     statusActive: "Активный",
     statusInactive: "Неактивный",
     statusBlocked: "Заблокирован",
+    statusDeleted: "Удален",
     statusPendingRegistration: "Регистрация не завершена",
     subActive: "Активная",
     subExpired: "Истекла",
@@ -624,7 +625,9 @@ const ru: TranslationKeys = {
       newRegistrations: "Новые Регистрации",
       activeSubscriptions: "Активные Подписки",
       endingSubscriptions: "Истекающие Подписки",
-      renewingSubscriptions: "Продлеваемые Подписки"
+      renewingSubscriptions: "Продлеваемые Подписки",
+      lightQrScans: "Скан в светлой теме",
+      darkQrScans: "Скан в темной теме"
     }
   },
   paymentsPage: {

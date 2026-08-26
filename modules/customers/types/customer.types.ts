@@ -1,4 +1,4 @@
-export type CustomerStatus = 'ACTIVE' | 'INACTIVE' | 'DELETED' | 'PENDING_REGISTRATION'
+export type CustomerStatus = 'ACTIVE' | 'INACTIVE' | 'DELETED' | 'BLOCKED' | 'BANNED' | 'SUSPENDED' | 'PENDING_REGISTRATION' | string
 
 export type CustomerSubscriptionType = 'ALL' | 'ACTIVE' | 'FINISHED' | 'FROZEN' | 'LAST_7_DAYS' | 'CHANGED'
 
@@ -26,6 +26,8 @@ export interface CustomerDetailApiResponse {
   weight: number
   bmiIndex: number
   role?: string | null
+  userStatus?: CustomerStatus | null
+  status?: CustomerStatus | null
 }
 
 export interface CustomerProfile extends CustomerListItem {

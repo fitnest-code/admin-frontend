@@ -62,7 +62,7 @@ export async function getCustomerById(id: string): Promise<CustomerProfile> {
     fullName: data.fullName || null,
     phoneNumber: data.phoneNumber || null,
     email: data.email || null,
-    userStatus: 'ACTIVE',
+    userStatus: data.userStatus || data.status || 'ACTIVE',
     subscriptionStatus: null,
     registeredAt: data.registrationDate,
     birthDate: data.birthDate,

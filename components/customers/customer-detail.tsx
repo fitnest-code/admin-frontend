@@ -32,7 +32,8 @@ const CUSTOMER_TABS = [
 const STATUS_STYLES = {
   active: 'bg-[#166728] text-white',
   inactive: 'bg-[#6B7280] text-white',
-  blocked: 'bg-red-600 text-white',
+  blocked: 'bg-[#c9373a] text-white',
+  deleted: 'bg-[#991b1b] text-white',
   pending_registration: 'bg-amber-600 text-white',
 } satisfies Record<UiCustomerStatus, string>
 

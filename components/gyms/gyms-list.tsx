@@ -175,8 +175,8 @@ export function GymsList() {
   }
 
   const { colWidths, tableRef, handleMouseDown } = useResizableColumns(
-    [200, 250, 200, 120],
-    [120, 150, 120, 90]
+    [240, 320, 240, 140],
+    [140, 180, 140, 100]
   )
 
   function handleToggle(id: number, currentEnabled: boolean) {

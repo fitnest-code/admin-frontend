@@ -540,6 +540,7 @@ const en: TranslationKeys = {
     statusActive: "Active",
     statusInactive: "Inactive",
     statusBlocked: "Blocked",
+    statusDeleted: "Deleted",
     statusPendingRegistration: "Registration Incomplete",
     subActive: "Active",
     subExpired: "Expired",
@@ -624,7 +625,9 @@ const en: TranslationKeys = {
       newRegistrations: "New Registrations",
       activeSubscriptions: "Active Subscriptions",
       endingSubscriptions: "Expiring Subscriptions",
-      renewingSubscriptions: "Renewing Subscriptions"
+      renewingSubscriptions: "Renewing Subscriptions",
+      lightQrScans: "Light Mode Scan",
+      darkQrScans: "Dark Mode Scan"
     }
   },
   paymentsPage: {

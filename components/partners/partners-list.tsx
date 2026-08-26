@@ -131,8 +131,8 @@ export function PartnersList() {
   const [blockOpen, setBlockOpen] = useState(false)
 
   const { colWidths, tableRef, handleMouseDown } = useResizableColumns(
-    [60, 180, 120, 150],
-    [40, 120, 80, 100]
+    [90, 260, 180, 220],
+    [60, 150, 120, 140]
   )
 
   useEffect(() => {
