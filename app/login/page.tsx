@@ -50,9 +50,23 @@ function LoginForm() {
     }
 
     try {
-      await loginMutation.mutateAsync({ mobile: mobile.trim(), password: password.trim() })
-
+      const result = await loginMutation.mutateAsync({ mobile: mobile.trim(), password: password.trim() })
+      const role = result.user?.role ?? ''
+      const normalized = role.startsWith('ROLE_') ? role : `ROLE_${role}`
+      const isStaff = normalized === 'ROLE_ADMIN' || normalized === 'ROLE_FITNEST_STAFF'
+      const adminEnv = (process.env.NEXT_PUBLIC_ADMIN_ENV || 'production').toLowerCase()
       const from = searchParams.get('from') ?? '/'
+
+      // Fitnest staff/admin on production admin → choose environment
+      if (isStaff && adminEnv === 'production') {
+        sessionStorage.setItem('fn_env_mobile', mobile.trim())
+        sessionStorage.setItem('fn_env_password', password.trim())
+        const selectUrl = new URL('/select-environment', window.location.origin)
+        selectUrl.searchParams.set('from', from)
+        window.location.assign(selectUrl.toString())
+        return
+      }
+
       window.location.assign(from)
     } catch (err) {
       if (err instanceof ApiError) {
