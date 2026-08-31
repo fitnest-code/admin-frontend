@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { ApiError, apiPost } from '@/lib/api/client'
 import { useLoginMutation } from '@/modules/auth'
+import { isProductionAdmin } from '@/lib/admin-env'
 import { cn } from '@/lib/utils'
 
 type RecoveryStep = 'LOGIN' | 'FORGOT' | 'OTP' | 'RESET'
@@ -54,11 +55,10 @@ function LoginForm() {
       const role = result.user?.role ?? ''
       const normalized = role.startsWith('ROLE_') ? role : `ROLE_${role}`
       const isStaff = normalized === 'ROLE_ADMIN' || normalized === 'ROLE_FITNEST_STAFF'
-      const adminEnv = (process.env.NEXT_PUBLIC_ADMIN_ENV || 'production').toLowerCase()
       const from = searchParams.get('from') ?? '/'
 
       // Fitnest staff/admin on production admin → choose environment
-      if (isStaff && adminEnv === 'production') {
+      if (isStaff && isProductionAdmin()) {
         sessionStorage.setItem('fn_dev_switch_mobile', mobile.trim())
         sessionStorage.setItem('fn_dev_switch_password', password.trim())
         const selectUrl = new URL('/select-environment', window.location.origin)

@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { FlaskConical, Loader2, Rocket, Shield } from 'lucide-react'
 import { useAuthStore } from '@/lib/store/auth-store'
+import { isProductionAdmin } from '@/lib/admin-env'
 import { cn } from '@/lib/utils'
 
 const STAFF_ROLES = new Set(['ROLE_ADMIN', 'ROLE_FITNEST_STAFF', 'ADMIN', 'FITNEST_STAFF'])
@@ -22,8 +23,7 @@ function SelectEnvironmentInner() {
   const [loadingEnv, setLoadingEnv] = useState<'production' | 'development' | null>(null)
 
   const from = searchParams.get('from') ?? '/'
-  const adminEnv = (process.env.NEXT_PUBLIC_ADMIN_ENV || 'production').toLowerCase()
-  const showPicker = adminEnv === 'production' && isStaffRole(user?.role)
+  const showPicker = isProductionAdmin() && isStaffRole(user?.role)
 
   useEffect(() => {
     if (!user) {
