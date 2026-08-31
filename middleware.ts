@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from './lib/auth/cookies'
 
-const PUBLIC_PATHS = ['/login', '/select-environment']
+const PUBLIC_PATHS = ['/login', '/select-environment', '/auth/accept']
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl

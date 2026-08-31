@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { parseAuthPayload } from '@/lib/auth/server-tokens'
 
 const STAFF_ROLES = new Set(['ROLE_ADMIN', 'ROLE_FITNEST_STAFF'])
 
@@ -33,9 +34,17 @@ function developmentAdminUrl(): string {
   )
 }
 
+function toBase64Url(value: string): string {
+  return Buffer.from(value, 'utf8')
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '')
+}
+
 /**
- * Ensures the signed-in Fitnest staff user exists in development identity,
- * then returns the development admin login URL.
+ * Ensures the staff user exists in development identity, logs them in there,
+ * and returns a handoff URL that lands on the development admin already authenticated.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -97,23 +106,78 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const payload = await ensureResponse.json().catch(() => null)
+    const ensurePayload = await ensureResponse.json().catch(() => null)
     if (!ensureResponse.ok) {
       return NextResponse.json(
         {
           message:
-            payload?.message ||
-            payload?.error?.message ||
-            'Failed to prepare your development login',
+            ensurePayload?.message ||
+            ensurePayload?.error?.message ||
+            'Failed to prepare your development account',
         },
         { status: ensureResponse.status || 502 },
       )
     }
 
+    let loginResponse: Response
+    try {
+      loginResponse = await fetch(`${identityBase.replace(/\/$/, '')}/api/v2/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          mobile,
+          password,
+          device_type: 'Web',
+          device_id: 'admin-env-switch',
+        }),
+        cache: 'no-store',
+      })
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : 'connection failed'
+      return NextResponse.json(
+        { message: `Could not sign in to development: ${detail}` },
+        { status: 502 },
+      )
+    }
+
+    const loginPayload = await loginResponse.json().catch(() => null)
+    if (!loginResponse.ok || !loginPayload) {
+      return NextResponse.json(
+        {
+          message:
+            loginPayload?.message ||
+            loginPayload?.error?.message ||
+            'Development login failed after account sync',
+        },
+        { status: loginResponse.status || 502 },
+      )
+    }
+
+    let parsed
+    try {
+      parsed = parseAuthPayload(loginPayload)
+    } catch {
+      return NextResponse.json(
+        { message: 'Development login did not return tokens' },
+        { status: 502 },
+      )
+    }
+
+    const handoff = toBase64Url(
+      JSON.stringify({
+        access_token: parsed.accessToken,
+        refresh_token: parsed.refreshToken,
+        user: parsed.user,
+      }),
+    )
+
     return NextResponse.json({
       ok: true,
-      redirectUrl: `${adminUrl.replace(/\/$/, '')}/login`,
-      user: payload,
+      redirectUrl: `${adminUrl.replace(/\/$/, '')}/auth/accept#p=${handoff}`,
+      user: parsed.user,
     })
   } catch (error) {
     return NextResponse.json(

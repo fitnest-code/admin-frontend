@@ -81,7 +81,8 @@ function SelectEnvironmentInner() {
       sessionStorage.removeItem('fn_dev_switch_password')
       sessionStorage.removeItem('fn_env_mobile')
       sessionStorage.removeItem('fn_env_password')
-      window.location.assign(data.redirectUrl || 'https://admin-dev.fitnest.az/login')
+      // Handoff URL includes a one-time fragment that sets cookies on admin-dev and opens /.
+      window.location.assign(data.redirectUrl || 'https://admin-dev.fitnest.az/auth/accept')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Xəta baş verdi')
       setLoadingEnv(null)
