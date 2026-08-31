@@ -59,8 +59,8 @@ function LoginForm() {
 
       // Fitnest staff/admin on production admin → choose environment
       if (isStaff && adminEnv === 'production') {
-        sessionStorage.setItem('fn_env_mobile', mobile.trim())
-        sessionStorage.setItem('fn_env_password', password.trim())
+        sessionStorage.setItem('fn_dev_switch_mobile', mobile.trim())
+        sessionStorage.setItem('fn_dev_switch_password', password.trim())
         const selectUrl = new URL('/select-environment', window.location.origin)
         selectUrl.searchParams.set('from', from)
         window.location.assign(selectUrl.toString())

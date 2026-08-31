@@ -46,8 +46,12 @@ function SelectEnvironmentInner() {
     setError(null)
     setLoadingEnv('development')
 
-    const mobile = sessionStorage.getItem('fn_env_mobile') || ''
-    const password = sessionStorage.getItem('fn_env_password') || ''
+    const mobile = sessionStorage.getItem('fn_dev_switch_mobile')
+      || sessionStorage.getItem('fn_env_mobile')
+      || ''
+    const password = sessionStorage.getItem('fn_dev_switch_password')
+      || sessionStorage.getItem('fn_env_password')
+      || ''
 
     if (!mobile || !password) {
       setError('Sessiya məlumatı tapılmadı. Yenidən daxil olun.')
@@ -57,7 +61,7 @@ function SelectEnvironmentInner() {
 
     try {
       const nameParts = (user?.name || '').trim().split(/\s+/)
-      const res = await fetch('/api/auth/prepare-sibling-env', {
+      const res = await fetch('/api/auth/open-development', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -73,6 +77,8 @@ function SelectEnvironmentInner() {
         throw new Error(data?.message || 'Development mühitinə keçid alınmadı')
       }
 
+      sessionStorage.removeItem('fn_dev_switch_mobile')
+      sessionStorage.removeItem('fn_dev_switch_password')
       sessionStorage.removeItem('fn_env_mobile')
       sessionStorage.removeItem('fn_env_password')
       window.location.assign(data.redirectUrl || 'https://admin-dev.fitnest.az/login')
