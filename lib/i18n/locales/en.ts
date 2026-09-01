@@ -664,6 +664,8 @@ const en: TranslationKeys = {
     invalidAmount: "Coin amount must be a positive number.",
     defaultWelcomeTitle: "Welcome bonus",
     defaultWelcomeBody: "FitNest Coin has been added to your account.",
+    confirmWelcomeTitle: "Are you sure you want to send the welcome bonus?",
+    confirmCampaignTitle: "Are you sure you want to send this campaign?",
     defaultCampaignTitle: "FitNest Coin campaign",
     defaultCampaignBody: "Bonus Coin has been added to your account.",
   },

@@ -681,6 +681,8 @@ const az = {
     invalidAmount: "Coin məbləği müsbət rəqəm olmalıdır.",
     defaultWelcomeTitle: "Xoş gəldin bonusu",
     defaultWelcomeBody: "FitNest Coin hesabınıza əlavə edildi.",
+    confirmWelcomeTitle: "Xoş gəldin bonusunu göndərmək istədiyinizə əminsiniz?",
+    confirmCampaignTitle: "Kampaniyanı göndərmək istədiyinizə əminsiniz?",
     defaultCampaignTitle: "FitNest Coin kampaniyası",
     defaultCampaignBody: "Hesabınıza bonus Coin əlavə edildi.",
   },

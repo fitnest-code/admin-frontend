@@ -664,6 +664,8 @@ const ru: TranslationKeys = {
     invalidAmount: "Сумма Coin должна быть положительным числом.",
     defaultWelcomeTitle: "Приветственный бонус",
     defaultWelcomeBody: "FitNest Coin добавлен на ваш счёт.",
+    confirmWelcomeTitle: "Вы уверены, что хотите отправить приветственный бонус?",
+    confirmCampaignTitle: "Вы уверены, что хотите отправить кампанию?",
     defaultCampaignTitle: "Кампания FitNest Coin",
     defaultCampaignBody: "Бонусные Coin добавлены на ваш счёт.",
   },
