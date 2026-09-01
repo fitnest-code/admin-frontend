@@ -12,6 +12,7 @@ const en: TranslationKeys = {
     admins: "Admins",
     fitnestStaff: "Fitnest Staff",
     payments: "Payments",
+    campaign: "Campaign",
     reports: "Reports",
     reportsGymPayments: "Gym payments",
     reportsGeneral: "General reports",

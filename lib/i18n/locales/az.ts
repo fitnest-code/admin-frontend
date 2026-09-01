@@ -11,6 +11,7 @@ const az = {
     admins: "Adminlər",
     fitnestStaff: "Fitnest Komandası",
     payments: "Ödənişlər",
+    campaign: "Kampaniya",
     reports: "Hesabatlar",
     reportsGymPayments: "Zallar üzrə ödəniş",
     reportsGeneral: "Ümumi hesabatlar",

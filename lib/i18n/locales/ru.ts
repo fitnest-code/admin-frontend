@@ -12,6 +12,7 @@ const ru: TranslationKeys = {
     admins: "Администраторы",
     fitnestStaff: "Команда Fitnest",
     payments: "Платежи",
+    campaign: "Кампания",
     reports: "Отчёты",
     reportsGymPayments: "Платежи по залам",
     reportsGeneral: "Общие отчёты",
