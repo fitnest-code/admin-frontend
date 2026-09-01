@@ -9,6 +9,6 @@ export interface PackageNameResponse {
 export function useSubscriptionPackages() {
   return useQuery<PackageNameResponse[]>({
     queryKey: ["subscription-packages-names"],
-    queryFn: () => apiGet("/subscription-packages/names"),
+    queryFn: () => apiGet("/api/v1/admin/subscription-packages/names"),
   });
 }

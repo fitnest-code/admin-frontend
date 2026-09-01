@@ -6,30 +6,7 @@ import { useT } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { useCoinSettingsV2, type CoinSettingsV2 } from '@/lib/query/use-coin-settings-v2'
 import { useRawSubscriptionPackages } from '@/lib/query/use-subscriptions'
-import {
-  COIN_PERIODS,
-  COIN_TIERS,
-  isCanonicalPeriod,
-  previewRowKey,
-  toCanonicalTier,
-} from '@/lib/coin-tier'
-
-const TIERS = COIN_TIERS
-const PERIODS = COIN_PERIODS
-
-const DEFAULT_TIER_MULTIPLIERS: Record<string, number> = {
-  BRONZE: 1,
-  SILVER: 1.1,
-  GOLD: 1.2,
-  PLATINUM: 1.3,
-}
-
-const DEFAULT_PERIOD_MULTIPLIERS: Record<number, number> = {
-  1: 1,
-  3: 1.15,
-  6: 1.3,
-  12: 1.5,
-}
+import { useSubscriptionPackages } from '@/lib/query/use-subscription-packages'
 
 const inputClass =
   'w-full rounded-lg border border-[#ececed] bg-white px-3 py-2.5 text-sm text-black placeholder:text-[#98a2b3] focus:outline-none focus:border-[#00b4cc] transition-colors'
@@ -60,44 +37,15 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   )
 }
 
-function durationLabel(months: number, c: ReturnType<typeof useT>['campaign']) {
-  if (months === 1) return c.period1Month
-  if (months === 3) return c.period3Month
-  if (months === 6) return c.period6Month
-  if (months === 12) return c.period12Month
-  return `${months} ${c.monthsShort}`
-}
-
-function mapValue(map: Record<string | number, number> | undefined, key: string | number, fallback: number) {
+function mapValue(map: Record<string | number, number> | undefined, key: string | number, fallback = 1) {
   if (!map) return fallback
   const value = map[key as keyof typeof map] ?? map[String(key) as keyof typeof map]
   const parsed = Number(value)
   return Number.isFinite(parsed) ? parsed : fallback
 }
 
-function toDraft(settings: CoinSettingsV2): CoinSettingsV2 {
-  const tierMultipliers = { ...DEFAULT_TIER_MULTIPLIERS }
-  TIERS.forEach((tier) => {
-    tierMultipliers[tier] = mapValue(settings.tierMultipliers, tier, DEFAULT_TIER_MULTIPLIERS[tier])
-  })
-  const periodMultipliers = { ...DEFAULT_PERIOD_MULTIPLIERS }
-  PERIODS.forEach((months) => {
-    periodMultipliers[months] = mapValue(settings.periodMultipliers, months, DEFAULT_PERIOD_MULTIPLIERS[months])
-  })
-  return {
-    ...settings,
-    formulaVersion: settings.formulaVersion || 'EARN_V2_20260901',
-    welcomeBonusAmount: Number(settings.welcomeBonusAmount ?? 0),
-    baseEarnRate: Number(settings.baseEarnRate ?? 0.02),
-    maxGivebackRate: Number(settings.maxGivebackRate ?? 0.05),
-    earnCoinFactor: Number(settings.earnCoinFactor ?? 10),
-    spendRateCoinToAzn: Number(settings.spendRateCoinToAzn ?? 10),
-    maxDiscountPercentage: Number(settings.maxDiscountPercentage ?? 100),
-    expiryMonths: Number(settings.expiryMonths ?? 12),
-    active: Boolean(settings.active),
-    tierMultipliers,
-    periodMultipliers,
-  }
+function previewKey(packageId?: number, optionId?: number) {
+  return `${packageId ?? ''}-${optionId ?? ''}`
 }
 
 export function CampaignEarnTab({
@@ -109,31 +57,76 @@ export function CampaignEarnTab({
   const c = t.campaign
   const { settings, isLoading, saveSettings, isSaving, previewBatch, isPreviewing, previews } =
     useCoinSettingsV2()
+  const { data: packageNames, isLoading: namesLoading } = useSubscriptionPackages()
   const { data: packages, isLoading: packagesLoading } = useRawSubscriptionPackages()
 
   const [draft, setDraft] = useState<CoinSettingsV2 | null>(null)
 
-  useEffect(() => {
-    if (settings) setDraft(toDraft(settings))
-  }, [settings])
+  const existingPackages = useMemo(() => {
+    if (packages && packages.length > 0) {
+      return packages
+        .filter((pkg) => pkg.package_id != null)
+        .map((pkg) => ({
+          id: Number(pkg.package_id),
+          name: pkg.name || `Package ${pkg.package_id}`,
+        }))
+    }
+    return (packageNames ?? []).map((pkg) => ({
+      id: pkg.id,
+      name: pkg.name,
+    }))
+  }, [packages, packageNames])
+
+  const existingDurations = useMemo(() => {
+    const months = new Set<number>()
+    for (const pkg of packages ?? []) {
+      for (const opt of pkg.duration_options ?? []) {
+        if (opt.duration_months != null && opt.duration_months > 0) {
+          months.add(opt.duration_months)
+        }
+      }
+    }
+    return Array.from(months).sort((a, b) => a - b)
+  }, [packages])
 
   const packageRows = useMemo(() => {
     if (!packages) return []
     return packages.flatMap((pkg) =>
-      (pkg.duration_options ?? []).map((opt) => {
-        const durationMonths = opt.duration_months ?? 1
-        return {
-          packageId: pkg.package_id,
-          optionId: opt.option_id,
-          packageName: pkg.name || 'Bronze',
-          tierName: toCanonicalTier(pkg.name),
-          durationMonths,
-          mapped: Boolean(toCanonicalTier(pkg.name) && isCanonicalPeriod(durationMonths)),
-          priceAzn: Number(opt.price_discounted || opt.price_standard || 0),
-        }
-      }),
+      (pkg.duration_options ?? []).map((opt) => ({
+        packageId: pkg.package_id,
+        optionId: opt.option_id,
+        packageName: pkg.name || `Package ${pkg.package_id}`,
+        durationMonths: opt.duration_months ?? 0,
+        priceAzn: Number(opt.price_discounted || opt.price_standard || 0),
+      })),
     )
   }, [packages])
+
+  useEffect(() => {
+    if (!settings) return
+    const tierMultipliers: Record<string, number> = {}
+    existingPackages.forEach((pkg) => {
+      tierMultipliers[String(pkg.id)] = mapValue(settings.tierMultipliers, String(pkg.id), 1)
+    })
+    const periodMultipliers: Record<number, number> = {}
+    existingDurations.forEach((months) => {
+      periodMultipliers[months] = mapValue(settings.periodMultipliers, months, 1)
+    })
+    setDraft({
+      ...settings,
+      formulaVersion: settings.formulaVersion || 'EARN_V2_20260901',
+      welcomeBonusAmount: Number(settings.welcomeBonusAmount ?? 0),
+      baseEarnRate: Number(settings.baseEarnRate ?? 0.02),
+      maxGivebackRate: Number(settings.maxGivebackRate ?? 0.05),
+      earnCoinFactor: Number(settings.earnCoinFactor ?? 10),
+      spendRateCoinToAzn: Number(settings.spendRateCoinToAzn ?? 10),
+      maxDiscountPercentage: Number(settings.maxDiscountPercentage ?? 100),
+      expiryMonths: Number(settings.expiryMonths ?? 12),
+      active: Boolean(settings.active),
+      tierMultipliers,
+      periodMultipliers,
+    })
+  }, [settings, existingPackages, existingDurations])
 
   useEffect(() => {
     if (packageRows.length === 0) return
@@ -141,7 +134,7 @@ export function CampaignEarnTab({
       packageRows.map((row) => ({
         packageId: row.packageId,
         optionId: row.optionId,
-        tierName: row.tierName,
+        tierName: row.packageName,
         durationMonths: row.durationMonths,
         priceAzn: row.priceAzn,
       })),
@@ -155,23 +148,40 @@ export function CampaignEarnTab({
         ...draft,
         formulaVersion: draft.formulaVersion || 'EARN_V2_20260901',
         tierMultipliers: Object.fromEntries(
-          TIERS.map((tier) => [tier, mapValue(draft.tierMultipliers, tier, DEFAULT_TIER_MULTIPLIERS[tier])]),
+          existingPackages.map((pkg) => [
+            String(pkg.id),
+            mapValue(draft.tierMultipliers, String(pkg.id), 1),
+          ]),
         ),
         periodMultipliers: Object.fromEntries(
-          PERIODS.map((months) => [
+          existingDurations.map((months) => [
             months,
-            mapValue(draft.periodMultipliers, months, DEFAULT_PERIOD_MULTIPLIERS[months]),
+            mapValue(draft.periodMultipliers, months, 1),
           ]),
         ) as Record<number, number>,
       })
-      setDraft(toDraft(saved))
+      setDraft({
+        ...saved,
+        tierMultipliers: Object.fromEntries(
+          existingPackages.map((pkg) => [
+            String(pkg.id),
+            mapValue(saved.tierMultipliers, String(pkg.id), 1),
+          ]),
+        ),
+        periodMultipliers: Object.fromEntries(
+          existingDurations.map((months) => [
+            months,
+            mapValue(saved.periodMultipliers, months, 1),
+          ]),
+        ) as Record<number, number>,
+      })
       onNotify(c.settingsSaved, 'success')
       if (packageRows.length > 0) {
         await previewBatch(
           packageRows.map((row) => ({
             packageId: row.packageId,
             optionId: row.optionId,
-            tierName: row.tierName,
+            tierName: row.packageName,
             durationMonths: row.durationMonths,
             priceAzn: row.priceAzn,
           })),
@@ -189,7 +199,7 @@ export function CampaignEarnTab({
         packageRows.map((row) => ({
           packageId: row.packageId,
           optionId: row.optionId,
-          tierName: row.tierName,
+          tierName: row.packageName,
           durationMonths: row.durationMonths,
           priceAzn: row.priceAzn,
         })),
@@ -199,11 +209,11 @@ export function CampaignEarnTab({
     }
   }
 
-  function updateTierMultiplier(tier: string, value: number) {
+  function updatePackageMultiplier(packageId: number, value: number) {
     if (!draft) return
     setDraft({
       ...draft,
-      tierMultipliers: { ...draft.tierMultipliers, [tier]: value },
+      tierMultipliers: { ...draft.tierMultipliers, [String(packageId)]: value },
     })
   }
 
@@ -215,7 +225,7 @@ export function CampaignEarnTab({
     })
   }
 
-  if (isLoading || !draft) {
+  if (isLoading || namesLoading || !draft) {
     return (
       <div className="flex min-h-[30vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-[#00B4CC]" />
@@ -223,7 +233,7 @@ export function CampaignEarnTab({
     )
   }
 
-  const previewMap = new Map(previews.map((p) => [previewRowKey(p.packageId, p.optionId), p]))
+  const previewMap = new Map(previews.map((p) => [previewKey(p.packageId, p.optionId), p]))
 
   return (
     <div className="flex flex-col gap-6 w-full">
@@ -300,38 +310,48 @@ export function CampaignEarnTab({
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="flex flex-col gap-3">
             <h3 className="text-sm font-semibold text-foreground">{c.tierMultipliers}</h3>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {TIERS.map((tier) => (
-                <label key={tier} className="flex flex-col gap-1.5">
-                  <FieldLabel>{tier}</FieldLabel>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className={inputClass}
-                    value={mapValue(draft.tierMultipliers, tier, DEFAULT_TIER_MULTIPLIERS[tier])}
-                    onChange={(e) => updateTierMultiplier(tier, Number(e.target.value))}
-                  />
-                </label>
-              ))}
-            </div>
+            {existingPackages.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{c.noPackages}</p>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {existingPackages.map((pkg) => (
+                  <label key={pkg.id} className="flex flex-col gap-1.5">
+                    <FieldLabel>{pkg.name}</FieldLabel>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className={inputClass}
+                      value={mapValue(draft.tierMultipliers, String(pkg.id), 1)}
+                      onChange={(e) => updatePackageMultiplier(pkg.id, Number(e.target.value))}
+                    />
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-3">
             <h3 className="text-sm font-semibold text-foreground">{c.periodMultipliers}</h3>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {PERIODS.map((months) => (
-                <label key={months} className="flex flex-col gap-1.5">
-                  <FieldLabel>{durationLabel(months, c)}</FieldLabel>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className={inputClass}
-                    value={mapValue(draft.periodMultipliers, months, DEFAULT_PERIOD_MULTIPLIERS[months])}
-                    onChange={(e) => updatePeriodMultiplier(months, Number(e.target.value))}
-                  />
-                </label>
-              ))}
-            </div>
+            {existingDurations.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{c.noDurations}</p>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {existingDurations.map((months) => (
+                  <label key={months} className="flex flex-col gap-1.5">
+                    <FieldLabel>
+                      {months} {c.monthsShort}
+                    </FieldLabel>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className={inputClass}
+                      value={mapValue(draft.periodMultipliers, months, 1)}
+                      onChange={(e) => updatePeriodMultiplier(months, Number(e.target.value))}
+                    />
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -366,6 +386,8 @@ export function CampaignEarnTab({
           <div className="flex justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-[#00B4CC]" />
           </div>
+        ) : packageRows.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4">{c.noPackages}</p>
         ) : (
           <table className="w-full text-sm">
             <thead>
@@ -379,19 +401,16 @@ export function CampaignEarnTab({
             </thead>
             <tbody>
               {packageRows.map((row) => {
-                const preview = previewMap.get(previewRowKey(row.packageId, row.optionId))
+                const preview = previewMap.get(previewKey(row.packageId, row.optionId))
                 return (
-                  <tr key={previewRowKey(row.packageId, row.optionId)} className="border-b border-[#ececed]/60">
-                    <td className="py-2.5 pr-4 font-medium">
-                      {row.packageName}
-                      {row.tierName && row.tierName !== row.packageName.trim().toUpperCase() ? (
-                        <span className="ml-2 text-xs text-[#667085]">{row.tierName}</span>
-                      ) : null}
+                  <tr key={previewKey(row.packageId, row.optionId)} className="border-b border-[#ececed]/60">
+                    <td className="py-2.5 pr-4 font-medium">{row.packageName}</td>
+                    <td className="py-2.5 pr-4">
+                      {row.durationMonths} {c.monthsShort}
                     </td>
-                    <td className="py-2.5 pr-4">{durationLabel(row.durationMonths, c)}</td>
                     <td className="py-2.5 pr-4">{row.priceAzn.toFixed(2)} AZN</td>
                     <td className="py-2.5 pr-4">
-                      {preview ? `${(preview.appliedGivebackRate * 100).toFixed(2)}%` : '—'}
+                      {preview ? `${(Number(preview.appliedGivebackRate) * 100).toFixed(2)}%` : '—'}
                     </td>
                     <td className="py-2.5 font-semibold text-[#00B4CC]">
                       {preview ? preview.awardedCoins : '—'}
