@@ -10,6 +10,20 @@ import { useRawSubscriptionPackages } from '@/lib/query/use-subscriptions'
 const TIERS = ['BRONZE', 'SILVER', 'GOLD', 'PLATINUM'] as const
 const PERIODS = [1, 3, 6, 12] as const
 
+const DEFAULT_TIER_MULTIPLIERS: Record<string, number> = {
+  BRONZE: 1,
+  SILVER: 1.1,
+  GOLD: 1.2,
+  PLATINUM: 1.3,
+}
+
+const DEFAULT_PERIOD_MULTIPLIERS: Record<number, number> = {
+  1: 1,
+  3: 1.15,
+  6: 1.3,
+  12: 1.5,
+}
+
 const inputClass =
   'w-full rounded-lg border border-[#ececed] bg-white px-3 py-2.5 text-sm text-black placeholder:text-[#98a2b3] focus:outline-none focus:border-[#00b4cc] transition-colors'
 
@@ -47,6 +61,38 @@ function durationLabel(months: number, c: ReturnType<typeof useT>['campaign']) {
   return `${months} ${c.monthsShort}`
 }
 
+function mapValue(map: Record<string | number, number> | undefined, key: string | number, fallback: number) {
+  if (!map) return fallback
+  const value = map[key as keyof typeof map] ?? map[String(key) as keyof typeof map]
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
+function toDraft(settings: CoinSettingsV2): CoinSettingsV2 {
+  const tierMultipliers = { ...DEFAULT_TIER_MULTIPLIERS }
+  TIERS.forEach((tier) => {
+    tierMultipliers[tier] = mapValue(settings.tierMultipliers, tier, DEFAULT_TIER_MULTIPLIERS[tier])
+  })
+  const periodMultipliers = { ...DEFAULT_PERIOD_MULTIPLIERS }
+  PERIODS.forEach((months) => {
+    periodMultipliers[months] = mapValue(settings.periodMultipliers, months, DEFAULT_PERIOD_MULTIPLIERS[months])
+  })
+  return {
+    ...settings,
+    formulaVersion: settings.formulaVersion || 'EARN_V2_20260901',
+    welcomeBonusAmount: Number(settings.welcomeBonusAmount ?? 0),
+    baseEarnRate: Number(settings.baseEarnRate ?? 0.02),
+    maxGivebackRate: Number(settings.maxGivebackRate ?? 0.05),
+    earnCoinFactor: Number(settings.earnCoinFactor ?? 10),
+    spendRateCoinToAzn: Number(settings.spendRateCoinToAzn ?? 10),
+    maxDiscountPercentage: Number(settings.maxDiscountPercentage ?? 100),
+    expiryMonths: Number(settings.expiryMonths ?? 12),
+    active: Boolean(settings.active),
+    tierMultipliers,
+    periodMultipliers,
+  }
+}
+
 export function CampaignEarnTab({
   onNotify,
 }: {
@@ -59,10 +105,9 @@ export function CampaignEarnTab({
   const { data: packages, isLoading: packagesLoading } = useRawSubscriptionPackages()
 
   const [draft, setDraft] = useState<CoinSettingsV2 | null>(null)
-  const [activeTier, setActiveTier] = useState<(typeof TIERS)[number]>('BRONZE')
 
   useEffect(() => {
-    if (settings) setDraft(settings)
+    if (settings) setDraft(toDraft(settings))
   }, [settings])
 
   const packageRows = useMemo(() => {
@@ -81,8 +126,24 @@ export function CampaignEarnTab({
   async function handleSave() {
     if (!draft) return
     try {
-      await saveSettings(draft)
+      const saved = await saveSettings({
+        ...draft,
+        formulaVersion: draft.formulaVersion || 'EARN_V2_20260901',
+        tierMultipliers: Object.fromEntries(
+          TIERS.map((tier) => [tier, mapValue(draft.tierMultipliers, tier, DEFAULT_TIER_MULTIPLIERS[tier])]),
+        ),
+        periodMultipliers: Object.fromEntries(
+          PERIODS.map((months) => [
+            months,
+            mapValue(draft.periodMultipliers, months, DEFAULT_PERIOD_MULTIPLIERS[months]),
+          ]),
+        ) as Record<number, number>,
+      })
+      setDraft(toDraft(saved))
       onNotify(c.settingsSaved, 'success')
+      if (packageRows.length > 0) {
+        await previewBatch(packageRows)
+      }
     } catch (e) {
       onNotify(e instanceof Error ? e.message : c.saveFailed, 'error')
     }
@@ -182,7 +243,16 @@ export function CampaignEarnTab({
               onChange={(e) => setDraft({ ...draft, spendRateCoinToAzn: Number(e.target.value) })}
             />
           </label>
-          <div className="flex items-center justify-between gap-4 rounded-lg border border-[#ececed] px-3 py-2.5">
+          <label className="flex flex-col gap-1.5">
+            <FieldLabel>{c.expiryMonths}</FieldLabel>
+            <input
+              type="number"
+              className={inputClass}
+              value={draft.expiryMonths}
+              onChange={(e) => setDraft({ ...draft, expiryMonths: Number(e.target.value) })}
+            />
+          </label>
+          <div className="flex items-center justify-between gap-4 rounded-lg border border-[#ececed] px-3 py-2.5 sm:col-span-2 lg:col-span-1">
             <FieldLabel>{c.active}</FieldLabel>
             <Toggle checked={draft.active} onChange={(active) => setDraft({ ...draft, active })} />
           </div>
@@ -191,33 +261,20 @@ export function CampaignEarnTab({
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="flex flex-col gap-3">
             <h3 className="text-sm font-semibold text-foreground">{c.tierMultipliers}</h3>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               {TIERS.map((tier) => (
-                <button
-                  key={tier}
-                  type="button"
-                  onClick={() => setActiveTier(tier)}
-                  className={cn(
-                    'px-4 py-2 rounded-full text-sm font-semibold border transition-all',
-                    activeTier === tier
-                      ? 'bg-[#00B4CC] text-white border-[#00B4CC]'
-                      : 'bg-white text-foreground border-[#ececed] hover:border-[#00B4CC]',
-                  )}
-                >
-                  {tier}
-                </button>
+                <label key={tier} className="flex flex-col gap-1.5">
+                  <FieldLabel>{tier}</FieldLabel>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className={inputClass}
+                    value={mapValue(draft.tierMultipliers, tier, DEFAULT_TIER_MULTIPLIERS[tier])}
+                    onChange={(e) => updateTierMultiplier(tier, Number(e.target.value))}
+                  />
+                </label>
               ))}
             </div>
-            <label className="flex flex-col gap-1.5">
-              <FieldLabel>{c.multiplierValue}</FieldLabel>
-              <input
-                type="number"
-                step="0.01"
-                className={inputClass}
-                value={draft.tierMultipliers[activeTier] ?? 1}
-                onChange={(e) => updateTierMultiplier(activeTier, Number(e.target.value))}
-              />
-            </label>
           </div>
 
           <div className="flex flex-col gap-3">
@@ -230,7 +287,7 @@ export function CampaignEarnTab({
                     type="number"
                     step="0.01"
                     className={inputClass}
-                    value={draft.periodMultipliers[months] ?? 1}
+                    value={mapValue(draft.periodMultipliers, months, DEFAULT_PERIOD_MULTIPLIERS[months])}
                     onChange={(e) => updatePeriodMultiplier(months, Number(e.target.value))}
                   />
                 </label>
