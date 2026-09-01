@@ -6,9 +6,16 @@ import { useT } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { useCoinSettingsV2, type CoinSettingsV2 } from '@/lib/query/use-coin-settings-v2'
 import { useRawSubscriptionPackages } from '@/lib/query/use-subscriptions'
+import {
+  COIN_PERIODS,
+  COIN_TIERS,
+  isCanonicalPeriod,
+  previewRowKey,
+  toCanonicalTier,
+} from '@/lib/coin-tier'
 
-const TIERS = ['BRONZE', 'SILVER', 'GOLD', 'PLATINUM'] as const
-const PERIODS = [1, 3, 6, 12] as const
+const TIERS = COIN_TIERS
+const PERIODS = COIN_PERIODS
 
 const DEFAULT_TIER_MULTIPLIERS: Record<string, number> = {
   BRONZE: 1,
@@ -113,15 +120,33 @@ export function CampaignEarnTab({
   const packageRows = useMemo(() => {
     if (!packages) return []
     return packages.flatMap((pkg) =>
-      (pkg.duration_options ?? []).map((opt) => ({
-        packageId: pkg.package_id,
-        optionId: opt.option_id,
-        tierName: (pkg.name ?? 'Bronze').toUpperCase(),
-        durationMonths: opt.duration_months ?? 1,
-        priceAzn: Number(opt.price_discounted || opt.price_standard || 0),
-      })),
+      (pkg.duration_options ?? []).map((opt) => {
+        const durationMonths = opt.duration_months ?? 1
+        return {
+          packageId: pkg.package_id,
+          optionId: opt.option_id,
+          packageName: pkg.name || 'Bronze',
+          tierName: toCanonicalTier(pkg.name),
+          durationMonths,
+          mapped: Boolean(toCanonicalTier(pkg.name) && isCanonicalPeriod(durationMonths)),
+          priceAzn: Number(opt.price_discounted || opt.price_standard || 0),
+        }
+      }),
     )
   }, [packages])
+
+  useEffect(() => {
+    if (packageRows.length === 0) return
+    previewBatch(
+      packageRows.map((row) => ({
+        packageId: row.packageId,
+        optionId: row.optionId,
+        tierName: row.tierName,
+        durationMonths: row.durationMonths,
+        priceAzn: row.priceAzn,
+      })),
+    ).catch(() => undefined)
+  }, [packageRows, previewBatch])
 
   async function handleSave() {
     if (!draft) return
@@ -142,7 +167,15 @@ export function CampaignEarnTab({
       setDraft(toDraft(saved))
       onNotify(c.settingsSaved, 'success')
       if (packageRows.length > 0) {
-        await previewBatch(packageRows)
+        await previewBatch(
+          packageRows.map((row) => ({
+            packageId: row.packageId,
+            optionId: row.optionId,
+            tierName: row.tierName,
+            durationMonths: row.durationMonths,
+            priceAzn: row.priceAzn,
+          })),
+        )
       }
     } catch (e) {
       onNotify(e instanceof Error ? e.message : c.saveFailed, 'error')
@@ -152,7 +185,15 @@ export function CampaignEarnTab({
   async function handlePreview() {
     if (packageRows.length === 0) return
     try {
-      await previewBatch(packageRows)
+      await previewBatch(
+        packageRows.map((row) => ({
+          packageId: row.packageId,
+          optionId: row.optionId,
+          tierName: row.tierName,
+          durationMonths: row.durationMonths,
+          priceAzn: row.priceAzn,
+        })),
+      )
     } catch (e) {
       onNotify(e instanceof Error ? e.message : c.previewFailed, 'error')
     }
@@ -182,9 +223,7 @@ export function CampaignEarnTab({
     )
   }
 
-  const previewMap = new Map(
-    previews.map((p) => [`${p.tier}-${p.durationMonths}-${p.optionId}`, p]),
-  )
+  const previewMap = new Map(previews.map((p) => [previewRowKey(p.packageId, p.optionId), p]))
 
   return (
     <div className="flex flex-col gap-6 w-full">
@@ -340,10 +379,15 @@ export function CampaignEarnTab({
             </thead>
             <tbody>
               {packageRows.map((row) => {
-                const preview = previewMap.get(`${row.tierName}-${row.durationMonths}-${row.optionId}`)
+                const preview = previewMap.get(previewRowKey(row.packageId, row.optionId))
                 return (
-                  <tr key={`${row.packageId}-${row.optionId}`} className="border-b border-[#ececed]/60">
-                    <td className="py-2.5 pr-4 font-medium">{row.tierName}</td>
+                  <tr key={previewRowKey(row.packageId, row.optionId)} className="border-b border-[#ececed]/60">
+                    <td className="py-2.5 pr-4 font-medium">
+                      {row.packageName}
+                      {row.tierName && row.tierName !== row.packageName.trim().toUpperCase() ? (
+                        <span className="ml-2 text-xs text-[#667085]">{row.tierName}</span>
+                      ) : null}
+                    </td>
                     <td className="py-2.5 pr-4">{durationLabel(row.durationMonths, c)}</td>
                     <td className="py-2.5 pr-4">{row.priceAzn.toFixed(2)} AZN</td>
                     <td className="py-2.5 pr-4">
