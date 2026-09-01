@@ -24,6 +24,7 @@ export default function CampaignPage() {
   const [welcomeTitle, setWelcomeTitle] = useState('Xoş gəldin bonusu')
   const [welcomeBody, setWelcomeBody] = useState('FitNest Coin hesabınıza əlavə edildi.')
   const [welcomeSending, setWelcomeSending] = useState(false)
+  const [campaignSending, setCampaignSending] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
