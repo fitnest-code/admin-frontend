@@ -9,17 +9,19 @@ import { CampaignCoinProvider } from './campaign-coin-provider'
 import { CampaignMultipliersTab } from './campaign-multipliers-tab'
 import { CampaignValueSettingsTab } from './campaign-value-settings-tab'
 import { CampaignActionsTab } from './campaign-actions-tab'
+import { CampaignRulesTab } from './campaign-rules-tab'
 
 const CAMPAIGN_TABS = [
   { key: 'multipliers', labelKey: 'multipliersTab' as const },
   { key: 'values', labelKey: 'valueSettingsTab' as const },
+  { key: 'rules', labelKey: 'rulesTab' as const },
   { key: 'actions', labelKey: 'actionsTab' as const },
 ] as const
 
 type CampaignTabKey = (typeof CAMPAIGN_TABS)[number]['key']
 
 function parseTab(value: string | null): CampaignTabKey {
-  if (value === 'values' || value === 'actions') return value
+  if (value === 'values' || value === 'actions' || value === 'rules') return value
   if (value === 'operations') return 'actions'
   if (value === 'earn') return 'multipliers'
   return 'multipliers'
@@ -83,6 +85,7 @@ export default function CampaignMain() {
 
         {activeTab === 'multipliers' && <CampaignMultipliersTab />}
         {activeTab === 'values' && <CampaignValueSettingsTab />}
+        {activeTab === 'rules' && <CampaignRulesTab onNotify={notify} />}
         {activeTab === 'actions' && (
           <CampaignActionsTab
             welcomeOpen={welcomeOpen}
