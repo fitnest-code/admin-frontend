@@ -12,6 +12,7 @@ import { ServiceSelectorModal } from "../modals/service-selector-modal";
 import { ConfirmDeleteModal } from "../modals/confirm-delete-modal";
 import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 import { useT, useI18nStore } from "@/lib/i18n";
+import { emptyLanguageRecord, useLanguages } from "@/lib/query/use-languages";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSubscriptionPackages } from "@/lib/query/use-subscription-packages";
 
@@ -56,6 +57,8 @@ const LOCAL_TRANSLATIONS: Record<string, Record<string, string>> = {
 
 export function PlansTab({ gym }: { gym?: any }) {
   const t = useT();
+  const { languages } = useLanguages();
+  const primaryLang = languages.includes("AZ") ? "AZ" : languages[0] ?? "AZ";
   const locale = useI18nStore((s) => s.locale);
   const lt = LOCAL_TRANSLATIONS[locale] || LOCAL_TRANSLATIONS.AZ;
   const queryClient = useQueryClient();
@@ -105,8 +108,8 @@ export function PlansTab({ gym }: { gym?: any }) {
   const [deleteServiceId, setDeleteServiceId] = useState<number | null>(null);
   const [isCreatingService, setIsCreatingService] = useState(false);
   const [editingServiceId, setEditingServiceId] = useState<number | null>(null);
-  const [serviceNames, setServiceNames] = useState<Record<string, string>>({ AZ: "", EN: "", RU: "" });
-  const [serviceActiveTab, setServiceActiveTab] = useState<string>("AZ");
+  const [serviceNames, setServiceNames] = useState<Record<string, string>>(() => emptyLanguageRecord(languages));
+  const [serviceActiveTab, setServiceActiveTab] = useState<string>(primaryLang);
   const [isSavingTranslation, setIsSavingTranslation] = useState(false);
 
   // Sync state when gym data arrives
@@ -262,17 +265,20 @@ export function PlansTab({ gym }: { gym?: any }) {
 
   const handleEditServiceTranslation = async (svc: any) => {
     setEditingServiceId(svc.id);
-    setServiceActiveTab("AZ");
-    setServiceNames({ AZ: svc.name, EN: "", RU: "" });
+    setServiceActiveTab(primaryLang);
+    setServiceNames(emptyLanguageRecord(languages, { [primaryLang]: svc.name }));
     try {
       const res = await apiGet<any[]>('/admin/translations', {
         params: { entityType: 'SUPPORTED_SERVICE', entityId: String(svc.id), fieldName: 'name' }
       });
       const list = Array.isArray(res) ? res : (res as any)?.data || [];
-      const newNames: Record<string, string> = { AZ: svc.name, EN: "", RU: "" };
+      const newNames = emptyLanguageRecord(languages, { [primaryLang]: svc.name });
       list.forEach((item: any) => {
         if (item.languageCode && item.fieldName === "name") {
-          newNames[item.languageCode.toUpperCase()] = item.fieldValue || "";
+          const lang = String(item.languageCode).toUpperCase();
+          if (languages.includes(lang)) {
+            newNames[lang] = item.fieldValue || "";
+          }
         }
       });
       setServiceNames(newNames);
@@ -284,7 +290,7 @@ export function PlansTab({ gym }: { gym?: any }) {
     setIsSavingTranslation(true);
     try {
       const payload = Object.entries(serviceNames)
-        .filter(([lang, val]) => lang !== "AZ" && val.trim() !== "")
+        .filter(([lang, val]) => lang !== primaryLang && val.trim() !== "")
         .map(([lang, val]) => ({
           entityType: "SUPPORTED_SERVICE",
           entityId: String(editingServiceId),
@@ -511,7 +517,7 @@ export function PlansTab({ gym }: { gym?: any }) {
                       <button onClick={() => setEditingServiceId(null)} className="text-gray-400 hover:text-gray-600 transition-colors"><X size={16} /></button>
                     </div>
                     <div className="flex items-center border-b border-[#ececed] gap-1">
-                      {["AZ", "EN", "RU"].map((lang) => (
+                      {languages.map((lang) => (
                         <button key={lang} type="button" onClick={() => setServiceActiveTab(lang)}
                           className={`px-4 py-2 text-[13px] font-semibold transition-all border-b-2 ${
                             serviceActiveTab === lang ? "border-[#00b4cc] text-[#00b4cc]" : "border-transparent text-gray-500 hover:text-gray-700"
@@ -522,9 +528,9 @@ export function PlansTab({ gym }: { gym?: any }) {
                       type="text"
                       value={serviceNames[serviceActiveTab] || ""}
                       onChange={(e) => setServiceNames(prev => ({ ...prev, [serviceActiveTab]: e.target.value }))}
-                      readOnly={serviceActiveTab === "AZ"}
-                      placeholder={serviceActiveTab === "AZ" ? "Əsas ad" : serviceActiveTab === "EN" ? "English name" : "Название на русском"}
-                      className={`h-[40px] rounded-lg border border-[#ececed] px-3 text-[14px] outline-none focus:border-[#00b4cc] transition-colors ${serviceActiveTab === 'AZ' ? 'bg-[#f5f5f5] text-gray-500' : 'bg-[#fafafa]'}`}
+                      readOnly={serviceActiveTab === primaryLang}
+                      placeholder={serviceActiveTab === primaryLang ? "Əsas ad" : `Name (${serviceActiveTab})`}
+                      className={`h-[40px] rounded-lg border border-[#ececed] px-3 text-[14px] outline-none focus:border-[#00b4cc] transition-colors ${serviceActiveTab === primaryLang ? 'bg-[#f5f5f5] text-gray-500' : 'bg-[#fafafa]'}`}
                     />
                     <div className="flex justify-end">
                       <button onClick={handleSaveServiceTranslation} disabled={isSavingTranslation}

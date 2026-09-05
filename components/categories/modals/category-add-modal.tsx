@@ -7,6 +7,7 @@ import { useLessonTypes } from "@/lib/query/use-lesson-types";
 import { apiGet, apiPost, apiRequest } from "@/lib/api/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useT } from "@/lib/i18n";
+import { emptyLanguageRecord, useLanguages } from "@/lib/query/use-languages";
 
 export interface CategoryFormData {
   name: string;
@@ -32,9 +33,10 @@ export default function CategoryModal({
   mode = "create",
 }: CategoryModalProps) {
   const t = useT();
-  const [languages, setLanguages] = useState<string[]>(["AZ", "RU", "EN"]);
-  const [activeTab, setActiveTab] = useState<string>("AZ");
-  const [names, setNames] = useState<Record<string, string>>({ AZ: "", EN: "", RU: "" });
+  const { languages } = useLanguages();
+  const primaryLang = languages.includes("AZ") ? "AZ" : languages[0] ?? "AZ";
+  const [activeTab, setActiveTab] = useState<string>(primaryLang);
+  const [names, setNames] = useState<Record<string, string>>({});
 
   const queryClient = useQueryClient();
   const [editingLtId, setEditingLtId] = useState<number | null>(null);
@@ -51,94 +53,78 @@ export default function CategoryModal({
 
   const { createLessonType, deleteLessonType } = useLessonTypes(activeTab);
 
-  // Fetch languages
-  useEffect(() => {
-    apiGet<any>('/me/languages')
-      .then(res => {
-        const list = res?.data || res;
-        if (Array.isArray(list)) {
-          setLanguages(list.map((l: any) => {
-            const val = typeof l === 'object' && l !== null ? (l.code || '') : l;
-            return String(val).toUpperCase();
-          }).filter(Boolean));
-        }
-      })
-      .catch(() => {});
-  }, []);
-
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ["lesson-types"] });
   }, [activeTab, queryClient]);
 
   useEffect(() => {
-    if (open) {
-      const azName = initialData?.name ?? "";
-      setNames({
-        AZ: azName,
-        EN: "",
-        RU: "",
-      });
-      setActiveTab("AZ");
-      setImagePreview(initialData?.image ?? null);
-      setIconPreview(initialData?.iconUrl ?? null);
-      setSelectedFile(null);
-      setSelectedIconFile(null);
-      if (initialData?.lessonTypes) {
-        setCategoryLessonTypes(initialData.lessonTypes);
-        setSelectedLessonTypeIds(new Set(initialData.lessonTypes.map((lt) => lt.id)));
-      } else {
-        setCategoryLessonTypes([]);
-        setSelectedLessonTypeIds(new Set());
-      }
+    if (!open) return;
 
-      if (mode === "edit" && initialData?.id) {
-        apiGet<any>('/categories', {
-          headers: { "Accept-Language": "AZ" }
-        }).then((res) => {
-          const items = Array.isArray(res) 
-            ? res 
-            : (res?.content || res?.data || res?.items || []);
+    const primaryName = initialData?.name ?? "";
+    const initialNames = emptyLanguageRecord(languages, { [primaryLang]: primaryName });
+    setNames(initialNames);
+    setActiveTab(primaryLang);
+    setImagePreview(initialData?.image ?? null);
+    setIconPreview(initialData?.iconUrl ?? null);
+    setSelectedFile(null);
+    setSelectedIconFile(null);
+    if (initialData?.lessonTypes) {
+      setCategoryLessonTypes(initialData.lessonTypes);
+      setSelectedLessonTypeIds(new Set(initialData.lessonTypes.map((lt) => lt.id)));
+    } else {
+      setCategoryLessonTypes([]);
+      setSelectedLessonTypeIds(new Set());
+    }
+
+    if (mode === "edit" && initialData?.id) {
+      apiGet<any>("/categories", {
+        headers: { "Accept-Language": primaryLang },
+      })
+        .then((res) => {
+          const items = Array.isArray(res)
+            ? res
+            : res?.content || res?.data || res?.items || [];
           const match = items.find((c: any) => c.id === initialData.id);
           if (match?.name) {
-            setNames((prev) => ({ ...prev, AZ: match.name }));
+            setNames((prev) => ({ ...prev, [primaryLang]: match.name }));
           }
           if (match?.lessonTypes) {
             setCategoryLessonTypes(match.lessonTypes);
             setSelectedLessonTypeIds(new Set(match.lessonTypes.map((lt: any) => lt.id)));
           }
-        }).catch((err) => console.error("Error fetching categories in AZ:", err));
+        })
+        .catch((err) => console.error("Error fetching categories:", err));
 
-        apiGet<any[]>(`/admin/translations`, {
-          params: {
-            entityType: "CATEGORY",
-            entityId: String(initialData.id),
-            fieldName: "name"
-          }
-        })
-        .then(res => {
+      apiGet<any[]>("/admin/translations", {
+        params: {
+          entityType: "CATEGORY",
+          entityId: String(initialData.id),
+          fieldName: "name",
+        },
+      })
+        .then((res) => {
           const list = (res as any)?.data || res;
-          if (Array.isArray(list)) {
-            const newNames: Record<string, string> = {
-              AZ: azName,
-              EN: "",
-              RU: ""
-            };
-            list.forEach(item => {
-              if (item.languageCode && item.fieldName === "name") {
-                newNames[item.languageCode.toUpperCase()] = item.fieldValue || "";
+          if (!Array.isArray(list)) return;
+          const newNames = emptyLanguageRecord(languages, { [primaryLang]: primaryName });
+          list.forEach((item: any) => {
+            if (item.languageCode && item.fieldName === "name") {
+              const lang = String(item.languageCode).toUpperCase();
+              if (languages.includes(lang)) {
+                newNames[lang] = item.fieldValue || "";
               }
-            });
-            setNames(prev => ({ 
-              ...prev, 
-              ...newNames,
-              AZ: prev.AZ !== azName ? prev.AZ : newNames.AZ 
-            }));
-          }
+            }
+          });
+          setNames((prev) => ({
+            ...newNames,
+            [primaryLang]:
+              prev[primaryLang] && prev[primaryLang] !== primaryName
+                ? prev[primaryLang]
+                : newNames[primaryLang],
+          }));
         })
-        .catch(err => console.error("Error fetching translations:", err));
-      }
+        .catch((err) => console.error("Error fetching translations:", err));
     }
-  }, [open, initialData, mode]);
+  }, [open, initialData, mode, languages, primaryLang]);
 
   const handleFile = useCallback((file: File) => {
     if (!file.type.startsWith("image/")) return;
@@ -162,18 +148,19 @@ export default function CategoryModal({
   const [isSubmittingLessonType, setIsSubmittingLessonType] = useState(false);
 
   const handleSave = () => {
-    if (!names.AZ.trim()) return;
-    onSave({ 
-      name: names.AZ.trim(), 
+    const primaryName = (names[primaryLang] || "").trim();
+    if (!primaryName) return;
+    onSave({
+      name: primaryName,
       photo: selectedFile,
       icon: selectedIconFile,
       lessonTypeIds: Array.from(selectedLessonTypeIds),
       translations: Object.entries(names)
-        .filter(([lang, val]) => lang !== "AZ" && val.trim() !== "")
+        .filter(([lang, val]) => lang !== primaryLang && val.trim() !== "")
         .map(([lang, val]) => ({
           languageCode: lang,
-          fieldValue: val.trim()
-        }))
+          fieldValue: val.trim(),
+        })),
     });
   };
 
@@ -228,7 +215,7 @@ export default function CategoryModal({
     setIsSubmittingLessonType(true);
 
     try {
-      if (activeTab === "AZ") {
+      if (activeTab === primaryLang) {
         try {
           const ltDetails = await apiGet<any>(`/admin/lesson-types/${lt.id}`);
           if (ltDetails?.name) {
@@ -269,10 +256,10 @@ export default function CategoryModal({
     setIsSubmittingLessonType(true);
 
     try {
-      if (activeTab === "AZ") {
+      if (activeTab === primaryLang) {
         await apiRequest(`/admin/lesson-types/${lt.id}`, {
           method: "PUT",
-          body: { name: trimmed }
+          body: { name: trimmed },
         });
       } else {
         await apiRequest(`/admin/translations`, {
@@ -376,7 +363,7 @@ export default function CategoryModal({
               type="text"
               value={names[activeTab] || ""}
               onChange={(e) => setNames((prev) => ({ ...prev, [activeTab]: e.target.value }))}
-              placeholder={activeTab === "AZ" ? "Məs: Fitness" : activeTab === "EN" ? "E.g., Fitness" : "Например: Фитнес"}
+              placeholder={activeTab === primaryLang ? "Məs: Fitness" : `Name (${activeTab})`}
               className="w-full h-[40px] rounded-lg bg-[#fafafa] border border-[#ececed] px-3 text-[13px] sm:text-[14px] font-medium outline-none focus:border-[#00b4cc] transition-colors"
             />
           </div>
@@ -579,7 +566,7 @@ export default function CategoryModal({
         {/* Footer */}
         <button
           onClick={handleSave}
-          disabled={!names.AZ.trim()}
+          disabled={!(names[primaryLang] || "").trim()}
           className="w-full max-w-[280px] h-[48px] rounded-xl bg-[#00b4cc] text-white flex items-center justify-center px-4 py-2 font-medium text-[14px] disabled:opacity-50 hover:bg-[#00a4bd] transition-all shadow-md shadow-cyan-50"
         >
           {t.common.save}

@@ -19,6 +19,7 @@ import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 import { useI18nStore } from "@/lib/i18n";
 import { toast } from "sonner";
 import { apiGet, apiPost } from "@/lib/api/client";
+import { emptyLanguageRecord, useLanguages } from "@/lib/query/use-languages";
 import styles from "./info-tab.module.css";
 
 interface InfoTabProps {
@@ -122,6 +123,8 @@ const LOCAL_TRANSLATIONS: Record<string, Record<string, string>> = {
 };
 
 export function InfoTab({ gymId }: InfoTabProps) {
+  const { languages } = useLanguages();
+  const primaryLang = languages.includes("AZ") ? "AZ" : languages[0] ?? "AZ";
   const [isEditing, setIsEditing] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   
@@ -149,11 +152,15 @@ export function InfoTab({ gymId }: InfoTabProps) {
   const lt = LOCAL_TRANSLATIONS[locale] || LOCAL_TRANSLATIONS.AZ;
 
   // --- Translation state (AZ/EN/RU) ---
-  const [infoLangTab, setInfoLangTab] = useState<string>("AZ");
-  const [gymNames, setGymNames] = useState<Record<string, string>>({ AZ: "", EN: "", RU: "" });
-  const [gymCatDescs, setGymCatDescs] = useState<Record<string, Record<number, string>>>({ AZ: {}, EN: {}, RU: {} });
-  const [initialGymNames, setInitialGymNames] = useState<Record<string, string>>({ AZ: "", EN: "", RU: "" });
-  const [initialGymCatDescs, setInitialGymCatDescs] = useState<Record<string, Record<number, string>>>({ AZ: {}, EN: {}, RU: {} });
+  const [infoLangTab, setInfoLangTab] = useState<string>(primaryLang);
+  const [gymNames, setGymNames] = useState<Record<string, string>>(() => emptyLanguageRecord(languages));
+  const [gymCatDescs, setGymCatDescs] = useState<Record<string, Record<number, string>>>(() =>
+    Object.fromEntries(languages.map((lang) => [lang, {}]))
+  );
+  const [initialGymNames, setInitialGymNames] = useState<Record<string, string>>(() => emptyLanguageRecord(languages));
+  const [initialGymCatDescs, setInitialGymCatDescs] = useState<Record<string, Record<number, string>>>(() =>
+    Object.fromEntries(languages.map((lang) => [lang, {}]))
+  );
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
 
   const [isMainDropdownOpen, setIsMainDropdownOpen] = useState(false);
@@ -359,7 +366,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
       }
 
       // Sync AZ translations
-      setGymNames(prev => ({ ...prev, AZ: gymInfo.name || "" }));
+      setGymNames((prev) => ({ ...emptyLanguageRecord(languages), ...prev, [primaryLang]: gymInfo.name || "" }));
       const azDescs: Record<number, string> = {};
       const syncCats = [
         ...(gymInfo.mainCategories || []),
@@ -371,9 +378,9 @@ export function InfoTab({ gymId }: InfoTabProps) {
       } else {
         syncCats.forEach((c: any) => { azDescs[c.id] = gymInfo.description || ""; });
       }
-      setGymCatDescs(prev => ({ ...prev, AZ: azDescs }));
+      setGymCatDescs((prev) => ({ ...Object.fromEntries(languages.map((lang) => [lang, {}])), ...prev, [primaryLang]: azDescs }));
     }
-  }, [gymInfo]);
+  }, [gymInfo, languages, primaryLang]);
 
   // Fetch translations when entering edit mode
   useEffect(() => {
@@ -388,7 +395,10 @@ export function InfoTab({ gymId }: InfoTabProps) {
           const newNames: Record<string, string> = { ...gymNames };
           nameList.forEach((item: any) => {
             if (item.languageCode && item.fieldName === 'name') {
-              newNames[item.languageCode.toUpperCase()] = item.fieldValue || '';
+              const lang = String(item.languageCode).toUpperCase();
+              if (languages.includes(lang)) {
+                newNames[lang] = item.fieldValue || '';
+              }
             }
           });
           setGymNames(newNames);
@@ -403,7 +413,8 @@ export function InfoTab({ gymId }: InfoTabProps) {
           descList.forEach((item: any) => {
             if (item.languageCode && item.fieldName) {
               const lang = item.languageCode.toUpperCase();
-              if (lang === 'AZ') return;
+              if (lang === primaryLang) return;
+              if (!languages.includes(lang)) return;
               if (!newDescs[lang]) newDescs[lang] = {};
               if (item.fieldName === 'description') {
                 // General description (used as fallback)
@@ -426,11 +437,11 @@ export function InfoTab({ gymId }: InfoTabProps) {
     }
     if (!isEditing) {
       setTranslationsLoaded(false);
-      setInfoLangTab("AZ");
-      setInitialGymNames({ AZ: "", EN: "", RU: "" });
-      setInitialGymCatDescs({ AZ: {}, EN: {}, RU: {} });
+      setInfoLangTab(primaryLang);
+      setInitialGymNames(emptyLanguageRecord(languages));
+      setInitialGymCatDescs(Object.fromEntries(languages.map((lang) => [lang, {}])));
     }
-  }, [isEditing, gymId, translationsLoaded]);
+  }, [isEditing, gymId, translationsLoaded, languages, primaryLang]);
 
   useEffect(() => {
     if (allCategories.length > 0) {
@@ -600,7 +611,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
     if (!gymId) return;
     const payload: any[] = [];
     // Gym name translations (EN, RU)
-    for (const lang of ["EN", "RU"]) {
+    for (const lang of languages.filter((l) => l !== primaryLang)) {
       const val = gymNames[lang];
       if (val && val.trim()) {
         payload.push({
@@ -612,8 +623,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
         });
       }
     }
-    // Category description translations (EN, RU)
-    for (const lang of ["EN", "RU"]) {
+    for (const lang of languages.filter((l) => l !== primaryLang)) {
       const descs = gymCatDescs[lang] || {};
       for (const [catId, val] of Object.entries(descs)) {
         if (val && (val as string).trim()) {
@@ -1016,7 +1026,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
           {/* Language Tabs (only in edit mode) */}
           {isEditing && (
             <div className="w-full flex items-center border-b border-[#ececed] gap-1">
-              {["AZ", "EN", "RU"].map((lang) => (
+              {languages.map((lang) => (
                 <button key={lang} type="button" onClick={() => setInfoLangTab(lang)}
                   className={`px-4 py-2 text-[13px] font-semibold transition-all border-b-2 ${
                     infoLangTab === lang ? "border-[#00b4cc] text-[#00b4cc]" : "border-transparent text-gray-500 hover:text-gray-700"
@@ -1027,7 +1037,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
 
           {/* Zal adı */}
           <div className="flex flex-col items-start gap-3 w-full">
-            <div className="self-stretch relative leading-[24px]">{lt.gymName} {isEditing && infoLangTab !== "AZ" ? `(${infoLangTab})` : ""}</div>
+            <div className="self-stretch relative leading-[24px]">{lt.gymName} {isEditing && infoLangTab !== primaryLang ? `(${infoLangTab})` : ""}</div>
             <div className={cn(
               "self-stretch h-[44px] rounded-lg border flex items-center p-[0px_12px] text-sm transition-colors",
               isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
@@ -1035,16 +1045,16 @@ export function InfoTab({ gymId }: InfoTabProps) {
               <input 
                 type="text" 
                 name="name"
-                value={infoLangTab === "AZ" ? formData.name : (gymNames[infoLangTab] || "")}
+                value={infoLangTab === primaryLang ? formData.name : (gymNames[infoLangTab] || "")}
                 onChange={(e) => {
-                  if (infoLangTab === "AZ") {
+                  if (infoLangTab === primaryLang) {
                     handleChange(e);
                   } else {
                     setGymNames(prev => ({ ...prev, [infoLangTab]: e.target.value }));
                   }
                 }}
                 readOnly={!isEditing}
-                placeholder={infoLangTab === "AZ" ? "" : infoLangTab === "EN" ? "English name" : "Название на русском"}
+                placeholder={infoLangTab === primaryLang ? "" : `Name (${infoLangTab})`}
                 className="bg-transparent text-foreground outline-none w-full h-full"
               />
             </div>
@@ -1052,7 +1062,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
 
           {/* Haqqında */}
           <div className="self-stretch flex flex-col items-start gap-3 w-full">
-            <div className="self-stretch relative leading-[24px]">{lt.about} {isEditing && infoLangTab !== "AZ" ? `(${infoLangTab})` : ""}</div>
+            <div className="self-stretch relative leading-[24px]">{lt.about} {isEditing && infoLangTab !== primaryLang ? `(${infoLangTab})` : ""}</div>
             
             {/* Category selection inside description if there are categories */}
             {allCategories.length > 0 && (
@@ -1085,11 +1095,11 @@ export function InfoTab({ gymId }: InfoTabProps) {
               )}>
                 <textarea 
                   name="description"
-                  value={infoLangTab === "AZ" 
-                    ? (catDescriptions[activeCategoryId] || "") 
+                  value={infoLangTab === primaryLang
+                    ? (catDescriptions[activeCategoryId] || "")
                     : (gymCatDescs[infoLangTab]?.[activeCategoryId] || "")}
                   onChange={(e) => {
-                    if (infoLangTab === "AZ") {
+                    if (infoLangTab === primaryLang) {
                       setCatDescriptions(prev => ({ ...prev, [activeCategoryId!]: e.target.value }));
                     } else {
                       setGymCatDescs(prev => ({
@@ -1099,9 +1109,9 @@ export function InfoTab({ gymId }: InfoTabProps) {
                     }
                   }}
                   readOnly={!isEditing}
-                  placeholder={infoLangTab === "AZ" 
+                  placeholder={infoLangTab === primaryLang
                     ? `${allCategories.find(c => c.id === activeCategoryId)?.name} haqqında məlumat...`
-                    : infoLangTab === "EN" ? "Description in English..." : "Описание на русском..."}
+                    : `Description (${infoLangTab})...`}
                   className="bg-transparent text-foreground outline-none w-full h-full min-h-[64px] resize-none"
                 />
               </div>

@@ -1,13 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Pencil, Trash2, Plus, Image as ImageIcon, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { type Store, type StorePackage } from '@/lib/stores-data'
-
-const LANGS = ['Az', 'Ru', 'En'] as const
-type Lang = typeof LANGS[number]
+import { emptyLanguageRecord, useLanguages } from '@/lib/query/use-languages'
 
 interface Props {
   store?: Store
@@ -20,17 +18,29 @@ type PkgModal =
   | null
 
 export function StoreDetail({ store, isNew }: Props) {
-  const router  = useRouter()
-  const [lang, setLang]         = useState<Lang>('Az')
-  const [name, setName]         = useState(store?.name ?? '')
-  const [about, setAbout]       = useState(store?.about ?? '')
-  const [address, setAddress]   = useState(store?.address ?? '')
-  const [phone, setPhone]       = useState(store?.phone ?? '')
-  const [email, setEmail]       = useState(store?.email ?? '')
-  const [hours, setHours]       = useState(store?.workingHours ?? '')
+  const router = useRouter()
+  const { languages } = useLanguages()
+  const primaryLang = languages.includes('AZ') ? 'AZ' : languages[0] ?? 'AZ'
+  const [lang, setLang] = useState<string>(primaryLang)
+  const [names, setNames] = useState<Record<string, string>>(() =>
+    emptyLanguageRecord(languages, { [primaryLang]: store?.name ?? '' })
+  )
+  const [abouts, setAbouts] = useState<Record<string, string>>(() =>
+    emptyLanguageRecord(languages, { [primaryLang]: store?.about ?? '' })
+  )
+  const [address, setAddress] = useState(store?.address ?? '')
+  const [phone, setPhone] = useState(store?.phone ?? '')
+  const [email, setEmail] = useState(store?.email ?? '')
+  const [hours, setHours] = useState(store?.workingHours ?? '')
   const [packages, setPackages] = useState<StorePackage[]>(store?.packages ?? [])
-  const [photo, setPhoto]       = useState<string | null>(store?.photo ?? null)
+  const [photo, setPhoto] = useState<string | null>(store?.photo ?? null)
   const [pkgModal, setPkgModal] = useState<PkgModal>(null)
+
+  useEffect(() => {
+    setLang(primaryLang)
+    setNames(emptyLanguageRecord(languages, { [primaryLang]: store?.name ?? '' }))
+    setAbouts(emptyLanguageRecord(languages, { [primaryLang]: store?.about ?? '' }))
+  }, [languages, primaryLang, store?.name, store?.about])
 
   function handleSavePkg(data: { name: string; discount: number }) {
     if (!pkgModal) return
@@ -53,7 +63,6 @@ export function StoreDetail({ store, isNew }: Props) {
 
   return (
     <div className="flex flex-col gap-5 pb-10">
-      {/* Back */}
       <button
         onClick={() => router.push('/stores')}
         className="flex w-fit items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -61,17 +70,15 @@ export function StoreDetail({ store, isNew }: Props) {
         <ArrowLeft size={15} /> Geri qayıt
       </button>
 
-      {/* Title */}
       <h1 className="text-xl font-bold text-foreground">
-        {isNew ? '' : (name || 'Mağaza')}
+        {isNew ? '' : (names[primaryLang] || 'Mağaza')}
       </h1>
 
-      {/* Mağaza məlumatları */}
       <section className="rounded-xl border border-border bg-card p-5 flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-foreground">Mağaza məlumatları</h2>
           <div className="flex overflow-hidden rounded-lg border border-border">
-            {LANGS.map((l) => (
+            {languages.map((l) => (
               <button
                 key={l}
                 onClick={() => setLang(l)}
@@ -87,20 +94,20 @@ export function StoreDetail({ store, isNew }: Props) {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs text-muted-foreground">Mağaza adı</label>
+          <label className="text-xs text-muted-foreground">Mağaza adı ({lang})</label>
           <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            value={names[lang] || ''}
+            onChange={(e) => setNames((prev) => ({ ...prev, [lang]: e.target.value }))}
             placeholder="Vitamin club"
             className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-[#00B4CC] transition-colors"
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs text-muted-foreground">Haqqında</label>
+          <label className="text-xs text-muted-foreground">Haqqında ({lang})</label>
           <textarea
-            value={about}
-            onChange={(e) => setAbout(e.target.value)}
+            value={abouts[lang] || ''}
+            onChange={(e) => setAbouts((prev) => ({ ...prev, [lang]: e.target.value }))}
             placeholder="Haqqında"
             rows={4}
             className="resize-none rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-[#00B4CC] transition-colors"
@@ -137,7 +144,6 @@ export function StoreDetail({ store, isNew }: Props) {
         </div>
       </section>
 
-      {/* Əlaqə */}
       <section className="rounded-xl border border-border bg-card p-5 flex flex-col gap-4">
         <h2 className="text-sm font-semibold text-foreground">Əlaqə</h2>
         <Field label="Ünvan"           value={address} onChange={setAddress} placeholder="Bakı, Nərimanov rayonu" />
@@ -146,7 +152,6 @@ export function StoreDetail({ store, isNew }: Props) {
         <Field label="İş saatları"     value={hours}   onChange={setHours}   placeholder="B.e-C :  07:00-22:00" />
       </section>
 
-      {/* Paketlər və endirim */}
       <section className="rounded-xl border border-border bg-card p-5 flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-foreground">Paketlər və endirim</h2>
@@ -197,7 +202,6 @@ export function StoreDetail({ store, isNew }: Props) {
         )}
       </section>
 
-      {/* Footer */}
       <div className="flex justify-end gap-3">
         <button
           onClick={() => router.push('/stores')}
@@ -213,7 +217,6 @@ export function StoreDetail({ store, isNew }: Props) {
         </button>
       </div>
 
-      {/* Package modal */}
       {pkgModal && (
         <PackageModal
           initial={pkgModal.mode === 'edit' ? pkgModal.pkg : undefined}
@@ -225,7 +228,6 @@ export function StoreDetail({ store, isNew }: Props) {
   )
 }
 
-// ── Package add/edit modal ────────────────────────────────────────────────────
 function PackageModal({
   initial,
   onSave,
@@ -252,7 +254,6 @@ function PackageModal({
         className="w-full max-w-sm rounded-2xl bg-card p-5 shadow-2xl flex flex-col gap-4"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold text-foreground">
             {initial ? 'Paketi redaktə et' : 'Yeni paket əlavə et'}
@@ -262,7 +263,6 @@ function PackageModal({
           </button>
         </div>
 
-        {/* Paket adı */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-muted-foreground">Paket adı</label>
           <input
@@ -274,7 +274,6 @@ function PackageModal({
           />
         </div>
 
-        {/* Endirim */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-muted-foreground">Endirim (%)</label>
           <input
@@ -288,7 +287,6 @@ function PackageModal({
           />
         </div>
 
-        {/* Actions */}
         <div className="flex gap-3 pt-1">
           <button
             onClick={onClose}
@@ -309,7 +307,6 @@ function PackageModal({
   )
 }
 
-// ── Field ─────────────────────────────────────────────────────────────────────
 function Field({ label, value, onChange, placeholder }: {
   label: string; value: string; onChange: (v: string) => void; placeholder?: string
 }) {

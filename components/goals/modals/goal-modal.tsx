@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import Image from "next/image";
 import { X, Upload, Loader2 } from "lucide-react";
-import az, { type TranslationKeys } from "@/lib/i18n/locales/az";
+import { type TranslationKeys } from "@/lib/i18n/locales/az";
 import { apiGet } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
+import { emptyLanguageRecord, useLanguages } from "@/lib/query/use-languages";
 
 export interface GoalFormData {
   code: string;
@@ -33,10 +33,13 @@ export default function GoalModal({
   t,
   isLoading = false,
 }: GoalModalProps) {
-  const [activeTab, setActiveTab] = useState<string>("AZ");
-  const [titles, setTitles] = useState<Record<string, string>>({ AZ: "", RU: "", EN: "" });
-  const [subtitles, setSubtitles] = useState<Record<string, string>>({ AZ: "", RU: "", EN: "" });
-  
+  const { languages } = useLanguages();
+  const primaryLang = languages.includes("AZ") ? "AZ" : languages[0] ?? "AZ";
+
+  const [activeTab, setActiveTab] = useState<string>(primaryLang);
+  const [titles, setTitles] = useState<Record<string, string>>({});
+  const [subtitles, setSubtitles] = useState<Record<string, string>>({});
+
   const [code, setCode] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -45,43 +48,44 @@ export default function GoalModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (open) {
-      const azTitle = initialData?.title ?? "";
-      const azSubtitle = initialData?.subtitle ?? "";
-      
-      setTitles({ AZ: azTitle, RU: "", EN: "" });
-      setSubtitles({ AZ: azSubtitle, RU: "", EN: "" });
-      setActiveTab("AZ");
-      setCode(initialData?.code ?? "");
-      setImagePreview(initialData?.imageUrl ?? null);
-      setSelectedFile(null);
-      setErrors({});
+    if (!open) return;
 
-      if (initialData?.code) {
-        apiGet<any>(`/translations/GoalReference/${initialData.code}`)
-          .then((res) => {
-            const list = res?.data || res;
-            if (Array.isArray(list)) {
-              const newTitles: Record<string, string> = { AZ: azTitle, RU: "", EN: "" };
-              const newSubtitles: Record<string, string> = { AZ: azSubtitle, RU: "", EN: "" };
-              list.forEach((item: any) => {
-                const lang = item.languageCode?.toUpperCase();
-                if (lang === "RU" || lang === "EN") {
-                  if (item.fieldName === "title") {
-                    newTitles[lang] = item.fieldValue || "";
-                  } else if (item.fieldName === "subtitle") {
-                    newSubtitles[lang] = item.fieldValue || "";
-                  }
-                }
-              });
-              setTitles(newTitles);
-              setSubtitles(newSubtitles);
-            }
-          })
-          .catch((err) => console.warn("Failed to load goal translations", err));
-      }
-    }
-  }, [open, initialData]);
+    const primaryTitle = initialData?.title ?? "";
+    const primarySubtitle = initialData?.subtitle ?? "";
+    const initialTitles = emptyLanguageRecord(languages, { [primaryLang]: primaryTitle });
+    const initialSubtitles = emptyLanguageRecord(languages, { [primaryLang]: primarySubtitle });
+
+    setTitles(initialTitles);
+    setSubtitles(initialSubtitles);
+    setActiveTab(primaryLang);
+    setCode(initialData?.code ?? "");
+    setImagePreview(initialData?.imageUrl ?? null);
+    setSelectedFile(null);
+    setErrors({});
+
+    if (!initialData?.code) return;
+
+    apiGet<any>(`/translations/GoalReference/${initialData.code}`)
+      .then((res) => {
+        const list = res?.data || res;
+        if (!Array.isArray(list)) return;
+
+        const nextTitles = { ...initialTitles };
+        const nextSubtitles = { ...initialSubtitles };
+        list.forEach((item: any) => {
+          const lang = String(item.languageCode ?? "").toUpperCase();
+          if (!lang || lang === primaryLang || !languages.includes(lang)) return;
+          if (item.fieldName === "title") {
+            nextTitles[lang] = item.fieldValue || "";
+          } else if (item.fieldName === "subtitle") {
+            nextSubtitles[lang] = item.fieldValue || "";
+          }
+        });
+        setTitles(nextTitles);
+        setSubtitles(nextSubtitles);
+      })
+      .catch((err) => console.warn("Failed to load goal translations", err));
+  }, [open, initialData, languages, primaryLang]);
 
   const handleFile = useCallback((file: File) => {
     if (!file.type.startsWith("image/")) return;
@@ -102,45 +106,54 @@ export default function GoalModal({
 
   const handleSave = () => {
     const newErrors: { [key: string]: string } = {};
+    const primaryTitle = (titles[primaryLang] || "").trim();
 
-    if (!titles.AZ.trim()) {
+    if (!primaryTitle) {
       newErrors.title = t.validation.required;
     }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      setActiveTab(primaryLang);
       return;
     }
 
     let finalCode = code;
     if (mode === "create") {
-      finalCode = titles.AZ.trim().toUpperCase()
-          .replace(/Ə/g, 'E').replace(/Ö/g, 'O').replace(/Ü/g, 'U')
-          .replace(/Ş/g, 'S').replace(/Ç/g, 'C').replace(/Ğ/g, 'G')
-          .replace(/İ/g, 'I').replace(/I/g, 'I')
-          .replace(/[^A-Z0-9]/g, '_')
-          .replace(/_+/g, '_')
-          .replace(/^_|_$/g, '');
+      finalCode = primaryTitle
+        .toUpperCase()
+        .replace(/Ə/g, "E")
+        .replace(/Ö/g, "O")
+        .replace(/Ü/g, "U")
+        .replace(/Ş/g, "S")
+        .replace(/Ç/g, "C")
+        .replace(/Ğ/g, "G")
+        .replace(/İ/g, "I")
+        .replace(/I/g, "I")
+        .replace(/[^A-Z0-9]/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_|_$/g, "");
       if (!finalCode) finalCode = "GOAL_" + Date.now();
     }
 
-    const translationsPayload = {
-      EN: {
-        title: titles.EN.trim(),
-        subtitle: subtitles.EN.trim(),
-      },
-      RU: {
-        title: titles.RU.trim(),
-        subtitle: subtitles.RU.trim(),
-      }
-    };
+    const translationsPayload: Record<string, Record<string, string>> = {};
+    languages.forEach((lang) => {
+      if (lang === primaryLang) return;
+      translationsPayload[lang] = {
+        title: (titles[lang] || "").trim(),
+        subtitle: (subtitles[lang] || "").trim(),
+      };
+    });
 
-    onSave({
-      code: finalCode,
-      title: titles.AZ.trim(),
-      subtitle: subtitles.AZ.trim(),
-      image: selectedFile,
-    }, translationsPayload);
+    onSave(
+      {
+        code: finalCode,
+        title: primaryTitle,
+        subtitle: (subtitles[primaryLang] || "").trim(),
+        image: selectedFile,
+      },
+      translationsPayload
+    );
   };
 
   if (!open) return null;
@@ -148,28 +161,28 @@ export default function GoalModal({
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center font-sans p-4 sm:py-10">
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => onOpenChange(false)} />
-      
+
       <div className="relative z-10 w-full max-w-[500px] max-h-[90vh] overflow-y-auto rounded-2xl bg-white border border-[#ececed] flex flex-col items-center justify-center p-4 sm:p-6 gap-4 shadow-2xl">
-        
-        {/* Header */}
         <div className="w-full flex items-center justify-between gap-5 text-[#101828] border-b border-[#ececed] pb-2.5">
           <h2 className="text-[16px] sm:text-[18px] font-semibold leading-tight">
             {mode === "create" ? t.goals.addGoal : t.goals.editGoal}
           </h2>
-          <button onClick={() => onOpenChange(false)} className="w-6 h-6 text-[#101828] hover:text-gray-600 transition-colors flex items-center justify-center">
+          <button
+            onClick={() => onOpenChange(false)}
+            className="w-6 h-6 text-[#101828] hover:text-gray-600 transition-colors flex items-center justify-center"
+          >
             <X size={18} />
           </button>
         </div>
 
-        {/* Language Tabs */}
-        <div className="w-full flex border-b border-[#ececed] gap-2">
-          {["AZ", "RU", "EN"].map((lang) => (
+        <div className="w-full flex border-b border-[#ececed] gap-2 overflow-x-auto no-scrollbar">
+          {languages.map((lang) => (
             <button
               key={lang}
               type="button"
               onClick={() => setActiveTab(lang)}
               className={cn(
-                "h-[36px] px-4 text-[13px] font-semibold transition-all border-b-2 outline-none",
+                "h-[36px] px-4 text-[13px] font-semibold transition-all border-b-2 outline-none shrink-0",
                 activeTab === lang
                   ? "border-[#00b4cc] text-[#00b4cc]"
                   : "border-transparent text-gray-500 hover:text-gray-700"
@@ -180,16 +193,13 @@ export default function GoalModal({
           ))}
         </div>
 
-        {/* Content */}
         <div className="w-full flex flex-col items-start gap-4 sm:gap-5 text-[#000]">
-          
-          {/* Image Upload */}
           <div className="w-full flex flex-col items-start gap-2">
             <label className="text-[12px] sm:text-[13px] leading-[20px] font-medium text-black/60">
               {t.goals.image}
             </label>
             <div className="w-full flex flex-col items-start gap-2 text-center text-[13px] text-[#4a5565] font-inter">
-              <div 
+              <div
                 onClick={() => fileInputRef.current?.click()}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleDrop}
@@ -206,11 +216,16 @@ export default function GoalModal({
                   </div>
                 )}
               </div>
-              <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.svg" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                accept="image/*,.svg"
+                onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+              />
             </div>
           </div>
 
-          {/* Title */}
           <div className="w-full flex flex-col items-start gap-2">
             <label className="text-[12px] sm:text-[13px] leading-[20px] font-medium text-black/60">
               {t.goals.goalTitle} ({activeTab})
@@ -219,45 +234,44 @@ export default function GoalModal({
               type="text"
               value={titles[activeTab] || ""}
               onChange={(e) => {
-                setTitles(prev => ({ ...prev, [activeTab]: e.target.value }));
-                if (activeTab === "AZ") {
+                setTitles((prev) => ({ ...prev, [activeTab]: e.target.value }));
+                if (activeTab === primaryLang) {
                   setErrors((prev) => ({ ...prev, title: "" }));
                 }
               }}
               placeholder={t.goals.enterTitle || "Başlıq daxil edin"}
               className={`w-full h-[40px] rounded-lg bg-[#fafafa] border px-3 text-[13px] sm:text-[14px] font-medium outline-none focus:border-[#00b4cc] transition-colors ${
-                errors.title && activeTab === "AZ" ? "border-red-500" : "border-[#ececed]"
+                errors.title && activeTab === primaryLang ? "border-red-500" : "border-[#ececed]"
               }`}
             />
-            {errors.title && activeTab === "AZ" && <p className="text-[11px] text-red-500 mt-[-4px]">{errors.title}</p>}
+            {errors.title && activeTab === primaryLang && (
+              <p className="text-[11px] text-red-500 mt-[-4px]">{errors.title}</p>
+            )}
           </div>
 
-          {/* Subtitle */}
           <div className="w-full flex flex-col items-start gap-2">
             <label className="text-[12px] sm:text-[13px] leading-[20px] font-medium text-black/60">
               {t.goals.goalSubtitle} ({activeTab})
             </label>
             <textarea
               value={subtitles[activeTab] || ""}
-              onChange={(e) => setSubtitles(prev => ({ ...prev, [activeTab]: e.target.value }))}
+              onChange={(e) => setSubtitles((prev) => ({ ...prev, [activeTab]: e.target.value }))}
               placeholder={t.goals.enterSubtitle || "Yarımbaşlıq daxil edin"}
               className="w-full h-[80px] rounded-lg bg-[#fafafa] border border-[#ececed] p-3 text-[13px] sm:text-[14px] font-medium outline-none focus:border-[#00b4cc] transition-colors resize-none"
             />
           </div>
-
         </div>
 
-        {/* Footer */}
         <div className="w-full flex items-center justify-end gap-3 mt-2 border-t border-[#ececed] pt-4">
-          <button 
+          <button
             onClick={() => onOpenChange(false)}
             disabled={isLoading}
             className="h-[44px] px-5 rounded-lg border border-[#ececed] bg-white text-[14px] font-medium text-[#344054] hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             {t.common.cancel}
           </button>
-          <button 
-            onClick={handleSave} 
+          <button
+            onClick={handleSave}
             disabled={isLoading}
             className="h-[44px] px-6 rounded-lg bg-[#00b4cc] flex items-center justify-center gap-2 text-[14px] font-medium text-white shadow-sm hover:opacity-90 transition-all disabled:opacity-50"
           >
@@ -265,7 +279,6 @@ export default function GoalModal({
             {t.common.save}
           </button>
         </div>
-
       </div>
     </div>
   );

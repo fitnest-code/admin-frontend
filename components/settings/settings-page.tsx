@@ -19,6 +19,7 @@ import { toast } from 'sonner'
 import { LegalDocumentsTab } from '../legal/legal-documents-tab'
 import { ContactDetailsPage } from '../contact-details/contact-details-page'
 import CancellationReasonsMain from '../cancellation-reasons/cancellation-reasons-main'
+import LanguagesMain from '../languages/languages-main'
 
 // ─── Tab config ───────────────────────────────────────────────────────────────
 
@@ -26,6 +27,7 @@ const TABS = [
   { key: 'legal',         label: 'Hüquqi sənədlər',    icon: Scale        },
   { key: 'contact',       label: 'Əlaqə məlumatları',  icon: PhoneCall    },
   { key: 'cancellation',  label: 'Ləğv səbəbləri',     icon: Ban          },
+  { key: 'languages',     label: 'Dillər',             icon: Globe        },
   { key: 'roles',         label: 'Rollar',             icon: Shield       },
 ] as const
 
@@ -118,6 +120,7 @@ export function SettingsPage() {
         {activeTab === 'legal'         && <LegalDocumentsTab />}
         {activeTab === 'contact'       && <ContactDetailsPage isTab={true} />}
         {activeTab === 'cancellation'  && <CancellationReasonsMain isTab={true} />}
+        {activeTab === 'languages'     && <LanguagesMain isTab={true} />}
         {activeTab === 'roles'         && <RolesTab />}
       </div>
     </div>
