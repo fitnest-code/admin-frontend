@@ -260,25 +260,11 @@ export function BulkCampaignModal({ onClose }: { onClose: () => void }) {
   const [amount, setAmount] = useState('')
   const [title, setTitle] = useState(c.defaultCampaignTitle)
   const [body, setBody] = useState(c.defaultCampaignBody)
-  const [userIdsRaw, setUserIdsRaw] = useState('')
   const [state, setState] = useState<SendState>('form')
   const [loading, setLoading] = useState(false)
   const [resultMessage, setResultMessage] = useState('')
 
   async function handleConfirm() {
-    const ids = userIdsRaw
-      .split(/[\s,;]+/)
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .map((s) => Number(s))
-      .filter((n) => Number.isFinite(n) && n > 0)
-
-    if (ids.length === 0) {
-      setResultMessage(c.emptyUserIds)
-      setState('error')
-      return
-    }
-
     const coinAmount = Number(amount)
     if (!Number.isFinite(coinAmount) || coinAmount <= 0) {
       setResultMessage(c.invalidAmount)
@@ -292,8 +278,7 @@ export function BulkCampaignModal({ onClose }: { onClose: () => void }) {
         totalRequested: number
         totalSuccess: number
         totalFailed: number
-      }>('/api/v1/admin/coins/bulk-adjust', {
-        userIds: ids,
+      }>('/api/v1/admin/coins/bulk-adjust-all', {
         amount: coinAmount,
         type: 'CAMPAIGN_BONUS',
         description: title,
@@ -323,29 +308,23 @@ export function BulkCampaignModal({ onClose }: { onClose: () => void }) {
           <div className="flex flex-col gap-5 font-sans">
             <div className="w-full border-b border-[#ececed] pb-3">
               <h2 className="text-[20px] font-semibold text-black leading-[30px]">{c.bulkModalTitle}</h2>
+              <p className="mt-1 text-[13px] text-[#667085] leading-relaxed">{c.campaignAllUsersHint}</p>
             </div>
             <Field label={c.coinAmount} value={amount} onChange={setAmount} type="number" placeholder="0" />
             <Field label={c.notificationTitle} value={title} onChange={setTitle} />
             <Field label={c.notificationBody} value={body} onChange={setBody} rows={3} />
-            <Field
-              label={c.userIds}
-              value={userIdsRaw}
-              onChange={setUserIdsRaw}
-              rows={4}
-              placeholder={c.userIdsPlaceholder}
-            />
             <FormActions
               onCancel={onClose}
               onConfirm={() => setState('confirm')}
               cancelLabel={t.common.cancel}
               confirmLabel={t.modals.sendButton}
-              disabled={!amount.trim() || !title.trim() || !userIdsRaw.trim()}
+              disabled={!amount.trim() || !title.trim() || !body.trim()}
             />
           </div>
         )}
         {state === 'confirm' && (
           <ConfirmDialog
-            message={c.confirmCampaignTitle}
+            message={c.confirmCampaignAllTitle}
             onConfirm={handleConfirm}
             onCancel={() => setState('form')}
             loading={loading}
