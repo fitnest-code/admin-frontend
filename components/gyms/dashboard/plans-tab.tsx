@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import Image from "next/image";
-import { Plus, Check, Loader2, Trash2, X, Pencil } from "lucide-react";
+import { Plus, Check, Loader2, Trash2, X, Pencil, ImagePlus } from "lucide-react";
 import { apiGet, apiPost } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 import { useGymStore } from "@/lib/store/gym-store";
-import { useSupportedServices, useCreateGymStep6, useCreateSupportedService, useDeleteSupportedService, useUpdateGymSubscriptions, useGymSubscriptionsAdmin } from "@/lib/query/gym-query";
+import { useSupportedServices, useCreateGymStep6, useCreateSupportedService, useUpdateSupportedService, useDeleteSupportedService, useUpdateGymSubscriptions, useGymSubscriptionsAdmin } from "@/lib/query/gym-query";
 import { toast } from "sonner";
 import { ServiceSelectorModal } from "../modals/service-selector-modal";
 import { ConfirmDeleteModal } from "../modals/confirm-delete-modal";
@@ -44,14 +44,17 @@ const LOCAL_TRANSLATIONS: Record<string, Record<string, string>> = {
   AZ: {
     serviceIcon: "Xidmət ikonu",
     selectImage: "Şəkil seçin",
+    changeIcon: "İkonu dəyiş",
   },
   EN: {
     serviceIcon: "Service icon",
     selectImage: "Select image",
+    changeIcon: "Change icon",
   },
   RU: {
     serviceIcon: "Иконка услуги",
     selectImage: "Выберите изображение",
+    changeIcon: "Изменить иконку",
   },
 };
 
@@ -67,8 +70,11 @@ export function PlansTab({ gym }: { gym?: any }) {
   const { data: allPackageNames } = useSubscriptionPackages();
   const { data: allServices } = useSupportedServices(gymId ? Number(gymId) : undefined);
   const createServiceMutation = useCreateSupportedService();
+  const updateServiceMutation = useUpdateSupportedService();
   const deleteServiceMutation = useDeleteSupportedService();
   const { mutate: updateSubscriptions, isPending: savingUpdate } = useUpdateGymSubscriptions();
+  const iconFileInputRef = useRef<HTMLInputElement>(null);
+  const [iconTargetServiceId, setIconTargetServiceId] = useState<number | null>(null);
 
   const initialData = useMemo(() => {
     const selected = new Set<Package>();
@@ -175,6 +181,44 @@ export function PlansTab({ gym }: { gym?: any }) {
       setShowSuccessModal(true);
     } catch (err: any) {
       toast.error(err?.message || t.plans.serviceDeleteFailed);
+    }
+  };
+
+  const handlePickServiceIcon = (serviceId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIconTargetServiceId(serviceId);
+    iconFileInputRef.current?.click();
+  };
+
+  const handleServiceIconSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const serviceId = iconTargetServiceId;
+    e.target.value = "";
+    if (!file || !serviceId) {
+      setIconTargetServiceId(null);
+      return;
+    }
+
+    const service = allServices?.find((s) => s.id === serviceId);
+    if (!service) {
+      setIconTargetServiceId(null);
+      return;
+    }
+
+    try {
+      await updateServiceMutation.mutateAsync({
+        id: serviceId,
+        payload: {
+          name: service.name,
+          gymId: gymId ? Number(gymId) : service.gymId,
+        },
+        icon: file,
+      });
+      setShowSuccessModal(true);
+    } catch (err: any) {
+      toast.error(err?.message || t.plans.genericError);
+    } finally {
+      setIconTargetServiceId(null);
     }
   };
 
@@ -451,6 +495,13 @@ export function PlansTab({ gym }: { gym?: any }) {
           </div>
         )}
         <div className="flex flex-col gap-5">
+          <input
+            ref={iconFileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleServiceIconSelected}
+          />
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
             {allServices?.map((svc) => {
               const stateSelected = packageServices[activePackage]?.includes(svc.name);
@@ -464,11 +515,13 @@ export function PlansTab({ gym }: { gym?: any }) {
               const iconUrl = svc.iconImageUrl || svc.iconUrl || gymBenefits.find(
                 (b: any) => b.description?.trim().toLowerCase() === svc.name?.trim().toLowerCase()
               )?.iconImageUrl;
+              const isUpdatingIcon =
+                updateServiceMutation.isPending &&
+                updateServiceMutation.variables?.id === svc.id;
 
               return (
-                <>
+                <div key={svc.id} className="contents">
                 <div
-                  key={svc.id}
                   onClick={() => toggleServiceSelection(svc.name)}
                   className={cn(
                     "h-[48px] rounded-lg px-3 flex items-center justify-between gap-3 cursor-pointer transition-all border",
@@ -478,13 +531,24 @@ export function PlansTab({ gym }: { gym?: any }) {
                   )}
                 >
                   <div className="flex items-center gap-2 overflow-hidden">
-                    {iconUrl && (
-                      <img
-                        src={getImageUrl(iconUrl)}
-                        alt={svc.name}
-                        className="w-5 h-5 object-contain rounded shrink-0"
-                      />
-                    )}
+                    <button
+                      type="button"
+                      title={lt.changeIcon}
+                      onClick={(e) => handlePickServiceIcon(svc.id, e)}
+                      className="w-7 h-7 rounded-md border border-[#ececed] bg-white flex items-center justify-center shrink-0 hover:border-[#00B4CC] transition-colors overflow-hidden"
+                    >
+                      {isUpdatingIcon ? (
+                        <Loader2 className="animate-spin w-3.5 h-3.5 text-[#00B4CC]" />
+                      ) : iconUrl ? (
+                        <img
+                          src={getImageUrl(iconUrl)}
+                          alt={svc.name}
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <ImagePlus size={14} className="text-black/40" />
+                      )}
+                    </button>
                     <span className="text-[14px] font-medium text-black truncate leading-[20px]">
                       {svc.name}
                     </span>
@@ -540,7 +604,7 @@ export function PlansTab({ gym }: { gym?: any }) {
                     </div>
                   </div>
                 )}
-                </>
+                </div>
               );
             })}
           </div>

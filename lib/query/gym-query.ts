@@ -164,6 +164,34 @@ export function useCreateSupportedService() {
   });
 }
 
+export function useUpdateSupportedService() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+      icon,
+    }: {
+      id: number;
+      payload: SupportedServiceRequest;
+      icon?: File;
+    }) => {
+      const formData = new FormData();
+      formData.append("data", new Blob([JSON.stringify(payload)], { type: "application/json" }));
+      if (icon) {
+        formData.append("icon", icon);
+      }
+      return apiPut<SupportedServiceResponse>(`/admin/gyms/services/${id}`, formData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['supported-services'] });
+      queryClient.invalidateQueries({ queryKey: ['gym-subscriptions-admin'] });
+      queryClient.invalidateQueries({ queryKey: ['gym-details'] });
+    },
+  });
+}
+
 // 5.1 Xidməti silmək üçün
 export function useDeleteSupportedService() {
   const queryClient = useQueryClient();
