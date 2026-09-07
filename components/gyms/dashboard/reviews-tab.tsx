@@ -47,6 +47,18 @@ const STATUS_BADGE_MAP: Record<string, { label: string, color: string, bgColor: 
   },
 };
 
+/** Backend used to return translated status labels; normalize to machine keys. */
+function normalizeReviewStatus(status: unknown): "PENDING" | "ACCEPTED" | "REJECTED" | "" {
+  const raw = String(status ?? "").trim();
+  const upper = raw.toUpperCase();
+  if (upper === "PENDING" || upper === "ACCEPTED" || upper === "REJECTED") return upper;
+  const lower = raw.toLowerCase();
+  if (lower.includes("gözlə") || lower.includes("pending") || lower.includes("ожид")) return "PENDING";
+  if (lower.includes("təsdiq") || lower.includes("accept") || lower.includes("approv") || lower.includes("подтверж")) return "ACCEPTED";
+  if (lower.includes("rədd") || lower.includes("reject") || lower.includes("отклон")) return "REJECTED";
+  return "";
+}
+
 export function ReviewsTab({ gymName }: { gymName?: string }) {
   const { gymId } = useGymStore();
   const [status, setStatus] = useState<string>("");
@@ -268,7 +280,10 @@ export function ReviewsTab({ gymName }: { gymName?: string }) {
                 <td colSpan={5} className="py-20 text-center text-slate-400">Rəy tapılmadı</td>
               </tr>
             ) : (
-              reviews.map((review: any) => (
+              reviews.map((review: any) => {
+                const reviewStatus = normalizeReviewStatus(review.status);
+                const badge = STATUS_BADGE_MAP[reviewStatus];
+                return (
                 <tr
                   key={review.id}
                   onClick={() => setSelectedReview(review)}
@@ -310,28 +325,51 @@ export function ReviewsTab({ gymName }: { gymName?: string }) {
                   <td className="px-6 py-3">
                     <div 
                       className="w-fit rounded-[20px] px-3 py-1.5 flex items-center gap-2 text-[12px] font-bold"
-                      style={{ backgroundColor: STATUS_BADGE_MAP[review.status]?.bgColor, color: STATUS_BADGE_MAP[review.status]?.color }}
+                      style={{ backgroundColor: badge?.bgColor, color: badge?.color }}
                     >
-                      <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: STATUS_BADGE_MAP[review.status]?.dotColor }} />
-                      {STATUS_BADGE_MAP[review.status]?.label}
+                      <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: badge?.dotColor }} />
+                      {badge?.label || review.status || "—"}
                     </div>
                   </td>
 
-                  {/* Detail */}
-                  <td className="px-6 py-3 text-center">
-                    <button onClick={(e) => { e.stopPropagation(); setSelectedReview(review); }} className="p-2 text-slate-400 hover:text-[#00B4CC] transition-colors">
-                      <Eye size={18} />
-                    </button>
+                  {/* Detail / actions */}
+                  <td className="px-6 py-3">
+                    <div className="flex items-center justify-center gap-2" onClick={(e) => e.stopPropagation()}>
+                      {reviewStatus === "PENDING" && (
+                        <>
+                          <button
+                            onClick={() => handleAction(review.id, "approve")}
+                            disabled={isApproving || isRejecting}
+                            className="h-8 px-3 rounded-lg bg-[#00B4CC] text-white text-[12px] font-medium hover:opacity-90 disabled:opacity-50"
+                          >
+                            Təsdiq et
+                          </button>
+                          <button
+                            onClick={() => handleAction(review.id, "reject")}
+                            disabled={isApproving || isRejecting}
+                            className="h-8 px-3 rounded-lg bg-[#ff004f] text-white text-[12px] font-medium hover:opacity-90 disabled:opacity-50"
+                          >
+                            Rədd et
+                          </button>
+                        </>
+                      )}
+                      <button onClick={() => setSelectedReview(review)} className="p-2 text-slate-400 hover:text-[#00B4CC] transition-colors">
+                        <Eye size={18} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
-              ))
+              )})
             )}
           </tbody>
         </table>
       </div>
 
       {/* Review Detail Modal (Container UI) */}
-      {selectedReview && (
+      {selectedReview && (() => {
+        const selectedStatus = normalizeReviewStatus(selectedReview.status);
+        const selectedBadge = STATUS_BADGE_MAP[selectedStatus];
+        return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4 font-sans text-black">
           <div className="w-full max-w-[744px] bg-white rounded-[14px] shadow-2xl flex flex-col animate-in fade-in zoom-in duration-200 overflow-hidden">
             {/* Header */}
@@ -377,10 +415,10 @@ export function ReviewsTab({ gymName }: { gymName?: string }) {
                      <span className="text-[14px] font-medium text-[#364153]">Status</span>
                      <div 
                        className="w-fit rounded-[20px] px-3 py-1.5 flex items-center gap-2 text-[12px] font-bold"
-                       style={{ backgroundColor: STATUS_BADGE_MAP[selectedReview.status]?.bgColor, color: STATUS_BADGE_MAP[selectedReview.status]?.color }}
+                       style={{ backgroundColor: selectedBadge?.bgColor, color: selectedBadge?.color }}
                      >
-                       <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: STATUS_BADGE_MAP[selectedReview.status]?.dotColor }} />
-                       {STATUS_BADGE_MAP[selectedReview.status]?.label}
+                       <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: selectedBadge?.dotColor }} />
+                       {selectedBadge?.label || selectedReview.status}
                      </div>
                   </div>
                </div>
@@ -427,7 +465,7 @@ export function ReviewsTab({ gymName }: { gymName?: string }) {
                >
                   Bağla
                </button>
-               {(selectedReview.status === 'PENDING' || selectedReview.status === 'ACCEPTED') && (
+               {(selectedStatus === 'PENDING' || selectedStatus === 'ACCEPTED') && (
                    <button 
                      onClick={() => handleAction(selectedReview.id, 'reject')}
                      disabled={isRejecting || isApproving}
@@ -436,7 +474,7 @@ export function ReviewsTab({ gymName }: { gymName?: string }) {
                      {isRejecting ? <Loader2 size={20} className="animate-spin mx-auto" /> : "Rədd et"}
                    </button>
                )}
-               {(selectedReview.status === 'PENDING' || selectedReview.status === 'REJECTED') && (
+               {(selectedStatus === 'PENDING' || selectedStatus === 'REJECTED') && (
                    <button 
                      onClick={() => handleAction(selectedReview.id, 'approve')}
                      disabled={isRejecting || isApproving}
@@ -448,7 +486,7 @@ export function ReviewsTab({ gymName }: { gymName?: string }) {
             </div>
           </div>
         </div>
-      )}
+      ); })()}
       <SuccessAnimationModal
         isOpen={modalConfig.isOpen}
         onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
