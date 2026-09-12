@@ -46,7 +46,6 @@ export function ZalAbunelikTab({ gymId }: { gymId: string | number }) {
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isCreatingService, setIsCreatingService] = useState(false);
-  const [hasSynced, setHasSynced] = useState(false);
   const [customServicesList, setCustomServicesList] = useState<string[]>([]);
   const [pendingIcon, setPendingIcon] = useState<File | null>(null);
   const [customIcons, setCustomIcons] = useState<Record<string, File>>({});
@@ -71,49 +70,47 @@ export function ZalAbunelikTab({ gymId }: { gymId: string | number }) {
     }
   }, [selectedCategoryIds, activeCategoryId]);
 
-  // Sync API subscriptions to edit state
+  // Sync API subscriptions to edit state whenever the server payload changes.
   useEffect(() => {
-    if (!allPackageNames || allPackageNames.length === 0 || hasSynced) return;
-    if (subscriptionData) {
-      if (allServices === undefined) return;
-      
-      const pkgs = new Set<string>();
-      const prcs: Record<string, string> = {};
-      const svcs: Record<string, string[]> = {};
-      const localCustoms = new Set<string>();
+    if (!allPackageNames || allPackageNames.length === 0) return;
+    if (!subscriptionData) return;
+    if (allServices === undefined) return;
 
-      subscriptionData.subscriptions.forEach(s => {
-        const found = allPackageNames.find(p => p.id === s.packageId);
-        if (found) {
-          const key = `${s.categoryId}_${found.name}`;
-          pkgs.add(key);
-          prcs[key] = s.dailyPrice.toString();
-          
-          const names = s.benefits?.map(b => b.name) || [];
-          svcs[key] = names;
-        }
-      });
+    const pkgs = new Set<string>();
+    const prcs: Record<string, string> = {};
+    const svcs: Record<string, string[]> = {};
+    const localCustoms = new Set<string>();
 
-      setSelectedPackages(pkgs);
-      const firstActiveKey = pkgs.size > 0 ? Array.from(pkgs)[0] : "";
-      if (firstActiveKey) {
-        const index = firstActiveKey.indexOf('_');
-        const firstActiveCat = Number(firstActiveKey.substring(0, index));
-        const firstActivePkg = firstActiveKey.substring(index + 1);
-        setActiveCategoryId(firstActiveCat);
-        setActivePackage(firstActivePkg);
-      } else {
-        if (selectedCategoryIds.length > 0) setActiveCategoryId(selectedCategoryIds[0]);
-        setActivePackage(allPackageNames[0].name);
+    subscriptionData.subscriptions.forEach(s => {
+      const found = allPackageNames.find(p => p.id === s.packageId);
+      if (found) {
+        const key = `${s.categoryId}_${found.name}`;
+        pkgs.add(key);
+        prcs[key] = s.dailyPrice.toString();
+
+        const names = s.benefits?.map(b => b.name) || [];
+        svcs[key] = names;
       }
-      setPrices(prcs);
-      setPackageServices(svcs);
-      if (localCustoms.size > 0) {
-        setCustomServicesList(Array.from(localCustoms));
-      }
-      setHasSynced(true);
+    });
+
+    setSelectedPackages(pkgs);
+    const firstActiveKey = pkgs.size > 0 ? Array.from(pkgs)[0] : "";
+    if (firstActiveKey) {
+      const index = firstActiveKey.indexOf('_');
+      const firstActiveCat = Number(firstActiveKey.substring(0, index));
+      const firstActivePkg = firstActiveKey.substring(index + 1);
+      setActiveCategoryId(firstActiveCat);
+      setActivePackage(firstActivePkg);
+    } else {
+      if (selectedCategoryIds.length > 0) setActiveCategoryId(selectedCategoryIds[0]);
+      setActivePackage(allPackageNames[0].name);
     }
-  }, [allPackageNames, allServices, subscriptionData, hasSynced, selectedCategoryIds]);
+    setPrices(prcs);
+    setPackageServices(svcs);
+    if (localCustoms.size > 0) {
+      setCustomServicesList(Array.from(localCustoms));
+    }
+  }, [allPackageNames, allServices, subscriptionData, selectedCategoryIds]);
 
   const [pendingService, setPendingService] = useState<string | null>(null);
   const createServiceMutation = useCreateSupportedService();

@@ -98,7 +98,6 @@ export function PlansTab({ gym }: { gym?: any }) {
   const [selectedPackages, setSelectedPackages] = useState<Set<Package>>(initialData.selected);
   const [prices, setPrices] = useState<Record<Package, string>>(initialData.prices);
   const [packageServices, setPackageServices] = useState<Record<Package, string[]>>(initialData.services);
-  const [hasSynced, setHasSynced] = useState(false);
   const [pendingService, setPendingService] = useState<string | null>(null);
   const [pendingIcon, setPendingIcon] = useState<File | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -109,17 +108,27 @@ export function PlansTab({ gym }: { gym?: any }) {
   const [serviceActiveTab, setServiceActiveTab] = useState<string>("AZ");
   const [isSavingTranslation, setIsSavingTranslation] = useState(false);
 
-  // Sync state when gym data arrives
+  const serverSignature = JSON.stringify(
+    (adminSubs?.subscriptions ?? gym?.supportedSubscriptions ?? []).map((s: any) => ({
+      packageId: s.packageId,
+      packageName: s.packageName,
+      dailyPrice: s.dailyPrice,
+      categoryId: s.categoryId,
+      benefits: (s.benefits ?? []).map((b: any) => b.id ?? b.name),
+    })),
+  );
+
   useEffect(() => {
-    const sourceData = adminSubs?.subscriptions || gym?.supportedSubscriptions;
-    const hasData = adminSubs ? true : (gym?.supportedSubscriptions && gym.supportedSubscriptions.length > 0);
-    if (hasData && !hasSynced) {
-      setSelectedPackages(initialData.selected);
-      setPrices(initialData.prices);
-      setPackageServices(initialData.services);
-      setHasSynced(true);
-    }
-  }, [gym?.supportedSubscriptions, adminSubs, initialData, hasSynced]);
+    const hasData = adminSubs
+      ? true
+      : Boolean(gym?.supportedSubscriptions && gym.supportedSubscriptions.length > 0);
+    if (!hasData) return;
+    setSelectedPackages(initialData.selected);
+    setPrices(initialData.prices);
+    setPackageServices(initialData.services);
+    // Re-apply only when the server payload actually changes (after save/refetch).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serverSignature]);
 
   if (subsLoading) {
     return (
@@ -251,7 +260,6 @@ export function PlansTab({ gym }: { gym?: any }) {
       payload: { subscriptions }
     }, {
       onSuccess: () => {
-        setHasSynced(false);
         setShowSuccessModal(true);
       },
       onError: (err: any) => {

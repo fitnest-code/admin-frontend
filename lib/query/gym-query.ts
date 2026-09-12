@@ -199,10 +199,11 @@ export function useUpdateGymSubscriptions() {
   return useMutation({
     mutationFn: ({ id, payload }: { id: number, payload: GymCreateStep6RequestV2 }) =>
       apiPut(`/api/v2/admin/gyms/${id}/subscriptions`, payload),
-    onSuccess: (_, variables) => {
-      // Invalidate with partial key so all locale variants are refreshed
-      queryClient.invalidateQueries({ queryKey: ['gym-subscriptions-admin', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['gym-details', variables.id] });
+    onSuccess: async (_, variables) => {
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['gym-subscriptions-admin', variables.id] }),
+        queryClient.refetchQueries({ queryKey: ['gym-details', variables.id] }),
+      ]);
     },
   });
 }
