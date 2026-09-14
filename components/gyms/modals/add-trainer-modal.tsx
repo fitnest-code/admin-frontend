@@ -198,8 +198,8 @@ export function AddTrainerModal({ onClose, isDashboard = false, gymId }: { onClo
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("Şəkil ölçüsü maksimum 10MB olmalıdır");
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("Şəkil ölçüsü maksimum 20MB olmalıdır");
       e.target.value = "";
       return;
     }
@@ -288,7 +288,7 @@ export function AddTrainerModal({ onClose, isDashboard = false, gymId }: { onClo
                     </div>
                   )}
                 </div>
-                <div className="text-[12px] leading-5 text-[#6a7282] font-medium italic">JPG or PNG • Max size 2MB</div>
+                <div className="text-[12px] leading-5 text-[#6a7282] font-medium italic">JPG or PNG • Max size 20MB</div>
               </div>
             </div>
 

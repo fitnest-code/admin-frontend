@@ -242,8 +242,8 @@ export function EditTrainerModal({ onClose, trainer, index, isDashboard = false 
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("Şəkil ölçüsü maksimum 10MB olmalıdır");
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("Şəkil ölçüsü maksimum 20MB olmalıdır");
       e.target.value = "";
       return;
     }
@@ -344,7 +344,7 @@ export function EditTrainerModal({ onClose, trainer, index, isDashboard = false 
                   )}
                 </div>
                 <div className="text-[12px] leading-5 text-[#6a7282] font-medium italic">
-                  JPG or PNG • Max 10MB
+                  JPG or PNG • Max 20MB
                 </div>
               </div>
             </div>

@@ -344,7 +344,7 @@ export default function CategoryModal({
               </div>
               <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
               <div className="w-full text-left text-[11px] sm:text-[12px] leading-[18px] tracking-[-0.15px] text-[#6a7282]">
-                JPG or PNG • Max size 2MB
+                JPG or PNG • Max size 20MB
               </div>
             </div>
           </div>
@@ -404,7 +404,7 @@ export default function CategoryModal({
               </div>
               <input ref={iconInputRef} type="file" className="hidden" accept="image/*,image/svg+xml,.svg" onChange={(e) => e.target.files?.[0] && handleIconFile(e.target.files[0])} />
               <div className="w-full text-left text-[11px] sm:text-[12px] leading-[18px] tracking-[-0.15px] text-[#6a7282]">
-                JPG, PNG or SVG • Max size 2MB
+                JPG, PNG or SVG • Max size 20MB
               </div>
             </div>
           </div>

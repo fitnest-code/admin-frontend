@@ -107,75 +107,27 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
 
   useEffect(() => { setMounted(true); }, []);
 
-  // Client-side image compression helper utilizing standard HTML5 Canvas
-  const compressImage = (file: File, maxWidth = 1024, maxHeight = 768, quality = 0.7): Promise<File> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.src = URL.createObjectURL(file);
-      img.onload = () => {
-        let { width, height } = img;
-        if (width > maxWidth || height > maxHeight) {
-          const ratio = Math.min(maxWidth / width, maxHeight / height);
-          width *= ratio;
-          height *= ratio;
-        }
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          resolve(file);
-          return;
-        }
-        
-        ctx.fillStyle = "#FFFFFF";
-        ctx.fillRect(0, 0, width, height);
-        ctx.drawImage(img, 0, 0, width, height);
-        
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              const newName = file.name.replace(/\.[^/.]+$/, ".jpg");
-              const compressedFile = new File([blob], newName, {
-                type: "image/jpeg",
-                lastModified: Date.now(),
-              });
-              resolve(compressedFile);
-            } else {
-              resolve(file);
-            }
-          },
-          "image/jpeg",
-          quality
-        );
-      };
-      img.onerror = () => resolve(file);
-    });
-  };
-
-  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!activeCategoryId) return;
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 50 * 1024 * 1024) return toast.error("Şəkil ölçüsü max 50MB ola bilər");
-      const compressed = await compressImage(file, 1200, 800, 0.72);
-      setCovers(prev => ({ ...prev, [activeCategoryId]: compressed }));
-      setCoverPreviews(prev => ({ ...prev, [activeCategoryId]: URL.createObjectURL(compressed) }));
+      if (file.size > 20 * 1024 * 1024) return toast.error("Şəkil ölçüsü max 20MB ola bilər");
+      setCovers(prev => ({ ...prev, [activeCategoryId]: file }));
+      setCoverPreviews(prev => ({ ...prev, [activeCategoryId]: URL.createObjectURL(file) }));
     }
   };
 
-  const handleRoomPhotoChange = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleRoomPhotoChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     if (!activeCategoryId) return;
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 50 * 1024 * 1024) return toast.error("Şəkil ölçüsü max 50MB ola bilər");
-      const compressed = await compressImage(file, 800, 600, 0.65);
+      if (file.size > 20 * 1024 * 1024) return toast.error("Şəkil ölçüsü max 20MB ola bilər");
       setRoomPhotos(prev => {
         const catRooms = [...(prev[activeCategoryId] || [])];
         catRooms[index] = { 
           ...catRooms[index], 
-          photo: compressed, 
-          previewUrl: URL.createObjectURL(compressed)
+          photo: file, 
+          previewUrl: URL.createObjectURL(file)
         };
         return { ...prev, [activeCategoryId]: catRooms };
       });
@@ -349,7 +301,7 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
                   </div>
                 )}
               </div>
-              <span className="text-[14px] leading-5 text-[#6a7282] italic">JPG or PNG • Max size 2MB</span>
+              <span className="text-[14px] leading-5 text-[#6a7282] italic">JPG or PNG • Max size 20MB</span>
             </div>
           </div>
 

@@ -72,8 +72,8 @@ export function TrainerDetailsModal({ trainer, onClose }: TrainerDetailsModalPro
       return
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("Şəkil ölçüsü maksimum 2MB olmalıdır")
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("Şəkil ölçüsü maksimum 20MB olmalıdır")
       return
     }
 
@@ -147,7 +147,7 @@ export function TrainerDetailsModal({ trainer, onClose }: TrainerDetailsModalPro
                     </div>
                   )}
                 </div>
-                <div className="text-[14px] leading-5 tracking-[-0.15px] text-[#6a7282]">JPG or PNG • Max size 2MB</div>
+                <div className="text-[14px] leading-5 tracking-[-0.15px] text-[#6a7282]">JPG or PNG • Max size 20MB</div>
               </div>
             </div>
 

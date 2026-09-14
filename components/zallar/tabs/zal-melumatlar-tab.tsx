@@ -136,7 +136,7 @@ export function ZalMelumatlarTab({ gymId, gymDetails, zal, isNew = false }: ZalM
               </>
             )}
           </div>
-          <span className="text-[10px] text-muted-foreground">JPG və PNG • max 5mb</span>
+          <span className="text-[10px] text-muted-foreground">JPG və PNG • max 20mb</span>
         </div>
 
         {/* Name & Address */}

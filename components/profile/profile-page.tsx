@@ -278,9 +278,9 @@ export function ProfilePage() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Validate size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Şəkil ölçüsü 5MB-dan böyük ola bilməz')
+    // Validate size (max 20MB)
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error('Şəkil ölçüsü 20MB-dan böyük ola bilməz')
       return
     }
 
