@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 import Image from 'next/image'
 import { useQueryClient } from '@tanstack/react-query'
 import { useI18nStore, useT } from '@/lib/i18n'
+import { useLanguages } from '@/lib/query/use-languages'
 
 const flagPngMap: Record<string, string> = {
   AZ: "https://flagcdn.com/w80/az.png",
@@ -31,8 +32,8 @@ export function Header() {
   const setMobileSidebarOpen = useUIStore((state) => state.setMobileSidebarOpen)
   const toggleMobileSidebar = useUIStore((state) => state.toggleMobileSidebar)
 
+  const { languages } = useLanguages()
   const [currentLang, setCurrentLang] = useState<string>("AZ")
-  const [languages, setLanguages] = useState<string[]>(["AZ", "RU", "EN"])
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false)
   const langRef = useRef<HTMLDivElement>(null)
 
@@ -93,19 +94,6 @@ export function Header() {
   }, [notificationsOpen]);
 
   useEffect(() => {
-    // Fetch languages list
-    apiGet<any>('/me/languages')
-      .then(res => {
-        const list = res?.data || res;
-        if (Array.isArray(list)) {
-          setLanguages(list.map((l: any) => {
-            const val = typeof l === 'object' && l !== null ? (l.code || '') : l;
-            return String(val).toUpperCase();
-          }).filter(Boolean));
-        }
-      })
-      .catch(() => {})
-
     // Fetch current selected language
     apiGet<any>('/me/language')
       .then(res => {

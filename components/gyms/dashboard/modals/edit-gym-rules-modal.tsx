@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { useGymRulesQuery, useUpdateGymRules } from '@/lib/query/gym-query'
 import { SuccessAnimationModal } from '@/components/ui/success-animation-modal'
 import { useT } from '@/lib/i18n'
+import { emptyLanguageRecord, useLanguages } from '@/lib/query/use-languages'
 import { apiGet, apiPost } from '@/lib/api/client'
 
 interface Props {
@@ -16,21 +17,28 @@ interface Props {
 
 export const EditGymRulesModal = ({ gymId, onClose }: Props) => {
     const t = useT()
+    const { languages } = useLanguages()
+    const primaryLang = languages.includes('AZ') ? 'AZ' : languages[0] ?? 'AZ'
     const { data: rulesData, isLoading } = useGymRulesQuery(gymId)
     const updateRulesMutation = useUpdateGymRules()
     
     const [htmlContent, setHtmlContent] = useState('')
     const [showSuccess, setShowSuccess] = useState(false)
-    const [activeTab, setActiveTab] = useState<string>('AZ')
-    const [htmlContents, setHtmlContents] = useState<Record<string, string>>({ AZ: '', EN: '', RU: '' })
+    const [activeTab, setActiveTab] = useState<string>(primaryLang)
+    const [htmlContents, setHtmlContents] = useState<Record<string, string>>(() => emptyLanguageRecord(languages))
     const [translationsLoaded, setTranslationsLoaded] = useState(false)
+
+    useEffect(() => {
+        setActiveTab(primaryLang)
+        setHtmlContents(emptyLanguageRecord(languages))
+    }, [languages, primaryLang])
 
     useEffect(() => {
         if (rulesData && typeof rulesData.htmlContent === 'string') {
             setHtmlContent(rulesData.htmlContent)
-            setHtmlContents(prev => ({ ...prev, AZ: rulesData.htmlContent }))
+            setHtmlContents(prev => ({ ...emptyLanguageRecord(languages, { [primaryLang]: rulesData.htmlContent }), ...prev, [primaryLang]: rulesData.htmlContent }))
         }
-    }, [rulesData])
+    }, [rulesData, languages, primaryLang])
 
     useEffect(() => {
         if (gymId && !translationsLoaded) {
@@ -41,23 +49,26 @@ export const EditGymRulesModal = ({ gymId, onClose }: Props) => {
                 const contents: Record<string, string> = { ...htmlContents }
                 list.forEach((item: any) => {
                     if (item.languageCode && item.fieldName === 'htmlContent') {
-                        contents[item.languageCode.toUpperCase()] = item.fieldValue || ''
+                        const lang = String(item.languageCode).toUpperCase()
+                        if (languages.includes(lang)) {
+                            contents[lang] = item.fieldValue || ''
+                        }
                     }
                 })
                 setHtmlContents(contents)
                 setTranslationsLoaded(true)
             }).catch(() => {})
         }
-    }, [gymId, translationsLoaded])
+    }, [gymId, translationsLoaded, languages])
 
     const handleSubmit = () => {
         updateRulesMutation.mutate({
             gymId,
-            htmlContent: htmlContents.AZ || htmlContent
+            htmlContent: htmlContents[primaryLang] || htmlContent
         }, {
             onSuccess: async () => {
                 const payload = Object.entries(htmlContents)
-                    .filter(([lang, val]) => lang !== 'AZ' && val.trim() !== '')
+                    .filter(([lang, val]) => lang !== primaryLang && val.trim() !== '')
                     .map(([lang, val]) => ({
                         entityType: 'RESERVATION_RULE',
                         entityId: String(gymId),
@@ -86,7 +97,7 @@ export const EditGymRulesModal = ({ gymId, onClose }: Props) => {
                 <div className={styles.body}>
                     {/* Language Tabs */}
                     <div className="flex items-center border-b border-[#ececed] gap-1 mb-3">
-                        {['AZ', 'EN', 'RU'].map((lang) => (
+                        {languages.map((lang) => (
                             <button key={lang} type="button" onClick={() => setActiveTab(lang)}
                                 className={`px-4 py-2 text-[13px] font-semibold transition-all border-b-2 ${
                                     activeTab === lang ? 'border-[#00b4cc] text-[#00b4cc]' : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -102,12 +113,12 @@ export const EditGymRulesModal = ({ gymId, onClose }: Props) => {
                             <textarea
                                 className={cn(styles.input, "min-h-[240px] font-mono text-sm leading-relaxed p-4")}
                                 style={{ resize: 'vertical' }}
-                                placeholder={activeTab === 'AZ' ? '<p>Rezervasiya qaydaları HTML formatında...</p>' : activeTab === 'EN' ? '<p>Reservation rules in HTML format...</p>' : '<p>Правила бронирования в HTML формате...</p>'}
+                                placeholder={activeTab === primaryLang ? '<p>Rezervasiya qaydaları HTML formatında...</p>' : `<p>HTML (${activeTab})...</p>`}
                                 value={htmlContents[activeTab] || ''}
                                 onChange={(e) => {
                                     const val = e.target.value
                                     setHtmlContents(prev => ({ ...prev, [activeTab]: val }))
-                                    if (activeTab === 'AZ') setHtmlContent(val)
+                                    if (activeTab === primaryLang) setHtmlContent(val)
                                 }}
                             />
                         )}

@@ -11,9 +11,42 @@ import { useSubscriptions } from '@/lib/query/use-subscriptions'
 import { ErrorToastModal } from '../categories/modals/error-toast-modal'
 import { ConfirmDeleteModal } from '../gyms/modals/confirm-delete-modal'
 import { useT } from '@/lib/i18n'
+import { useLanguages } from '@/lib/query/use-languages'
 import { apiGet } from '@/lib/api/client'
 
 const PAGE_SIZE = 6
+
+function buildEmptyServiceTranslations(languages: string[], primaryLang: string) {
+  return Object.fromEntries(
+    languages.filter((l) => l !== primaryLang).map((l) => [l, {} as Record<string, string>])
+  );
+}
+
+function buildBenefitTranslationPayload(
+  targetId: string,
+  services: string[],
+  translations: Record<string, Record<string, string>>,
+  languages: string[],
+  primaryLang: string,
+) {
+  const payload: any[] = []
+  languages
+    .filter((lang) => lang !== primaryLang)
+    .forEach((lang) => {
+      services.forEach((primarySrv) => {
+        if (translations[lang]?.[primarySrv]) {
+          payload.push({
+            entityType: "PLANBENEFIT",
+            entityId: `${targetId}_${primarySrv}`,
+            fieldName: "description",
+            languageCode: lang,
+            fieldValue: translations[lang][primarySrv],
+          })
+        }
+      })
+    })
+  return payload
+}
 
 // ── Pagination ────────────────────────────────────────────────────────────────
 function Pagination({ total, page, perPage, onChange }: {
@@ -165,9 +198,13 @@ function PackageForm({
   onCancel: () => void
 }) {
   const t = useT()
+  const { languages } = useLanguages()
+  const primaryLang = languages.includes("AZ") ? "AZ" : languages[0] ?? "AZ"
   const { addBenefit, deleteBenefit, updateTranslations } = useSubscriptions()
-  const [activeTab, setActiveTab] = useState<string>("AZ")
-  const [translations, setTranslations] = useState<Record<string, Record<string, string>>>({ EN: {}, RU: {} })
+  const [activeTab, setActiveTab] = useState<string>(primaryLang)
+  const [translations, setTranslations] = useState<Record<string, Record<string, string>>>(() =>
+    buildEmptyServiceTranslations(languages, primaryLang)
+  )
   const [editingServiceIdx, setEditingServiceIdx] = useState<number | null>(null)
   const [editingServiceValue, setEditingServiceValue] = useState<string>("")
 
@@ -183,46 +220,36 @@ function PackageForm({
   const [status, setStatus] = useState<SubStatus>(initial?.status ?? 'active')
 
   useEffect(() => {
-    if (initial?.id && !initial.id.startsWith('temp') && !initial.id.startsWith('sub-')) {
-      apiGet<any[]>("/admin/subscription-packages", { headers: { "Accept-Language": "EN" } })
-        .then(res => {
-          const pkg = res.find(p => String(p.package_id) === initial.id);
-          if (pkg && pkg.benefits) {
-            const enBenefits = pkg.benefits;
-            const azBenefits = initial.services || [];
-            setTranslations(prev => {
-              const newEn = { ...prev.EN };
-              azBenefits.forEach((azSrv, idx) => {
-                if (enBenefits[idx]) {
-                  newEn[azSrv] = enBenefits[idx];
-                } 
-              });
-              return { ...prev, EN: newEn };
-            });
-          }
-        })
-        .catch(err => console.warn("Failed to fetch EN translations", err));
+    setActiveTab(primaryLang)
+    setTranslations(buildEmptyServiceTranslations(languages, primaryLang))
+  }, [languages, primaryLang])
 
-      apiGet<any[]>("/admin/subscription-packages", { headers: { "Accept-Language": "RU" } })
-        .then(res => {
-          const pkg = res.find(p => String(p.package_id) === initial.id);
-          if (pkg && pkg.benefits) {
-            const ruBenefits = pkg.benefits;
-            const azBenefits = initial.services || [];
-            setTranslations(prev => {
-              const newRu = { ...prev.RU };
-              azBenefits.forEach((azSrv, idx) => {
-                if (ruBenefits[idx]) {
-                  newRu[azSrv] = ruBenefits[idx];
-                } 
-              });
-              return { ...prev, RU: newRu };
-            });
-          }
-        })
-        .catch(err => console.warn("Failed to fetch RU translations", err));
-    }
-  }, [initial]);
+  useEffect(() => {
+    if (!initial?.id || initial.id.startsWith('temp') || initial.id.startsWith('sub-')) return
+
+    languages
+      .filter((lang) => lang !== primaryLang)
+      .forEach((lang) => {
+        apiGet<any[]>("/admin/subscription-packages", { headers: { "Accept-Language": lang } })
+          .then((res) => {
+            const pkg = res.find((p) => String(p.package_id) === initial.id)
+            if (pkg?.benefits) {
+              const langBenefits = pkg.benefits
+              const primaryBenefits = initial.services || []
+              setTranslations((prev) => {
+                const nextLang = { ...(prev[lang] || {}) }
+                primaryBenefits.forEach((primarySrv, idx) => {
+                  if (langBenefits[idx]) {
+                    nextLang[primarySrv] = langBenefits[idx]
+                  }
+                })
+                return { ...prev, [lang]: nextLang }
+              })
+            }
+          })
+          .catch((err) => console.warn(`Failed to fetch ${lang} translations`, err))
+      })
+  }, [initial, languages, primaryLang])
 
   function addTier() {
     setPriceTiers((prev) => [...prev, { duration: `${prev.length + 1} ay`, price: 0, discountPrice: 0 }])
@@ -257,8 +284,9 @@ function PackageForm({
     setServices((prev) => prev.filter((_, i) => i !== idx))
     setTranslations((prev) => {
       const next = { ...prev }
-      delete next.EN[targetService]
-      delete next.RU[targetService]
+      languages.filter((l) => l !== primaryLang).forEach((lang) => {
+        if (next[lang]) delete next[lang][targetService]
+      })
       return next
     })
 
@@ -274,7 +302,7 @@ function PackageForm({
   function handleStartEditService(idx: number) {
     setEditingServiceIdx(idx)
     const baseSrv = services[idx]
-    if (activeTab === "AZ") {
+    if (activeTab === primaryLang) {
       setEditingServiceValue(baseSrv)
     } else {
       setEditingServiceValue(translations[activeTab]?.[baseSrv] || "")
@@ -286,7 +314,7 @@ function PackageForm({
     if (!trimmed) return
 
     const baseSrv = services[idx]
-    if (activeTab === "AZ") {
+    if (activeTab === primaryLang) {
       const oldVal = services[idx]
       setServices(prev => {
         const copy = [...prev]
@@ -295,14 +323,12 @@ function PackageForm({
       })
       setTranslations(prev => {
         const next = { ...prev }
-        if (next.EN[oldVal]) {
-          next.EN[trimmed] = next.EN[oldVal]
-          delete next.EN[oldVal]
-        }
-        if (next.RU[oldVal]) {
-          next.RU[trimmed] = next.RU[oldVal]
-          delete next.RU[oldVal]
-        }
+        languages.filter((l) => l !== primaryLang).forEach((lang) => {
+          if (next[lang]?.[oldVal]) {
+            next[lang] = { ...next[lang], [trimmed]: next[lang][oldVal] }
+            delete next[lang][oldVal]
+          }
+        })
         return next
       })
 
@@ -368,7 +394,7 @@ function PackageForm({
 
       {/* Language Tabs */}
       <div className="flex border-b border-[#ececed] gap-2">
-        {["AZ", "RU", "EN"].map((lang) => (
+        {languages.map((lang) => (
           <button
             key={lang}
             type="button"
@@ -483,7 +509,7 @@ function PackageForm({
           <div className="w-full flex flex-col items-stretch gap-3">
             <div className="w-full flex flex-col gap-1.5">
               <label className="text-[16px] leading-[24px] font-medium text-black">{t.subscriptions.servicesLimit}</label>
-              {activeTab === "AZ" && (
+              {activeTab === primaryLang && (
                 <div className="w-full flex items-center gap-2">
                   <input
                     value={serviceInput}
@@ -512,7 +538,7 @@ function PackageForm({
                 </div>
               ) : (
                 services.map((srv, idx) => {
-                  const displayName = activeTab === "AZ" ? srv : (translations[activeTab]?.[srv] || srv);
+                  const displayName = activeTab === primaryLang ? srv : (translations[activeTab]?.[srv] || srv);
                   if (editingServiceIdx === idx) {
                     return (
                       <div key={idx} className="w-full min-h-[50px] rounded-[12px] bg-white border border-[#00b4cc] px-3 flex items-center justify-between shadow-2xs shrink-0 gap-2">
@@ -557,7 +583,7 @@ function PackageForm({
                         >
                           <Pencil size={13} className="text-gray-600" />
                         </button>
-                        {activeTab === "AZ" && (
+                        {activeTab === primaryLang && (
                           <button
                             type="button"
                             onClick={() => handleRemoveService(idx)}
@@ -729,7 +755,9 @@ function PackageCard({
 // ── Main ──────────────────────────────────────────────────────────────────────
 export function SubscriptionList() {
   const t = useT()
-  const { 
+  const { languages } = useLanguages()
+  const primaryLang = languages.includes("AZ") ? "AZ" : languages[0] ?? "AZ"
+  const {
     packages: backendPackages, 
     isLoading, 
     createPackage, 
@@ -781,27 +809,13 @@ export function SubscriptionList() {
           })
 
           if (translations) {
-            const translationPayload: any[] = [];
-            data.services.forEach((azSrv) => {
-              if (translations.EN?.[azSrv]) {
-                translationPayload.push({
-                  entityType: "PLANBENEFIT",
-                  entityId: `${targetId}_${azSrv}`,
-                  fieldName: "description",
-                  languageCode: "EN",
-                  fieldValue: translations.EN[azSrv],
-                });
-              }
-              if (translations.RU?.[azSrv]) {
-                translationPayload.push({
-                  entityType: "PLANBENEFIT",
-                  entityId: `${targetId}_${azSrv}`,
-                  fieldName: "description",
-                  languageCode: "RU",
-                  fieldValue: translations.RU[azSrv],
-                });
-              }
-            });
+            const translationPayload = buildBenefitTranslationPayload(
+              targetId,
+              data.services,
+              translations,
+              languages,
+              primaryLang,
+            )
             if (translationPayload.length > 0) {
               await updateTranslations(translationPayload);
             }
@@ -828,27 +842,13 @@ export function SubscriptionList() {
           const createdPkg = updated.data?.find(p => p.name === data.name);
           if (createdPkg && !createdPkg.id.startsWith('temp') && !createdPkg.id.startsWith('sub-')) {
             const packageId = createdPkg.id;
-            const translationPayload: any[] = [];
-            data.services.forEach((azSrv) => {
-              if (translations.EN?.[azSrv]) {
-                translationPayload.push({
-                  entityType: "PLANBENEFIT",
-                  entityId: `${packageId}_${azSrv}`,
-                  fieldName: "description",
-                  languageCode: "EN",
-                  fieldValue: translations.EN[azSrv],
-                });
-              }
-              if (translations.RU?.[azSrv]) {
-                translationPayload.push({
-                  entityType: "PLANBENEFIT",
-                  entityId: `${packageId}_${azSrv}`,
-                  fieldName: "description",
-                  languageCode: "RU",
-                  fieldValue: translations.RU[azSrv],
-                });
-              }
-            });
+            const translationPayload = buildBenefitTranslationPayload(
+              packageId,
+              data.services,
+              translations,
+              languages,
+              primaryLang,
+            )
             if (translationPayload.length > 0) {
               await updateTranslations(translationPayload);
             }

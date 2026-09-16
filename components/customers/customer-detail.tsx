@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { ArrowLeft, Ban, Bell, Mail, MessageSquare, Upload, UserCog, Trash2, RefreshCw, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, Ban, Bell, Coins, Mail, MessageSquare, Upload, UserCog, Trash2, RefreshCw, ShieldCheck } from 'lucide-react'
 import { resetDeviceLimit, blockUser, unblockUser } from '@/modules/customers/api/customers.service'
 import { cn } from '@/lib/utils'
 import type { CustomerProfile } from '@/modules/customers'
@@ -15,6 +15,7 @@ import { ConfirmDeleteSubscriptionModal } from './modals/confirm-delete-subscrip
 import { AssignSubscriptionModal } from './modals/assign-subscription-modal'
 import { ResetDeviceLimitModal } from './modals/reset-device-limit-modal'
 import { ConfirmDeleteUserModal } from './modals/confirm-delete-user-modal'
+import { SendCoinModal } from './modals/send-coin-modal'
 import { SubscriptionTab } from './tabs/subscription-tab'
 import { PaymentsTab } from './tabs/payments-tab'
 import { AccessTab } from './tabs/access-tab'
@@ -114,6 +115,7 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
   const [resetDeviceLimitOpen, setResetDeviceLimitOpen] = useState(false)
   const [blockOpen, setBlockOpen] = useState(false)
   const [deleteUserOpen, setDeleteUserOpen] = useState(false)
+  const [sendCoinOpen, setSendCoinOpen] = useState(false)
   const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; message: string; type: "success" | "error" }>({
     isOpen: false,
     message: "",
@@ -266,6 +268,7 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
                 <OpsBtn icon={Bell} label={t.details.sendPush} onClick={() => setPushOpen(true)} />
                 <OpsBtn icon={MessageSquare} label={t.details.sendSms} onClick={() => setSmsOpen(true)} />
                 <OpsBtn icon={Mail} label={t.details.sendEmail} onClick={() => setEmailOpen(true)} />
+                <OpsBtn icon={Coins} label={t.details.sendCoin} onClick={() => setSendCoinOpen(true)} />
                 <OpsBtn icon={Upload} label={t.details.export} onClick={() => {}} />
                 <OpsBtn icon={UserCog} label={t.details.changeRole} onClick={() => setRoleOpen(true)} />
                 <OpsBtn icon={RefreshCw} label={t.details.resetDeviceLimit} onClick={handleResetDeviceLimit} />
@@ -294,6 +297,13 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
        {pushOpen && <PushModal selectedUsers={[{ id: customer.id, fullName: fullName, email: customer.email, phoneNumber: customer.phoneNumber }]} onClose={() => setPushOpen(false)} />}
        {smsOpen && <SmsModal selectedUsers={[{ id: customer.id, fullName: fullName, email: customer.email, phoneNumber: customer.phoneNumber }]} onClose={() => setSmsOpen(false)} />}
        {emailOpen && <EmailModal selectedUsers={[{ id: customer.id, fullName: fullName, email: customer.email, phoneNumber: customer.phoneNumber }]} onClose={() => setEmailOpen(false)} />}
+       {sendCoinOpen && (
+         <SendCoinModal
+           userId={customer.id}
+           userName={fullName}
+           onClose={() => setSendCoinOpen(false)}
+         />
+       )}
        {roleOpen && (
          <ChangeRoleModal
            userId={customer.id}

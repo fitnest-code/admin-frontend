@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useGymStore } from "@/lib/store/gym-store";
 import styles from "./info-tab.module.css";
 import { apiGet, apiPost } from "@/lib/api/client";
+import { useLanguages } from "@/lib/query/use-languages";
 import { useI18nStore } from "@/lib/i18n";
 
 const getImageUrl = (urlOrFsId: string | undefined | null) => {
@@ -90,6 +91,8 @@ const LOCAL_TRANSLATIONS: Record<string, Record<string, string>> = {
 
 export function ImagesTab() {
   const gymId = useGymStore((s) => s.gymId);
+  const { languages } = useLanguages();
+  const primaryLang = languages.includes("AZ") ? "AZ" : languages[0] ?? "AZ";
   const { data: gymInfo } = useGymDetailsAdmin(gymId ? Number(gymId) : null);
 
   const { mutate: updateGymCover, isPending: isCoverUpdating } = useUpdateGymCover();
@@ -102,8 +105,10 @@ export function ImagesTab() {
   const locale = useI18nStore((s) => s.locale);
   const lt = LOCAL_TRANSLATIONS[locale] || LOCAL_TRANSLATIONS.AZ;
 
-  const [roomLangTab, setRoomLangTab] = useState<string>("AZ");
-  const [roomNamesByLang, setRoomNamesByLang] = useState<Record<string, Record<number, string>>>({ AZ: {}, EN: {}, RU: {} });
+  const [roomLangTab, setRoomLangTab] = useState<string>(primaryLang);
+  const [roomNamesByLang, setRoomNamesByLang] = useState<Record<string, Record<number, string>>>(() =>
+    Object.fromEntries(languages.map((lang) => [lang, {}]))
+  );
   const [roomTranslationsLoaded, setRoomTranslationsLoaded] = useState(false);
 
   // All categories
@@ -159,8 +164,10 @@ export function ImagesTab() {
   useEffect(() => {
     if (isEditing && gymInfo?.rooms && !roomTranslationsLoaded) {
       const fetchRoomTranslations = async () => {
-        const byLang: Record<string, Record<number, string>> = { AZ: {}, EN: {}, RU: {} };
-        gymInfo.rooms.forEach((room: any) => { byLang.AZ[room.id] = room.name || ""; });
+        const byLang: Record<string, Record<number, string>> = Object.fromEntries(
+          languages.map((lang) => [lang, {}])
+        );
+        gymInfo.rooms.forEach((room: any) => { byLang[primaryLang][room.id] = room.name || ""; });
         for (const room of gymInfo.rooms) {
           try {
             const res = await apiGet<any[]>('/admin/translations', {
@@ -170,7 +177,9 @@ export function ImagesTab() {
             list.forEach((item: any) => {
               if (item.languageCode && item.fieldName === "name") {
                 const lang = item.languageCode.toUpperCase();
-                if (byLang[lang]) byLang[lang][room.id] = item.fieldValue || "";
+                if (languages.includes(lang)) {
+                  byLang[lang][room.id] = item.fieldValue || "";
+                }
               }
             });
           } catch (e) { /* ignore */ }
@@ -182,9 +191,9 @@ export function ImagesTab() {
     }
     if (!isEditing) {
       setRoomTranslationsLoaded(false);
-      setRoomLangTab("AZ");
+      setRoomLangTab(primaryLang);
     }
-  }, [isEditing, gymInfo?.rooms, roomTranslationsLoaded]);
+  }, [isEditing, gymInfo?.rooms, roomTranslationsLoaded, languages, primaryLang]);
 
   const handleEditRoomClick = (room: any) => {
     if (!isEditing) return;
@@ -247,7 +256,7 @@ export function ImagesTab() {
 
     // Save translations for EN, RU
     const translationPayload: any[] = [];
-    for (const lang of ["EN", "RU"]) {
+    for (const lang of languages.filter((l) => l !== primaryLang)) {
       for (const room of (gymInfo?.rooms || [])) {
         const val = roomNamesByLang[lang]?.[room.id];
         if (val && val.trim()) {
@@ -396,7 +405,7 @@ export function ImagesTab() {
 
         {isEditing && (
           <div className="flex items-center border-b border-[#ececed] gap-1 mt-1">
-            {["AZ", "EN", "RU"].map((lang) => (
+            {languages.map((lang) => (
               <button key={lang} type="button" onClick={() => setRoomLangTab(lang)}
                 className={`px-4 py-2 text-[13px] font-semibold transition-all border-b-2 ${
                   roomLangTab === lang ? "border-[#00b4cc] text-[#00b4cc]" : "border-transparent text-gray-500 hover:text-gray-700"
@@ -439,11 +448,11 @@ export function ImagesTab() {
                 )}>
                   <input
                     type="text"
-                    value={roomLangTab === "AZ"
+                    value={roomLangTab === primaryLang
                       ? (roomNames[room.id] !== undefined ? roomNames[room.id] : (room.name || ""))
                       : (roomNamesByLang[roomLangTab]?.[room.id] || "")}
                     onChange={(e) => {
-                      if (roomLangTab === "AZ") {
+                      if (roomLangTab === primaryLang) {
                         setRoomNames(prev => ({ ...prev, [room.id]: e.target.value }));
                       } else {
                         setRoomNamesByLang(prev => ({

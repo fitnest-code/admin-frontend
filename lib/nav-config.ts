@@ -18,6 +18,7 @@ import {
   Scale,
   PhoneCall,
   Ban,
+  Coins,
 } from "lucide-react";
 
 export interface NavItem {
@@ -67,6 +68,12 @@ export const NAV_ITEMS: NavItem[] = [
     icon: CreditCard,
     href: "/odenisler",
     iconPath: "/Sidebar/Sidebar/odenisler.svg"
+  },
+  {
+    key: "campaign",
+    labelKey: "campaign",
+    icon: Coins,
+    href: "/campaign",
   },
   {
     key: "hesabatlar",
