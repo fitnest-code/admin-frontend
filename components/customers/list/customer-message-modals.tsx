@@ -3,12 +3,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
-import { Ban, Bell, Check, ChevronDown, Mail, MessageSquare, Upload } from 'lucide-react'
+import { Ban, Bell, Check, ChevronDown, Coins, Mail, MessageSquare, Upload } from 'lucide-react'
 import { QUICK_REPLIES } from '@/lib/customers-data'
 import { cn } from '@/lib/utils'
 import { SuccessAnimationModal } from '@/components/ui/success-animation-modal'
 import { Spinner } from '@/components/ui/spinner'
 import { useT } from '@/lib/i18n'
+import { apiPost } from '@/lib/api/client'
 
 type SendState = 'form' | 'confirm' | 'success' | 'error'
 
@@ -18,6 +19,7 @@ export function CustomerBulkActions({
   onOpenSms,
   onOpenEmail,
   onOpenBlock,
+  onOpenSendCoin,
   blockMode = 'block',
   onExport,
 }: {
@@ -26,6 +28,7 @@ export function CustomerBulkActions({
   onOpenSms: () => void
   onOpenEmail?: () => void
   onOpenBlock?: () => void
+  onOpenSendCoin?: () => void
   blockMode?: 'block' | 'unblock' | 'disabled'
   onExport?: () => void
 }) {
@@ -43,6 +46,7 @@ export function CustomerBulkActions({
         <ActionBtn iconSrc="/sms-icon.svg" icon={MessageSquare} label="SMS" onClick={onOpenSms} variant="cyan-outline" disabled={selectedCount === 0} />
         <ActionBtn iconSrc="/mail-icon.svg" icon={Mail} label="Email " onClick={() => onOpenEmail?.()} variant="cyan-outline" disabled={selectedCount === 0} />
         <ActionBtn iconSrc="/export-icon.svg" icon={Upload} label="Export" onClick={() => onExport?.()} variant="cyan-outline" disabled={selectedCount === 0} />
+        <ActionBtn icon={Coins} label={t.modals.sendCoin} onClick={() => onOpenSendCoin?.()} variant="cyan-outline" disabled={selectedCount === 0} />
         <ActionBtn icon={Ban} label={blockLabel} onClick={() => onOpenBlock?.()} variant="danger-outline" disabled={isBlockDisabled} />
       </div>
     </div>
@@ -225,7 +229,148 @@ function ConfirmDialog({
   )
 }
 
+export function BulkSendCoinModal({ selectedUsers = [], onClose }: { selectedUsers?: { id: number }[]; onClose: () => void }) {
+  const t = useT()
+  const c = t.campaign
+  const [amount, setAmount] = useState('')
+  const [title, setTitle] = useState(t.details.sendCoinDefaultTitle)
+  const [body, setBody] = useState(t.details.sendCoinDefaultBody)
+  const [state, setState] = useState<SendState>('form')
+  const [loading, setLoading] = useState(false)
+  const [resultMessage, setResultMessage] = useState('')
 
+  async function handleConfirm() {
+    const coinAmount = Number(amount)
+    if (!Number.isFinite(coinAmount) || coinAmount <= 0) {
+      setResultMessage(c.invalidAmount)
+      setState('error')
+      return
+    }
+
+    const userIds = selectedUsers.map((user) => user.id).filter(Boolean)
+    if (userIds.length === 0) {
+      setResultMessage(c.emptyUserIds)
+      setState('error')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const res = await apiPost<{
+        totalRequested: number
+        totalSuccess: number
+        totalFailed: number
+      }>('/api/v1/admin/coins/bulk-adjust', {
+        userIds,
+        amount: coinAmount,
+        type: 'BONUS',
+        description: title.trim() || t.details.sendCoinDefaultDescription,
+        notificationTitle: title.trim(),
+        notificationBody: body.trim(),
+        sendNotification: true,
+      })
+      setResultMessage(
+        t.modals.sendCoinSuccess
+          .replace('{success}', String(res.totalSuccess))
+          .replace('{total}', String(res.totalRequested))
+          .replace('{failed}', String(res.totalFailed)),
+      )
+      setState('success')
+    } catch (e) {
+      setResultMessage(e instanceof Error ? e.message : t.modals.sendCoinError)
+      setState('error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <>
+      <ModalBase onClose={onClose}>
+        {state === 'form' && (
+          <div className="flex flex-col gap-5 font-sans">
+            <div className="w-full border-b border-[#ececed] pb-3">
+              <h2 className="text-xl font-semibold text-black">{t.modals.sendCoinTitle}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {t.modals.selectedCount.replace('{count}', String(selectedUsers.length))}
+              </p>
+            </div>
+            <Field label={c.coinAmount} placeholder="100" value={amount} onChange={setAmount} />
+            <Field label={c.notificationTitle} placeholder={c.notificationTitle} value={title} onChange={setTitle} />
+            <div className="flex flex-col gap-1.5 w-full">
+              <label className="text-sm font-medium text-black">{c.notificationBody}</label>
+              <textarea
+                value={body}
+                onChange={(event) => setBody(event.target.value)}
+                rows={4}
+                className="w-full min-h-[100px] resize-none rounded-[8px] border border-[#ececed] bg-[#fafafa] px-3 py-2 text-sm text-black outline-none focus:border-[#00B4CC] transition-colors"
+              />
+            </div>
+            <div className="flex items-center justify-end gap-3 pt-1">
+              <button
+                onClick={onClose}
+                className="h-[40px] rounded-[8px] bg-white border border-[#cecfd2] px-4 text-sm font-medium text-black hover:bg-slate-50"
+              >
+                {t.modals.cancel}
+              </button>
+              <button
+                onClick={() => setState('confirm')}
+                disabled={!amount.trim() || !title.trim() || !body.trim()}
+                className="h-[40px] rounded-[8px] bg-[#00b4cc] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40"
+              >
+                {t.modals.sendButton}
+              </button>
+            </div>
+          </div>
+        )}
+        {state === 'confirm' && (
+          <div className="flex flex-col items-center justify-center py-4 gap-6">
+            <p className="text-xl font-semibold text-black text-center max-w-xs leading-relaxed">
+              {t.modals.confirmSendCoinTitle
+                .replace('{amount}', amount)
+                .replace('{count}', String(selectedUsers.length))}
+            </p>
+            <div className="w-full flex items-center justify-center gap-4 mt-2">
+              <button
+                onClick={() => setState('form')}
+                disabled={loading}
+                className="flex-1 h-[40px] max-w-[140px] rounded-[8px] bg-white border border-[#cecfd2] text-sm font-medium text-black hover:bg-slate-50 disabled:opacity-50"
+              >
+                {t.modals.cancel}
+              </button>
+              <button
+                onClick={handleConfirm}
+                disabled={loading}
+                className="flex-1 h-[40px] max-w-[140px] rounded-[8px] bg-[#00b4cc] text-white text-sm font-semibold hover:opacity-90 disabled:opacity-80 flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <Spinner className="size-4 text-white" />
+                    <span>{t.modals.sendingButton}</span>
+                  </>
+                ) : (
+                  t.modals.sendButton
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+      </ModalBase>
+      <SuccessAnimationModal
+        isOpen={state === 'success'}
+        onClose={onClose}
+        message={resultMessage}
+        type="success"
+      />
+      <SuccessAnimationModal
+        isOpen={state === 'error'}
+        onClose={() => setState('form')}
+        message={resultMessage}
+        type="error"
+      />
+    </>
+  )
+}
 
 export function PushModal({ selectedUsers = [], onClose }: { selectedUsers?: any[]; onClose: () => void }) {
   const [title, setTitle] = useState('')

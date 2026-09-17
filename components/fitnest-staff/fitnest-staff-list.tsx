@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 import { useT } from '@/lib/i18n'
 import { useCustomersQuery, type CustomerListItem } from '@/modules/customers'
 import { PAGE_SIZE } from '../customers/list/customer-list-constants'
+import { CustomerBulkActions, EmailModal, PushModal, SmsModal, BlockModal, BulkSendCoinModal } from '../customers/list/customer-message-modals'
 import { CustomerPagination } from '../customers/list/customer-list-table'
 import { normalizeCustomerStatus } from '../customers/list/customer-list-utils'
 import styles from '../partners/partners-list.module.css'
@@ -113,8 +114,13 @@ export function FitnestStaffList() {
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [sortBy, setSortBy] = useState<StaffSortValue | null>(null)
-  const [selected, setSelected] = useState<Set<number>>(new Set())
+  const [selected, setSelected] = useState<Map<number, CustomerListItem>>(new Map())
   const [page, setPage] = useState(1)
+  const [pushOpen, setPushOpen] = useState(false)
+  const [smsOpen, setSmsOpen] = useState(false)
+  const [emailOpen, setEmailOpen] = useState(false)
+  const [blockOpen, setBlockOpen] = useState(false)
+  const [sendCoinOpen, setSendCoinOpen] = useState(false)
 
   const { colWidths, tableRef, handleMouseDown } = useResizableColumns(
     [100, 320, 240],
@@ -149,30 +155,34 @@ export function FitnestStaffList() {
   }, [staff, sortBy])
 
   useEffect(() => {
-    setSelected(new Set())
-  }, [page, search])
+    setSelected(new Map())
+  }, [search])
 
   function toggleAll() {
     setSelected((prev) => {
-      const next = new Set(prev)
+      const next = new Map(prev)
       const allOnPage = sorted.length > 0 && sorted.every((s) => prev.has(s.id))
       if (allOnPage) sorted.forEach((s) => next.delete(s.id))
-      else sorted.forEach((s) => next.add(s.id))
+      else sorted.forEach((s) => next.set(s.id, s))
       return next
     })
   }
 
   function toggleOne(id: number) {
     setSelected((prev) => {
-      const next = new Set(prev)
+      const next = new Map(prev)
       if (next.has(id)) next.delete(id)
-      else next.add(id)
+      else {
+        const member = sorted.find((item) => item.id === id)
+        if (member) next.set(id, member)
+      }
       return next
     })
   }
 
   const total = staffQuery.data?.total ?? 0
   const allOnPage = sorted.length > 0 && sorted.every((s) => selected.has(s.id))
+  const selectedUsers = useMemo(() => Array.from(selected.values()), [selected])
 
   // Resize handle element shared across resizable headers
   const resizeHandle = (colIndex: number) => (
@@ -204,6 +214,15 @@ export function FitnestStaffList() {
         </div>
         <SortDropdown value={sortBy} onChange={setSortBy} />
       </div>
+
+      <CustomerBulkActions
+        selectedCount={selected.size}
+        onOpenPush={() => setPushOpen(true)}
+        onOpenSms={() => setSmsOpen(true)}
+        onOpenEmail={() => setEmailOpen(true)}
+        onOpenBlock={() => setBlockOpen(true)}
+        onOpenSendCoin={() => setSendCoinOpen(true)}
+      />
 
       {/* Table */}
       {staffQuery.isLoading ? (
@@ -318,6 +337,21 @@ export function FitnestStaffList() {
       )}
 
       <CustomerPagination total={total} page={page} perPage={PAGE_SIZE} onChange={setPage} />
+
+      {pushOpen && <PushModal selectedUsers={selectedUsers} onClose={() => setPushOpen(false)} />}
+      {smsOpen && <SmsModal selectedUsers={selectedUsers} onClose={() => setSmsOpen(false)} />}
+      {emailOpen && <EmailModal selectedUsers={selectedUsers} onClose={() => setEmailOpen(false)} />}
+      {sendCoinOpen && <BulkSendCoinModal selectedUsers={selectedUsers} onClose={() => setSendCoinOpen(false)} />}
+      {blockOpen && (
+        <BlockModal
+          selectedUsers={selectedUsers}
+          onClose={() => setBlockOpen(false)}
+          onSuccess={() => {
+            staffQuery.refetch()
+            setSelected(new Map())
+          }}
+        />
+      )}
     </div>
   )
 }

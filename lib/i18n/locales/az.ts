@@ -543,6 +543,11 @@ const az = {
     unblockSuccess: "İstifadəçilər uğurla blokdan çıxarıldı",
     unblockSuccessSingle: "İstifadəçi uğurla blokdan çıxarıldı",
     unblockError: "Blokdan çıxarma zamanı xəta baş verdi",
+    sendCoin: "Coin göndər",
+    sendCoinTitle: "Coin göndər",
+    confirmSendCoinTitle: "Seçilmiş {count} istifadəçiyə {amount} Coin göndərmək istədiyinizə əminsiniz?",
+    sendCoinSuccess: "Coin göndərildi: {success}/{total} uğurlu, {failed} uğursuz.",
+    sendCoinError: "Coin göndərilmədi. Yenidən cəhd edin.",
   },
   lists: {
     // Shared
@@ -679,7 +684,7 @@ const az = {
     valueSettingsProgramSection: "Proqram statusu",
     spendRateHint: "Məsələn 10 Coin = 1 AZN",
     activeHint: "Deaktiv olduqda yeni Coin qazancı və xərcləmə dayanır.",
-    actionsHint: "Bütün müştərilərə bonus Coin və bildiriş göndərin.",
+    actionsHint: "Bütün müştərilərə kampaniya Coin-i və bildiriş göndərin. Xoş gəldin bonusu qeydiyyatda avtomatik verilir, qalan istifadəçilər üçün gündəlik yoxlama işləyir.",
     welcomeActionHint: "Yeni istifadəçilərə qeydiyyat bonusu kimi Coin verin.",
     campaignActionHint: "Bütün aktiv müştərilərə eyni kampaniya Coin-i və push bildirişi göndərir.",
     termsSectionTitle: "Coin qaydaları",

@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 import { useT } from '@/lib/i18n'
 import { useCustomersQuery, type CustomerListItem } from '@/modules/customers'
 import { PAGE_SIZE } from '../customers/list/customer-list-constants'
-import { CustomerBulkActions, EmailModal, PushModal, SmsModal, BlockModal } from '../customers/list/customer-message-modals'
+import { CustomerBulkActions, EmailModal, PushModal, SmsModal, BlockModal, BulkSendCoinModal } from '../customers/list/customer-message-modals'
 import { CustomerPagination } from '../customers/list/customer-list-table'
 import { normalizeCustomerStatus } from '../customers/list/customer-list-utils'
 import styles from './partners-list.module.css'
@@ -122,13 +122,14 @@ export function PartnersList() {
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [sortBy, setSortBy] = useState<PartnerSortValue | null>(null)
-  const [selected, setSelected] = useState<Set<number>>(new Set())
+  const [selected, setSelected] = useState<Map<number, CustomerListItem>>(new Map())
   const [page, setPage] = useState(1)
 
   const [pushOpen, setPushOpen] = useState(false)
   const [smsOpen, setSmsOpen] = useState(false)
   const [emailOpen, setEmailOpen] = useState(false)
   const [blockOpen, setBlockOpen] = useState(false)
+  const [sendCoinOpen, setSendCoinOpen] = useState(false)
 
   const { colWidths, tableRef, handleMouseDown } = useResizableColumns(
     [90, 260, 180, 220],
@@ -163,16 +164,16 @@ export function PartnersList() {
   }, [partners, sortBy])
 
   useEffect(() => {
-    setSelected(new Set())
-  }, [page, search])
+    setSelected(new Map())
+  }, [search])
 
   function toggleAll() {
     setSelected((prev) => {
-      const next = new Set(prev)
+      const next = new Map(prev)
       const allOnPage = sorted.length > 0 && sorted.every((partner) => prev.has(partner.id))
 
       if (allOnPage) sorted.forEach((partner) => next.delete(partner.id))
-      else sorted.forEach((partner) => next.add(partner.id))
+      else sorted.forEach((partner) => next.set(partner.id, partner))
 
       return next
     })
@@ -180,15 +181,19 @@ export function PartnersList() {
 
   function toggleOne(id: number) {
     setSelected((prev) => {
-      const next = new Set(prev)
+      const next = new Map(prev)
       if (next.has(id)) next.delete(id)
-      else next.add(id)
+      else {
+        const partner = sorted.find((item) => item.id === id)
+        if (partner) next.set(id, partner)
+      }
       return next
     })
   }
 
   const total = partnersQuery.data?.total ?? 0
   const allOnPage = sorted.length > 0 && sorted.every((partner) => selected.has(partner.id))
+  const selectedUsers = useMemo(() => Array.from(selected.values()), [selected])
 
   return (
     <div className="flex flex-col gap-5 font-sans">
@@ -223,6 +228,7 @@ export function PartnersList() {
         onOpenSms={() => setSmsOpen(true)} 
         onOpenEmail={() => setEmailOpen(true)}
         onOpenBlock={() => setBlockOpen(true)}
+        onOpenSendCoin={() => setSendCoinOpen(true)}
       />
 
       {/* Table */}
@@ -346,16 +352,17 @@ export function PartnersList() {
 
       <CustomerPagination total={total} page={page} perPage={PAGE_SIZE} onChange={setPage} />
 
-      {pushOpen && <PushModal selectedUsers={Array.from(selected).map(id => sorted.find(c => c.id === id)).filter(Boolean) as any[]} onClose={() => setPushOpen(false)} />}
-      {smsOpen && <SmsModal selectedUsers={Array.from(selected).map(id => sorted.find(c => c.id === id)).filter(Boolean) as any[]} onClose={() => setSmsOpen(false)} />}
-      {emailOpen && <EmailModal selectedUsers={Array.from(selected).map(id => sorted.find(c => c.id === id)).filter(Boolean) as any[]} onClose={() => setEmailOpen(false)} />}
+      {pushOpen && <PushModal selectedUsers={selectedUsers} onClose={() => setPushOpen(false)} />}
+      {smsOpen && <SmsModal selectedUsers={selectedUsers} onClose={() => setSmsOpen(false)} />}
+      {emailOpen && <EmailModal selectedUsers={selectedUsers} onClose={() => setEmailOpen(false)} />}
+      {sendCoinOpen && <BulkSendCoinModal selectedUsers={selectedUsers} onClose={() => setSendCoinOpen(false)} />}
       {blockOpen && (
         <BlockModal 
-          selectedUsers={Array.from(selected).map(id => sorted.find(c => c.id === id)).filter(Boolean) as any[]} 
+          selectedUsers={selectedUsers} 
           onClose={() => setBlockOpen(false)} 
           onSuccess={() => {
             partnersQuery.refetch()
-            setSelected(new Set())
+            setSelected(new Map())
           }}
         />
       )}
