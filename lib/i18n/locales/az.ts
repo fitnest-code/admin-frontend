@@ -423,6 +423,7 @@ const az = {
     height: "Boy:",
     weight: "Çəki:",
     bmi: "BMI indeksi:",
+    coinBalance: "Coin balansı:",
     operations: "Əməliyyatlar",
     sendPush: "Push bildiriş göndər",
     sendSms: "SMS göndər",

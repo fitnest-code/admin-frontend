@@ -17,9 +17,10 @@ interface SendCoinModalProps {
   userId: number
   userName: string
   onClose: () => void
+  onSuccess?: (balance?: number) => void
 }
 
-export function SendCoinModal({ userId, userName, onClose }: SendCoinModalProps) {
+export function SendCoinModal({ userId, userName, onClose, onSuccess }: SendCoinModalProps) {
   const t = useT()
   const [mounted, setMounted] = useState(false)
   const [amount, setAmount] = useState('')
@@ -64,6 +65,12 @@ export function SendCoinModal({ userId, userName, onClose }: SendCoinModalProps)
         notificationBody: sendNotification ? notificationBody.trim() : undefined,
       })
       const balance = res.totalBalance ?? res.coinBalance ?? res.balance
+      if (typeof balance === 'number') {
+        onSuccess?.(balance)
+      } else if (balance !== undefined && balance !== null) {
+        const parsed = Number(balance)
+        if (Number.isFinite(parsed)) onSuccess?.(parsed)
+      }
       const balanceText =
         balance !== undefined && balance !== null
           ? t.details.sendCoinSuccessWithBalance.replace('{balance}', String(balance))

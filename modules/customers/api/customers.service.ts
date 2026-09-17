@@ -73,7 +73,15 @@ export async function getCustomerById(id: string): Promise<CustomerProfile> {
     bmi: data.bmiIndex,
     photoUrl: null,
     role: data.role || null,
+    coinBalance: toNumber(data.coinBalance),
+    coinAznEquivalent: toNumber(data.coinAznEquivalent),
   }
+}
+
+function toNumber(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
 }
 
 export function blockUser(userId: number) {

@@ -414,6 +414,7 @@ const en: TranslationKeys = {
     height: "Height:",
     weight: "Weight:",
     bmi: "BMI index:",
+    coinBalance: "Coin balance:",
     operations: "Operations",
     sendPush: "Send push notification",
     sendSms: "Send SMS",

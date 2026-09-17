@@ -414,6 +414,7 @@ const ru: TranslationKeys = {
     height: "Рост:",
     weight: "Вес:",
     bmi: "Индекс ИМТ:",
+    coinBalance: "Баланс Coin:",
     operations: "Операции",
     sendPush: "Отправить push-уведомление",
     sendSms: "Отправить SMS",
