@@ -34,4 +34,9 @@ export const queryKeys = {
   support: {
     contactDetails: ['support', 'contactDetails'] as const,
   },
+  bmiRequests: {
+    all: ['bmi-requests'] as const,
+    list: (params?: Record<string, unknown>) => ['bmi-requests', 'list', params ?? {}] as const,
+    filters: ['bmi-requests', 'filters'] as const,
+  },
 } as const
