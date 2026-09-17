@@ -28,6 +28,8 @@ export interface CustomerDetailApiResponse {
   role?: string | null
   userStatus?: CustomerStatus | null
   status?: CustomerStatus | null
+  coinBalance?: number | null
+  coinAznEquivalent?: number | null
 }
 
 export interface CustomerProfile extends CustomerListItem {
@@ -41,6 +43,8 @@ export interface CustomerProfile extends CustomerListItem {
   weight?: number | null
   bmi?: number | null
   photoUrl?: string | null
+  coinBalance?: number | null
+  coinAznEquivalent?: number | null
 }
 
 export interface CustomersResponse {

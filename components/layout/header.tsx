@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Search, LogOut, User, Menu, Globe, ChevronDown, Bell, CheckCheck } from 'lucide-react'
+import { Menu, Bell, CheckCheck } from 'lucide-react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { apiPost, apiGet, apiPut, apiPatch, apiDelete } from '@/lib/api/client'
@@ -258,7 +258,13 @@ export function Header() {
             </div>
             <div className="relative text-base font-semibold leading-6 text-black tracking-tight">{currentLang}</div>
             <div className="w-4 h-4 relative flex items-center justify-center shrink-0">
-              <ChevronDown size={16} className={cn("text-slate-500 transition-transform duration-200", dropdownOpen && "rotate-180")} />
+              <Image
+                src="/admin-panel-icons/arrow-down.svg"
+                width={16}
+                height={16}
+                alt=""
+                className={cn("transition-transform duration-200", dropdownOpen && "rotate-180")}
+              />
             </div>
           </button>
 
@@ -295,7 +301,7 @@ export function Header() {
           className="flex items-center gap-1.5 text-[#F10303] hover:opacity-80 transition-opacity font-medium cursor-pointer"
         >
           <div className="w-5 h-5 flex items-center justify-center">
-            <LogOut size={16} />
+            <Image src="/admin-panel-icons/logout.svg" width={16} height={16} alt="" />
           </div>
           <span className="text-[14px] leading-[20px] font-medium hidden sm:block">{t.common.exit}</span>
         </button>

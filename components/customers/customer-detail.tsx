@@ -43,6 +43,11 @@ function formatValue(value: string | number | null | undefined, fallback: string
   return suffix ? `${value} ${suffix}` : String(value)
 }
 
+function formatCoinBalance(value: number | null | undefined, fallback: string) {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return fallback
+  return new Intl.NumberFormat('az-AZ', { maximumFractionDigits: 2 }).format(Number(value))
+}
+
 function formatDateTimeClean(val: string | null | undefined, fallback: string) {
   if (!val) return fallback
   try {
@@ -214,6 +219,15 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
           <div className="h-8 w-[1px] bg-border shrink-0 self-center" />
 
           <div className="flex flex-col gap-0.5 text-left">
+            <span className="text-[10px] font-medium uppercase text-muted-foreground">{t.details.coinBalance}</span>
+            <strong className="text-sm font-medium text-[#00B4CC]">
+              {formatCoinBalance(customer.coinBalance, '0')}
+            </strong>
+          </div>
+
+          <div className="h-8 w-[1px] bg-border shrink-0 self-center" />
+
+          <div className="flex flex-col gap-0.5 text-left">
             <span className="text-[10px] font-medium uppercase text-muted-foreground">{t.details.registrationDate}</span>
             <strong className="text-sm font-medium text-foreground">{formatDateTimeClean(customer.registeredAt, t.details.noData)}</strong>
           </div>
@@ -242,6 +256,10 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
                 <InfoRow label={t.details.email} value={formatValue(customer.email, t.details.noData)} />
                 <InfoRow label={t.details.birthDate} value={formatValue(customer.birthDate, t.details.noData)} />
                 <InfoRow label={t.details.goal} value={formatValue(customer.goal, t.details.noData)} />
+                <InfoRow
+                  label={t.details.coinBalance}
+                  value={formatCoinBalance(customer.coinBalance, t.details.noData)}
+                />
               </div>
             </div>
 
@@ -302,6 +320,11 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
            userId={customer.id}
            userName={fullName}
            onClose={() => setSendCoinOpen(false)}
+           onSuccess={(balance) => {
+             if (balance !== undefined && balance !== null) {
+               setCustomer((prev) => ({ ...prev, coinBalance: balance }))
+             }
+           }}
          />
        )}
        {roleOpen && (
