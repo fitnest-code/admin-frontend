@@ -13,7 +13,7 @@ import {
 } from '@/modules/customers'
 import { PAGE_SIZE } from './list/customer-list-constants'
 import { CustomerFilters, CustomerStats } from './list/customer-list-controls'
-import { CustomerBulkActions, EmailModal, PushModal, SmsModal, BlockModal } from './list/customer-message-modals'
+import { CustomerBulkActions, EmailModal, PushModal, SmsModal, BlockModal, BulkSendCoinModal } from './list/customer-message-modals'
 import { CustomerPagination, CustomerTable } from './list/customer-list-table'
 import {
   sortCustomers,
@@ -40,6 +40,7 @@ export function CustomersList() {
   const [smsOpen, setSmsOpen] = useState(false)
   const [emailOpen, setEmailOpen] = useState(false)
   const [blockOpen, setBlockOpen] = useState(false)
+  const [sendCoinOpen, setSendCoinOpen] = useState(false)
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -66,7 +67,7 @@ export function CustomersList() {
 
   useEffect(() => {
     setSelected(new Map())
-  }, [page, search, pkg, duration, subStatus])
+  }, [search, pkg, duration, subStatus])
 
   async function toggleAll() {
     const allOnPage = sorted.length > 0 && sorted.every((customer) => selected.has(customer.id))
@@ -221,6 +222,7 @@ export function CustomersList() {
         onOpenSms={() => setSmsOpen(true)} 
         onOpenEmail={() => setEmailOpen(true)}
         onOpenBlock={() => setBlockOpen(true)}
+        onOpenSendCoin={() => setSendCoinOpen(true)}
         blockMode={blockMode}
         onExport={handleExport}
       />
@@ -250,6 +252,7 @@ export function CustomersList() {
       {pushOpen && <PushModal selectedUsers={selectedUsers} onClose={() => setPushOpen(false)} />}
       {smsOpen && <SmsModal selectedUsers={selectedUsers} onClose={() => setSmsOpen(false)} />}
       {emailOpen && <EmailModal selectedUsers={selectedUsers} onClose={() => setEmailOpen(false)} />}
+      {sendCoinOpen && <BulkSendCoinModal selectedUsers={selectedUsers} onClose={() => setSendCoinOpen(false)} />}
       {blockOpen && (
         <BlockModal 
           selectedUsers={selectedUsers} 

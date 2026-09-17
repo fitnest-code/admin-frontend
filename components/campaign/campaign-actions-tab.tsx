@@ -1,9 +1,9 @@
 'use client'
 
-import { Gift, Megaphone, Sparkles } from 'lucide-react'
+import { Megaphone, Sparkles } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
-import { BulkCampaignModal, WelcomeBonusModal } from './campaign-modals'
+import { BulkCampaignModal } from './campaign-modals'
 
 function ActionCard({
   icon: Icon,
@@ -54,18 +54,12 @@ function ActionCard({
 }
 
 export function CampaignActionsTab({
-  welcomeOpen,
   bulkOpen,
-  onWelcomeOpen,
   onBulkOpen,
-  onWelcomeClose,
   onBulkClose,
 }: {
-  welcomeOpen: boolean
   bulkOpen: boolean
-  onWelcomeOpen: () => void
   onBulkOpen: () => void
-  onWelcomeClose: () => void
   onBulkClose: () => void
 }) {
   const t = useT()
@@ -86,13 +80,6 @@ export function CampaignActionsTab({
 
         <div className="grid gap-4 sm:grid-cols-2">
           <ActionCard
-            icon={Gift}
-            accent="cyan"
-            title={c.sendWelcome}
-            description={c.welcomeActionHint}
-            onClick={onWelcomeOpen}
-          />
-          <ActionCard
             icon={Megaphone}
             accent="violet"
             title={c.sendCampaign}
@@ -102,7 +89,6 @@ export function CampaignActionsTab({
         </div>
       </div>
 
-      {welcomeOpen && <WelcomeBonusModal onClose={onWelcomeClose} />}
       {bulkOpen && <BulkCampaignModal onClose={onBulkClose} />}
     </>
   )

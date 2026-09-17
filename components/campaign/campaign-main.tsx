@@ -35,7 +35,6 @@ export default function CampaignMain() {
   const searchParams = useSearchParams()
   const activeTab = parseTab(searchParams.get('tab'))
 
-  const [welcomeOpen, setWelcomeOpen] = useState(false)
   const [bulkOpen, setBulkOpen] = useState(false)
   const [modal, setModal] = useState<{ open: boolean; message: string; type: 'success' | 'error' }>({
     open: false,
@@ -88,11 +87,8 @@ export default function CampaignMain() {
         {activeTab === 'rules' && <CampaignRulesTab onNotify={notify} />}
         {activeTab === 'actions' && (
           <CampaignActionsTab
-            welcomeOpen={welcomeOpen}
             bulkOpen={bulkOpen}
-            onWelcomeOpen={() => setWelcomeOpen(true)}
             onBulkOpen={() => setBulkOpen(true)}
-            onWelcomeClose={() => setWelcomeOpen(false)}
             onBulkClose={() => setBulkOpen(false)}
           />
         )}
