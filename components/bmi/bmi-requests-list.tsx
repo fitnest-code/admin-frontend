@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Check, ChevronDown, ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import { Check } from 'lucide-react'
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { useT } from '@/lib/i18n'
 import { useCustomersQuery } from '@/modules/customers'
@@ -101,7 +102,13 @@ function FilterDropdown({
         className="flex h-12 w-[140px] items-center justify-center gap-3 rounded-xl border border-[#ECECED] bg-white px-3 text-base text-black"
       >
         <span className="truncate">{current ? current.label : label}</span>
-        <ChevronDown size={20} className={cn('shrink-0 text-[#292D32]', open && 'rotate-180')} />
+        <Image
+          src="/admin-panel-icons/arrow-down.svg"
+          width={20}
+          height={20}
+          alt=""
+          className={cn('shrink-0', open && 'rotate-180')}
+        />
       </button>
       {open && (
         <div className="absolute right-0 top-full z-30 mt-1 max-h-72 w-64 overflow-auto rounded-xl border border-[#ECECED] bg-white shadow-xl">
@@ -346,7 +353,7 @@ export function BmiRequestsList() {
 
       <div className="flex flex-col flex-wrap gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex h-12 min-w-[240px] max-w-[381px] flex-1 items-center gap-3 rounded-xl border border-[#ECECED] bg-white px-6">
-          <Search size={24} className="shrink-0 text-[#94979C]" />
+          <Image src="/admin-panel-icons/search-normal.svg" width={24} height={24} alt="" className="shrink-0" />
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
@@ -461,7 +468,7 @@ export function BmiRequestsList() {
             onClick={() => setPage((current) => Math.max(1, current - 1))}
             className="flex size-10 items-center justify-center rounded-full disabled:opacity-40"
           >
-            <ChevronLeft size={24} />
+            <Image src="/admin-panel-icons/chevron-left.svg" width={24} height={24} alt="" />
           </button>
           <div className="flex items-start gap-1">
             {pages.map((item) => (
@@ -484,7 +491,7 @@ export function BmiRequestsList() {
             onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
             className="flex size-10 items-center justify-center rounded-full disabled:opacity-40"
           >
-            <ChevronRight size={24} />
+            <Image src="/admin-panel-icons/chevron-right.svg" width={24} height={24} alt="" />
           </button>
         </div>
       ) : null}

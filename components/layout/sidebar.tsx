@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { NAV_ITEMS } from '@/lib/nav-config'
-import { Menu, X, ChevronDown, ChevronUp } from 'lucide-react'
 import Image from 'next/image'
 import { useGymStore } from '@/lib/store/gym-store'
 import { useUIStore } from '@/lib/store/ui-store'
@@ -99,7 +98,7 @@ export function Sidebar({ className }: SidebarProps) {
           )}>
             <div className="flex items-center gap-3">
                <div className="relative h-[28px] w-[28px] md:h-[32px] md:w-[32px] shrink-0">
-                  <Image src="/Sidebar/Group 11.svg" fill alt="Logo" className="object-contain" />
+                  <Image src="/admin-panel-icons/Group 11.svg" fill alt="Logo" className="object-contain" />
                </div>
                {!collapsed && (
                  <span className="text-[22px] font-semibold text-[#00b4cc] leading-[32px] animate-in fade-in slide-in-from-left-2 duration-500 whitespace-nowrap">
@@ -126,7 +125,7 @@ export function Sidebar({ className }: SidebarProps) {
               className="absolute top-[34px] right-5 text-slate-400 hover:text-slate-600 transition-colors"
             >
                <div className="h-[32px] flex items-center justify-center">
-                  <Image src="/Sidebar/X.svg" width={20} height={20} alt="Collapse" />
+                  <Image src="/admin-panel-icons/X.svg" width={20} height={20} alt="Collapse" />
                </div>
             </button>
           )}
@@ -185,12 +184,14 @@ export function Sidebar({ className }: SidebarProps) {
 
                       {/* Expand/Collapse Chevron Indicator */}
                       {hasChildren && !collapsed && (
-                        <div className="shrink-0 text-gray-500 hover:text-black">
-                          {isExpanded ? (
-                            <ChevronUp size={16} strokeWidth={2} />
-                          ) : (
-                            <ChevronDown size={16} strokeWidth={2} />
-                          )}
+                        <div className="shrink-0">
+                          <Image
+                            src="/admin-panel-icons/arrow-down.svg"
+                            width={16}
+                            height={16}
+                            alt=""
+                            className={cn("transition-transform duration-200", isExpanded && "rotate-180")}
+                          />
                         </div>
                       )}
                     </Link>
