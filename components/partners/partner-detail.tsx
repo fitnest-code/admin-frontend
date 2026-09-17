@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { ArrowLeft, UserCog, RefreshCw, Ban, Trash2, ShieldCheck, Bell, MessageSquare, Mail, Upload, Coins } from 'lucide-react'
+import { ArrowLeft, UserCog, RefreshCw, Ban, Trash2, ShieldCheck, Bell, MessageSquare, Mail, Upload, Coins, Wallet } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CustomerProfile } from '@/modules/customers'
 import { resetDeviceLimit } from '@/modules/customers/api/customers.service'
@@ -16,6 +16,7 @@ import { ResetPasswordModal } from './reset-password-modal'
 import { ResetDeviceLimitModal } from '../customers/modals/reset-device-limit-modal'
 import { ConfirmDeleteUserModal } from '../customers/modals/confirm-delete-user-modal'
 import { SendCoinModal } from '../customers/modals/send-coin-modal'
+import { ChangeCoinBalanceModal } from '../customers/modals/change-coin-balance-modal'
 import { useHardDeleteUserMutation } from '@/modules/customers'
 import { SuccessAnimationModal } from '@/components/ui/success-animation-modal'
 import { toast } from 'sonner'
@@ -118,6 +119,7 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
   const [resetDeviceLimitOpen, setResetDeviceLimitOpen] = useState(false)
   const [deleteUserOpen, setDeleteUserOpen] = useState(false)
   const [sendCoinOpen, setSendCoinOpen] = useState(false)
+  const [changeCoinBalanceOpen, setChangeCoinBalanceOpen] = useState(false)
   const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; message: string; type: "success" | "error" }>({
     isOpen: false,
     message: "",
@@ -264,6 +266,7 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
               <OpsBtn icon={MessageSquare} label={t.details.sendSms} onClick={() => setSmsOpen(true)} />
               <OpsBtn icon={Mail} label={t.details.sendEmail} onClick={() => setEmailOpen(true)} />
               <OpsBtn icon={Coins} label={t.details.sendCoin} onClick={() => setSendCoinOpen(true)} />
+              <OpsBtn icon={Wallet} label={t.details.changeCoinBalance} onClick={() => setChangeCoinBalanceOpen(true)} />
               <OpsBtn icon={Upload} label={t.details.export} onClick={() => {}} />
               <OpsBtn icon={UserCog} label={t.details.changeRole} onClick={() => setRoleOpen(true)} />
               <OpsBtn icon={RefreshCw} label={t.details.resetDeviceLimit} onClick={handleResetDeviceLimit} />
@@ -312,6 +315,24 @@ export function PartnerDetail({ customer: initialCustomer }: { customer: Custome
           userId={customer.id}
           userName={fullName}
           onClose={() => setSendCoinOpen(false)}
+          onSuccess={(balance) => {
+            if (balance !== undefined && balance !== null) {
+              setCustomer((prev) => ({ ...prev, coinBalance: balance }))
+            }
+          }}
+        />
+      )}
+      {changeCoinBalanceOpen && (
+        <ChangeCoinBalanceModal
+          userId={customer.id}
+          userName={fullName}
+          currentBalance={customer.coinBalance}
+          onClose={() => setChangeCoinBalanceOpen(false)}
+          onSuccess={(balance) => {
+            if (balance !== undefined && balance !== null) {
+              setCustomer((prev) => ({ ...prev, coinBalance: balance }))
+            }
+          }}
         />
       )}
       {resetPwdOpen && (
