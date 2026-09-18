@@ -78,7 +78,7 @@ export function ContactTab() {
         hasSubcategories: subCats.length > 0 ? true : undefined,
         name: gymInfo.name || '',
         description: gymInfo.description || '',
-        phone: gymInfo.phone || '',
+        phone: Object.values(catPhones).find((value) => Boolean(value?.trim())) || gymInfo.phone || '',
         email,
         city: gymInfo.city || 'Bakı',
         address: gymInfo.address || '',

@@ -63,7 +63,10 @@ export const NAV_ITEMS: NavItem[] = [
   { key: "musteriler", labelKey: "customers", icon: Users, href: "/customers", iconPath: `${ICONS}/UsersFour.svg` },
   { key: "bmi", labelKey: "bmi", icon: Scale, href: "/bmi", iconPath: `${ICONS}/scale.svg` },
   { key: "fitnest-staff", labelKey: "fitnestStaff", icon: Users, href: "/fitnest-staff", iconPath: `${ICONS}/UsersFour.svg` },
-  { key: "partners", labelKey: "partners", icon: Users, href: "/partners", iconPath: `${ICONS}/UsersFour.svg` },
+  { key: "partners", labelKey: "partners", icon: Users, href: "/partners", iconPath: `${ICONS}/UsersFour.svg`, children: [
+    { key: "partners", labelKey: "partners", href: "/partners" },
+    { key: "partnerApplications", labelKey: "partnerApplications", href: "/partners/applications" },
+  ] },
   { key: "admins", labelKey: "admins", icon: Users, href: "/admins", iconPath: `${ICONS}/UsersFour.svg` },
   {
     key: "odenisler",

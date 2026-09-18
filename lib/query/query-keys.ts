@@ -39,4 +39,9 @@ export const queryKeys = {
     list: (params?: Record<string, unknown>) => ['bmi-requests', 'list', params ?? {}] as const,
     filters: ['bmi-requests', 'filters'] as const,
   },
+  partnerApplications: {
+    all: ['partner-applications'] as const,
+    list: (params?: Record<string, unknown>) => ['partner-applications', 'list', params ?? {}] as const,
+    filters: ['partner-applications', 'filters'] as const,
+  },
 } as const
