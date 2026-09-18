@@ -789,7 +789,7 @@ const en: TranslationKeys = {
   bmiRequests: {
     title: "BMI requests",
     subtitle: "New requests automatically join the shared queue",
-    searchPlaceholder: "Search by ID or phone.....",
+    searchPlaceholder: "Search by ID, phone, or email.....",
     filterStatus: "Status",
     filterGoal: "Goal",
     filterAssignee: "Owner",
@@ -797,6 +797,7 @@ const en: TranslationKeys = {
     colId: "ID",
     colCreated: "Received",
     colPhone: "Phone",
+    colEmail: "Email",
     colGoal: "Goal",
     colBmi: "BMI",
     colStatus: "Status",

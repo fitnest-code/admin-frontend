@@ -4,6 +4,7 @@ export interface BmiLead {
   id: number
   createdAt: string
   phone: string
+  email?: string | null
   goalCode: string
   goalTitle: string
   bmi: number
