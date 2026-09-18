@@ -806,7 +806,7 @@ const az = {
   bmiRequests: {
     title: "BKİ müraciətləri",
     subtitle: "Yeni müraciətlər avtomatik olaraq ümumi növbəyə düşür",
-    searchPlaceholder: "ID və ya nömrə üzrə axtarış.....",
+    searchPlaceholder: "ID, nömrə və ya email üzrə axtarış.....",
     filterStatus: "Status",
     filterGoal: "Hədəf",
     filterAssignee: "Məsul şəxs",
@@ -814,6 +814,7 @@ const az = {
     colId: "ID",
     colCreated: "Daxilolma tarixi",
     colPhone: "Telefon",
+    colEmail: "Email",
     colGoal: "Hədəf",
     colBmi: "BMİ",
     colStatus: "Status",

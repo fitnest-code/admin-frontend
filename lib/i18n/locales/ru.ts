@@ -789,7 +789,7 @@ const ru: TranslationKeys = {
   bmiRequests: {
     title: "Заявки ИМТ",
     subtitle: "Новые заявки автоматически попадают в общую очередь",
-    searchPlaceholder: "Поиск по ID или номеру.....",
+    searchPlaceholder: "Поиск по ID, номеру или email.....",
     filterStatus: "Статус",
     filterGoal: "Цель",
     filterAssignee: "Ответственный",
@@ -797,6 +797,7 @@ const ru: TranslationKeys = {
     colId: "ID",
     colCreated: "Дата поступления",
     colPhone: "Телефон",
+    colEmail: "Email",
     colGoal: "Цель",
     colBmi: "ИМТ",
     colStatus: "Статус",

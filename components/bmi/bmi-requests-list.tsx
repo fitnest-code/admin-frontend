@@ -404,11 +404,12 @@ export function BmiRequestsList() {
       ) : null}
 
       <div className="overflow-x-auto">
-        <div className="min-w-[1063px]">
+        <div className="min-w-[1220px]">
           <div className="flex items-center justify-between rounded-t-xl bg-[rgba(0,180,204,0.15)] px-2.5 py-5 text-base text-black outline outline-1 outline-[#CECFD2] outline-offset-[-1px]">
             <span className="w-[74px]">{copy.colId}</span>
             <span className="w-[116px] text-center">{copy.colCreated}</span>
             <span className="w-[150px] text-center">{copy.colPhone}</span>
+            <span className="w-[160px] text-center">{copy.colEmail}</span>
             <span className="w-[180px] text-center">{copy.colGoal}</span>
             <span className="w-[42px] text-center">{copy.colBmi}</span>
             <span className="w-[123px] text-center">{copy.colStatus}</span>
@@ -434,6 +435,7 @@ export function BmiRequestsList() {
                 <span className="w-[74px] text-center">{padId(lead.id)}</span>
                 <span className="w-[116px]">{formatDate(lead.createdAt)}</span>
                 <span className="w-[150px] text-center">{formatAzPhone(lead.phone)}</span>
+                <span className="w-[160px] truncate text-center" title={lead.email || ''}>{lead.email || '—'}</span>
                 <span className="w-[180px] text-center leading-6">{lead.goalTitle}</span>
                 <span className="w-[42px]">{Number(lead.bmi).toFixed(1)}</span>
                 <div className="w-[123px]">
