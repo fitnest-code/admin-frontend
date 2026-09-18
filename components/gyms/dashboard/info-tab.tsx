@@ -18,6 +18,7 @@ import LocationPickerMap from "@/components/ui/location-picker-map";
 import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 import { useI18nStore } from "@/lib/i18n";
 import { toast } from "sonner";
+import { AZ_CITIES } from "@/lib/constants/az-cities";
 import { apiGet, apiPost } from "@/lib/api/client";
 import { emptyLanguageRecord, useLanguages } from "@/lib/query/use-languages";
 import styles from "./info-tab.module.css";
@@ -246,10 +247,6 @@ export function InfoTab({ gymId }: InfoTabProps) {
   const handleSelectSuggestion = (s: any) => {
     const lat = typeof s.latitude === "number" ? s.latitude : parseFloat(s.lat || 0);
     const lng = typeof s.longitude === "number" ? s.longitude : parseFloat(s.lon || 0);
-    let city = s.city || formData.city;
-    if (!city && s.address) {
-      city = s.address.city || s.address.town || s.address.village;
-    }
     const suggestedText = s.addressText || s.display_name || "";
     
     // Extract custom typed numbers/house indicators missing from the map result
@@ -268,7 +265,6 @@ export function InfoTab({ gymId }: InfoTabProps) {
       latitude: lat,
       longitude: lng,
       address: finalAddress,
-      city: city || ""
     }));
     setSuggestions([]);
   };
@@ -463,7 +459,6 @@ export function InfoTab({ gymId }: InfoTabProps) {
         setFormData(prev => ({
           ...prev,
           address: fullAddr,
-          city: revAddressData.city || prev.city || ""
         }));
         setIsUpdatingFromCoords(false);
       }
@@ -1153,41 +1148,22 @@ export function InfoTab({ gymId }: InfoTabProps) {
                 "self-stretch h-[44px] rounded-lg border flex items-center p-[0px_12px] text-sm transition-colors relative",
                 isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
               )}>
-                <input 
-                  type="text" 
+                <select
                   name="city"
-                  value={formData.city}
-                  onChange={(e) => {
-                    handleChange(e);
-                    if (isEditing) debouncedSearch(e.target.value, "city");
-                  }}
-                  readOnly={!isEditing}
+                  value={formData.city && AZ_CITIES.includes(formData.city as (typeof AZ_CITIES)[number]) ? formData.city : formData.city || ""}
+                  onChange={handleChange}
+                  disabled={!isEditing}
                   className="bg-transparent text-foreground outline-none w-full h-full"
-                  autoComplete="off"
-                />
-                {isSearching && activeSearchField === "city" && <Loader2 size={18} className="absolute right-4 animate-spin text-[#00B4CC]" />}
+                >
+                  <option value="">{lt.city}</option>
+                  {formData.city && !AZ_CITIES.includes(formData.city as (typeof AZ_CITIES)[number]) ? (
+                    <option value={formData.city}>{formData.city}</option>
+                  ) : null}
+                  {AZ_CITIES.map((city) => (
+                    <option key={city} value={city}>{city}</option>
+                  ))}
+                </select>
               </div>
-
-              {/* Suggestions Dropdown for City */}
-              {isEditing && suggestions.length > 0 && activeSearchField === "city" && (
-                <div className="absolute top-[90px] left-0 right-0 z-[1000] bg-white border border-[#ECECED] rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2">
-                  {suggestions.map((s, i) => {
-                    const text = s.addressText || s.display_name || "";
-                    const shortText = text.split(',')[0] || text;
-                    return (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => handleSelectSuggestion(s)}
-                        className="w-full text-left px-4 py-3 text-sm font-medium hover:bg-slate-50 border-b border-slate-100 last:border-0 transition-colors flex flex-col gap-0.5"
-                      >
-                        <span className="text-slate-800">{shortText}</span>
-                        <span className="text-xs text-slate-400 truncate">{text}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
             </div>
 
             {/* Ünvan */}
@@ -1243,7 +1219,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
               height="320px"
               disabled={!isEditing}
               onLocationSelect={(lat, lng) => {
-                setFormData(prev => ({ ...prev, latitude: lat, longitude: lng, address: "", city: "" }));
+                setFormData(prev => ({ ...prev, latitude: lat, longitude: lng, address: "" }));
                 setIsUpdatingFromCoords(true);
               }}
             />
