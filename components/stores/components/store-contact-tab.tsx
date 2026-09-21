@@ -6,6 +6,7 @@ import * as Label from "@radix-ui/react-label";
 import { Copy, Loader2, Check } from "lucide-react";
 import { useGetAddressByCoords } from "@/lib/query/location-query";
 import LocationPickerMap from "@/components/ui/location-picker-map";
+import { AZ_CITIES, BAKI_RAYONS, isBakiCity } from "@/lib/constants/az-cities";
 
 interface Step2Props {
   data: IStoreStep2Payload;
@@ -75,11 +76,12 @@ export default function ContactInfoTab({ data, onChange }: Step2Props) {
       const latDiff = Math.abs((addressData.latitude || 0) - (data.latitude || 0));
       const lngDiff = Math.abs((addressData.longitude || 0) - (data.longitude || 0));
       if (latDiff < 0.0001 && lngDiff < 0.0001) {
-        const fullAddr = [addressData.addressText, addressData.city].filter(Boolean).join(", ");
-        setSearchQuery(fullAddr);
+        setSearchQuery(addressData.addressText || "");
         onChange({
           ...data,
-          address: fullAddr
+          city: addressData.city || data.city || "",
+          rayon: isBakiCity(addressData.city || data.city) ? (addressData.rayon || "") : "",
+          address: addressData.addressText || ""
         });
         setIsUpdatingFromCoords(false); // Reset
       }
@@ -149,6 +151,8 @@ export default function ContactInfoTab({ data, onChange }: Step2Props) {
       ...data,
       latitude: lat,
       longitude: lng,
+      city: s.city || data.city || "",
+      rayon: isBakiCity(s.city || data.city) ? (s.rayon || "") : "",
       address: finalAddressText
     });
     setInputLat(lat.toString());
@@ -167,9 +171,53 @@ export default function ContactInfoTab({ data, onChange }: Step2Props) {
         Məkan və Ünvan məlumatları
       </h2>
 
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Field label="Şəhər" htmlFor="city">
+          <select
+            id="city"
+            value={data.city || ""}
+            onChange={(e) => {
+              const next = e.target.value;
+              onChange({
+                ...data,
+                city: next,
+                rayon: isBakiCity(next) ? data.rayon || "" : "",
+              });
+            }}
+            className={inputCls}
+          >
+            <option value="">Şəhər seçin</option>
+            {data.city && !(AZ_CITIES as readonly string[]).includes(data.city) ? (
+              <option value={data.city}>{data.city}</option>
+            ) : null}
+            {AZ_CITIES.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </Field>
+        {isBakiCity(data.city) ? (
+          <Field label="Rayon" htmlFor="rayon">
+            <select
+              id="rayon"
+              value={data.rayon || ""}
+              onChange={(e) => handleChange("rayon", e.target.value)}
+              className={inputCls}
+            >
+              <option value="">Rayon seçin</option>
+              {data.rayon && !(BAKI_RAYONS as readonly string[]).includes(data.rayon) ? (
+                <option value={data.rayon}>{data.rayon}</option>
+              ) : null}
+              {BAKI_RAYONS.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+          </Field>
+        ) : null}
+      </div>
+
       {/* Ünvan (Axtarış və Seçim) */}
       <div className="flex flex-col gap-1.5 relative">
-        <label className="text-[13px] font-semibold text-black/60">Ünvan axtarışı (Xəritə üçün)</label>
+        <label className="text-[13px] font-semibold text-black/60">Ünvan</label>
         <div className="relative">
           <input
             placeholder="Ünvanı daxil edin (Məs: Heydər Əliyev pr. 101)"
@@ -225,7 +273,6 @@ export default function ContactInfoTab({ data, onChange }: Step2Props) {
               ...data,
               latitude: lat,
               longitude: lng,
-              address: ""
             });
           }}
         />

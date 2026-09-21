@@ -74,3 +74,24 @@ export const AZ_CITIES = [
   "Zəngilan",
   "Zərdab",
 ] as const;
+
+export const BAKI_RAYONS = [
+  "Binəqədi",
+  "Xətai",
+  "Xəzər",
+  "Qaradağ",
+  "Nərimanov",
+  "Nəsimi",
+  "Nizami",
+  "Pirallahı",
+  "Sabunçu",
+  "Səbail",
+  "Suraxanı",
+  "Yasamal",
+] as const;
+
+export const isBakiCity = (city: string | null | undefined) => {
+  if (!city) return false;
+  const n = city.trim().toLocaleLowerCase("az");
+  return n === "bakı" || n === "baki" || n === "baku";
+};

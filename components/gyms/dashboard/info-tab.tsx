@@ -18,7 +18,7 @@ import LocationPickerMap from "@/components/ui/location-picker-map";
 import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 import { useI18nStore } from "@/lib/i18n";
 import { toast } from "sonner";
-import { AZ_CITIES } from "@/lib/constants/az-cities";
+import { AZ_CITIES, BAKI_RAYONS, isBakiCity } from "@/lib/constants/az-cities";
 import { apiGet, apiPost } from "@/lib/api/client";
 import { emptyLanguageRecord, useLanguages } from "@/lib/query/use-languages";
 import styles from "./info-tab.module.css";
@@ -53,6 +53,7 @@ const LOCAL_TRANSLATIONS: Record<string, Record<string, string>> = {
     phoneNumber: "Telefon nömrəsi",
     email: "E-Poçt",
     city: "Şəhər",
+    rayon: "Rayon",
     address: "Ünvan",
     creationDate: "Yaradılma tarixi",
     cancel: "Ləğv et",
@@ -82,6 +83,7 @@ const LOCAL_TRANSLATIONS: Record<string, Record<string, string>> = {
     phoneNumber: "Phone number",
     email: "Email",
     city: "City",
+    rayon: "District",
     address: "Address",
     creationDate: "Creation date",
     cancel: "Cancel",
@@ -111,6 +113,7 @@ const LOCAL_TRANSLATIONS: Record<string, Record<string, string>> = {
     phoneNumber: "Номер телефона",
     email: "Email",
     city: "Город",
+    rayon: "Район",
     address: "Адрес",
     creationDate: "Дата создания",
     cancel: "Отмена",
@@ -192,6 +195,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
     phone: "",
     email: "",
     city: "",
+    rayon: "",
     address: "",
     latitude: 0,
     longitude: 0,
@@ -264,6 +268,8 @@ export function InfoTab({ gymId }: InfoTabProps) {
       ...prev,
       latitude: lat,
       longitude: lng,
+      city: s.city || prev.city,
+      rayon: isBakiCity(s.city || prev.city) ? (s.rayon || "") : "",
       address: finalAddress,
     }));
     setSuggestions([]);
@@ -277,6 +283,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
     phone: gymInfo.phone || "",
     email: gymInfo.email || "",
     city: gymInfo.city || "",
+    rayon: gymInfo.rayon || "",
     address: gymInfo.address || "",
     latitude: gymInfo.latitude || 0,
     longitude: gymInfo.longitude || 0,
@@ -455,10 +462,11 @@ export function InfoTab({ gymId }: InfoTabProps) {
       const latDiff = Math.abs((revAddressData.latitude || 0) - formData.latitude);
       const lngDiff = Math.abs((revAddressData.longitude || 0) - formData.longitude);
       if (latDiff < 0.0001 && lngDiff < 0.0001) {
-        const fullAddr = [revAddressData.addressText, revAddressData.city].filter(Boolean).join(", ");
         setFormData(prev => ({
           ...prev,
-          address: fullAddr,
+          city: revAddressData.city || prev.city,
+          rayon: isBakiCity(revAddressData.city || prev.city) ? (revAddressData.rayon || "") : "",
+          address: revAddressData.addressText || prev.address,
         }));
         setIsUpdatingFromCoords(false);
       }
@@ -690,6 +698,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
             phone: formData.phone,
             email: formData.email.trim() === "" ? null : formData.email.trim(),
             city: formData.city,
+            rayon: isBakiCity(formData.city) ? formData.rayon : "",
             address: formData.address,
             latitude: Number(formData.latitude),
             longitude: Number(formData.longitude),
@@ -1151,7 +1160,12 @@ export function InfoTab({ gymId }: InfoTabProps) {
                 <select
                   name="city"
                   value={formData.city && AZ_CITIES.includes(formData.city as (typeof AZ_CITIES)[number]) ? formData.city : formData.city || ""}
-                  onChange={handleChange}
+                  onChange={(e) => {
+                    handleChange(e);
+                    if (!isBakiCity(e.target.value)) {
+                      setFormData(prev => ({ ...prev, city: e.target.value, rayon: "" }));
+                    }
+                  }}
                   disabled={!isEditing}
                   className="bg-transparent text-foreground outline-none w-full h-full"
                 >
@@ -1165,6 +1179,33 @@ export function InfoTab({ gymId }: InfoTabProps) {
                 </select>
               </div>
             </div>
+
+            {/* Rayon */}
+            {isBakiCity(formData.city) ? (
+            <div className="flex-1 w-full flex flex-col items-start gap-3 relative">
+              <div className="self-stretch relative leading-[24px]">{lt.rayon}</div>
+              <div className={cn(
+                "self-stretch h-[44px] rounded-lg border flex items-center p-[0px_12px] text-sm transition-colors relative",
+                isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
+              )}>
+                <select
+                  name="rayon"
+                  value={formData.rayon}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  className="bg-transparent text-foreground outline-none w-full h-full"
+                >
+                  <option value="">{lt.rayon}</option>
+                  {formData.rayon && !(BAKI_RAYONS as readonly string[]).includes(formData.rayon) ? (
+                    <option value={formData.rayon}>{formData.rayon}</option>
+                  ) : null}
+                  {BAKI_RAYONS.map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            ) : null}
 
             {/* Ünvan */}
             <div className="flex-1 w-full flex flex-col items-start gap-3 relative">
@@ -1219,7 +1260,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
               height="320px"
               disabled={!isEditing}
               onLocationSelect={(lat, lng) => {
-                setFormData(prev => ({ ...prev, latitude: lat, longitude: lng, address: "" }));
+                setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }));
                 setIsUpdatingFromCoords(true);
               }}
             />
@@ -1253,6 +1294,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
                     phone: gymInfo.phone || "",
                     email: gymInfo.email || "",
                     city: gymInfo.city || "",
+                    rayon: gymInfo.rayon || "",
                     address: gymInfo.address || "",
                     latitude: gymInfo.latitude || 0,
                     longitude: gymInfo.longitude || 0,

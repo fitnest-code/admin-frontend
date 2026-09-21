@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useGymStore } from "@/lib/store/gym-store";
 import LocationPickerMap from "@/components/ui/location-picker-map";
 import { useAddGymLocation, useGetAddressByCoords } from "@/lib/query/location-query";
+import { AZ_CITIES, BAKI_RAYONS, isBakiCity } from "@/lib/constants/az-cities";
 
 export default function AddressTab({ onNext }: { onNext?: () => void }) {
   const [mounted, setMounted] = useState(false);
@@ -20,6 +21,8 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
   const [isUpdatingFromCoords, setIsUpdatingFromCoords] = useState(false);
 
   // Axtarış üçün state-lər
+  const [city, setCity] = useState("");
+  const [rayon, setRayon] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -66,7 +69,9 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
       const latDiff = Math.abs((addressData.latitude || 0) - coords.lat);
       const lngDiff = Math.abs((addressData.longitude || 0) - coords.lng);
       if (latDiff < 0.0001 && lngDiff < 0.0001) {
-        setSearchQuery([addressData.addressText, addressData.city].filter(Boolean).join(", "));
+        if (addressData.city) setCity(addressData.city);
+        setRayon(isBakiCity(addressData.city) ? (addressData.rayon || "") : "");
+        if (addressData.addressText) setSearchQuery(addressData.addressText);
         setIsUpdatingFromCoords(false); // Reset
       }
     }
