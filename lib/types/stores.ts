@@ -40,6 +40,8 @@ export interface IWorkHours {
 export interface IStoreStep2Payload {
   latitude: number;
   longitude: number;
+  city?: string;
+  rayon?: string;
   address?: string;
   phone: string;
   email: string;

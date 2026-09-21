@@ -26,6 +26,7 @@ import {
 } from "@/modules/stores";
 import { useSubscriptionPackages } from "@/lib/query/use-subscription-packages";
 import { useGetAddressByCoords } from "@/lib/query/location-query";
+import { AZ_CITIES, BAKI_RAYONS, isBakiCity } from "@/lib/constants/az-cities";
 import LocationPickerMap from "@/components/ui/location-picker-map";
 import styles from "./index.module.css";
 import { cn } from "@/lib/utils";
@@ -47,6 +48,8 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
 
   const seededForId = useRef<number | null>(null);
   const [name, setName] = useState("");
+  const [city, setCity] = useState("");
+  const [rayon, setRayon] = useState("");
   const [address, setAddress] = useState("");
   const [contact, setContact] = useState<IStoreStep2Payload>(defaultContact);
   const [discounts, setDiscounts] = useState<{ id: string; packageId: string; discount: string }[]>([]);
@@ -119,6 +122,8 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
     } else {
       setAddress(suggestedText);
     }
+    if (s.city) setCity(s.city);
+    setRayon(isBakiCity(s.city) ? (s.rayon || "") : "");
     
     setSuggestions([]);
   };
@@ -138,7 +143,9 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
       const latDiff = Math.abs((addressData.latitude || 0) - (contact.latitude || 0));
       const lngDiff = Math.abs((addressData.longitude || 0) - (contact.longitude || 0));
       if (latDiff < 0.0001 && lngDiff < 0.0001) {
-        setAddress([addressData.addressText, addressData.city].filter(Boolean).join(", "));
+        if (addressData.city) setCity(addressData.city);
+        setRayon(isBakiCity(addressData.city) ? (addressData.rayon || "") : "");
+        if (addressData.addressText) setAddress(addressData.addressText);
         setIsUpdatingFromCoords(false); // Reset
       }
     }
@@ -150,11 +157,15 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
     seededForId.current = data.id;
     
     setName(data.name);
-    setAddress(data.address);
+    setCity((data as any).city || data.address?.city || "");
+    setRayon((data as any).rayon || data.address?.rayon || "");
+    setAddress(typeof data.address === "string" ? data.address : (data.address?.addressText || ""));
     setImagePreview(data.coverImageUrl);
     setContact({
-      latitude: data.latitude,
-      longitude: data.longitude,
+      latitude: data.latitude ?? data.address?.latitude,
+      longitude: data.longitude ?? data.address?.longitude,
+      city: (data as any).city || data.address?.city || "",
+      rayon: (data as any).rayon || data.address?.rayon || "",
       phone: data.phone,
       email: data.email,
       socialUrl: data.socialUrl,
@@ -198,6 +209,8 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
         .filter(d => d.packageId)
         .map(d => ({ packageId: Number(d.packageId), discountPercent: Number(d.discount) })),
       address: address.trim(),
+      city: city.trim() || undefined,
+      rayon: isBakiCity(city) ? (rayon.trim() || undefined) : undefined,
     };
 
     try {
@@ -279,6 +292,46 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
             </div>
             
             <div className={cn(styles.infoGroup, "relative")}>
+            <div className={styles.infoGroup}>
+              <label className={styles.label}>Şəhər</label>
+              <select
+                className={styles.input}
+                value={city}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setCity(next);
+                  if (!isBakiCity(next)) setRayon("");
+                }}
+              >
+                <option value="">Şəhər seçin</option>
+                {city && !(AZ_CITIES as readonly string[]).includes(city) ? (
+                  <option value={city}>{city}</option>
+                ) : null}
+                {AZ_CITIES.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+
+            {isBakiCity(city) ? (
+            <div className={styles.infoGroup}>
+              <label className={styles.label}>Rayon</label>
+              <select
+                className={styles.input}
+                value={rayon}
+                onChange={(e) => setRayon(e.target.value)}
+              >
+                <option value="">Rayon seçin</option>
+                {rayon && !(BAKI_RAYONS as readonly string[]).includes(rayon) ? (
+                  <option value={rayon}>{rayon}</option>
+                ) : null}
+                {BAKI_RAYONS.map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+            </div>
+            ) : null}
+
               <label className={styles.label}>Ünvan</label>
               <div className="relative">
                 <input 

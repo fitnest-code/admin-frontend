@@ -43,6 +43,8 @@ export interface Step3Data {
 
 export interface Step4Data {
   cityId: number | null;
+  city?: string;
+  rayon?: string;
   address: string;
   lat: number | null;
   lng: number | null;

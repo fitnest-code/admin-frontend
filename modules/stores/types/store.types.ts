@@ -66,6 +66,8 @@ export interface AdminStorePatchData {
   workHours: { from: string; to: string }
   workHoursProvided: boolean
   discounts: { packageId: number; discountPercent: number }[]
-  /** Backend ünvan üçün əlavə sahə istifadə edə bilər */
+  /** Küçə ünvanı */
   address?: string
+  city?: string
+  rayon?: string
 }
