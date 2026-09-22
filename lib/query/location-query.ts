@@ -23,6 +23,10 @@ export const useAddGymLocation = () => {
       apiPost(`/admin/gyms/${payload.gymId}/step4`, {
         latitude: payload.latitude,
         longitude: payload.longitude,
+        altitude: payload.altitude ?? undefined,
+        city: payload.city || undefined,
+        rayon: payload.rayon || undefined,
+        addressText: payload.addressText || undefined,
       })
   });
 };

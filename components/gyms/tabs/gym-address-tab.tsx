@@ -138,7 +138,10 @@ export default function AddressTab({ onNext }: { onNext?: () => void }) {
       await submitStep4({
         gymId: Number(gymId),
         latitude: Number(coords.lat), 
-        longitude: Number(coords.lng)
+        longitude: Number(coords.lng),
+        city: city || undefined,
+        rayon: isBakiCity(city) ? (rayon || undefined) : undefined,
+        addressText: searchQuery || undefined,
       });
       return true;
     } catch (error: any) {

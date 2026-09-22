@@ -332,6 +332,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
         phone: gymInfo.phone || "",
         email: gymInfo.email || "",
         city: gymInfo.city || "",
+        rayon: gymInfo.rayon || "",
         address: gymInfo.address || "",
         latitude: gymInfo.latitude || 0,
         longitude: gymInfo.longitude || 0,
