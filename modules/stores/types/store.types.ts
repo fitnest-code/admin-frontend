@@ -44,6 +44,8 @@ export interface AdminStoreDetailViewModel {
   name: string
   coverImageUrl: string | null
   address: string
+  city?: string
+  rayon?: string
   latitude: number
   longitude: number
   phone: string

@@ -157,15 +157,15 @@ export function AdminStoreEditView({ storeId }: { storeId: number }) {
     seededForId.current = data.id;
     
     setName(data.name);
-    setCity((data as any).city || data.address?.city || "");
-    setRayon((data as any).rayon || data.address?.rayon || "");
-    setAddress(typeof data.address === "string" ? data.address : (data.address?.addressText || ""));
+    setCity(data.city || "");
+    setRayon(data.rayon || "");
+    setAddress(data.address || "");
     setImagePreview(data.coverImageUrl);
     setContact({
-      latitude: data.latitude ?? data.address?.latitude,
-      longitude: data.longitude ?? data.address?.longitude,
-      city: (data as any).city || data.address?.city || "",
-      rayon: (data as any).rayon || data.address?.rayon || "",
+      latitude: data.latitude,
+      longitude: data.longitude,
+      city: data.city || "",
+      rayon: data.rayon || "",
       phone: data.phone,
       email: data.email,
       socialUrl: data.socialUrl,

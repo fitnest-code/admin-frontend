@@ -283,6 +283,7 @@ export interface GymInfoAdminResponseV2 {
   phone: string
   email: string
   city: string
+  rayon?: string | null
   address: string
   latitude: number
   longitude: number
@@ -326,6 +327,7 @@ export interface GymInfoUpdateRequestV2 {
   phone: string
   email: string | null
   city: string
+  rayon?: string | null
   address: string
   latitude: number
   longitude: number

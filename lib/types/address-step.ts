@@ -8,6 +8,7 @@ export interface ICoordinates {
 export interface IReverseGeocodingResponse {
   addressText: string;
   city: string;
+  rayon?: string | null;
   latitude?: number;
   longitude?: number;
 }
@@ -17,7 +18,10 @@ export interface IGymStep4Payload {
   gymId: number;
   latitude: number;
   longitude: number;
- 
+  city?: string;
+  rayon?: string;
+  addressText?: string;
+  altitude?: number | null;
 }
 
 // 4. Komponent daxilində istifadə edəcəyimiz state forması

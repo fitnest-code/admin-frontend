@@ -57,6 +57,8 @@ function mergeDetailFromApi(
   
   const addrObj = raw.address && typeof raw.address === 'object' ? (raw.address as Record<string, unknown>) : null
   const addressText = addrObj ? str(addrObj.addressText ?? addrObj.fullAddress ?? '', '') : str(raw.address ?? raw.fullAddress, '')
+  const city = addrObj ? str(addrObj.city ?? raw.city, '') : str(raw.city, '')
+  const rayon = addrObj ? str(addrObj.rayon ?? raw.rayon, '') : str(raw.rayon, '')
   const latitude = addrObj ? num(addrObj.latitude, 0) : num(raw.latitude, 0)
   const longitude = addrObj ? num(addrObj.longitude, 0) : num(raw.longitude, 0)
 
@@ -69,6 +71,8 @@ function mergeDetailFromApi(
     name: str(raw.name, ''),
     coverImageUrl: str(raw.coverImageUrl ?? raw.photoUrl ?? raw.imageUrl, '') || null,
     address: addressText,
+    city: city || undefined,
+    rayon: rayon || undefined,
     latitude,
     longitude,
     phone: str(raw.phone, ''),

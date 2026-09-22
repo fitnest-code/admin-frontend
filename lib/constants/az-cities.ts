@@ -92,6 +92,17 @@ export const BAKI_RAYONS = [
 
 export const isBakiCity = (city: string | null | undefined) => {
   if (!city) return false;
-  const n = city.trim().toLocaleLowerCase("az");
-  return n === "bakı" || n === "baki" || n === "baku";
+  const n = city
+    .trim()
+    .toLocaleLowerCase("az")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ə/g, "e")
+    .replace(/ı/g, "i")
+    .replace(/ö/g, "o")
+    .replace(/ü/g, "u")
+    .replace(/ğ/g, "g")
+    .replace(/ş/g, "s")
+    .replace(/ç/g, "c");
+  return n === "baki" || n === "baku" || n.startsWith("baki ") || n.startsWith("baku ");
 };

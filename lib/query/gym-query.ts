@@ -288,6 +288,9 @@ export function useCreateGymComplete() {
         // Step 4
         latitude: data.step4.lat,
         longitude: data.step4.lng,
+        city: data.step4.city || undefined,
+        rayon: data.step4.rayon || undefined,
+        addressText: data.step4.address || undefined,
         // Step 5 - room names and category IDs (files are separate)
         roomNames: data.step5.rooms.map((r: any) => r.name),
         roomCategoryIds: data.step5.rooms.map((r: any) => r.categoryId),
