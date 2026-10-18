@@ -28,7 +28,7 @@ export default function GoalsMain() {
     type: "success",
   });
 
-  const filteredGoals = goals?.filter(
+  const filteredGoals = (goals || []).filter(
     (g: IGoal) =>
       g.title.toLowerCase().includes(search.toLowerCase()) ||
       g.code.toLowerCase().includes(search.toLowerCase())
