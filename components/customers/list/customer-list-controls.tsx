@@ -275,7 +275,10 @@ export function CustomerFilters({
       <div className="flex flex-wrap items-center gap-3">
         <FilterDropdown
           label={t.lists.filterPackages}
-          options={packageOptions.map((option) => ({ value: option.id, label: option.name }))}
+          options={(Array.isArray(packageOptions) ? packageOptions : []).map((option) => ({
+            value: option.id,
+            label: option.name,
+          }))}
           selected={selectedPackageId}
           onChange={(value) => onPackageChange(value as number | null)}
         />

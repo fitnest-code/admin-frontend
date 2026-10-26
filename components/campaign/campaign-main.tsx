@@ -10,21 +10,41 @@ import { CampaignMultipliersTab } from './campaign-multipliers-tab'
 import { CampaignValueSettingsTab } from './campaign-value-settings-tab'
 import { CampaignActionsTab } from './campaign-actions-tab'
 import { CampaignRulesTab } from './campaign-rules-tab'
+import { CampaignHistoryTab } from './campaign-history-tab'
+import Image from 'next/image'
 
-const CAMPAIGN_TABS = [
+// Main tabs: FitCoin, Promo kodlar, Tərəfdaşlar
+const MAIN_TABS = [
+  { key: 'fitcoin', labelKey: 'fitCoin' as const },
+  { key: 'promo', labelKey: 'promoCodes' as const },
+  { key: 'partners', labelKey: 'partners' as const },
+] as const
+
+type MainTabKey = (typeof MAIN_TABS)[number]['key']
+
+// FitCoin sub-tabs
+const FITCOIN_SUB_TABS = [
+  { key: 'history', labelKey: 'history' as const }, // Custom label handled separately
   { key: 'multipliers', labelKey: 'multipliersTab' as const },
   { key: 'values', labelKey: 'valueSettingsTab' as const },
   { key: 'rules', labelKey: 'rulesTab' as const },
   { key: 'actions', labelKey: 'actionsTab' as const },
 ] as const
 
-type CampaignTabKey = (typeof CAMPAIGN_TABS)[number]['key']
+type FitCoinSubTabKey = (typeof FITCOIN_SUB_TABS)[number]['key']
 
-function parseTab(value: string | null): CampaignTabKey {
-  if (value === 'values' || value === 'actions' || value === 'rules') return value
+function parseMainTab(value: string | null): MainTabKey {
+  if (value === 'promo' || value === 'partners') return value
+  return 'fitcoin'
+}
+
+function parseFitCoinSubTab(value: string | null): FitCoinSubTabKey {
+  if (value === 'multipliers' || value === 'values' || value === 'rules' || value === 'actions' || value === 'history') {
+    return value
+  }
   if (value === 'operations') return 'actions'
   if (value === 'earn') return 'multipliers'
-  return 'multipliers'
+  return 'history' // Default to history (new design)
 }
 
 export default function CampaignMain() {
@@ -33,7 +53,9 @@ export default function CampaignMain() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const activeTab = parseTab(searchParams.get('tab'))
+
+  const mainTab = parseMainTab(searchParams.get('mainTab'))
+  const fitCoinSubTab = parseFitCoinSubTab(searchParams.get('subTab'))
 
   const [bulkOpen, setBulkOpen] = useState(false)
   const [modal, setModal] = useState<{ open: boolean; message: string; type: 'success' | 'error' }>({
@@ -42,9 +64,20 @@ export default function CampaignMain() {
     type: 'success',
   })
 
-  function setTab(tab: CampaignTabKey) {
+  function setMainTab(tab: MainTabKey) {
     const params = new URLSearchParams(searchParams.toString())
-    params.set('tab', tab)
+    params.set('mainTab', tab)
+    // Reset subTab when switching main tabs
+    if (tab !== 'fitcoin') {
+      params.delete('subTab')
+    }
+    router.replace(`${pathname}?${params.toString()}`)
+  }
+
+  function setFitCoinSubTab(subTab: FitCoinSubTabKey) {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('mainTab', 'fitcoin')
+    params.set('subTab', subTab)
     router.replace(`${pathname}?${params.toString()}`)
   }
 
@@ -59,38 +92,94 @@ export default function CampaignMain() {
       saveFailedMessage={c.saveFailed}
       previewFailedMessage={c.previewFailed}
     >
-      <div className="flex flex-col gap-6 w-full pb-12 animate-in fade-in-50 duration-300 font-sans">
-        <div className="w-full flex items-center justify-between border-b border-[#ececed] pb-3">
-          <h1 className="text-[20px] font-bold text-[#101828] tracking-tight">{c.title}</h1>
+      <div className="flex flex-col gap-6 w-full pb-12 animate-in fade-in-50 duration-300 font-sans bg-[#FAFAFA] min-h-screen">
+        {/* Page Header */}
+        <div className="w-full flex items-center justify-between">
+          <h1 className="text-[20px] font-bold text-black tracking-tight font-sans leading-[30px]">
+            {c.title}
+          </h1>
+          <button
+            type="button"
+            className="h-12 px-6 bg-[#00B4CC] rounded-lg flex items-center justify-center gap-2"
+          >
+            <Image
+              src="/admin-panel-icons/add.svg"
+              alt="add"
+              width={24}
+              height={24}
+              className="object-contain"
+            />
+            <span className="text-white text-[16px] font-medium leading-[24px] font-sans">
+              {c.createCampaign}
+            </span>
+          </button>
         </div>
 
-        <div className="flex gap-1 rounded-xl bg-[#f4f4f5] p-1 w-fit">
-          {CAMPAIGN_TABS.map((tab) => (
+        {/* Main Tabs */}
+        <div className="w-full flex gap-0">
+          {MAIN_TABS.map((tab) => (
             <button
               key={tab.key}
               type="button"
-              onClick={() => setTab(tab.key)}
+              onClick={() => setMainTab(tab.key)}
               className={cn(
-                'rounded-lg px-4 py-2 text-[13px] font-medium transition-all',
-                activeTab === tab.key
-                  ? 'bg-white text-[#101828] shadow-sm'
-                  : 'text-[#667085] hover:text-[#101828]',
+                'flex-1 min-w-[130px] py-3 px-4 text-center text-[20px] font-bold leading-[30px] font-sans transition-all border-b-[3px]',
+                mainTab === tab.key
+                  ? 'border-[#00B4CC] text-black'
+                  : 'border-[#7C7C7C] text-[#7C7C7C]',
               )}
             >
-              {c[tab.labelKey]}
+              {c.tabs[tab.labelKey]}
             </button>
           ))}
         </div>
 
-        {activeTab === 'multipliers' && <CampaignMultipliersTab />}
-        {activeTab === 'values' && <CampaignValueSettingsTab />}
-        {activeTab === 'rules' && <CampaignRulesTab onNotify={notify} />}
-        {activeTab === 'actions' && (
-          <CampaignActionsTab
-            bulkOpen={bulkOpen}
-            onBulkOpen={() => setBulkOpen(true)}
-            onBulkClose={() => setBulkOpen(false)}
-          />
+        {mainTab === 'fitcoin' && (
+          <>
+            {/* FitCoin Sub Tabs */}
+            <div className="flex gap-1 rounded-xl bg-[#f4f4f5] p-1 w-fit">
+              {FITCOIN_SUB_TABS.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setFitCoinSubTab(tab.key)}
+                  className={cn(
+                    'rounded-lg px-4 py-2 text-[13px] font-medium transition-all',
+                    fitCoinSubTab === tab.key
+                      ? 'bg-white text-[#101828] shadow-sm'
+                      : 'text-[#667085] hover:text-[#101828]',
+                  )}
+                >
+                  {c[tab.labelKey]}
+                </button>
+              ))}
+            </div>
+
+            {/* FitCoin Sub Tab Content */}
+            {fitCoinSubTab === 'history' && <CampaignHistoryTab />}
+            {fitCoinSubTab === 'multipliers' && <CampaignMultipliersTab />}
+            {fitCoinSubTab === 'values' && <CampaignValueSettingsTab />}
+            {fitCoinSubTab === 'rules' && <CampaignRulesTab onNotify={notify} />}
+            {fitCoinSubTab === 'actions' && (
+              <CampaignActionsTab
+                bulkOpen={bulkOpen}
+                onBulkOpen={() => setBulkOpen(true)}
+                onBulkClose={() => setBulkOpen(false)}
+              />
+            )}
+          </>
+        )}
+
+        {mainTab === 'promo' && (
+          <div className="flex flex-col gap-6 w-full animate-in fade-in-50 duration-300">
+            <div className="text-center text-[#8A9694] text-[16px] py-12">{c.comingSoon}</div>
+          </div>
+        )}
+
+        {mainTab === 'partners' && (
+          <div className="flex flex-col gap-6 w-full animate-in fade-in-50 duration-300">
+            <div className="text-center text-[#8A9694] text-[16px] py-12">{c.comingSoon}</div>
+          </div>
         )}
 
         <SuccessAnimationModal

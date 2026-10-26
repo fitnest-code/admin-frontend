@@ -15,8 +15,14 @@ export function getCustomers(params?: GetCustomersParams) {
   return apiGet<CustomersResponse>('/api/v1/admin/users', { params })
 }
 
-export function getSubscriptionPackageNames() {
-  return apiGet<SubscriptionPackageName[]>('/api/v1/admin/subscription-packages/names')
+export async function getSubscriptionPackageNames() {
+  const res = await apiGet<SubscriptionPackageName[] | { items?: SubscriptionPackageName[] }>(
+    '/api/v1/admin/subscription-packages/names',
+  )
+  // Guard: empty gateway bodies / wrapped payloads must not reach .map in the UI.
+  if (Array.isArray(res)) return res
+  if (res && Array.isArray(res.items)) return res.items
+  return []
 }
 
 export function getUserStatistics() {
