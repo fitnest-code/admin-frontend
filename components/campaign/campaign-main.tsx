@@ -11,6 +11,7 @@ import { CampaignValueSettingsTab } from './campaign-value-settings-tab'
 import { CampaignActionsTab } from './campaign-actions-tab'
 import { CampaignRulesTab } from './campaign-rules-tab'
 import { CampaignHistoryTab } from './campaign-history-tab'
+import { PromoCodesTab } from './promo-codes-tab'
 import Image from 'next/image'
 
 // Main tabs: FitCoin, Promo kodlar, Tərəfdaşlar
@@ -58,6 +59,7 @@ export default function CampaignMain() {
   const fitCoinSubTab = parseFitCoinSubTab(searchParams.get('subTab'))
 
   const [bulkOpen, setBulkOpen] = useState(false)
+  const [promoCreateOpen, setPromoCreateOpen] = useState(false)
   const [modal, setModal] = useState<{ open: boolean; message: string; type: 'success' | 'error' }>({
     open: false,
     message: '',
@@ -100,6 +102,10 @@ export default function CampaignMain() {
           </h1>
           <button
             type="button"
+            onClick={() => {
+              if (mainTab !== 'promo') setMainTab('promo')
+              setPromoCreateOpen(true)
+            }}
             className="h-12 px-6 bg-[#00B4CC] rounded-lg flex items-center justify-center gap-2"
           >
             <Image
@@ -171,9 +177,7 @@ export default function CampaignMain() {
         )}
 
         {mainTab === 'promo' && (
-          <div className="flex flex-col gap-6 w-full animate-in fade-in-50 duration-300">
-            <div className="text-center text-[#8A9694] text-[16px] py-12">{c.comingSoon}</div>
-          </div>
+          <PromoCodesTab createRequested={promoCreateOpen} onCreateOpenChange={setPromoCreateOpen} />
         )}
 
         {mainTab === 'partners' && (

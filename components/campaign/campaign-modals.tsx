@@ -9,7 +9,7 @@ import { Spinner } from '@/components/ui/spinner'
 
 type SendState = 'form' | 'confirm' | 'success' | 'error'
 
-function ModalBase({
+export function ModalBase({
   children,
   onClose,
   closeDisabled = false,
