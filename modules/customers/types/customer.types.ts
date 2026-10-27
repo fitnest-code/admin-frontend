@@ -74,6 +74,9 @@ export interface UserStatistics {
   totalUsers: number
   usersWithLast7Days: number
   finishedSubscriptions: number
+  activeSubscriptions: number
+  frozenSubscriptions: number
+  /** Combined distinct count, kept for backward compatibility. */
   activeOrFrozenSubscriptions: number
 }
 
