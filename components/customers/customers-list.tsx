@@ -127,7 +127,8 @@ export function CustomersList() {
     total: statisticsQuery.data?.totalUsers ?? total,
     last7: statisticsQuery.data?.usersWithLast7Days ?? 0,
     expired: statisticsQuery.data?.finishedSubscriptions ?? 0,
-    active: statisticsQuery.data?.activeOrFrozenSubscriptions ?? 0,
+    active: statisticsQuery.data?.activeSubscriptions ?? 0,
+    frozen: statisticsQuery.data?.frozenSubscriptions ?? 0,
   }
   const packageOptions = packageNamesQuery.data ?? []
 
@@ -183,6 +184,7 @@ export function CustomersList() {
         last7={stats.last7}
         expired={stats.expired}
         active={stats.active}
+        frozen={stats.frozen}
         selectedStatus={subStatus}
         onStatusClick={(status) => {
           setSubStatus(status)
