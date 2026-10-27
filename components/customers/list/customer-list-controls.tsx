@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
-import { Check, ChevronDown, Search, Timer, UserCheck, UserX, Users } from 'lucide-react'
+import { Check, ChevronDown, Search, Snowflake, Timer, UserCheck, UserX, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useT } from '@/lib/i18n'
 import type { CustomerSubscriptionType, SubscriptionPackageName } from '@/modules/customers'
@@ -186,6 +186,7 @@ export function CustomerStats({
   last7,
   expired,
   active,
+  frozen,
   selectedStatus,
   onStatusClick,
 }: {
@@ -193,12 +194,13 @@ export function CustomerStats({
   last7: number
   expired: number
   active: number
+  frozen: number
   selectedStatus?: Exclude<CustomerSubscriptionType, 'ALL'> | null
   onStatusClick?: (status: Exclude<CustomerSubscriptionType, 'ALL'> | null) => void
 }) {
   const t = useT()
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 w-full">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 w-full">
       <StatCard
         iconSrc="/vuesax/linear/People.svg"
         icon={Users}
@@ -224,12 +226,20 @@ export function CustomerStats({
         onClick={() => onStatusClick?.('FINISHED')}
       />
       <StatCard
-        iconSrc="/dondurulmus-status.svg"
+        iconSrc="/Hesabatlar/active_subscriptions.svg"
         icon={UserCheck}
         label={t.lists.statActive}
         value={active}
         active={selectedStatus === 'ACTIVE'}
         onClick={() => onStatusClick?.('ACTIVE')}
+      />
+      <StatCard
+        iconSrc="/dondurulmus-status.svg"
+        icon={Snowflake}
+        label={t.lists.statFrozen}
+        value={frozen}
+        active={selectedStatus === 'FROZEN'}
+        onClick={() => onStatusClick?.('FROZEN')}
       />
     </div>
   )

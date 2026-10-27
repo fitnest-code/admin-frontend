@@ -600,7 +600,8 @@ const az = {
     statTotalCustomers: "Ümumi Müştərilər",
     statLast7Days: "Abunəlikdə son 7 gün",
     statExpired: "Bitmiş Status",
-    statActive: "Aktiv/Dondurulmuş Status",
+    statActive: "Aktiv Status",
+    statFrozen: "Dondurulmuş Status",
     // Filter dropdowns
     filterPackages: "Paketlər",
     filterDuration: "Müddət",
@@ -610,6 +611,7 @@ const az = {
     duration6: "6 aylıq",
     duration12: "12 aylıq",
     subFilterActive: "Aktiv Abunəlik",
+    subFilterFrozen: "Dondurulmuş Abunəlik",
     subFilterFinished: "Bitmiş Abunəlik",
     subFilterChanged: "Dəyişdirilmiş Abunəlik",
     subFilterLast7: "Abunəlikdə son 7 gün",
