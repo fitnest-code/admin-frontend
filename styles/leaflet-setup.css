@@ -57,5 +57,5 @@
 
 /* Fix Leaflet marker icon paths in Next.js */
 .leaflet-default-icon-path {
-  background-image: url("leaflet/dist/images/marker-icon.png");
+  background-image: url("../node_modules/leaflet/dist/images/marker-icon.png");
 }

@@ -42,6 +42,7 @@ export function getSubscriptionStatusOptions(
 ): { value: Exclude<CustomerSubscriptionType, 'ALL'>; label: string }[] {
   return [
     { value: 'ACTIVE', label: t.subFilterActive },
+    { value: 'FROZEN', label: t.subFilterFrozen },
     { value: 'FINISHED', label: t.subFilterFinished },
     { value: 'CHANGED', label: t.subFilterChanged },
     { value: 'LAST_7_DAYS', label: t.subFilterLast7 },
@@ -68,6 +69,7 @@ export const DURATION_OPTIONS = [
 
 export const SUBSCRIPTION_STATUS_OPTIONS: { value: Exclude<CustomerSubscriptionType, 'ALL'>; label: string }[] = [
   { value: 'ACTIVE', label: 'Aktiv Abunəlik' },
+  { value: 'FROZEN', label: 'Dondurulmuş Abunəlik' },
   { value: 'FINISHED', label: 'Bitmiş Abunəlik' },
   { value: 'CHANGED', label: 'Dəyişdirilmiş Abunəlik' },
   { value: 'LAST_7_DAYS', label: 'Abunəlikdə son 7 gün' },

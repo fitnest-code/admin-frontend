@@ -11,6 +11,9 @@ import { CampaignValueSettingsTab } from './campaign-value-settings-tab'
 import { CampaignActionsTab } from './campaign-actions-tab'
 import { CampaignRulesTab } from './campaign-rules-tab'
 import { CampaignHistoryTab } from './campaign-history-tab'
+import { PromoCodesTab } from './promo-codes-tab'
+import { PlanCampaignPanel } from './plan-campaign-panel'
+import { useI18nStore } from '@/lib/i18n'
 import Image from 'next/image'
 
 // Main tabs: FitCoin, Promo kodlar, Tərəfdaşlar
@@ -18,6 +21,7 @@ const MAIN_TABS = [
   { key: 'fitcoin', labelKey: 'fitCoin' as const },
   { key: 'promo', labelKey: 'promoCodes' as const },
   { key: 'partners', labelKey: 'partners' as const },
+  { key: 'planBanners', labelKey: 'promoCodes' as const },
 ] as const
 
 type MainTabKey = (typeof MAIN_TABS)[number]['key']
@@ -34,7 +38,7 @@ const FITCOIN_SUB_TABS = [
 type FitCoinSubTabKey = (typeof FITCOIN_SUB_TABS)[number]['key']
 
 function parseMainTab(value: string | null): MainTabKey {
-  if (value === 'promo' || value === 'partners') return value
+  if (value === 'promo' || value === 'partners' || value === 'planBanners') return value
   return 'fitcoin'
 }
 
@@ -50,6 +54,7 @@ function parseFitCoinSubTab(value: string | null): FitCoinSubTabKey {
 export default function CampaignMain() {
   const t = useT()
   const c = t.campaign
+  const locale = useI18nStore((state) => state.locale).toLowerCase()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -58,6 +63,7 @@ export default function CampaignMain() {
   const fitCoinSubTab = parseFitCoinSubTab(searchParams.get('subTab'))
 
   const [bulkOpen, setBulkOpen] = useState(false)
+  const [promoCreateOpen, setPromoCreateOpen] = useState(false)
   const [modal, setModal] = useState<{ open: boolean; message: string; type: 'success' | 'error' }>({
     open: false,
     message: '',
@@ -98,8 +104,12 @@ export default function CampaignMain() {
           <h1 className="text-[20px] font-bold text-black tracking-tight font-sans leading-[30px]">
             {c.title}
           </h1>
-          <button
+          {mainTab !== 'planBanners' && <button
             type="button"
+            onClick={() => {
+              if (mainTab !== 'promo') setMainTab('promo')
+              setPromoCreateOpen(true)
+            }}
             className="h-12 px-6 bg-[#00B4CC] rounded-lg flex items-center justify-center gap-2"
           >
             <Image
@@ -112,7 +122,7 @@ export default function CampaignMain() {
             <span className="text-white text-[16px] font-medium leading-[24px] font-sans">
               {c.createCampaign}
             </span>
-          </button>
+          </button>}
         </div>
 
         {/* Main Tabs */}
@@ -129,7 +139,7 @@ export default function CampaignMain() {
                   : 'border-[#7C7C7C] text-[#7C7C7C]',
               )}
             >
-              {c.tabs[tab.labelKey]}
+              {tab.key === 'planBanners' ? ({ az: 'Mobil bannerlər', en: 'Mobile banners', ru: 'Мобильные баннеры' }[locale] ?? 'Mobil bannerlər') : c.tabs[tab.labelKey]}
             </button>
           ))}
         </div>
@@ -171,10 +181,10 @@ export default function CampaignMain() {
         )}
 
         {mainTab === 'promo' && (
-          <div className="flex flex-col gap-6 w-full animate-in fade-in-50 duration-300">
-            <div className="text-center text-[#8A9694] text-[16px] py-12">{c.comingSoon}</div>
-          </div>
+          <PromoCodesTab createRequested={promoCreateOpen} onCreateOpenChange={setPromoCreateOpen} />
         )}
+
+        {mainTab === 'planBanners' && <PlanCampaignPanel />}
 
         {mainTab === 'partners' && (
           <div className="flex flex-col gap-6 w-full animate-in fade-in-50 duration-300">
