@@ -104,18 +104,40 @@ export const minute = (value: string) =>
   Number(value.slice(3)) < 60
     ? Number(value.slice(0, 2)) * 60 + Number(value.slice(3))
     : NaN;
+export function normalizeDay(value: string): Day | undefined {
+  const localized = [
+    ["monday", "bazar ertəsi", "понедельник"],
+    ["tuesday", "çərşənbə axşamı", "вторник"],
+    ["wednesday", "çərşənbə", "среда"],
+    ["thursday", "cümə axşamı", "четверг"],
+    ["friday", "cümə", "пятница"],
+    ["saturday", "şənbə", "суббота"],
+    ["sunday", "bazar", "воскресенье"],
+  ];
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/\u0307/g, "");
+  const index = localized.findIndex((names) => names.includes(normalized));
+  return index >= 0 ? DAYS[index] : undefined;
+}
 export function workMinutes(hours: WorkingHours): Map<Day, Set<number>> {
   const result = new Map<Day, Set<number>>(DAYS.map((d) => [d, new Set()]));
   const rest = new Set(
     (hours.restDays ?? []).map((d) =>
-      (typeof d === "string" ? d : d.period).toUpperCase(),
+      normalizeDay(typeof d === "string" ? d : d.period),
     ),
   );
   for (const h of hours.generalWorkHours ?? []) {
-    const day = h.period.toUpperCase() as Day;
+    const day = normalizeDay(h.period);
     const start = minute(time(h.from ?? h.fromTime));
     const end = minute(time(h.to ?? h.toTime));
-    if (!result.has(day) || !Number.isFinite(start) || !Number.isFinite(end))
+    if (
+      !day ||
+      !result.has(day) ||
+      !Number.isFinite(start) ||
+      !Number.isFinite(end)
+    )
       continue;
     for (let n = start; n <= (start <= end ? end : 1439); n++)
       if (!rest.has(day)) result.get(day)!.add(n);

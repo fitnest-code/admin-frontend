@@ -212,3 +212,44 @@ test("draft memory survives a locale remount and is removed only after confirmed
   store.confirmDiscard();
   assert.equal(useMembershipEditorState.getState().drafts[10], undefined);
 });
+test("normalizes all localized catalog day names before coverage checks", () => {
+  const az = [
+    "Bazar ertəsi",
+    "Çərşənbə axşamı",
+    "Çərşənbə",
+    "Cümə axşamı",
+    "Cümə",
+    "Şənbə",
+    "Bazar",
+  ];
+  const ru = [
+    "Понедельник",
+    "Вторник",
+    "Среда",
+    "Четверг",
+    "Пятница",
+    "Суббота",
+    "Воскресенье",
+  ];
+  for (const labels of [az, ru]) {
+    const translated = {
+      generalWorkHours: labels.map((period) => ({
+        period,
+        from: "00:01",
+        to: "23:59",
+      })),
+      restDays: [],
+    };
+    assert.deepEqual(validatePolicy(draft(), translated), []);
+    assert.deepEqual(defaultRules(translated, "BRONZE")[0].days, [...DAYS]);
+  }
+});
+test("localized rest days still close overnight access", () => {
+  const localized = {
+    generalWorkHours: [{ period: "Понедельник", from: "22:00", to: "02:00" }],
+    restDays: [{ period: "Вторник" }],
+  };
+  const rules = defaultRules(localized, "BRONZE");
+  assert.equal(rules.length, 1);
+  assert.deepEqual(rules[0].days, ["MONDAY"]);
+});
