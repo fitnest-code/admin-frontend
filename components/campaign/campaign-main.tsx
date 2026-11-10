@@ -13,13 +13,15 @@ import { CampaignRulesTab } from './campaign-rules-tab'
 import { CampaignHistoryTab } from './campaign-history-tab'
 import { PromoCodesTab } from './promo-codes-tab'
 import { PlanCampaignPanel } from './plan-campaign-panel'
+import { PricingCampaignPanel } from './pricing-campaign-panel'
 import { useI18nStore } from '@/lib/i18n'
 import Image from 'next/image'
 
-// Main tabs: FitCoin, Promo kodlar, Tərəfdaşlar
+// Main tabs: FitCoin, Promo kodlar, Qiymət kampaniyası, Tərəfdaşlar
 const MAIN_TABS = [
   { key: 'fitcoin', labelKey: 'fitCoin' as const },
   { key: 'promo', labelKey: 'promoCodes' as const },
+  { key: 'blackFriday', labelKey: 'pricingCampaign' as const },
   { key: 'partners', labelKey: 'partners' as const },
   { key: 'planBanners', labelKey: 'promoCodes' as const },
 ] as const
@@ -38,7 +40,9 @@ const FITCOIN_SUB_TABS = [
 type FitCoinSubTabKey = (typeof FITCOIN_SUB_TABS)[number]['key']
 
 function parseMainTab(value: string | null): MainTabKey {
-  if (value === 'promo' || value === 'partners' || value === 'planBanners') return value
+  if (value === 'promo' || value === 'partners' || value === 'planBanners' || value === 'blackFriday') {
+    return value
+  }
   return 'fitcoin'
 }
 
@@ -185,6 +189,10 @@ export default function CampaignMain() {
         )}
 
         {mainTab === 'planBanners' && <PlanCampaignPanel />}
+
+        {mainTab === 'blackFriday' && (
+          <PricingCampaignPanel onNotify={notify} />
+        )}
 
         {mainTab === 'partners' && (
           <div className="flex flex-col gap-6 w-full animate-in fade-in-50 duration-300">
