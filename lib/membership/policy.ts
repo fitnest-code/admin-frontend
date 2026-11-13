@@ -8,6 +8,7 @@ import {
   type WorkingHours,
   type TimeRule,
 } from "../types/membership";
+import { toTime24 } from "@/lib/time-24";
 
 export const tierName = (tier: Tier) => tier[0] + tier.slice(1).toLowerCase();
 export function resolveTier(name: string): Tier | undefined {
@@ -30,7 +31,11 @@ export function resolveTier(name: string): Tier | undefined {
 export function toDraft(policy: MembershipPolicy): PolicyDraft {
   return {
     ...policy,
-    timeRules: policy.timeRules ?? [],
+    timeRules: (policy.timeRules ?? []).map((r) => ({
+      ...r,
+      start: toTime24(r.start),
+      end: toTime24(r.end),
+    })),
     packages: TIERS.map(
       (tier) => policy.packages.find((p) => p.tier === tier)!,
     ).map((p) => ({
@@ -45,6 +50,11 @@ export function toDraft(policy: MembershipPolicy): PolicyDraft {
 export function fromDraft(draft: PolicyDraft): MembershipPolicy {
   return {
     ...draft,
+    timeRules: draft.timeRules.map((r) => ({
+      ...r,
+      start: toTime24(r.start),
+      end: toTime24(r.end),
+    })),
     packages: draft.packages.map((p) => ({
       ...p,
       entryPrice: p.entryPrice.trim() === "" ? 0 : Number(p.entryPrice),
@@ -98,12 +108,14 @@ const time = (value: string | number[] | undefined) =>
   Array.isArray(value)
     ? `${String(value[0] ?? 0).padStart(2, "0")}:${String(value[1] ?? 0).padStart(2, "0")}`
     : (value ?? "").slice(0, 5);
-export const minute = (value: string) =>
-  /^\d{2}:\d{2}$/.test(value) &&
-  Number(value.slice(0, 2)) < 24 &&
-  Number(value.slice(3)) < 60
-    ? Number(value.slice(0, 2)) * 60 + Number(value.slice(3))
+export const minute = (value: string) => {
+  const normalized = toTime24(value);
+  return /^\d{2}:\d{2}$/.test(normalized) &&
+    Number(normalized.slice(0, 2)) < 24 &&
+    Number(normalized.slice(3)) < 60
+    ? Number(normalized.slice(0, 2)) * 60 + Number(normalized.slice(3))
     : NaN;
+};
 export function normalizeDay(value: string): Day | undefined {
   const localized = [
     ["monday", "bazar ertəsi", "понедельник"],

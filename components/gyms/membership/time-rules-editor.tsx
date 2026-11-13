@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Plus, RotateCcw, Trash2, Clock } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { SubscriptionBadge } from "@/components/ui/subscription-badge";
+import { TimeInput24 } from "@/components/ui/time-input-24";
 import {
   DAYS,
   TIERS,
@@ -131,24 +132,22 @@ export function TimeRulesEditor({
                 </div>
                 <label className={styles.label}>
                   {c.start}
-                  <input
+                  <TimeInput24
                     aria-label={`${c.start} ${index + 1}`}
                     className={styles.input}
-                    type="time"
                     value={r.start}
                     disabled={disabled}
-                    onChange={(e) => update(index, { start: e.target.value })}
+                    onChange={(start) => update(index, { start })}
                   />
                 </label>
                 <label className={styles.label}>
                   {c.end}
-                  <input
+                  <TimeInput24
                     aria-label={`${c.end} ${index + 1}`}
                     className={styles.input}
-                    type="time"
                     value={r.end}
                     disabled={disabled}
-                    onChange={(e) => update(index, { end: e.target.value })}
+                    onChange={(end) => update(index, { end })}
                   />
                 </label>
                 <div className={styles.label}>
@@ -296,13 +295,12 @@ export function TimeRulesEditor({
                   </option>
                 ))}
               </select>
-              <input
+              <TimeInput24
                 aria-label={c.preview}
-                type="time"
                 className={styles.input}
                 style={{ width: 110 }}
                 value={previewTime}
-                onChange={(e) => setPreviewTime(e.target.value)}
+                onChange={setPreviewTime}
               />
               {match?.allowedTiers.includes(previewTier) && price ? (
                 <span className={styles.inline}>
