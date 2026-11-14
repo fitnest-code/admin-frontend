@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { useCustomerCurrentSubscriptionQuery, useUpdateEntryLimitMutation } from '@/modules/customers/hooks/use-customers-query'
 import { useAuthStore } from '@/lib/store/auth-store'
 import { cn } from '@/lib/utils'
+import { PrimaryGymCard } from '../membership/primary-gym-card'
 
 const AZ_MONTHS = [
   'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'İyun',
@@ -129,6 +130,7 @@ export function SubscriptionTab({ userId }: { userId: string }) {
   }
 
   return (
+    <div className="flex flex-col gap-5">
     <div className="flex flex-col rounded-2xl bg-white border border-border p-7 shadow-xs gap-6 animate-in fade-in-50 duration-300">
       {/* Container Header */}
       <div className="flex items-center justify-between border-b border-border pb-3.5">
@@ -283,6 +285,8 @@ export function SubscriptionTab({ userId }: { userId: string }) {
           </div>
         )}
       </div>
+    </div>
+    <PrimaryGymCard userId={userId}/>
     </div>
   )
 }

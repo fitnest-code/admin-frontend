@@ -36,6 +36,7 @@ import { useT } from '@/lib/i18n'
 import { useAuthStore } from '@/lib/store/auth-store'
 import { apiGet } from '@/lib/api/client'
 import styles from './gym-detail.module.css'
+import { useMembershipEditorState } from '@/lib/membership/editor-state'
 
 const getImageUrl = (urlOrFsId: string | undefined | null) => {
   if (!urlOrFsId) return "";
@@ -196,6 +197,12 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
   }, [tabParam])
 
   const setActiveTab = (tabKey: string) => {
+    const leavingMembership = !isNew && tabKey !== 'plans' && activeTab === 'plans'
+    if (leavingMembership && useMembershipEditorState.getState().dirtyGymId === Number(gym.id)) {
+      useMembershipEditorState.getState().requestDiscard(() => setActiveTab(tabKey))
+      setCurrentTab('plans')
+      return
+    }
     setActiveTabState(tabKey)
     setCurrentTab(tabKey)
     const params = new URLSearchParams(searchParams.toString())
@@ -300,7 +307,7 @@ export function GymDetail({ gym, isNew = false }: GymDetailProps) {
       case 'workingHours':
         return <ZalWorkHoursTab gymId={gym.id} />
       case 'plans':
-        return <PlansTab gym={gym} />
+        return <PlansTab gym={gym} onWorkHours={() => setActiveTab('workingHours')} />
       case 'contact':
         return <ContactTab />
       case 'images':
