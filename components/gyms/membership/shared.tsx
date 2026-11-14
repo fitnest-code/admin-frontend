@@ -69,13 +69,22 @@ export function membershipError(error: unknown, copy: MembershipCopy): string {
     PRIMARY_PRICE_REQUIRED: copy.errorMonthly,
     INVALID_TIME_PRICE_TIER: copy.errorTier,
     NO_ACTIVE_SUBSCRIPTION: copy.noSubscription,
+    PACKAGE_NOT_ACTIVE: copy.packageNotActive,
+    PACKAGE_TIER_MAPPING_IMMUTABLE: copy.packageMappingImmutable,
+    FOUR_UNIQUE_PACKAGES_REQUIRED: copy.fourPackagesRequired,
+    TIME_RULES_REQUIRED: copy.timeRulesRequired,
+    INVALID_TIME_RANGE: copy.invalidTimeRange,
+    UNKNOWN_PACKAGE: copy.unknownPackage,
+    INVALID_REQUEST: copy.saveFailed,
+    GYM_NOT_FOUND: copy.notEligible,
   };
+  // Load path uses copy.failed directly; this helper is for mutations/quotes.
   return (
     (code && messages[code]) ||
     (error instanceof ApiError && error.status === 503
       ? copy.failed
       : error instanceof ApiError && error.status === 404
         ? copy.notEligible
-        : copy.failed)
+        : copy.saveFailed)
   );
 }
