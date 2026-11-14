@@ -27,6 +27,15 @@ const az = {
   reload: "Serverdən yenilə",
   loading: "Məlumatlar yüklənir…",
   failed: "Məlumatları yükləmək mümkün olmadı.",
+  // Save/mutation failures used to fall through to `failed` and looked like a load error.
+  saveFailed: "Dəyişiklikləri yadda saxlamaq mümkün olmadı.",
+  packageNotActive: "Seçilmiş paket aktiv deyil. Paketlər siyahısını yoxlayın.",
+  packageMappingImmutable:
+    "Paket–səviyyə uyğunluğu dəyişdirilə bilməz. Səhifəni yeniləyib yenidən cəhd edin.",
+  fourPackagesRequired: "Bütün dörd paket (Bronze–Platinum) təyin olunmalıdır.",
+  timeRulesRequired: "Saat qaydaları aktivdirsə, ən azı bir aralıq lazımdır.",
+  invalidTimeRange: "Saat aralığının başlanğıcı bitmədən əvvəl olmalıdır.",
+  unknownPackage: "Naməlum paket ID-si. Paketlər siyahısını yoxlayın.",
   conflict:
     "Məlumat başqa yerdə dəyişdirilib. Qaralamanı qoruyub saxladıq. Yadda saxlanmış versiyanı yeniləyin.",
   newPolicy:
@@ -61,6 +70,8 @@ const az = {
   categoryHelp: "Dəyişiklik yalnız seçilmiş paketə aiddir.",
   addCategory: "Kateqoriya əlavə et",
   categoryName: "Kateqoriyanın adı",
+  categoryOrSelect: "Yazın və ya aşağıdan seçin",
+  selectCategories: "Birdən çox kateqoriya seçə bilərsiniz",
   noCategories: "Bu paketdə hələ kateqoriya yoxdur.",
   choose: "Seçin",
   unsaved: "Yadda saxlanılmamış dəyişikliklər",
@@ -157,6 +168,14 @@ const en: Record<keyof typeof az, string> = {
   reload: "Reload saved version",
   loading: "Loading details…",
   failed: "Unable to load the details.",
+  saveFailed: "Unable to save the changes.",
+  packageNotActive: "A selected package is not active. Check the package list.",
+  packageMappingImmutable:
+    "Package-to-tier mapping cannot change. Reload the page and try again.",
+  fourPackagesRequired: "All four packages (Bronze–Platinum) must be set.",
+  timeRulesRequired: "When time rules are on, at least one range is required.",
+  invalidTimeRange: "Each time range must start before it ends.",
+  unknownPackage: "Unknown package ID. Check the package list.",
   conflict:
     "This policy was changed elsewhere. Your draft is preserved. Reload the saved version before saving again.",
   newPolicy:
@@ -191,6 +210,8 @@ const en: Record<keyof typeof az, string> = {
   categoryHelp: "Changes apply only to the selected package.",
   addCategory: "Add category",
   categoryName: "Category name",
+  categoryOrSelect: "Type a name or select below",
+  selectCategories: "You can select more than one category",
   noCategories: "No categories in this package yet.",
   choose: "Choose",
   unsaved: "Unsaved changes",
@@ -286,6 +307,14 @@ const ru: Record<keyof typeof az, string> = {
   reload: "Загрузить сохранённую версию",
   loading: "Загрузка данных…",
   failed: "Не удалось загрузить данные.",
+  saveFailed: "Не удалось сохранить изменения.",
+  packageNotActive: "Выбранный пакет неактивен. Проверьте список пакетов.",
+  packageMappingImmutable:
+    "Соответствие пакета и уровня нельзя менять. Обновите страницу и попробуйте снова.",
+  fourPackagesRequired: "Нужно задать все четыре пакета (Bronze–Platinum).",
+  timeRulesRequired: "Если правила по времени включены, нужен хотя бы один интервал.",
+  invalidTimeRange: "Начало интервала должно быть раньше конца.",
+  unknownPackage: "Неизвестный ID пакета. Проверьте список пакетов.",
   conflict:
     "Правила изменены другим пользователем. Черновик сохранён. Загрузите актуальную версию перед сохранением.",
   newPolicy:
@@ -319,6 +348,8 @@ const ru: Record<keyof typeof az, string> = {
   categoryHelp: "Изменения относятся только к выбранному пакету.",
   addCategory: "Добавить категорию",
   categoryName: "Название категории",
+  categoryOrSelect: "Введите название или выберите ниже",
+  selectCategories: "Можно выбрать несколько категорий",
   noCategories: "В этом пакете пока нет категорий.",
   choose: "Выберите",
   unsaved: "Несохранённые изменения",

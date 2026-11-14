@@ -13,6 +13,10 @@ import { TIERS, type PolicyDraft, type Tier } from "@/lib/types/membership";
 import { tierName } from "@/lib/membership/policy";
 import styles from "./membership.module.css";
 
+function sameName(a: string, b: string) {
+  return a.trim().toLocaleLowerCase() === b.trim().toLocaleLowerCase();
+}
+
 export function CategoryEditor({
   draft,
   onChange,
@@ -28,8 +32,12 @@ export function CategoryEditor({
   const [tier, setTier] = useState<Tier>("BRONZE");
   const [editing, setEditing] = useState<number | "new" | null>(null);
   const [name, setName] = useState("");
+  const [selected, setSelected] = useState<string[]>([]);
   const categories =
     draft.packages.find((p) => p.tier === tier)?.categories ?? [];
+  const available = suggestions.filter(
+    (s) => !categories.some((c) => sameName(c, s)),
+  );
   const update = (next: string[]) =>
     onChange({
       ...draft,
@@ -37,19 +45,48 @@ export function CategoryEditor({
         p.tier === tier ? { ...p, categories: next } : p,
       ),
     });
-  const duplicate = categories.some(
-    (value, i) =>
-      i !== editing &&
-      value.trim().toLocaleLowerCase() === name.trim().toLocaleLowerCase(),
-  );
-  const confirm = () => {
-    if (!name.trim() || duplicate) return;
-    update(
-      editing === "new"
-        ? [...categories, name.trim()]
-        : categories.map((v, i) => (i === editing ? name.trim() : v)),
+  const custom = name.trim();
+  const customDuplicate =
+    !!custom &&
+    (categories.some(
+      (value, i) => i !== editing && sameName(value, custom),
+    ) ||
+      selected.some((s) => sameName(s, custom)));
+  const canSave =
+    editing === "new"
+      ? (selected.length > 0 || !!custom) && !customDuplicate
+      : !!custom && !customDuplicate;
+  const openNew = () => {
+    setName("");
+    setSelected([]);
+    setEditing("new");
+  };
+  const openEdit = (index: number, category: string) => {
+    setName(category);
+    setSelected([]);
+    setEditing(index);
+  };
+  const toggleSuggestion = (suggestion: string) => {
+    setSelected((prev) =>
+      prev.some((s) => sameName(s, suggestion))
+        ? prev.filter((s) => !sameName(s, suggestion))
+        : [...prev, suggestion],
     );
+  };
+  const confirm = () => {
+    if (!canSave) return;
+    if (editing === "new") {
+      const next = [...categories];
+      for (const s of selected) {
+        if (!next.some((c) => sameName(c, s))) next.push(s);
+      }
+      if (custom && !next.some((c) => sameName(c, custom))) next.push(custom);
+      update(next);
+    } else if (typeof editing === "number") {
+      update(categories.map((v, i) => (i === editing ? custom : v)));
+    }
     setEditing(null);
+    setSelected([]);
   };
   return (
     <section className={styles.panel} aria-labelledby="category-heading">
@@ -64,10 +101,7 @@ export function CategoryEditor({
           type="button"
           className={styles.button}
           disabled={disabled}
-          onClick={() => {
-            setName("");
-            setEditing("new");
-          }}
+          onClick={openNew}
         >
           <Plus size={15} />
           {c.addCategory}
@@ -95,10 +129,7 @@ export function CategoryEditor({
               type="button"
               aria-label={`${c.edit}: ${category}`}
               disabled={disabled}
-              onClick={() => {
-                setName(category);
-                setEditing(i);
-              }}
+              onClick={() => openEdit(i, category)}
             >
               <Pencil size={12} />
             </button>
@@ -119,7 +150,10 @@ export function CategoryEditor({
       <Dialog
         open={editing !== null}
         onOpenChange={(open) => {
-          if (!open) setEditing(null);
+          if (!open) {
+            setEditing(null);
+            setSelected([]);
+          }
         }}
       >
         <DialogContent className={styles.dialog}>
@@ -145,43 +179,56 @@ export function CategoryEditor({
                 value={name}
                 maxLength={100}
                 autoFocus
-                required
+                required={editing !== "new" || selected.length === 0}
+                placeholder={
+                  editing === "new" ? c.categoryOrSelect : undefined
+                }
                 onChange={(e) => setName(e.target.value)}
               />
             </label>
-            {duplicate && (
+            {customDuplicate && (
               <p className="text-sm text-red-600" role="alert">
                 {c.errorCategory}
               </p>
             )}
-            {suggestions.filter((s) => !categories.includes(s)).length > 0 && (
-              <div className={styles.chips}>
-                {suggestions
-                  .filter((s) => !categories.includes(s))
-                  .map((s) => (
-                    <button
-                      type="button"
-                      className={styles.tab}
-                      key={s}
-                      onClick={() => setName(s)}
-                    >
-                      {s}
-                    </button>
-                  ))}
+            {editing === "new" && available.length > 0 && (
+              <div>
+                <p className={styles.muted}>{c.selectCategories}</p>
+                <div
+                  className={styles.chips}
+                  role="group"
+                  aria-label={c.selectCategories}
+                >
+                  {available.map((s) => {
+                    const on = selected.some((v) => sameName(v, s));
+                    return (
+                      <button
+                        type="button"
+                        className={styles.tab}
+                        key={s}
+                        aria-pressed={on}
+                        aria-selected={on}
+                        onClick={() => toggleSuggestion(s)}
+                      >
+                        {s}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
             <div className={`${styles.actions} justify-end`}>
               <button
                 type="button"
                 className={styles.secondary}
-                onClick={() => setEditing(null)}
+                onClick={() => {
+                  setEditing(null);
+                  setSelected([]);
+                }}
               >
                 {c.cancel}
               </button>
-              <button
-                className={styles.button}
-                disabled={!name.trim() || duplicate}
-              >
+              <button className={styles.button} disabled={!canSave}>
                 {c.save}
               </button>
             </div>
