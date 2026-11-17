@@ -14,7 +14,9 @@ import {
 } from "@/lib/types/membership";
 import {
   defaultRules,
+  effectiveEndMinute,
   minute,
+  tierAdmitted,
   tierName,
   validatePolicy,
 } from "@/lib/membership/policy";
@@ -62,7 +64,8 @@ export function TimeRulesEditor({
     (r) =>
       r.days.includes(previewDay) &&
       minute(previewTime) >= minute(r.start) &&
-      minute(previewTime) <= minute(r.end),
+      minute(previewTime) <=
+        effectiveEndMinute(minute(r.start), minute(r.end)),
   );
   const price = match && draft.packages.find((p) => p.tier === match.priceTier);
   return (
@@ -302,7 +305,7 @@ export function TimeRulesEditor({
                 value={previewTime}
                 onChange={setPreviewTime}
               />
-              {match?.allowedTiers.includes(previewTier) && price ? (
+              {match && tierAdmitted(match.allowedTiers, previewTier) && price ? (
                 <span className={styles.inline}>
                   <SubscriptionBadge type={tierName(price.tier)} />
                   <span>
