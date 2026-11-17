@@ -22,6 +22,8 @@ const {
   formatMembershipEndDate,
   workMinutes,
   minute,
+  effectiveEndMinute,
+  tierAdmitted,
 } = require("../lib/membership/policy.ts");
 const { TIERS, DAYS } = require("../lib/types/membership.ts");
 const names = TIERS.map((name, i) => ({ name, id: (i + 1) * 10 }));
@@ -252,4 +254,17 @@ test("localized rest days still close overnight access", () => {
   const rules = defaultRules(localized, "BRONZE");
   assert.equal(rules.length, 1);
   assert.deepEqual(rules[0].days, ["MONDAY"]);
+});
+
+test("end 00:00 after a later start means end of day; higher tiers inherit windows", () => {
+  assert.equal(effectiveEndMinute(17 * 60, 0), 23 * 60 + 59);
+  assert.equal(effectiveEndMinute(0, 0), 0);
+  assert.equal(tierAdmitted(["BRONZE"], "SILVER"), true);
+  assert.equal(tierAdmitted(["SILVER"], "BRONZE"), false);
+  const d = draft();
+  d.timeRules = [
+    { days: [...DAYS], start: "00:01", end: "16:59", allowedTiers: ["BRONZE", "SILVER"], priceTier: "BRONZE" },
+    { days: [...DAYS], start: "17:00", end: "00:00", allowedTiers: ["SILVER"], priceTier: "SILVER" },
+  ];
+  assert.deepEqual(validatePolicy(d, hours), []);
 });

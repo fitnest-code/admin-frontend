@@ -116,6 +116,20 @@ export const minute = (value: string) => {
     ? Number(normalized.slice(0, 2)) * 60 + Number(normalized.slice(3))
     : NaN;
 };
+/**
+ * Admin "Bitmə 00:00" means until end of day. A raw 00:00 end after a later start would read as a
+ * midnight start and leave a gap, so it is treated as 23:59 (mirrors catalog-backend effectiveEnd).
+ */
+export const effectiveEndMinute = (start: number, end: number) =>
+  end === 0 && start > 0 ? 23 * 60 + 59 : end;
+
+/**
+ * Tier windows inherit upward (as legacy home-gym): a rule admits a member when any allowed tier
+ * is at or below the member's tier (Bronze window also admits Silver/Gold/Platinum).
+ */
+export const tierAdmitted = (allowed: Tier[], member: Tier) =>
+  allowed.some((t) => TIERS.indexOf(t) <= TIERS.indexOf(member));
+
 export function normalizeDay(value: string): Day | undefined {
   const localized = [
     ["monday", "bazar ertəsi", "понедельник"],
@@ -241,7 +255,7 @@ export function validatePolicy(
       !r.allowedTiers.length ||
       !Number.isFinite(start) ||
       !Number.isFinite(end) ||
-      start > end
+      start > effectiveEndMinute(start, end)
     )
       issues.push({ code: "ranges", index });
     if (
@@ -260,9 +274,11 @@ export function validatePolicy(
   }
   for (const day of DAYS) {
     const counts = new Uint8Array(1440);
-    for (const r of draft.timeRules.filter((r) => r.days.includes(day)))
-      for (let n = minute(r.start); n <= minute(r.end) && n < 1440; n++)
-        if (n >= 0) counts[n]++;
+    for (const r of draft.timeRules.filter((r) => r.days.includes(day))) {
+      const start = minute(r.start);
+      const end = effectiveEndMinute(start, minute(r.end));
+      for (let n = start; n <= end && n < 1440; n++) if (n >= 0) counts[n]++;
+    }
     if (counts.some((n) => n > 1)) issues.push({ code: "overlap" });
     if (expected && counts.some((n, i) => n > 0 !== expected.get(day)!.has(i)))
       issues.push({ code: "coverage" });
