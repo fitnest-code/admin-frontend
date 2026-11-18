@@ -21,7 +21,12 @@ export async function POST(request: NextRequest) {
     const refreshResult = await requestTokenRefresh(refreshToken)
     if (!refreshResult.ok) {
       const response = NextResponse.json({ message: refreshResult.message }, { status: refreshResult.status })
-      clearAuthCookies(response)
+      // Clear cookies only on a definitive auth rejection. Clearing on 429/5xx/parse errors logged admins
+      // out during transient gateway/identity blips even though their refresh token was still valid
+      // (the backend never consumed it). Non-auth failures keep cookies; the client retries on its next 401.
+      if (refreshResult.status === 401 || refreshResult.status === 403) {
+        clearAuthCookies(response)
+      }
       return response
     }
 
