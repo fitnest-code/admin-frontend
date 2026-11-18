@@ -120,12 +120,18 @@ export async function requestTokenRefresh(refreshToken: string) {
   })
 
   const payload = await response.json().catch(() => null)
-  if (!response.ok || !payload) {
+  if (!response.ok) {
     return {
       ok: false as const,
-      status: response.status || 401,
+      status: response.status || 502,
       message: extractApiErrorMessage(payload, 'Token refresh failed'),
     }
+  }
+
+  // A 2xx with an unusable body is an upstream fault, not an auth failure. Reporting it as 401 made the
+  // refresh route wipe valid cookies; 502 keeps the session and lets the client retry.
+  if (!payload) {
+    return { ok: false as const, status: 502, message: 'Token refresh returned an empty response' }
   }
 
   try {
@@ -134,7 +140,7 @@ export async function requestTokenRefresh(refreshToken: string) {
   } catch (error) {
     return {
       ok: false as const,
-      status: 401,
+      status: 502,
       message: error instanceof Error ? error.message : 'Token refresh parse failed',
     }
   }

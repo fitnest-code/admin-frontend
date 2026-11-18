@@ -78,14 +78,149 @@ function extractApiErrorMessage(payload: unknown, fallback: string) {
   return fallback;
 }
 
-async function refreshAccessToken() {
-  if (!refreshPromise) {
-    refreshPromise = fetch("/api/auth/refresh", {
+/*
+ * Cross-tab refresh coordination.
+ * Refresh tokens are single-use server-side, and auth cookies are shared by every admin tab. If N tabs
+ * hit a 401 together and each posts /api/auth/refresh, the losers present an already-consumed token and
+ * get a definitive 401, which logs the whole browser out. So refreshes are serialized across tabs and a
+ * tab whose request predates a completed refresh just retries with the (shared) fresh cookies.
+ */
+const REFRESH_LOCK_NAME = "fitnest-admin-refresh";
+const REFRESH_LS_LOCK_KEY = "fn_admin_refresh_lock";
+const REFRESH_LS_DONE_KEY = "fn_admin_refresh_done_at";
+const AUTH_CHANNEL_NAME = "fitnest-admin-auth";
+// A crashed/closed tab must not wedge refreshes forever: locks older than this are considered abandoned.
+const REFRESH_LS_LOCK_STALE_MS = 15_000;
+const REFRESH_LS_WAIT_MAX_MS = 15_000;
+const REFRESH_LS_POLL_MS = 100;
+
+function getAuthChannel(): BroadcastChannel | null {
+  if (typeof BroadcastChannel === "undefined") return null;
+  try {
+    return new BroadcastChannel(AUTH_CHANNEL_NAME);
+  } catch {
+    return null;
+  }
+}
+
+function readLastRefreshAt(): number {
+  try {
+    return Number(localStorage.getItem(REFRESH_LS_DONE_KEY)) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+function markRefreshed() {
+  const at = Date.now();
+  try {
+    localStorage.setItem(REFRESH_LS_DONE_KEY, String(at));
+  } catch {
+    // Private mode / storage disabled: other tabs just refresh once more, which is still safe.
+  }
+  const channel = getAuthChannel();
+  channel?.postMessage({ type: "refreshed", at });
+  channel?.close();
+}
+
+// Only 401/403 mean the session is really gone (the route clears cookies then). 429/5xx/network errors
+// leave cookies intact, so we return false and the caller keeps the old cookies until its next 401.
+async function postRefresh(): Promise<boolean> {
+  try {
+    const res = await fetch("/api/auth/refresh", {
       method: "POST",
       credentials: "include",
       cache: "no-store",
-    })
-      .then((res) => res.ok)
+    });
+    if (res.ok) markRefreshed();
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+function readLsLock(): { owner: string; at: number } | null {
+  try {
+    const raw = localStorage.getItem(REFRESH_LS_LOCK_KEY);
+    if (!raw) return null;
+    const [owner, at] = raw.split(":");
+    const ts = Number(at);
+    if (!owner || !ts || Date.now() - ts > REFRESH_LS_LOCK_STALE_MS) return null;
+    return { owner, at: ts };
+  } catch {
+    return null;
+  }
+}
+
+// Fallback for browsers without navigator.locks: advisory localStorage lock + BroadcastChannel wake-ups.
+async function refreshWithStorageLock(requestStartedAt: number): Promise<boolean> {
+  const me = `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
+  const deadline = Date.now() + REFRESH_LS_WAIT_MAX_MS;
+  const channel = getAuthChannel();
+
+  try {
+    while (Date.now() < deadline) {
+      if (readLastRefreshAt() >= requestStartedAt) return true;
+
+      if (!readLsLock()) {
+        try {
+          localStorage.setItem(REFRESH_LS_LOCK_KEY, `${me}:${Date.now()}`);
+        } catch {
+          break; // storage unavailable: fall through to an uncoordinated refresh
+        }
+        // localStorage isn't atomic; re-read after a tick to confirm no other tab overwrote us.
+        await new Promise((r) => setTimeout(r, 25));
+        if (readLsLock()?.owner === me) {
+          try {
+            if (readLastRefreshAt() >= requestStartedAt) return true;
+            return await postRefresh();
+          } finally {
+            try {
+              if (readLsLock()?.owner === me) localStorage.removeItem(REFRESH_LS_LOCK_KEY);
+            } catch {
+              /* ignore */
+            }
+          }
+        }
+      }
+
+      // Another tab is refreshing: wait for its completion broadcast, or poll as a safety net.
+      await new Promise<void>((resolve) => {
+        const timer = setTimeout(done, REFRESH_LS_POLL_MS);
+        function done() {
+          clearTimeout(timer);
+          if (channel) channel.onmessage = null;
+          resolve();
+        }
+        if (channel) channel.onmessage = done;
+      });
+    }
+    return readLastRefreshAt() >= requestStartedAt ? true : await postRefresh();
+  } finally {
+    channel?.close();
+  }
+}
+
+async function runSharedRefresh(requestStartedAt: number): Promise<boolean> {
+  if (typeof navigator !== "undefined" && navigator.locks?.request) {
+    return navigator.locks.request(REFRESH_LOCK_NAME, async () => {
+      // Another tab may have completed a refresh while we queued for the lock; cookies are shared,
+      // so we only need to retry the original request instead of burning a second single-use token.
+      if (readLastRefreshAt() >= requestStartedAt) return true;
+      return postRefresh();
+    });
+  }
+  if (typeof localStorage !== "undefined") {
+    return refreshWithStorageLock(requestStartedAt);
+  }
+  return postRefresh();
+}
+
+// requestStartedAt: when the 401'd request was sent. A refresh finishing after that moment means the
+// request used a stale access token and the shared cookies are already fresh.
+async function refreshAccessToken(requestStartedAt: number) {
+  if (!refreshPromise) {
+    refreshPromise = runSharedRefresh(requestStartedAt)
       .catch(() => false)
       .finally(() => {
         refreshPromise = null;
@@ -138,6 +273,7 @@ export async function apiRequest<T>(
     }
   }
 
+  const requestStartedAt = Date.now();
   const response = await fetch(requestUrl, {
     ...init,
     headers: requestHeaders,
@@ -154,7 +290,7 @@ export async function apiRequest<T>(
 
   // 401 halında token yeniləmə məntiqi
   if (response.status === 401 && auth && !_retried && !isAuthRoute) {
-    const refreshed = await refreshAccessToken();
+    const refreshed = await refreshAccessToken(requestStartedAt);
     if (refreshed) {
       return apiRequest<T>(path, { ...options, _retried: true });
     }
