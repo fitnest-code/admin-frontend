@@ -1,5 +1,6 @@
 "use client";
 import { Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { TimeInput24 } from "@/components/ui/time-input-24";
 import { SubscriptionBadge } from "@/components/ui/subscription-badge";
@@ -11,10 +12,14 @@ import {
   type WorkingHours,
 } from "@/lib/types/membership";
 import {
+  dayHasWork,
   editorWindows,
+  formatWorkHoursHint,
+  isCompleteWindow,
   nextEmptyWindow,
   setPackageWindows,
   tierName,
+  windowFitsWorkHours,
   type PackageAccessWindow,
 } from "@/lib/membership/policy";
 import { membershipDays, useMembershipCopy } from "@/lib/i18n/membership";
@@ -37,21 +42,62 @@ export function TimeRulesEditor({
 }) {
   const c = useMembershipCopy();
   const locale = useI18nStore((s) => s.locale);
+  const dayLabels = membershipDays[locale];
   const included = draft.packages.filter((p) => p.included);
   const byTier = editorWindows(draft);
+  const workHint = hours ? formatWorkHoursHint(hours, dayLabels) : "";
 
   const write = (tier: Tier, windows: PackageAccessWindow[]) =>
     onChange((prev) => setPackageWindows(prev, tier, windows));
 
-  const patchWindow = (
+  const rejectOutside = () => toast.error(c.errorCoverage);
+
+  const tryPatchWindow = (
     tier: Tier,
     index: number,
     patch: Partial<PackageAccessWindow>,
   ) => {
+    const next = { ...byTier[tier][index], ...patch };
+    if (hours && isCompleteWindow(next) && !windowFitsWorkHours(next, hours)) {
+      rejectOutside();
+      return;
+    }
     const windows = byTier[tier].map((w, i) =>
-      i === index ? { ...w, ...patch } : w,
+      i === index ? next : w,
     );
     write(tier, windows);
+  };
+
+  const addRange = (tier: Tier, windows: PackageAccessWindow[]) => {
+    if (!hours) {
+      toast.error(c.errorHours);
+      onWorkHours();
+      return;
+    }
+    const created = nextEmptyWindow(windows, hours);
+    if (!created) {
+      toast.error(c.errorHours);
+      onWorkHours();
+      return;
+    }
+    write(tier, [...windows, created]);
+  };
+
+  const toggleDay = (
+    tier: Tier,
+    index: number,
+    day: Day,
+    current: PackageAccessWindow,
+  ) => {
+    const enabling = !current.days.includes(day);
+    if (enabling && hours && !dayHasWork(hours, day)) {
+      toast.error(c.errorDayClosed);
+      return;
+    }
+    const days = DAYS.filter((x) =>
+      x === day ? enabling : current.days.includes(x),
+    ) as Day[];
+    tryPatchWindow(tier, index, { days });
   };
 
   return (
@@ -82,6 +128,19 @@ export function TimeRulesEditor({
           {!included.length && (
             <Notice tone="warning">{c.errorIncluded}</Notice>
           )}
+          {!hours ? (
+            <Notice tone="warning">
+              {c.errorHours}{" "}
+              <button type="button" className={styles.link} onClick={onWorkHours}>
+                {c.workHours}
+              </button>
+            </Notice>
+          ) : (
+            <Notice>
+              {c.workHoursBound}
+              {workHint ? ` ${workHint}` : ""}
+            </Notice>
+          )}
           {included.map((pkg) => {
             const windows = byTier[pkg.tier] ?? [];
             return (
@@ -91,10 +150,8 @@ export function TimeRulesEditor({
                   <button
                     type="button"
                     className={styles.ghost}
-                    disabled={disabled}
-                    onClick={() =>
-                      write(pkg.tier, [...windows, nextEmptyWindow(windows)])
-                    }
+                    disabled={disabled || !hours}
+                    onClick={() => addRange(pkg.tier, windows)}
                   >
                     <Plus size={14} />
                     {c.addRange}
@@ -104,71 +161,91 @@ export function TimeRulesEditor({
                   <p className={styles.emptyHint}>{c.noPackageHours}</p>
                 ) : (
                   <div className={styles.windowList}>
-                    {windows.map((w, index) => (
-                      <div
-                        key={`${pkg.tier}-${index}`}
-                        className={styles.windowCard}
-                        aria-label={`${tierName(pkg.tier)} ${index + 1}`}
-                      >
-                        <div className={styles.days}>
-                          {DAYS.map((day, d) => (
+                    {windows.map((w, index) => {
+                      const outside =
+                        !!hours &&
+                        isCompleteWindow(w) &&
+                        !windowFitsWorkHours(w, hours);
+                      return (
+                        <div
+                          key={`${pkg.tier}-${index}`}
+                          className={styles.windowCard}
+                          aria-label={`${tierName(pkg.tier)} ${index + 1}`}
+                          data-invalid={outside || undefined}
+                          style={
+                            outside
+                              ? { outline: "1px solid #e11d48", outlineOffset: 2 }
+                              : undefined
+                          }
+                        >
+                          {outside && (
+                            <Notice tone="error">{c.errorCoverage}</Notice>
+                          )}
+                          <div className={styles.days}>
+                            {DAYS.map((day, d) => {
+                              const closed =
+                                !!hours && !dayHasWork(hours, day);
+                              return (
+                                <button
+                                  type="button"
+                                  key={day}
+                                  aria-label={`${day} ${pkg.tier} ${index + 1}`}
+                                  aria-pressed={w.days.includes(day)}
+                                  disabled={disabled || (closed && !w.days.includes(day))}
+                                  title={closed ? c.errorDayClosed : undefined}
+                                  className={styles.day}
+                                  style={
+                                    closed
+                                      ? { opacity: 0.35, cursor: "not-allowed" }
+                                      : undefined
+                                  }
+                                  onClick={() =>
+                                    toggleDay(pkg.tier, index, day, w)
+                                  }
+                                >
+                                  {dayLabels[d]}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <div className={styles.windowTimes}>
+                            <TimeInput24
+                              aria-label={`${c.start} ${pkg.tier} ${index + 1}`}
+                              className={styles.input}
+                              value={w.start}
+                              disabled={disabled}
+                              onChange={(start) =>
+                                tryPatchWindow(pkg.tier, index, { start })
+                              }
+                            />
+                            <span className={styles.muted}>–</span>
+                            <TimeInput24
+                              aria-label={`${c.end} ${pkg.tier} ${index + 1}`}
+                              className={styles.input}
+                              value={w.end}
+                              disabled={disabled}
+                              onChange={(end) =>
+                                tryPatchWindow(pkg.tier, index, { end })
+                              }
+                            />
                             <button
                               type="button"
-                              key={day}
-                              aria-label={`${day} ${pkg.tier} ${index + 1}`}
-                              aria-pressed={w.days.includes(day)}
+                              className={styles.iconDanger}
+                              aria-label={`${c.remove} ${pkg.tier} ${index + 1}`}
                               disabled={disabled}
-                              className={styles.day}
-                              onClick={() => {
-                                const days = DAYS.filter((x) =>
-                                  x === day
-                                    ? !w.days.includes(x)
-                                    : w.days.includes(x),
-                                ) as Day[];
-                                patchWindow(pkg.tier, index, { days });
-                              }}
+                              onClick={() =>
+                                write(
+                                  pkg.tier,
+                                  windows.filter((_, i) => i !== index),
+                                )
+                              }
                             >
-                              {membershipDays[locale][d]}
+                              <Trash2 size={14} />
                             </button>
-                          ))}
+                          </div>
                         </div>
-                        <div className={styles.windowTimes}>
-                          <TimeInput24
-                            aria-label={`${c.start} ${pkg.tier} ${index + 1}`}
-                            className={styles.input}
-                            value={w.start}
-                            disabled={disabled}
-                            onChange={(start) =>
-                              patchWindow(pkg.tier, index, { start })
-                            }
-                          />
-                          <span className={styles.muted}>–</span>
-                          <TimeInput24
-                            aria-label={`${c.end} ${pkg.tier} ${index + 1}`}
-                            className={styles.input}
-                            value={w.end}
-                            disabled={disabled}
-                            onChange={(end) =>
-                              patchWindow(pkg.tier, index, { end })
-                            }
-                          />
-                          <button
-                            type="button"
-                            className={styles.iconDanger}
-                            aria-label={`${c.remove} ${pkg.tier} ${index + 1}`}
-                            disabled={disabled}
-                            onClick={() =>
-                              write(
-                                pkg.tier,
-                                windows.filter((_, i) => i !== index),
-                              )
-                            }
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -177,7 +254,6 @@ export function TimeRulesEditor({
           <button type="button" onClick={onWorkHours} className={styles.link}>
             {c.workHours}
           </button>
-          {!hours && <Notice tone="warning">{c.errorHours}</Notice>}
         </div>
       )}
     </section>

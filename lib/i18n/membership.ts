@@ -131,6 +131,10 @@ const az = {
   errorOverlap: "Saat aralıqları üst-üstə düşür.",
   errorCoverage: "Saatlar zalın iş saatlarından kənara çıxa bilməz.",
   errorHours: "Əvvəlcə zalın iş saatlarını təyin edin.",
+  errorDayClosed: "Bu gün zalın iş saatı yoxdur — seçmək olmaz.",
+  workHoursBound:
+    "Paket saatları yalnız zalın iş saatları daxilində ola bilər.",
+  fixValidation: "Yadda saxlamadan əvvəl xətaları düzəldin.",
   errorTier:
     "Qiymət paketi zala daxil olmalıdır; daha aşağı paket həmin qiymət aralığına buraxıla bilməz.",
   errorCategory: "Kateqoriya adları boş və ya təkrarlanan ola bilməz.",
@@ -265,6 +269,9 @@ const en: Record<keyof typeof az, string> = {
   errorOverlap: "Time ranges overlap.",
   errorCoverage: "Hours must stay inside the gym’s working hours.",
   errorHours: "Set the gym’s working hours first.",
+  errorDayClosed: "The gym is closed that day — cannot select it.",
+  workHoursBound: "Package hours must stay inside the gym’s working hours.",
+  fixValidation: "Fix the errors before saving.",
   errorTier:
     "The price tier must be included; lower tiers cannot enter its time range.",
   errorCategory: "Category names cannot be empty or duplicated.",
@@ -402,6 +409,10 @@ const ru: Record<keyof typeof az, string> = {
   errorOverlap: "Временные интервалы пересекаются.",
   errorCoverage: "Часы не могут выходить за пределы часов работы зала.",
   errorHours: "Сначала задайте часы работы зала.",
+  errorDayClosed: "В этот день зал не работает — выбрать нельзя.",
+  workHoursBound:
+    "Часы пакета должны быть в пределах часов работы зала.",
+  fixValidation: "Исправьте ошибки перед сохранением.",
   errorTier:
     "Тарифный пакет должен быть включён; младшие пакеты не допускаются в его интервал.",
   errorCategory: "Названия категорий не могут быть пустыми или повторяться.",

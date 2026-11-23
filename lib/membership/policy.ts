@@ -225,21 +225,116 @@ export function editorWindows(
   return decomposeTimeRules(draft.timeRules);
 }
 
-/** Suggest a non-colliding default so "Add range" is visibly a new card. */
+/** True when the gym has any open minutes that day. */
+export function dayHasWork(hours: WorkingHours, day: Day): boolean {
+  return (workMinutes(hours).get(day)?.size ?? 0) > 0;
+}
+
+/**
+ * Complete window must sit inside work minutes for every selected day.
+ * Incomplete windows are skipped (validated on save via ranges).
+ */
+export function windowFitsWorkHours(
+  w: PackageAccessWindow,
+  hours: WorkingHours,
+): boolean {
+  if (!isCompleteWindow(w)) return true;
+  const work = workMinutes(hours);
+  const start = minute(w.start);
+  const end = effectiveEndMinute(start, minute(w.end));
+  for (const day of w.days) {
+    const open = work.get(day);
+    if (!open?.size) return false;
+    for (let n = start; n <= end && n < 1440; n++) {
+      if (!open.has(n)) return false;
+    }
+  }
+  return true;
+}
+
+/** First contiguous open span per working day — used for defaults and hints. */
+export function workDaySpans(
+  hours: WorkingHours,
+): { day: Day; start: string; end: string }[] {
+  const work = workMinutes(hours);
+  const spans: { day: Day; start: string; end: string }[] = [];
+  for (const day of DAYS) {
+    const sorted = [...(work.get(day) ?? [])].sort((a, b) => a - b);
+    for (let i = 0; i < sorted.length; i++) {
+      const first = sorted[i];
+      let last = first;
+      while (sorted[i + 1] === last + 1) last = sorted[++i];
+      spans.push({ day, start: hhmm(first), end: hhmm(last) });
+    }
+  }
+  return spans;
+}
+
+/** Short summary e.g. "Mon 09:00–18:00 · Tue 09:00–18:00". */
+export function formatWorkHoursHint(
+  hours: WorkingHours,
+  dayLabels: string[],
+): string {
+  const spans = workDaySpans(hours);
+  if (!spans.length) return "";
+  return spans
+    .map((s) => {
+      const label = dayLabels[DAYS.indexOf(s.day)] ?? s.day;
+      return `${label} ${s.start}–${s.end}`;
+    })
+    .join(" · ");
+}
+
+/**
+ * Suggest a non-colliding default inside work hours when known.
+ * Returns null when work hours are required but empty/missing.
+ */
 export function nextEmptyWindow(
   existing: PackageAccessWindow[],
-): PackageAccessWindow {
+  hours?: WorkingHours,
+): PackageAccessWindow | null {
+  const key = (w: PackageAccessWindow) =>
+    `${w.days.join(",")}|${toTime24(w.start)}|${toTime24(w.end)}`;
+  const used = new Set(existing.map(key));
+
+  if (hours) {
+    const spans = workDaySpans(hours);
+    if (!spans.length) return null;
+    for (const s of spans) {
+      const candidate = {
+        days: [s.day] as Day[],
+        start: s.start,
+        end: s.end,
+      };
+      if (!used.has(key(candidate))) return candidate;
+      // Same day already has full span — try a shorter morning half if possible.
+      const startM = minute(s.start);
+      const endM = minute(s.end);
+      if (Number.isFinite(startM) && Number.isFinite(endM) && endM - startM >= 120) {
+        const mid = startM + Math.floor((endM - startM) / 2);
+        const half = {
+          days: [s.day] as Day[],
+          start: s.start,
+          end: hhmm(mid),
+        };
+        if (!used.has(key(half)) && windowFitsWorkHours(half, hours))
+          return half;
+      }
+    }
+    // All spans used — still return first span so the card appears; save merge is OK.
+    const first = spans[0];
+    return { days: [first.day], start: first.start, end: first.end };
+  }
+
   const candidates: PackageAccessWindow[] = [
     { days: [DAYS[0]], start: "09:00", end: "17:00" },
     { days: [DAYS[0]], start: "17:00", end: "21:00" },
     { days: [DAYS[1]], start: "09:00", end: "17:00" },
     { days: [DAYS[2]], start: "09:00", end: "17:00" },
   ];
-  const key = (w: PackageAccessWindow) =>
-    `${w.days.join(",")}|${toTime24(w.start)}|${toTime24(w.end)}`;
-  const used = new Set(existing.map(key));
   for (const c of candidates) {
-    if (!used.has(key(c))) return { days: [...c.days], start: c.start, end: c.end };
+    if (!used.has(key(c)))
+      return { days: [...c.days], start: c.start, end: c.end };
   }
   return { days: [DAYS[0]], start: "09:00", end: "17:00" };
 }
