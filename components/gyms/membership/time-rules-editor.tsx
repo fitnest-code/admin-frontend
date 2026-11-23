@@ -11,7 +11,8 @@ import {
   type WorkingHours,
 } from "@/lib/types/membership";
 import {
-  decomposeTimeRules,
+  editorWindows,
+  nextEmptyWindow,
   setPackageWindows,
   tierName,
   type PackageAccessWindow,
@@ -20,10 +21,6 @@ import { membershipDays, useMembershipCopy } from "@/lib/i18n/membership";
 import { useI18nStore } from "@/lib/i18n";
 import { Notice } from "./shared";
 import styles from "./membership.module.css";
-
-function emptyWindow(): PackageAccessWindow {
-  return { days: [DAYS[0]], start: "09:00", end: "17:00" };
-}
 
 export function TimeRulesEditor({
   draft,
@@ -34,17 +31,17 @@ export function TimeRulesEditor({
 }: {
   draft: PolicyDraft;
   hours?: WorkingHours;
-  onChange: (next: PolicyDraft) => void;
+  onChange: (next: PolicyDraft | ((prev: PolicyDraft) => PolicyDraft)) => void;
   onWorkHours: () => void;
   disabled: boolean;
 }) {
   const c = useMembershipCopy();
   const locale = useI18nStore((s) => s.locale);
   const included = draft.packages.filter((p) => p.included);
-  const byTier = decomposeTimeRules(draft.timeRules);
+  const byTier = editorWindows(draft);
 
   const write = (tier: Tier, windows: PackageAccessWindow[]) =>
-    onChange(setPackageWindows(draft, tier, windows));
+    onChange((prev) => setPackageWindows(prev, tier, windows));
 
   const patchWindow = (
     tier: Tier,
@@ -73,7 +70,7 @@ export function TimeRulesEditor({
             checked={draft.timeRulesEnabled}
             disabled={disabled}
             onCheckedChange={(value) =>
-              onChange({ ...draft, timeRulesEnabled: value })
+              onChange((prev) => ({ ...prev, timeRulesEnabled: value }))
             }
           />
         </label>
@@ -95,7 +92,9 @@ export function TimeRulesEditor({
                     type="button"
                     className={styles.ghost}
                     disabled={disabled}
-                    onClick={() => write(pkg.tier, [...windows, emptyWindow()])}
+                    onClick={() =>
+                      write(pkg.tier, [...windows, nextEmptyWindow(windows)])
+                    }
                   >
                     <Plus size={14} />
                     {c.addRange}
@@ -107,7 +106,7 @@ export function TimeRulesEditor({
                   <div className={styles.windowList}>
                     {windows.map((w, index) => (
                       <div
-                        key={`${pkg.tier}-${index}-${w.start}-${w.end}`}
+                        key={`${pkg.tier}-${index}`}
                         className={styles.windowCard}
                         aria-label={`${tierName(pkg.tier)} ${index + 1}`}
                       >
