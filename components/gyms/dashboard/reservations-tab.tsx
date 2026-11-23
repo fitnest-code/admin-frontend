@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useMemo } from 'react'
 import Image from 'next/image'
 import styles from './reservations-tab.module.css'
 import { 
@@ -14,6 +14,7 @@ import { cn, formatTo24h } from '@/lib/utils'
 import { ChevronDown, ArrowLeft } from 'lucide-react'
 import { SuccessAnimationModal } from '@/components/ui/success-animation-modal'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
+import { AdminDataTable, type AdminDataTableColumn } from '@/components/ui/admin-data-table'
 
 const STATUS_OPTIONS = [
     { key: "", label: "Hamısı", color: "#4b5563" },
@@ -41,44 +42,6 @@ const ReservationsTab = () => {
         type: "success"
     })
 
-    // Resizable column state
-    const [colWidths, setColWidths] = useState<number[]>([200, 130, 130, 130, 200])
-    const startXRef = useRef<number>(0)
-    const startWidthRef = useRef<number>(0)
-    const activeColIndexRef = useRef<number>(-1)
-    const tableRef = useRef<HTMLTableElement>(null)
-    const containerWidthRef = useRef<number>(0)
-    const mouseMoveRef = useRef<(e: MouseEvent) => void>(null)
-    const mouseUpRef = useRef<() => void>(null)
-    const minWidths = [120, 90, 90, 90, 120]
-
-    mouseMoveRef.current = (e: MouseEvent) => {
-        if (activeColIndexRef.current === -1) return
-        const deltaX = e.clientX - startXRef.current
-        const minW = minWidths[activeColIndexRef.current] || 100
-        const sumOthers = colWidths.reduce((acc, w, idx) => idx !== activeColIndexRef.current ? acc + w : acc, 0)
-        const maxW = Math.max(minW, containerWidthRef.current - sumOthers - 90)
-        const newWidth = Math.min(maxW, Math.max(minW, startWidthRef.current + deltaX))
-        setColWidths((prev) => { const copy = [...prev]; copy[activeColIndexRef.current] = newWidth; return copy; })
-    }
-
-    mouseUpRef.current = () => {
-        activeColIndexRef.current = -1
-        if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current)
-        if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current)
-    }
-
-    const handleMouseDown = (index: number, e: React.MouseEvent) => {
-        e.preventDefault(); e.stopPropagation()
-        activeColIndexRef.current = index
-        startXRef.current = e.clientX
-        startWidthRef.current = colWidths[index]
-        if (tableRef.current) containerWidthRef.current = tableRef.current.parentElement?.getBoundingClientRect().width || tableRef.current.getBoundingClientRect().width
-        else containerWidthRef.current = 800
-        if (mouseMoveRef.current) document.addEventListener("mousemove", mouseMoveRef.current)
-        if (mouseUpRef.current) document.addEventListener("mouseup", mouseUpRef.current)
-    }
-
     const { data: stats } = useGymReservationStats(gymId as string)
     const { data: reservationsData, isLoading } = useGymReservations(gymId as string, {
         status: statusFilter,
@@ -88,13 +51,6 @@ const ReservationsTab = () => {
 
     const { data: detailData } = useReservationDetail(selectedReservationId)
     const updateStatusMutation = useUpdateReservationStatus()
-
-    useEffect(() => {
-        return () => {
-            if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current)
-            if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current)
-        }
-    }, [])
 
     const handleStatusFilter = (status: string | undefined) => {
         setStatusFilter(status)
@@ -134,18 +90,127 @@ const ReservationsTab = () => {
         }
     }
 
-    const getStatusClass = (status: string) => {
-        switch (status) {
-            case 'PENDING': return styles.odeniStatus
-            case 'APPROVED': return styles.odeniStatus2
-            case 'CANCELLED': return styles.odeniStatus3
-            case 'REJECTED': return styles.odeniStatus4
-            default: return styles.odeniStatus
-        }
-    }
-
     const totalPages = Math.ceil((reservationsData?.total || 0) / 10) || 1;
     const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
+    const reservationRows = reservationsData?.items ?? []
+
+    const columns: AdminDataTableColumn<any>[] = useMemo(
+        () => [
+            {
+                id: 'name',
+                label: 'Ad / Soyad',
+                defaultWidth: 200,
+                minWidth: 120,
+                maxWidth: 320,
+                flex: true,
+                render: (res) => <span className="block truncate font-bold text-[#101828]">{res.userFullName}</span>,
+            },
+            {
+                id: 'date',
+                label: 'Tarix',
+                defaultWidth: 120,
+                minWidth: 90,
+                maxWidth: 160,
+                render: (res) => <span className="block truncate">{res.date}</span>,
+            },
+            {
+                id: 'time',
+                label: 'Saat',
+                defaultWidth: 120,
+                minWidth: 90,
+                maxWidth: 160,
+                render: (res) => <span className="block truncate">{formatTo24h(res.timeRange)}</span>,
+            },
+            {
+                id: 'status',
+                label: 'Status',
+                defaultWidth: 200,
+                minWidth: 120,
+                maxWidth: 280,
+                render: (res) => (
+                    <div className="flex min-w-0 flex-col gap-1">
+                        <div
+                            className={cn(
+                                'flex h-[26px] w-fit min-w-[90px] items-center justify-center gap-1.5 rounded-[20px] px-3 text-[10px] font-bold uppercase tracking-tight text-white shadow-xs',
+                                res.status === 'PENDING' && 'bg-[#ec972f]',
+                                res.status === 'APPROVED' && 'bg-[#166728]',
+                                res.status === 'CANCELLED' && 'bg-[#c9373a]',
+                                res.status === 'REJECTED' && 'bg-[#8a38f5]',
+                            )}
+                        >
+                            <div className="h-1.5 w-1.5 rounded-full bg-white shadow-sm" />
+                            <span>{getStatusText(res.status)}</span>
+                        </div>
+                        {(res.status === 'REJECTED' || res.status === 'CANCELLED') && res.reason ? (
+                            <span className="truncate text-xs text-slate-500" title={res.reason}>
+                                {res.reason}
+                            </span>
+                        ) : null}
+                    </div>
+                ),
+            },
+            {
+                id: 'trainer',
+                label: 'Məşqçi',
+                defaultWidth: 180,
+                minWidth: 120,
+                maxWidth: 280,
+                render: (res) => <span className="block truncate">{res.trainerName || 'N/A'}</span>,
+            },
+            {
+                id: 'actions',
+                label: 'Əməliyyatlar',
+                defaultWidth: 90,
+                minWidth: 80,
+                maxWidth: 120,
+                reorderable: false,
+                hideable: false,
+                render: (res) => (
+                    <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <button
+                                    type="button"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="cursor-pointer rounded-md p-1.5 transition-colors hover:bg-slate-100"
+                                >
+                                    <Image src="/more.svg" width={20} height={20} alt="More" className="opacity-70" />
+                                </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-[160px]">
+                                <DropdownMenuItem
+                                    onClick={() => {
+                                        setSelectedReservationId(res.id)
+                                        setViewMode('detail')
+                                    }}
+                                >
+                                    Bax
+                                </DropdownMenuItem>
+                                {res.status === 'PENDING' && (
+                                    <>
+                                        <DropdownMenuItem onClick={() => handleApprove(res.id)}>Təsdiq et</DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            onClick={() => {
+                                                setSelectedReservationId(res.id)
+                                                setViewMode('detail')
+                                                setTimeout(() => {
+                                                    const textarea = document.getElementById('rejectionReasonTextarea')
+                                                    if (textarea) textarea.focus()
+                                                }, 150)
+                                            }}
+                                        >
+                                            İmtina et
+                                        </DropdownMenuItem>
+                                    </>
+                                )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                ),
+            },
+        ],
+        [],
+    )
 
     // Detailed Reservation View Mode
     if (viewMode === 'detail' && detailData) {
@@ -466,107 +531,18 @@ const ReservationsTab = () => {
                     </div>
                 </div>
 
-                <div className="w-full overflow-auto rounded-[12px] border border-[#cecfd2] bg-white">
-                    <table ref={tableRef} className="w-full min-w-[1000px] bg-white border-collapse" style={{ tableLayout: 'fixed' }}>
-                        <colgroup>
-                            <col style={{ width: colWidths[0] }} />
-                            <col style={{ width: colWidths[1] }} />
-                            <col style={{ width: colWidths[2] }} />
-                            <col style={{ width: colWidths[3] }} />
-                            <col style={{ width: colWidths[4] }} />
-                            <col style={{ width: 90 }} />
-                        </colgroup>
-                        <thead>
-                            <tr className="h-[48px] bg-[rgba(0,180,204,0.15)] text-[14px] font-bold text-[#101828] border-b border-[#cecfd2]">
-                                {['Ad / Soyad', 'Tarix', 'Saat', 'Status', 'Məşqçi'].map((label, i) => (
-                                    <th key={label} className="relative text-left px-[20px] opacity-80 uppercase text-[12px] tracking-wider font-bold select-none" style={{ width: colWidths[i] }}>
-                                        {label}
-                                        <div
-                                            onMouseDown={(e) => handleMouseDown(i, e)}
-                                            className="absolute right-0 top-0 h-full w-[6px] cursor-col-resize z-10 hover:bg-[rgba(0,180,204,0.35)] transition-colors"
-                                        />
-                                    </th>
-                                ))}
-                                <th className="text-center px-[20px] opacity-80 uppercase text-[12px] tracking-wider font-bold" style={{ width: 90 }}>Əməliyyatlar</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white min-h-[220px]">
-                            {isLoading ? (
-                                <tr><td colSpan={6} className="h-[64px] text-center text-[14px] text-slate-400">Yüklənir...</td></tr>
-                            ) : reservationsData?.items?.length === 0 ? (
-                                <tr><td colSpan={6} className="h-[64px] text-center text-[14px] text-slate-400">Rezervasiya tapılmadı</td></tr>
-                            ) : reservationsData?.items?.map((res: any) => (
-                                <React.Fragment key={res.id}>
-                                    <tr
-                                        className="h-[64px] text-[14px] hover:bg-slate-50 transition-colors group cursor-pointer border-b border-[#ececed]"
-                                        onClick={() => { setSelectedReservationId(res.id); setViewMode('detail'); }}
-                                    >
-                                        <td className="px-[20px] font-bold text-[#101828] group-hover:text-[#00B4CC] transition-colors truncate">
-                                            {res.userFullName}
-                                        </td>
-                                        <td className="px-[20px] text-slate-600 font-medium">
-                                            {res.date}
-                                        </td>
-                                        <td className="px-[20px] text-slate-600 font-medium">
-                                            {formatTo24h(res.timeRange)}
-                                        </td>
-                                        <td className="px-[20px]">
-                                            <div className={cn(
-                                                "h-[26px] min-w-[90px] w-fit rounded-[20px] flex items-center justify-center gap-1.5 px-3 text-[12px] font-bold text-white shadow-xs",
-                                                res.status === 'PENDING' && "bg-[#ec972f]",
-                                                res.status === 'APPROVED' && "bg-[#166728]",
-                                                res.status === 'CANCELLED' && "bg-[#c9373a]",
-                                                res.status === 'REJECTED' && "bg-[#8a38f5]"
-                                            )}>
-                                                <div className="h-1.5 w-1.5 rounded-full bg-white shadow-sm" />
-                                                <span className="uppercase tracking-tight text-[10px]">{getStatusText(res.status)}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-[20px] text-slate-600 font-medium truncate">
-                                            {res.trainerName || 'N/A'}
-                                        </td>
-                                        <td className="px-[20px] text-center">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <button onClick={(e) => e.stopPropagation()} className="cursor-pointer p-1.5 hover:bg-slate-100 rounded-md transition-colors">
-                                                        <Image src="/more.svg" width={20} height={20} alt="More" className="opacity-70 group-hover:opacity-100 transition-opacity" />
-                                                    </button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="w-[160px]">
-                                                    <DropdownMenuItem onClick={() => { setSelectedReservationId(res.id); setViewMode('detail'); }}>Bax</DropdownMenuItem>
-                                                    {res.status === 'PENDING' && (
-                                                        <>
-                                                            <DropdownMenuItem onClick={() => handleApprove(res.id)}>Təsdiq et</DropdownMenuItem>
-                                                            <DropdownMenuItem onClick={() => {
-                                                                setSelectedReservationId(res.id);
-                                                                setViewMode('detail');
-                                                                setTimeout(() => {
-                                                                    const textarea = document.getElementById('rejectionReasonTextarea');
-                                                                    if (textarea) textarea.focus();
-                                                                }, 150);
-                                                            }}>İmtina et</DropdownMenuItem>
-                                                        </>
-                                                    )}
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </td>
-                                    </tr>
-                                    {/* Sub row showing cancellation reason */}
-                                    {(res.status === 'REJECTED' || res.status === 'CANCELLED') && res.reason && (
-                                        <tr className="bg-[#fafafa] border-b border-[#ececed]">
-                                            <td colSpan={6} className="px-[20px] py-[10px] text-[13px] text-slate-500">
-                                                <div className="flex gap-2">
-                                                    <span className="font-bold text-red-500">Ləğv etmə səbəbi:</span>
-                                                    <span>{res.reason}</span>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )}
-                                </React.Fragment>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                <AdminDataTable
+                    storageKey="gym-reservations"
+                    columns={columns}
+                    rows={reservationRows}
+                    getRowId={(res) => res.id}
+                    isLoading={isLoading}
+                    emptyTitle="Rezervasiya tapılmadı"
+                    onRowClick={(res) => {
+                        setSelectedReservationId(res.id)
+                        setViewMode('detail')
+                    }}
+                />
 
                 {/* Pagination Section */}
                 {totalPages > 1 && (

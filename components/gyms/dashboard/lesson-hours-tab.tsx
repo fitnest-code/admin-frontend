@@ -1,13 +1,12 @@
 'use client'
 
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useMemo } from 'react'
 import Image from 'next/image'
 import styles from './lesson-hours-tab.module.css'
 import {
     useGymLessonHours,
     useGymLessonHoursArchive,
     useDeleteLessonHour,
-    useGymTrainers,
     useLessonHourReservationCounts
 } from '@/lib/query/gym-query'
 import { useParams } from 'next/navigation'
@@ -24,6 +23,7 @@ import { az } from 'date-fns/locale'
 import { DateRange } from 'react-day-picker'
 import { ChevronDown } from 'lucide-react'
 import { useAuthStore } from '@/lib/store/auth-store'
+import { AdminDataTable, type AdminDataTableColumn } from '@/components/ui/admin-data-table'
 
 const LessonHoursTab = () => {
     const t = useT()
@@ -95,51 +95,6 @@ const LessonHoursTab = () => {
         }
     }
 
-    // Column resize state
-    const [colWidths, setColWidths] = useState<number[]>([150, 150, 120, 120, 120, 100]);
-    const startXRef = useRef<number>(0);
-    const startWidthRef = useRef<number>(0);
-    const activeColIndexRef = useRef<number>(-1);
-    const tableRef = useRef<HTMLTableElement>(null);
-    const containerWidthRef = useRef<number>(0);
-    const mouseMoveRef = useRef<((e: MouseEvent) => void) | null>(null);
-    const mouseUpRef = useRef<(() => void) | null>(null);
-    const minWidths = [100, 100, 80, 80, 80, 70];
-
-    mouseMoveRef.current = (e: MouseEvent) => {
-        if (activeColIndexRef.current === -1) return;
-        const deltaX = e.clientX - startXRef.current;
-        const minW = minWidths[activeColIndexRef.current] || 100;
-        const sumOthers = colWidths.reduce((acc, w, idx) => idx !== activeColIndexRef.current ? acc + w : acc, 0);
-        const maxW = Math.max(minW, containerWidthRef.current - sumOthers - 90);
-        const newWidth = Math.min(maxW, Math.max(minW, startWidthRef.current + deltaX));
-        setColWidths((prev) => { const copy = [...prev]; copy[activeColIndexRef.current] = newWidth; return copy; });
-    };
-
-    mouseUpRef.current = () => {
-        activeColIndexRef.current = -1;
-        if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current);
-        if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current);
-    };
-
-    const handleMouseDown = (index: number, e: React.MouseEvent) => {
-        e.preventDefault(); e.stopPropagation();
-        activeColIndexRef.current = index;
-        startXRef.current = e.clientX;
-        startWidthRef.current = colWidths[index];
-        if (tableRef.current) containerWidthRef.current = tableRef.current.parentElement?.getBoundingClientRect().width || tableRef.current.getBoundingClientRect().width;
-        else containerWidthRef.current = 800;
-        if (mouseMoveRef.current) document.addEventListener("mousemove", mouseMoveRef.current);
-        if (mouseUpRef.current) document.addEventListener("mouseup", mouseUpRef.current);
-    };
-
-    useEffect(() => {
-        return () => {
-            if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current);
-            if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current);
-        };
-    }, []);
-
     const [viewMode, setViewMode] = useState<'active' | 'archive'>('active')
 
     const { data: activeData, isLoading: isActiveLoading } = useGymLessonHours(gymId as string, { 
@@ -175,6 +130,107 @@ const LessonHoursTab = () => {
             }
         })
     }
+
+    const columns: AdminDataTableColumn<any>[] = useMemo(
+        () => [
+            {
+                id: 'type',
+                label: t.lessonHours.classType,
+                defaultWidth: 150,
+                minWidth: 100,
+                maxWidth: 240,
+                render: (hour) => <span className="block truncate">{hour.lessonTypeName}</span>,
+            },
+            {
+                id: 'trainer',
+                label: t.lessonHours.trainer,
+                defaultWidth: 150,
+                minWidth: 100,
+                maxWidth: 240,
+                render: (hour) => <span className="block truncate">{hour.trainerName}</span>,
+            },
+            {
+                id: 'date',
+                label: t.lessonHours.date,
+                defaultWidth: 120,
+                minWidth: 90,
+                maxWidth: 160,
+                render: (hour) => <span className="block truncate">{hour.date}</span>,
+            },
+            {
+                id: 'time',
+                label: t.lessonHours.time,
+                defaultWidth: 120,
+                minWidth: 90,
+                maxWidth: 160,
+                render: (hour) => <span className="block truncate">{formatTo24h(hour.timeRange)}</span>,
+            },
+            {
+                id: 'places',
+                label: t.lessonHours.places,
+                defaultWidth: 160,
+                minWidth: 120,
+                maxWidth: 220,
+                render: (hour) => (
+                    <div className="flex items-center gap-2">
+                        <span
+                            className="inline-flex min-w-[24px] items-center justify-center rounded border border-slate-100 bg-slate-50 px-1.5 py-0.5 text-xs font-semibold text-[#64748b]"
+                            title="Boş yerlər (Empty)"
+                        >
+                            {hour.emptySpaces ?? 0}
+                        </span>
+                        <span
+                            className="inline-flex min-w-[24px] items-center justify-center rounded border border-amber-100 bg-amber-50 px-1.5 py-0.5 text-xs font-semibold text-[#f97316]"
+                            title="Gözləmədə (Waiting)"
+                        >
+                            {hour.pendingReservations ?? 0}
+                        </span>
+                        <span
+                            className="inline-flex min-w-[24px] items-center justify-center rounded border border-emerald-100 bg-emerald-50 px-1.5 py-0.5 text-xs font-semibold text-[#22c55e]"
+                            title="Təsdiqlənmiş (Submitted)"
+                        >
+                            {hour.approvedReservations ?? 0}
+                        </span>
+                    </div>
+                ),
+            },
+            {
+                id: 'status',
+                label: t.lessonHours.status,
+                defaultWidth: 110,
+                minWidth: 90,
+                maxWidth: 140,
+                render: (hour) => (
+                    <span className={styles.statusBadge}>
+                        {hour.status === 'OPEN' ? t.lessonHours.statusActive : t.lessonHours.statusClosed}
+                    </span>
+                ),
+            },
+            {
+                id: 'actions',
+                label: '',
+                defaultWidth: 64,
+                minWidth: 56,
+                maxWidth: 80,
+                reorderable: false,
+                hideable: false,
+                render: (hour) =>
+                    viewMode === 'active' ? (
+                        <button
+                            type="button"
+                            className={styles.deleteBtn}
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                setDeleteLessonId(hour.id)
+                            }}
+                        >
+                            <Image src="/trash.png" width={20} height={20} alt="Delete" />
+                        </button>
+                    ) : null,
+            },
+        ],
+        [t, viewMode],
+    )
 
     return (
         <div className={styles.container}>
@@ -363,107 +419,17 @@ const LessonHoursTab = () => {
             </div>
             )}
 
-            {isLoading ? (
-                <div className={styles.loading}>{t.lessonHours.loading}</div>
-            ) : lessonHours.length === 0 ? (
-                <div className={styles.emptyState}>
-                    <div className={styles.emptyContent}>
-                        <h3 className={styles.emptyTitle}>{t.lessonHours.emptyTitle}</h3>
-                        <p className={styles.emptySubtitle}>{t.lessonHours.emptySubtitle}</p>
-                    </div>
-                </div>
-            ) : (
-                <>
-                    <div className={styles.tableContainer}>
-                        <table ref={tableRef} className={`${styles.table} border-separate border-spacing-0`} style={{ tableLayout: "fixed", minWidth: "750px" }}>
-                            <colgroup>
-                                {colWidths.map((w, i) => <col key={i} style={{ width: `${w}px` }} />)}
-                                <col />
-                            </colgroup>
-                            <thead>
-                                <tr>
-                                    <th className="relative">
-                                        {t.lessonHours.classType}
-                                        <div onMouseDown={(e) => handleMouseDown(0, e)} className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10">
-                                            <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-                                        </div>
-                                    </th>
-                                    <th className="relative">
-                                        {t.lessonHours.trainer}
-                                        <div onMouseDown={(e) => handleMouseDown(1, e)} className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10">
-                                            <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-                                        </div>
-                                    </th>
-                                    <th className="relative">
-                                        {t.lessonHours.date}
-                                        <div onMouseDown={(e) => handleMouseDown(2, e)} className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10">
-                                            <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-                                        </div>
-                                    </th>
-                                    <th className="relative">
-                                        {t.lessonHours.time}
-                                        <div onMouseDown={(e) => handleMouseDown(3, e)} className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10">
-                                            <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-                                        </div>
-                                    </th>
-                                    <th className="relative">
-                                        {t.lessonHours.places}
-                                        <div onMouseDown={(e) => handleMouseDown(4, e)} className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10">
-                                            <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-                                        </div>
-                                    </th>
-                                    <th className="relative">
-                                        {t.lessonHours.status}
-                                        <div onMouseDown={(e) => handleMouseDown(5, e)} className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10">
-                                            <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-                                        </div>
-                                    </th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {lessonHours.map((hour: any) => (
-                                    <tr key={hour.id}>
-                                        <td>{hour.lessonTypeName}</td>
-                                        <td>{hour.trainerName}</td>
-                                        <td>{hour.date}</td>
-                                        <td>{formatTo24h(hour.timeRange)}</td>
-                                        <td>
-                                            <div className="flex items-center gap-2">
-                                                {/* Empty Spaces */}
-                                                <span className="inline-flex items-center justify-center min-w-[24px] px-1.5 py-0.5 text-xs font-semibold rounded bg-slate-50 text-[#64748b] border border-slate-100" title="Boş yerlər (Empty)">
-                                                    {hour.emptySpaces ?? 0}
-                                                </span>
-                                                {/* Waiting (Pending) */}
-                                                <span className="inline-flex items-center justify-center min-w-[24px] px-1.5 py-0.5 text-xs font-semibold rounded bg-amber-50 text-[#f97316] border border-amber-100" title="Gözləmədə (Waiting)">
-                                                    {hour.pendingReservations ?? 0}
-                                                </span>
-                                                {/* Submitted (Approved) */}
-                                                <span className="inline-flex items-center justify-center min-w-[24px] px-1.5 py-0.5 text-xs font-semibold rounded bg-emerald-50 text-[#22c55e] border border-emerald-100" title="Təsdiqlənmiş (Submitted)">
-                                                    {hour.approvedReservations ?? 0}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span className={styles.statusBadge}>
-                                                {hour.status === 'OPEN' ? t.lessonHours.statusActive : t.lessonHours.statusClosed}
-                                            </span>
-                                        </td>
-                                        <td className={styles.actions}>
-                                            {viewMode === 'active' && (
-                                                <button className={styles.deleteBtn} onClick={() => setDeleteLessonId(hour.id)}>
-                                                    <Image src="/trash.png" width={20} height={20} alt="Delete" />
-                                                </button>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+            <AdminDataTable
+                storageKey="gym-lesson-hours"
+                columns={columns}
+                rows={lessonHours}
+                getRowId={(hour) => hour.id}
+                isLoading={isLoading}
+                emptyTitle={t.lessonHours.emptyTitle}
+                emptyDescription={t.lessonHours.emptySubtitle}
+            />
 
-                    {/* Pagination Section */}
-                    {totalPages > 1 && (
+            {lessonHours.length > 0 && totalPages > 1 && (
                         <div className="flex items-center justify-center gap-[18px] mt-8 select-none font-sans">
                             {/* Page 1 */}
                             <button 
@@ -537,8 +503,6 @@ const LessonHoursTab = () => {
                                 </button>
                             )}
                         </div>
-                    )}
-                </>
             )}
 
             {isAddModalOpen && (

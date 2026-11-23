@@ -1,6 +1,6 @@
 'use client'
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/query/query-keys'
 import { getCustomerById, getCustomerCurrentSubscription, getCustomers, getSubscriptionPackageNames, getUserPaymentHistory, getUserQrHistory, getUserStatistics, hardDeleteUser, updateCustomerEntryLimit, type UpdateEntryLimitBody } from '@/modules/customers/api/customers.service'
 import { useI18nStore } from '@/lib/i18n'
@@ -11,8 +11,10 @@ export function useCustomersQuery(params?: GetCustomersParams) {
   return useQuery({
     queryKey: [...queryKeys.customers.list(params as Record<string, unknown> | undefined), locale],
     queryFn: () => getCustomers(params),
-    staleTime: 0,
-    refetchOnMount: 'always',
+    // Keep prior page visible while the next page/sort loads (avoids full-table flash).
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+    refetchOnMount: true,
   })
 }
 

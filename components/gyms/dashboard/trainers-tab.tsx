@@ -1,10 +1,9 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import { AddTrainerModal } from "../modals/add-trainer-modal";
 import { EditTrainerModal } from "../modals/edit-trainer-modal";
-import { useState, useRef, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useGymStore } from "@/lib/store/gym-store";
 import { useGymTrainers, useDeleteTrainer } from "@/lib/query/gym-query";
 import { toast } from "sonner";
@@ -18,6 +17,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import { AdminDataTable, type AdminDataTableColumn } from "@/components/ui/admin-data-table";
 
 const LOCAL_TRANSLATIONS: Record<string, Record<string, string>> = {
   AZ: {
@@ -88,72 +88,11 @@ export function TrainersTab() {
     type: "success",
   });
   const pageSize = 10;
-  
-  const [colWidths, setColWidths] = useState<number[]>([280, 180, 220]);
-  const startXRef = useRef<number>(0);
-  const startWidthRef = useRef<number>(0);
-  const activeColIndexRef = useRef<number>(-1);
-  const tableRef = useRef<HTMLTableElement>(null);
-  const containerWidthRef = useRef<number>(0);
-
-  const mouseMoveRef = useRef<(e: MouseEvent) => void>(null);
-  const mouseUpRef = useRef<() => void>(null);
-
-  const minWidths = [150, 120, 120];
-
-  mouseMoveRef.current = (e: MouseEvent) => {
-    if (activeColIndexRef.current === -1) return;
-    const deltaX = e.clientX - startXRef.current;
-    const minW = minWidths[activeColIndexRef.current] || 100;
-
-    const sumOthers = colWidths.reduce((acc, w, idx) => {
-      return idx !== activeColIndexRef.current ? acc + w : acc;
-    }, 0);
-
-    const maxW = Math.max(minW, containerWidthRef.current - sumOthers - 100);
-    const newWidth = Math.min(maxW, Math.max(minW, startWidthRef.current + deltaX));
-    setColWidths((prev) => {
-      const copy = [...prev];
-      copy[activeColIndexRef.current] = newWidth;
-      return copy;
-    });
-  };
-
-  mouseUpRef.current = () => {
-    activeColIndexRef.current = -1;
-    if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current);
-    if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current);
-  };
-
-  const handleMouseDown = (index: number, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    activeColIndexRef.current = index;
-    startXRef.current = e.clientX;
-    startWidthRef.current = colWidths[index];
-
-    if (tableRef.current) {
-      containerWidthRef.current = tableRef.current.parentElement?.getBoundingClientRect().width 
-        || tableRef.current.getBoundingClientRect().width;
-    } else {
-      containerWidthRef.current = 750;
-    }
-
-    if (mouseMoveRef.current) document.addEventListener("mousemove", mouseMoveRef.current);
-    if (mouseUpRef.current) document.addEventListener("mouseup", mouseUpRef.current);
-  };
 
   const locale = useI18nStore((s) => s.locale);
   const lt = LOCAL_TRANSLATIONS[locale] || LOCAL_TRANSLATIONS.AZ;
 
   const { gymId } = useGymStore();
-
-  useEffect(() => {
-    return () => {
-      if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current);
-      if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current);
-    };
-  }, []);
 
   const { data: apiData, isLoading: apiLoading } = useGymTrainers(
     gymId || '',
@@ -177,6 +116,94 @@ export function TrainersTab() {
 
   const trainers = apiData?.items ?? [];
   const totalPages = apiData ? Math.ceil(apiData.total / pageSize) : 1;
+
+  const columns: AdminDataTableColumn<any>[] = useMemo(
+  () => [
+    {
+      id: "name",
+      label: lt.nameSurname,
+      defaultWidth: 280,
+      minWidth: 150,
+      maxWidth: 420,
+      flex: true,
+      render: (t) => {
+        const firstName = t.name || t.firstName || lt.unknown;
+        const lastName = t.surname || t.lastName || "";
+        const pictureUrl = t.picture || t.photo;
+        const role = t.profession?.name || t.role || lt.trainer;
+        const fullPicUrl = pictureUrl
+          ? pictureUrl.startsWith("http")
+            ? pictureUrl
+            : `${process.env.NEXT_PUBLIC_API_URL || ""}${pictureUrl}`
+          : null;
+        return (
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#00B4CC10]">
+              {fullPicUrl ? (
+                <img src={fullPicUrl} className="h-full w-full object-cover" alt="" />
+              ) : (
+                <span className="text-base font-bold uppercase italic text-[#00B4CC]">{firstName[0]}</span>
+              )}
+            </div>
+            <div className="min-w-0">
+              <div className="truncate text-sm font-medium text-black">
+                {firstName} {lastName}
+              </div>
+              <div className="truncate text-xs text-[#94979c]">{role}</div>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      id: "phone",
+      label: lt.phone,
+      defaultWidth: 180,
+      minWidth: 120,
+      maxWidth: 240,
+      render: (t) => <span className="block truncate">{t.phone || "—"}</span>,
+    },
+    {
+      id: "email",
+      label: lt.email,
+      defaultWidth: 220,
+      minWidth: 120,
+      maxWidth: 360,
+      flex: true,
+      render: (t) => <span className="block truncate">{t.email || "—"}</span>,
+    },
+    {
+      id: "actions",
+      label: lt.details,
+      defaultWidth: 80,
+      minWidth: 72,
+      maxWidth: 100,
+      reorderable: false,
+      hideable: false,
+      render: (t) => (
+        <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button type="button" className="flex h-8 w-8 items-center justify-center transition-opacity hover:opacity-70">
+                <Image src="/more.png" width={24} height={24} alt="more" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[180px] rounded-[12px] border border-[#ECECED] bg-white p-3 shadow-lg">
+              <DropdownMenuItem
+                onClick={() => setDeleteTrainerId(t.trainer_id || t.id)}
+                className="flex w-full cursor-pointer items-center gap-2 text-base font-normal text-[#F10303] focus:bg-red-50 focus:text-[#F10303]"
+              >
+                <Image src="/trash.png" width={16} height={16} alt="Delete" />
+                <span className="leading-none">{lt.deleteTrainer}</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      ),
+    },
+  ],
+  [lt],
+  );
 
   return (
     <div className="flex flex-col gap-6 py-4 w-full font-sans">
@@ -202,170 +229,26 @@ export function TrainersTab() {
         </button>
       </div>
 
-      {/* Table / Empty State */}
-      <div className="w-full overflow-hidden rounded-lg border border-border bg-card shadow-sm min-h-[350px] flex flex-col">
-        {apiLoading ? (
-          <div className="flex-1 py-20 flex justify-center items-center text-slate-400">
-            <Loader2 className="animate-spin mr-2" /> {lt.loading}
+      {!apiLoading && trainers.length === 0 ? (
+        <div className="flex min-h-[350px] w-full flex-col items-center justify-center gap-2 rounded-lg border border-border bg-card p-10 text-center shadow-sm">
+          <div className="relative mb-2 h-12 w-12">
+            <Image src="/no-trainer.svg" fill className="object-contain opacity-20" alt="No Trainer" />
           </div>
-        ) : trainers.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-10 gap-2 text-center font-sans">
-            <div className="h-12 w-12 relative mb-2">
-              <Image src="/no-trainer.svg" fill className="opacity-20 object-contain" alt="No Trainer" />
-            </div>
-            <div className="self-stretch text-[16px] leading-[24px] font-medium text-[#6a7282]">
-              {lt.noTrainers}
-            </div>
-            <div className="self-stretch text-[14px] leading-[18px] text-[#99a1af]">
-              {lt.noTrainersHint}
-            </div>
-          </div>
-        ) : (
-          <div className="w-full overflow-x-auto">
-            <table ref={tableRef} className="w-full border-separate border-spacing-0" style={{ tableLayout: "fixed", minWidth: "750px" }}>
-              <colgroup>
-                <col style={{ width: `${colWidths[0]}px` }} />
-                <col style={{ width: `${colWidths[1]}px` }} />
-                <col style={{ width: `${colWidths[2]}px` }} />
-                <col />
-              </colgroup>
-              {/* Header */}
-              <thead>
-                <tr className="bg-[#00B4CC]/[0.15] dark:bg-[#00B4CC]/10 h-[40px] text-[11px] font-bold uppercase text-foreground/80 font-sans">
-                  <th className="border-b border-[#cecfd2]/60 dark:border-border pl-[84px] text-left whitespace-nowrap py-3 relative">
-                    {lt.nameSurname}
-                    <div
-                      onMouseDown={(e) => handleMouseDown(0, e)}
-                      onClick={(e) => e.stopPropagation()}
-                      className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
-                    >
-                      <div className="w-[2px] h-4 bg-[#cecfd2] dark:bg-border group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-                    </div>
-                  </th>
-                  <th className="border-b border-[#cecfd2]/60 dark:border-border px-10 text-left whitespace-nowrap py-3 relative">
-                    {lt.phone}
-                    <div
-                      onMouseDown={(e) => handleMouseDown(1, e)}
-                      onClick={(e) => e.stopPropagation()}
-                      className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
-                    >
-                      <div className="w-[2px] h-4 bg-[#cecfd2] dark:bg-border group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-                    </div>
-                  </th>
-                  <th className="border-b border-[#cecfd2]/60 dark:border-border px-10 text-left whitespace-nowrap py-3 relative">
-                    {lt.email}
-                    <div
-                      onMouseDown={(e) => handleMouseDown(2, e)}
-                      onClick={(e) => e.stopPropagation()}
-                      className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
-                    >
-                      <div className="w-[2px] h-4 bg-[#cecfd2] dark:bg-border group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-                    </div>
-                  </th>
-                  <th className="border-b border-[#cecfd2]/60 dark:border-border px-10 text-center whitespace-nowrap py-3 relative">
-                    {lt.details}
-                  </th>
-                </tr>
-              </thead>
-
-              {/* Body */}
-              <tbody className="bg-white">
-                {trainers.length > 0 ? (
-                  trainers.map((t: any, i: number) => {
-                    const firstName = t.name || t.firstName || lt.unknown;
-                    const lastName = t.surname || t.lastName || "";
-                    const pictureUrl = t.picture || t.photo;
-                    const email = t.email || "";
-                    const phone = t.phone || "";
-                    const role = t.profession?.name || t.role || lt.trainer;
-                    const trainerUid = String(t.trainer_id || t.id || i);
-                    
-                    const fullPicUrl = pictureUrl 
-                      ? (pictureUrl.startsWith('http') ? pictureUrl : `${process.env.NEXT_PUBLIC_API_URL || ''}${pictureUrl}`) 
-                      : null;
-
-                    return (
-                      <tr 
-                        key={trainerUid} 
-                        onClick={() => setShowDetails(t)}
-                        className="hover:bg-secondary/40 transition-all duration-200 cursor-pointer group font-sans text-sm"
-                      >
-                        {/* Name Section */}
-                        <td className="border-b border-border pl-6 py-3">
-                          <div className="flex items-center gap-[12px]">
-                            <div className="h-[40px] w-[40px] relative rounded-full overflow-hidden shrink-0 bg-[#00B4CC10] flex items-center justify-center">
-                              {fullPicUrl ? (
-                                <img src={fullPicUrl} className="object-cover w-full h-full" alt="Trainer" />
-                              ) : (
-                                <div className="text-[#00B4CC] font-bold text-base italic uppercase">
-                                  {firstName[0]}
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex flex-col justify-center overflow-hidden">
-                              <div className="text-black leading-[20px] group-hover:text-[#00B4CC] transition-colors whitespace-nowrap font-medium text-sm truncate">
-                                {firstName} {lastName}
-                              </div>
-                              <div className="text-[12px] leading-[18px] text-[#94979c] whitespace-nowrap truncate">
-                                {role}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-
-                        {/* Phone */}
-                        <td className="border-b border-border px-10 py-3 overflow-hidden">
-                          <span className="text-sm font-normal text-black whitespace-nowrap truncate block">
-                            {phone || "—"}
-                          </span>
-                        </td>
-
-                        {/* Email */}
-                        <td className="border-b border-border px-10 py-3 overflow-hidden">
-                          <span className="text-sm font-normal text-black whitespace-nowrap truncate block">
-                            {email || "—"}
-                          </span>
-                        </td>
-
-                        {/* Actions */}
-                        <td className="border-b border-border px-10 py-3 text-center" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex justify-center relative">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <button className="w-8 h-8 flex items-center justify-center transition-opacity hover:opacity-70 outline-hidden">
-                                  <Image src="/more.png" width={24} height={24} alt="more" />
-                                </button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-[180px] bg-white rounded-[12px] border border-[#ECECED] p-3 shadow-lg">
-                                <DropdownMenuItem
-                                  onClick={() => setDeleteTrainerId(t.trainer_id || t.id)}
-                                  className="flex w-full items-center gap-2 text-base font-normal text-[#F10303] hover:opacity-70 transition-opacity cursor-pointer focus:bg-red-50 focus:text-[#F10303]"
-                                >
-                                  <Image src="/trash.png" width={16} height={16} alt="Delete" />
-                                  <span className="leading-none">{lt.deleteTrainer}</span>
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td colSpan={4} className="h-[200px] text-center border-b border-border rounded-b-lg">
-                      <div className="flex flex-col items-center justify-center gap-2 text-slate-400">
-                        <Loader2 className="w-8 h-8 animate-spin opacity-20" />
-                        <p className="text-[16px] font-medium">{lt.noTrainerFound}</p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+          <div className="text-[16px] font-medium leading-[24px] text-[#6a7282]">{lt.noTrainers}</div>
+          <div className="text-[14px] leading-[18px] text-[#99a1af]">{lt.noTrainersHint}</div>
+        </div>
+      ) : (
+        <AdminDataTable
+          storageKey="gym-trainers"
+          columns={columns}
+          rows={trainers}
+          getRowId={(t) => String(t.trainer_id || t.id)}
+          isLoading={apiLoading}
+          emptyTitle={lt.noTrainers}
+          emptyDescription={lt.noTrainersHint}
+          onRowClick={(t) => setShowDetails(t)}
+        />
+      )}
 
       {/* Pagination Section */}
       {totalPages > 1 && (

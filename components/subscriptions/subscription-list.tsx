@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { Plus, Pencil, Trash2, X, ChevronDown, Check, LayoutGrid, List, MoreVertical } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -13,7 +13,7 @@ import { ConfirmDeleteModal } from '../gyms/modals/confirm-delete-modal'
 import { SuccessAnimationModal } from '../ui/success-animation-modal'
 import { useT } from '@/lib/i18n'
 import { useLanguages } from '@/lib/query/use-languages'
-import { useResizableColumns } from '@/hooks/use-resizable-columns'
+import { AdminDataTable, type AdminDataTableColumn } from '@/components/ui/admin-data-table'
 import { apiGet } from '@/lib/api/client'
 import {
   DropdownMenu,
@@ -691,95 +691,6 @@ function PackageFormModal({
   )
 }
 
-// ── Package Row (list view) ───────────────────────────────────────────────────
-function PackageRow({
-  pkg,
-  onEdit,
-  onDelete,
-  onToggleStatus,
-}: {
-  pkg: SubPackage
-  onEdit: (p: SubPackage) => void
-  onDelete: (id: string) => void
-  onToggleStatus: (p: SubPackage) => void
-}) {
-  const t = useT()
-  const firstTier = pkg.priceTiers[0]
-
-  return (
-    <tr className="border-b border-border hover:bg-secondary/40 transition-colors">
-      <td className="px-4 py-3 text-sm font-normal text-black overflow-hidden">
-        <span className="truncate block" title={pkg.name}>{pkg.name}</span>
-      </td>
-      <td className="px-4 py-3">
-        <button
-          type="button"
-          onClick={() => onToggleStatus(pkg)}
-          className={cn(
-            'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold cursor-pointer border-none outline-none transition-opacity hover:opacity-80',
-            pkg.status === 'active' ? 'bg-green-600 text-white' : 'bg-[#6B7280] text-white',
-          )}
-          title={t.subscriptions.statusChangeTitle}
-        >
-          <span className="h-1.5 w-1.5 rounded-full bg-white/80 shrink-0" />
-          {pkg.status === 'active' ? t.subscriptions.active : t.subscriptions.deactive}
-        </button>
-      </td>
-      <td className="px-4 py-3 text-sm text-black overflow-hidden">
-        {pkg.priceTiers.map((tier, i) => (
-          <div key={i} className="flex items-baseline gap-1 truncate">
-            <span className="font-normal text-black">{tier.discountPrice || tier.price}</span>
-            <span className="text-black text-xs">AZN</span>
-            <span className="text-black text-xs">/ {formatDuration(tier.duration, t)}</span>
-          </div>
-        ))}
-      </td>
-      <td className="px-4 py-3 text-sm text-black overflow-hidden">
-        <span className="truncate block">{pkg.entryLimit} {t.subscriptions.entryLimit}</span>
-      </td>
-      <td className="px-4 py-3 overflow-hidden">
-        <div className="flex flex-wrap gap-1 truncate">
-          {pkg.services.slice(0, 2).map((s) => (
-            <span key={s} className="rounded-md border border-border px-2 py-0.5 text-xs text-black truncate">{s}</span>
-          ))}
-          {pkg.services.length > 2 && (
-            <span className="rounded-md border border-border px-2 py-0.5 text-xs text-black">
-              +{pkg.services.length - 2}
-            </span>
-          )}
-        </div>
-      </td>
-      <td className="px-4 py-3">
-        <div className="relative flex justify-center" onClick={(e) => e.stopPropagation()}>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors outline-none"
-              >
-                <MoreVertical size={15} />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-36 rounded-xl border border-border bg-card shadow-xl overflow-hidden p-1 flex flex-col gap-1">
-              <DropdownMenuItem
-                onClick={() => onEdit(pkg)}
-                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors cursor-pointer focus:bg-transparent px-0 py-0"
-              >
-                <Pencil size={13} className="text-[#00B4CC]" /> {t.subscriptions.change}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => onDelete(pkg.id)}
-                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors cursor-pointer focus:bg-transparent px-0 py-0"
-              >
-                <Trash2 size={13} /> {t.subscriptions.delete}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </td>
-    </tr>
-  )
-}
-
 // ── Package Card ───────────────────────────────────────────────────────────────
 function PackageCard({
   pkg,
@@ -931,9 +842,134 @@ export function SubscriptionList() {
     type: "success",
   })
 
-  const { colWidths, tableRef, handleMouseDown } = useResizableColumns(
-    [220, 140, 180, 150, 200],
-    [150, 120, 120, 120, 150]
+  const listColumns: AdminDataTableColumn<SubPackage>[] = useMemo(
+    () => [
+      {
+        id: 'name',
+        label: t.subscriptions.packageNameHeader,
+        defaultWidth: 200,
+        minWidth: 140,
+        maxWidth: 360,
+        flex: true,
+        render: (pkg) => (
+          <span className="block truncate" title={pkg.name}>
+            {pkg.name}
+          </span>
+        ),
+      },
+      {
+        id: 'status',
+        label: t.subscriptions.statusHeader,
+        defaultWidth: 130,
+        minWidth: 110,
+        maxWidth: 200,
+        render: (pkg) => (
+          <button
+            type="button"
+            onClick={() => handleToggleStatus(pkg)}
+            className={cn(
+              'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold cursor-pointer border-none outline-none transition-opacity hover:opacity-80',
+              pkg.status === 'active' ? 'bg-green-600 text-white' : 'bg-[#6B7280] text-white',
+            )}
+            title={t.subscriptions.statusChangeTitle}
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-white/80 shrink-0" />
+            {pkg.status === 'active' ? t.subscriptions.active : t.subscriptions.deactive}
+          </button>
+        ),
+      },
+      {
+        id: 'price',
+        label: t.subscriptions.priceDurationHeader,
+        defaultWidth: 170,
+        minWidth: 120,
+        maxWidth: 280,
+        render: (pkg) => (
+          <div className="min-w-0">
+            {pkg.priceTiers.map((tier, i) => (
+              <div key={i} className="flex items-baseline gap-1 truncate">
+                <span>{tier.discountPrice || tier.price}</span>
+                <span className="text-xs">AZN</span>
+                <span className="text-xs">/ {formatDuration(tier.duration, t)}</span>
+              </div>
+            ))}
+          </div>
+        ),
+      },
+      {
+        id: 'limit',
+        label: t.subscriptions.limitHeader,
+        defaultWidth: 130,
+        minWidth: 100,
+        maxWidth: 200,
+        render: (pkg) => (
+          <span className="block truncate">
+            {pkg.entryLimit} {t.subscriptions.entryLimit}
+          </span>
+        ),
+      },
+      {
+        id: 'services',
+        label: t.subscriptions.servicesHeader,
+        defaultWidth: 180,
+        minWidth: 120,
+        maxWidth: 320,
+        flex: true,
+        render: (pkg) => (
+          <div className="flex flex-wrap gap-1">
+            {pkg.services.slice(0, 2).map((s) => (
+              <span key={s} className="rounded-md border border-border px-2 py-0.5 text-xs truncate">
+                {s}
+              </span>
+            ))}
+            {pkg.services.length > 2 && (
+              <span className="rounded-md border border-border px-2 py-0.5 text-xs">
+                +{pkg.services.length - 2}
+              </span>
+            )}
+          </div>
+        ),
+      },
+      {
+        id: 'actions',
+        label: t.subscriptions.actionsHeader,
+        defaultWidth: 72,
+        minWidth: 64,
+        maxWidth: 96,
+        reorderable: false,
+        hideable: false,
+        render: (pkg) => (
+          <div className="relative flex justify-center" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors outline-none"
+                >
+                  <MoreVertical size={15} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-36 rounded-xl border border-border bg-card shadow-xl overflow-hidden p-1 flex flex-col gap-1">
+                <DropdownMenuItem
+                  onClick={() => setModalPkg(pkg)}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors cursor-pointer"
+                >
+                  <Pencil size={13} className="text-[#00B4CC]" /> {t.subscriptions.change}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setDeletingId(pkg.id)}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                >
+                  <Trash2 size={13} /> {t.subscriptions.delete}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        ),
+      },
+    ],
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- handlers recreated each render
+    [t],
   )
 
   async function handleToggleStatus(pkg: SubPackage) {
@@ -1126,79 +1162,14 @@ export function SubscriptionList() {
           ))}
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border bg-card">
-          <table ref={tableRef} className="w-full border-separate border-spacing-0" style={{ tableLayout: "fixed", minWidth: "800px" }}>
-            <colgroup>
-              <col style={{ width: `${colWidths[0]}px` }} />
-              <col style={{ width: `${colWidths[1]}px` }} />
-              <col style={{ width: `${colWidths[2]}px` }} />
-              <col style={{ width: `${colWidths[3]}px` }} />
-              <col style={{ width: `${colWidths[4]}px` }} />
-              <col />
-            </colgroup>
-            <thead>
-              <tr className="bg-[#00B4CC]/10 text-left">
-                <th className="px-4 py-3 text-xs font-semibold text-foreground relative">
-                  {t.subscriptions.packageNameHeader}
-                  <div
-                    onMouseDown={(e) => handleMouseDown(0, e)}
-                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
-                  >
-                    <div className="w-[2px] h-4 bg-[#cecfd2] dark:bg-border group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-                  </div>
-                </th>
-                <th className="px-4 py-3 text-xs font-semibold text-foreground relative">
-                  {t.subscriptions.statusHeader}
-                  <div
-                    onMouseDown={(e) => handleMouseDown(1, e)}
-                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
-                  >
-                    <div className="w-[2px] h-4 bg-[#cecfd2] dark:bg-border group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-                  </div>
-                </th>
-                <th className="px-4 py-3 text-xs font-semibold text-foreground relative">
-                  {t.subscriptions.priceDurationHeader}
-                  <div
-                    onMouseDown={(e) => handleMouseDown(2, e)}
-                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
-                  >
-                    <div className="w-[2px] h-4 bg-[#cecfd2] dark:bg-border group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-                  </div>
-                </th>
-                <th className="px-4 py-3 text-xs font-semibold text-foreground relative">
-                  {t.subscriptions.limitHeader}
-                  <div
-                    onMouseDown={(e) => handleMouseDown(3, e)}
-                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
-                  >
-                    <div className="w-[2px] h-4 bg-[#cecfd2] dark:bg-border group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-                  </div>
-                </th>
-                <th className="px-4 py-3 text-xs font-semibold text-foreground relative">
-                  {t.subscriptions.servicesHeader}
-                  <div
-                    onMouseDown={(e) => handleMouseDown(4, e)}
-                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
-                  >
-                    <div className="w-[2px] h-4 bg-[#cecfd2] dark:bg-border group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-                  </div>
-                </th>
-                <th className="px-4 py-3 text-xs font-semibold text-foreground text-center relative">{t.subscriptions.actionsHeader}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginated.map((pkg) => (
-                <PackageRow
-                  key={pkg.id}
-                  pkg={pkg}
-                  onEdit={(p) => setModalPkg(p)}
-                  onDelete={(id) => setDeletingId(id)}
-                  onToggleStatus={handleToggleStatus}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <AdminDataTable
+          storageKey="subscriptions"
+          columns={listColumns}
+          rows={paginated}
+          getRowId={(row) => row.id}
+          isLoading={isLoading}
+          emptyTitle={t.subscriptions.noPackages}
+        />
       )}
 
       <Pagination total={currentPackages.length} page={page} perPage={PAGE_SIZE} onChange={setPage} />

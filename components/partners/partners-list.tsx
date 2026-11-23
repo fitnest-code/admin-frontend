@@ -11,8 +11,7 @@ import { PAGE_SIZE } from '../customers/list/customer-list-constants'
 import { CustomerBulkActions, EmailModal, PushModal, SmsModal, BlockModal, BulkSendCoinModal } from '../customers/list/customer-message-modals'
 import { CustomerPagination } from '../customers/list/customer-list-table'
 import { normalizeCustomerStatus } from '../customers/list/customer-list-utils'
-import styles from './partners-list.module.css'
-import { useResizableColumns } from '@/hooks/use-resizable-columns'
+import { AdminDataTable, type AdminDataTableColumn } from '@/components/ui/admin-data-table'
 
 const PARTNER_SORT_OPTIONS = [
   { value: 'newest', label: 'Yeni əlavə olunanlar' },
@@ -131,11 +130,6 @@ export function PartnersList() {
   const [blockOpen, setBlockOpen] = useState(false)
   const [sendCoinOpen, setSendCoinOpen] = useState(false)
 
-  const { colWidths, tableRef, handleMouseDown } = useResizableColumns(
-    [90, 260, 180, 220],
-    [60, 150, 120, 140]
-  )
-
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setDebouncedSearch(search.trim())
@@ -193,7 +187,90 @@ export function PartnersList() {
 
   const total = partnersQuery.data?.total ?? 0
   const allOnPage = sorted.length > 0 && sorted.every((partner) => selected.has(partner.id))
+  const someOnPage = sorted.some((partner) => selected.has(partner.id))
   const selectedUsers = useMemo(() => Array.from(selected.values()), [selected])
+
+  const columns: AdminDataTableColumn<CustomerListItem>[] = useMemo(
+    () => [
+      {
+        id: 'id',
+        label: t.lists.colId,
+        defaultWidth: 88,
+        minWidth: 56,
+        maxWidth: 160,
+        render: (row) => <span className="block truncate tabular-nums">{row.id}</span>,
+      },
+      {
+        id: 'name',
+        label: t.lists.colName,
+        defaultWidth: 220,
+        minWidth: 120,
+        maxWidth: 420,
+        flex: true,
+        render: (row) => (
+          <span className="block truncate" title={row.fullName || ''}>
+            {row.fullName}
+          </span>
+        ),
+      },
+      {
+        id: 'role',
+        label: t.lists.colRole,
+        defaultWidth: 160,
+        minWidth: 120,
+        maxWidth: 240,
+        render: (row) => {
+          const isSuper = row.role === 'ROLE_GYM_SUPER_ADMIN'
+          return (
+            <div className="flex items-center">
+              <div
+                className={cn(
+                  'flex h-[22px] w-fit items-center justify-center gap-1.5 rounded-full px-3 text-[10px] font-medium uppercase text-white shadow-xs',
+                  isSuper ? 'bg-[#00B4CC]' : 'bg-[#00B4CC]/80',
+                )}
+              >
+                <Image
+                  src={isSuper ? '/superAdmin.svg' : '/admin.svg'}
+                  width={isSuper ? 12 : 11}
+                  height={isSuper ? 9 : 10}
+                  alt=""
+                  className="shrink-0 invert"
+                />
+                <span>{isSuper ? 'Super admin' : 'Admin'}</span>
+              </div>
+            </div>
+          )
+        },
+      },
+      {
+        id: 'phone',
+        label: t.lists.colPhone,
+        defaultWidth: 160,
+        minWidth: 110,
+        maxWidth: 280,
+        render: (row) => (
+          <span className="block truncate">{row.phoneNumber || '+994 00 000 00 00'}</span>
+        ),
+      },
+      {
+        id: 'gym',
+        label: 'Zal adı',
+        defaultWidth: 180,
+        minWidth: 120,
+        maxWidth: 320,
+        flex: true,
+        render: (row) => {
+          const gymName = row.gymName || '-'
+          return (
+            <span className="block truncate" title={gymName}>
+              {gymName}
+            </span>
+          )
+        },
+      },
+    ],
+    [t],
+  )
 
   return (
     <div className="flex flex-col gap-5 font-sans">
@@ -231,120 +308,23 @@ export function PartnersList() {
         onOpenSendCoin={() => setSendCoinOpen(true)}
       />
 
-      {/* Table */}
-      {partnersQuery.isLoading ? (
-        <div className="overflow-hidden rounded-xl border border-border bg-card px-4 py-16 text-center text-sm text-muted-foreground animate-pulse">
-          {t.lists.partnersLoading}
-        </div>
-      ) : sorted.length === 0 ? (
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
-          <table className="w-full border-collapse table-fixed">
-            <colgroup>
-              <col style={{ width: 48 }} />
-              {colWidths.map((w, i) => (
-                <col key={i} style={{ width: w }} />
-              ))}
-              <col />
-            </colgroup>
-            <thead>
-              <tr className="border-b border-border bg-[#00B4CC14]">
-                <th className="px-2 py-3 text-center">
-                  <input type="checkbox" disabled className="h-4 w-4 opacity-40" />
-                </th>
-                {['ID', 'Ad / Soyad', 'Rol', 'Telefon'].map((header, i) => (
-                  <th key={header} className="px-3 py-3 text-left text-[11px] font-medium uppercase text-foreground/80 relative">
-                    {header}
-                  </th>
-                ))}
-                <th className="px-3 py-3 text-left text-[11px] font-medium uppercase text-foreground/80">Zal adı</th>
-              </tr>
-            </thead>
-          </table>
-          <div className="flex flex-col items-center gap-3 py-20 text-center">
-            <p className="text-base font-semibold text-foreground">{t.lists.partnersEmpty}</p>
-            <p className="text-sm text-muted-foreground max-w-xs">
-              {t.lists.partnersEmptyDesc}
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-          <table ref={tableRef} className="w-full border-collapse table-fixed">
-            <colgroup>
-              <col style={{ width: 48 }} />
-              {colWidths.map((w, i) => (
-                <col key={i} style={{ width: w }} />
-              ))}
-              <col />
-            </colgroup>
-            <thead>
-              <tr className="border-b border-[#cecfd2]/60 dark:border-border bg-[#00B4CC]/[0.15] dark:bg-[#00B4CC]/10">
-                <th className="px-2 py-3 text-center">
-                  <input type="checkbox" checked={allOnPage} onChange={toggleAll} className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded" />
-                </th>
-                {['ID', 'Ad / Soyad', 'Rol', 'Telefon'].map((header, i) => (
-                  <th key={header} className="px-3 py-3 text-left text-[11px] font-bold uppercase text-foreground/80 relative select-none">
-                    {header}
-                    <span
-                      onMouseDown={(e) => handleMouseDown(i, e)}
-                      className="absolute right-0 top-0 bottom-0 w-[5px] cursor-col-resize hover:bg-[#00B4CC]/30 active:bg-[#00B4CC]/50 transition-colors"
-                    />
-                  </th>
-                ))}
-                <th className="px-3 py-3 text-left text-[11px] font-bold uppercase text-foreground/80">Zal adı</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.map((partner) => {
-                const isSuper = partner.role === 'ROLE_GYM_SUPER_ADMIN'
-                const gymName = partner.gymName || '-'
-
-                return (
-                  <tr
-                    key={partner.id}
-                    className="border-b border-border last:border-0 hover:bg-secondary/40 transition-all duration-200 bg-card cursor-pointer"
-                    onClick={() => router.push(`/partners/${partner.id}`)}
-                  >
-                    <td className="px-2 py-3 text-center">
-                      <input
-                        type="checkbox"
-                        checked={selected.has(partner.id)}
-                        onChange={() => toggleOne(partner.id)}
-                        onClick={(event) => event.stopPropagation()}
-                        className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded"
-                      />
-                    </td>
-                    <td className="px-3 py-3 text-sm font-normal text-black truncate overflow-hidden">{partner.id}</td>
-                    <td className="px-3 py-3 text-sm font-normal text-black truncate overflow-hidden" title={partner.fullName || ''}>
-                      {partner.fullName}
-                    </td>
-                    <td className="px-3 py-3 overflow-hidden">
-                      <div className="flex items-center">
-                        <div className={cn("flex h-[22px] w-fit items-center justify-center gap-1.5 rounded-full px-3 text-[10px] font-medium uppercase text-white shadow-xs", isSuper ? "bg-[#00B4CC]" : "bg-[#00B4CC]/80")}>
-                          <Image
-                            src={isSuper ? "/superAdmin.svg" : "/admin.svg"}
-                            width={isSuper ? 12 : 11}
-                            height={isSuper ? 9 : 10}
-                            alt=""
-                            className="shrink-0 invert"
-                          />
-                          <span>{isSuper ? 'Super admin' : 'Admin'}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-3 py-3 text-sm font-normal text-black truncate overflow-hidden">
-                      {partner.phoneNumber || '+994 00 000 00 00'}
-                    </td>
-                    <td className="px-3 py-3 text-sm font-normal text-black truncate overflow-hidden" title={gymName}>
-                      {gymName}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <AdminDataTable
+        storageKey="partners"
+        columns={columns}
+        rows={sorted}
+        getRowId={(row) => row.id}
+        isLoading={partnersQuery.isLoading}
+        emptyTitle={t.lists.partnersEmpty}
+        emptyDescription={t.lists.partnersEmptyDesc}
+        onRowClick={(row) => router.push(`/partners/${row.id}`)}
+        selection={{
+          headerChecked: allOnPage,
+          headerIndeterminate: someOnPage && !allOnPage,
+          onToggleAll: toggleAll,
+          isRowSelected: (id) => selected.has(Number(id)),
+          onToggleRow: (id) => toggleOne(Number(id)),
+        }}
+      />
 
       {partnersQuery.isError && (
         <p className="text-sm text-red-500">{t.lists.partnersError}</p>

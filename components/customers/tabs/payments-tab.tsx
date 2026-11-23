@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import Image from 'next/image'
 import { Copy, Download, RefreshCw, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useCustomerPaymentsQuery } from '@/modules/customers/hooks/use-customers-query'
 import type { UserPaymentHistoryItem } from '@/modules/customers/types/customer.types'
-import { useResizableColumns } from '@/hooks/use-resizable-columns'
+import { AdminDataTable, type AdminDataTableColumn } from '@/components/ui/admin-data-table'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -101,13 +101,155 @@ export function PaymentsTab({ userId }: { userId: string }) {
 
   const { data = [], isLoading, isError } = useCustomerPaymentsQuery(userId)
 
-  const { colWidths, tableRef, handleMouseDown } = useResizableColumns(
-    [160, 160, 160, 100, 160, 130],
-    [120, 120, 120, 90, 140, 120]
-  )
-
   const totalPages = Math.max(1, Math.ceil(data.length / PAGE_SIZE))
   const rows = data.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+  const columns: AdminDataTableColumn<UserPaymentHistoryItem>[] = useMemo(
+    () => [
+      {
+        id: 'transactionId',
+        label: 'Tranzaksiya ID',
+        defaultWidth: 150,
+        minWidth: 120,
+        maxWidth: 240,
+        render: (row) => (
+          <span className="block truncate" title={row.transactionId}>
+            {row.transactionId || '—'}
+          </span>
+        ),
+      },
+      {
+        id: 'orderId',
+        label: 'Sifariş ID',
+        defaultWidth: 150,
+        minWidth: 120,
+        maxWidth: 240,
+        render: (row) => (
+          <span className="block truncate" title={row.orderId}>
+            {row.orderId || '—'}
+          </span>
+        ),
+      },
+      {
+        id: 'date',
+        label: 'Tarix',
+        defaultWidth: 150,
+        minWidth: 120,
+        maxWidth: 200,
+        render: (row) => {
+          const formattedDate = row.dateTime ? row.dateTime.replace('T', ' / ').slice(0, 16) : '20.08.26 / 13:00'
+          return (
+            <span className="block truncate whitespace-nowrap" title={formattedDate}>
+              {formattedDate}
+            </span>
+          )
+        },
+      },
+      {
+        id: 'amount',
+        label: 'Məbləğ',
+        defaultWidth: 110,
+        minWidth: 90,
+        maxWidth: 160,
+        render: (row) => (
+          <span className="block truncate whitespace-nowrap">
+            {row.amount ? (row.amount.includes('AZN') ? row.amount : `${row.amount} AZN`) : ''}
+          </span>
+        ),
+      },
+      {
+        id: 'method',
+        label: 'Ödəniş metodu',
+        defaultWidth: 170,
+        minWidth: 130,
+        maxWidth: 280,
+        render: (row) => (
+          <div className="flex justify-center truncate">
+            <PaymentMethodBadge method={row.paymentMethod} />
+          </div>
+        ),
+      },
+      {
+        id: 'status',
+        label: 'Status',
+        defaultWidth: 130,
+        minWidth: 110,
+        maxWidth: 200,
+        render: (row) => {
+          const pill = getStatusPillConfig(row.status)
+          return (
+            <div className="flex justify-center">
+              <div
+                className={cn(
+                  'flex h-6.5 w-fit items-center justify-center gap-1.5 rounded-[20px] px-3.5 py-1 text-[12px] font-medium text-white shadow-2xs tracking-wide truncate',
+                  pill.bg,
+                )}
+              >
+                <div className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-white" />
+                <span>{pill.label}</span>
+              </div>
+            </div>
+          )
+        },
+      },
+      {
+        id: 'actions',
+        label: 'Ətraflı',
+        defaultWidth: 72,
+        minWidth: 64,
+        maxWidth: 96,
+        reorderable: false,
+        hideable: false,
+        render: (row) => (
+          <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex h-8 w-8 items-center justify-center rounded-full outline-none hover:bg-secondary/80"
+                  aria-label="Ətraflı"
+                >
+                  <Image src="/more.png" width={24} height={24} alt="Ətraflı" className="object-contain" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="flex w-[200px] flex-col gap-3 rounded-[12px] border border-[#ececed] bg-white p-3 font-sans text-black shadow-2xl">
+                <DropdownMenuItem
+                  onClick={() => openDetail(row)}
+                  className="block w-full cursor-pointer rounded-none border-b border-[#00b4cc] pb-2 text-left text-[16px] font-medium leading-[24px] text-black"
+                >
+                  Bax
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => copyTx(row.transactionId)}
+                  className="flex w-full cursor-pointer items-center justify-between border-b border-[#ececed] pb-2 text-left text-[16px] font-medium leading-[24px] text-black"
+                >
+                  <span>Tranzaksiya ID-ni kopyala</span>
+                  {copiedTx && <Check size={14} className="ml-1 shrink-0 text-[#00b4cc]" />}
+                </DropdownMenuItem>
+                {row.orderId ? (
+                  <DropdownMenuItem
+                    onClick={() => copyOrder(row.orderId!)}
+                    className="flex w-full cursor-pointer items-center justify-between border-b border-[#ececed] pb-2 text-left text-[16px] font-medium leading-[24px] text-black"
+                  >
+                    <span>Sifariş ID-ni kopyala</span>
+                    {copiedOrder && <Check size={14} className="ml-1 shrink-0 text-[#00b4cc]" />}
+                  </DropdownMenuItem>
+                ) : null}
+                <DropdownMenuItem
+                  onClick={() => downloadDirectReceipt(row)}
+                  className="block w-full cursor-pointer pt-0.5 text-left text-[16px] font-medium leading-[24px] text-black"
+                >
+                  Qəbzi yüklə
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        ),
+      },
+    ],
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+    [copiedTx, copiedOrder],
+  )
 
   function openDetail(row: UserPaymentHistoryItem) {
     setSelected(row)
@@ -156,215 +298,19 @@ export function PaymentsTab({ userId }: { userId: string }) {
         <h2 className="text-lg font-medium text-black tracking-tight">Ödəniş məlumatları</h2>
       </div>
 
-      {/* Responsive Table Tracks Wrapper */}
-      <div className="w-full overflow-x-auto pb-2">
-        <table ref={tableRef} className="w-full border-separate border-spacing-0 border border-[#cecfd2] rounded-xl text-sm" style={{ tableLayout: "fixed", minWidth: "900px" }}>
-          <colgroup>
-            <col style={{ width: `${colWidths[0]}px` }} />
-            <col style={{ width: `${colWidths[1]}px` }} />
-            <col style={{ width: `${colWidths[2]}px` }} />
-            <col style={{ width: `${colWidths[3]}px` }} />
-            <col style={{ width: `${colWidths[4]}px` }} />
-            <col style={{ width: `${colWidths[5]}px` }} />
-            <col />
-          </colgroup>
-          <thead>
-            <tr className="bg-[#00b4cc]/15 text-left text-xs font-bold uppercase text-foreground/80">
-              <th className="px-4 py-3 relative pl-6 border-b border-[#cecfd2]">
-                Tranzaksiya ID
-                <div
-                  onMouseDown={(e) => handleMouseDown(0, e)}
-                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
-                >
-                  <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-                </div>
-              </th>
-              <th className="px-4 py-3 relative border-b border-[#cecfd2]">
-                Sifariş ID
-                <div
-                  onMouseDown={(e) => handleMouseDown(1, e)}
-                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
-                >
-                  <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-                </div>
-              </th>
-              <th className="px-4 py-3 text-center relative border-b border-[#cecfd2]">
-                Tarix
-                <div
-                  onMouseDown={(e) => handleMouseDown(2, e)}
-                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
-                >
-                  <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-                </div>
-              </th>
-              <th className="px-4 py-3 text-center relative border-b border-[#cecfd2]">
-                Məbləğ
-                <div
-                  onMouseDown={(e) => handleMouseDown(3, e)}
-                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
-                >
-                  <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-                </div>
-              </th>
-              <th className="px-4 py-3 text-center relative border-b border-[#cecfd2]">
-                Ödəniş metodu
-                <div
-                  onMouseDown={(e) => handleMouseDown(4, e)}
-                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
-                >
-                  <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-                </div>
-              </th>
-              <th className="px-4 py-3 text-center relative border-b border-[#cecfd2]">
-                Status
-                <div
-                  onMouseDown={(e) => handleMouseDown(5, e)}
-                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
-                >
-                  <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-                </div>
-              </th>
-              <th className="px-4 py-3 text-center border-b border-[#cecfd2]">Ətraflı</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[#cecfd2] bg-white">
-            {isLoading && (
-              Array.from({ length: 4 }).map((_, i) => (
-                <tr key={i}>
-                  <td colSpan={7} className="px-4 py-4">
-                    <div className="h-4 w-full animate-pulse rounded bg-secondary" />
-                  </td>
-                </tr>
-              ))
-            )}
-            
-            {isError && (
-              <tr>
-                <td colSpan={7} className="p-8 text-center text-sm text-red-500">
-                  Ödəniş məlumatları yüklənmədi.
-                </td>
-              </tr>
-            )}
-
-            {!isLoading && !isError && rows.length === 0 && (
-              <tr>
-                <td colSpan={7} className="p-8 text-center text-sm text-muted-foreground italic">
-                  Bu müştəri üçün heç bir ödəniş əməliyyatı tapılmadı.
-                </td>
-              </tr>
-            )}
-
-            {!isLoading && !isError && rows.map((row, idx) => {
-              const pill = getStatusPillConfig(row.status)
-              const formattedDate = row.dateTime ? row.dateTime.replace('T', ' / ').slice(0, 16) : '20.08.26 / 13:00'
-              
-              return (
-                <tr 
-                  key={row.transactionId || idx} 
-                  className="hover:bg-[#fafafa] transition-colors duration-150"
-                >
-                  {/* Transaction ID */}
-                  <td className="px-4 py-3 text-left pl-6 text-sm font-normal text-black overflow-hidden">
-                    <span className="truncate block" title={row.transactionId}>{row.transactionId || '—'}</span>
-                  </td>
-
-                  {/* Order ID */}
-                  <td className="px-4 py-3 text-left text-sm font-normal text-black overflow-hidden">
-                    <span className="truncate block" title={row.orderId}>{row.orderId || '—'}</span>
-                  </td>
-
-                  {/* Date Time */}
-                  <td className="px-4 py-3 text-center text-sm font-normal text-black overflow-hidden">
-                    <span className="whitespace-nowrap truncate block" title={formattedDate}>{formattedDate}</span>
-                  </td>
-
-                  {/* Amount Value */}
-                  <td className="px-4 py-3 text-center text-sm font-normal text-black overflow-hidden">
-                    <span className="whitespace-nowrap truncate block">
-                      {row.amount ? (row.amount.includes('AZN') ? row.amount : `${row.amount} AZN`) : ''}
-                    </span>
-                  </td>
-
-                  {/* Payment Method component */}
-                  <td className="px-4 py-3 text-center overflow-hidden">
-                    <div className="flex items-center justify-center truncate">
-                      <PaymentMethodBadge method={row.paymentMethod} />
-                    </div>
-                  </td>
-
-                  {/* Status Badging Strip */}
-                  <td className="px-4 py-3 text-center overflow-hidden">
-                    <div className="flex items-center justify-center">
-                      <div className={cn(
-                        "h-6.5 rounded-[20px] flex items-center justify-center px-3.5 py-1 gap-1.5 text-[12px] font-medium text-white shadow-2xs tracking-wide w-fit truncate",
-                        pill.bg
-                      )}>
-                        <div className="w-1.5 h-1.5 rounded-full bg-white shrink-0 animate-pulse" />
-                        <span className="leading-[18px] font-medium">{pill.label}</span>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Actions column using exact requested Image visual token */}
-                  <td className="px-4 py-3 text-center">
-                    <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
-                            className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-secondary/80 transition-all cursor-pointer outline-none"
-                            aria-label="Ətraflı"
-                          >
-                            <Image src="/more.png" width={24} height={24} alt="Ətraflı" className="object-contain" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        
-                        <DropdownMenuContent align="end" className="w-[200px] rounded-[12px] bg-white border border-[#ececed] p-3 flex flex-col gap-3 shadow-2xl font-sans text-black">
-                          {/* Item 1: Bax */}
-                          <DropdownMenuItem
-                            onClick={() => openDetail(row)}
-                            className="w-full text-left text-[16px] leading-[24px] text-black hover:text-[#00b4cc] focus:text-[#00b4cc] transition-colors font-medium cursor-pointer block border-b border-[#00b4cc] pb-2 rounded-none focus:bg-transparent px-0 py-0"
-                          >
-                            Bax
-                          </DropdownMenuItem>
-
-                          {/* Item 2: Tranzaksiya ID- ni kopyala */}
-                          <DropdownMenuItem
-                            onClick={() => copyTx(row.transactionId)}
-                            className="w-full text-left text-[16px] leading-[24px] text-black hover:text-[#00b4cc] focus:text-[#00b4cc] transition-colors font-medium cursor-pointer flex items-center justify-between border-b border-[#ececed] pb-2 rounded-none focus:bg-transparent px-0 py-0"
-                          >
-                            <span>Tranzaksiya ID-ni kopyala</span>
-                            {copiedTx && <Check size={14} className="text-[#00b4cc] shrink-0 ml-1" />}
-                          </DropdownMenuItem>
-
-                          {/* Item 2b: Sifariş ID-ni kopyala */}
-                          {row.orderId && (
-                            <DropdownMenuItem
-                              onClick={() => copyOrder(row.orderId!)}
-                              className="w-full text-left text-[16px] leading-[24px] text-black hover:text-[#00b4cc] focus:text-[#00b4cc] transition-colors font-medium cursor-pointer flex items-center justify-between border-b border-[#ececed] pb-2 rounded-none focus:bg-transparent px-0 py-0"
-                            >
-                              <span>Sifariş ID-ni kopyala</span>
-                              {copiedOrder && <Check size={14} className="text-[#00b4cc] shrink-0 ml-1" />}
-                            </DropdownMenuItem>
-                          )}
-
-                          {/* Item 3: Qəbzi yüklə */}
-                          <DropdownMenuItem
-                            onClick={() => downloadDirectReceipt(row)}
-                            className="w-full text-left text-[16px] leading-[24px] text-black hover:text-[#00b4cc] focus:text-[#00b4cc] transition-colors font-medium cursor-pointer block pt-0.5 focus:bg-transparent px-0 py-0"
-                          >
-                            Qəbzi yüklə
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
+      {isError ? (
+        <p className="text-center text-sm text-red-500">Ödəniş məlumatları yüklənmədi.</p>
+      ) : (
+        <AdminDataTable
+          storageKey="customer-payments"
+          columns={columns}
+          rows={rows}
+          getRowId={(row) => row.transactionId || row.orderId || row.dateTime}
+          isLoading={isLoading}
+          emptyTitle="Bu müştəri üçün heç bir ödəniş əməliyyatı tapılmadı."
+          className="pb-2"
+        />
+      )}
 
       {/* Pagination Container Component */}
       <Pagination page={page} totalPages={totalPages} onChange={setPage} />
