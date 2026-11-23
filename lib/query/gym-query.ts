@@ -291,9 +291,10 @@ export function useCreateGymComplete() {
         city: data.step4.city || undefined,
         rayon: data.step4.rayon || undefined,
         addressText: data.step4.address || undefined,
-        // Step 5 - room names and category IDs (files are separate)
-        roomNames: data.step5.rooms.map((r: any) => r.name),
-        roomCategoryIds: data.step5.rooms.map((r: any) => r.categoryId),
+        // Step 5 - room names and category IDs (files are separate).
+        // Photos live only in memory (File can't persist in localStorage) — guard null step5.
+        roomNames: (data.step5?.rooms ?? []).map((r: any) => r.name),
+        roomCategoryIds: (data.step5?.rooms ?? []).map((r: any) => r.categoryId),
         // Step 6
         subscriptions: data.step6.subscriptions,
         // Step 7
@@ -303,12 +304,12 @@ export function useCreateGymComplete() {
       formData.append("data", new Blob([JSON.stringify(jsonPayload)], { type: "application/json" }));
 
       // Append cover photo
-      if (data.step5.cover) {
+      if (data.step5?.cover) {
         formData.append("coverPhoto", data.step5.cover);
       }
 
       // Append category covers
-      if (data.step5.categoryCovers) {
+      if (data.step5?.categoryCovers) {
         data.step5.categoryCovers.forEach((cc: any) => {
           formData.append("categoryCovers", cc.file);
           formData.append("categoryCoverCategoryIds", String(cc.categoryId));
@@ -321,7 +322,7 @@ export function useCreateGymComplete() {
       });
 
       // Append room photos (in order matching roomNames array)
-      data.step5.rooms.forEach((r: any) => {
+      ;(data.step5?.rooms ?? []).forEach((r: any) => {
         formData.append("roomPhotos", r.file);
       });
 

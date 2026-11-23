@@ -182,9 +182,25 @@ export const useGymStore = create<GymState>()(
         step2Trainers: state.step2Trainers.map(t => ({ ...t, photo: undefined })), // Don't persist File
         step3Data: state.step3Data,
         step4Data: state.step4Data,
+        // step5Photos intentionally omitted — File blobs can't survive localStorage
         step6Data: state.step6Data ? { ...state.step6Data, serviceIcons: undefined } : null,
         step7Admins: state.step7Admins
       }),
+      // After refresh, photos are gone — drop "images" (+ later steps) so wizard forces re-upload
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        if (state.step5Photos) return;
+        const PHOTO_STEP = "images";
+        const PHOTO_AND_AFTER = ["images", "plans", "admins"];
+        if (!state.completedSteps.includes(PHOTO_STEP)) return;
+        const pruned = state.completedSteps.filter((k) => !PHOTO_AND_AFTER.includes(k));
+        const tab = state.currentTab && PHOTO_AND_AFTER.includes(state.currentTab)
+          ? PHOTO_STEP
+          : state.currentTab;
+        state.completedSteps = pruned;
+        state.currentTab = tab;
+        state.step5Photos = null;
+      },
     }
   )
 )

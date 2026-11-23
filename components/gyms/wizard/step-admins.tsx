@@ -96,6 +96,18 @@ export function StepAdmins({ onComplete }: { onComplete?: () => void }) {
     if (isCompleting) return;
     if (admins.length === 0) return toast.error(t.admin.atLeastOneAdmin);
 
+    // Step 5 File objects are memory-only (not in localStorage). Refresh / long idle loses them.
+    if (!step5Photos || !Array.isArray(step5Photos.rooms)) {
+      return toast.error(
+        "Şəkil məlumatı itib (səhifə yenilənib ola bilər). Zəhmət olmasa Şəkillər addımına qayıdıb cover və otaq şəkillərini yenidən yükləyin.",
+      );
+    }
+    if (!step1Data || !step3Data || !step4Data || !step6Data) {
+      return toast.error(
+        "Zal məlumatları natamamdır. Əvvəlki addımları yoxlayıb yenidən davam edin.",
+      );
+    }
+
     try {
       const step7Payload = {
         admins: admins.map((a) => ({
@@ -113,12 +125,16 @@ export function StepAdmins({ onComplete }: { onComplete?: () => void }) {
 
       // 2. Final Sequential Creation
       await createComplete.mutateAsync({
-        step1: step1Data!,
+        step1: step1Data,
         step2: step2Trainers,
-        step3: step3Data!,
-        step4: step4Data!,
-        step5: step5Photos!,
-        step6: step6Data!,
+        step3: step3Data,
+        step4: step4Data,
+        step5: {
+          cover: step5Photos.cover ?? null,
+          categoryCovers: step5Photos.categoryCovers ?? [],
+          rooms: step5Photos.rooms ?? [],
+        },
+        step6: step6Data,
         step7: step7Payload
       });
 
@@ -126,7 +142,14 @@ export function StepAdmins({ onComplete }: { onComplete?: () => void }) {
       resetGym();
       onComplete?.();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || err?.message || t.error.createFailed);
+      const msg = String(err?.response?.data?.message || err?.message || "");
+      if (/rooms|null|undefined/i.test(msg) && /read|property/i.test(msg)) {
+        toast.error(
+          "Şəkil addımı məlumatı tapılmadı. Şəkillər addımına qayıdıb yenidən yükləyin, sonra admin əlavə edin.",
+        );
+      } else {
+        toast.error(msg || t.error.createFailed);
+      }
     }
   }
 
