@@ -6,6 +6,12 @@ import { toast } from "sonner";
 import { useGymStore } from "@/lib/store/gym-store";
 import { useValidateGymStep5, useCategories } from "@/lib/query/gym-query";
 import { cn } from "@/lib/utils";
+import {
+  ImagePrepareError,
+  MAX_TOTAL_UPLOAD_BYTES,
+  prepareUploadImage,
+  totalFileBytes,
+} from "@/lib/image/prepare-upload-image";
 
 interface RoomPhotoState {
   id: string;
@@ -107,30 +113,53 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
 
   useEffect(() => { setMounted(true); }, []);
 
-  const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!activeCategoryId) return;
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 20 * 1024 * 1024) return toast.error("Şəkil ölçüsü max 20MB ola bilər");
-      setCovers(prev => ({ ...prev, [activeCategoryId]: file }));
-      setCoverPreviews(prev => ({ ...prev, [activeCategoryId]: URL.createObjectURL(file) }));
+    e.target.value = "";
+    if (!file) return;
+    try {
+      // Cover: keep a bit more detail; still JPEG-compress for ingress limits.
+      const prepared = await prepareUploadImage(file, {
+        maxWidth: 1600,
+        maxHeight: 1200,
+        quality: 0.75,
+      });
+      setCovers((prev) => ({ ...prev, [activeCategoryId]: prepared }));
+      setCoverPreviews((prev) => {
+        const old = prev[activeCategoryId];
+        if (old) URL.revokeObjectURL(old);
+        return { ...prev, [activeCategoryId]: URL.createObjectURL(prepared) };
+      });
+    } catch (err) {
+      toast.error(err instanceof ImagePrepareError ? err.message : "Şəkil hazırlanmadı");
     }
   };
 
-  const handleRoomPhotoChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleRoomPhotoChange = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     if (!activeCategoryId) return;
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 20 * 1024 * 1024) return toast.error("Şəkil ölçüsü max 20MB ola bilər");
-      setRoomPhotos(prev => {
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const prepared = await prepareUploadImage(file, {
+        maxWidth: 1280,
+        maxHeight: 960,
+        quality: 0.7,
+      });
+      setRoomPhotos((prev) => {
         const catRooms = [...(prev[activeCategoryId] || [])];
-        catRooms[index] = { 
-          ...catRooms[index], 
-          photo: file, 
-          previewUrl: URL.createObjectURL(file)
+        const oldUrl = catRooms[index]?.previewUrl;
+        if (oldUrl) URL.revokeObjectURL(oldUrl);
+        catRooms[index] = {
+          ...catRooms[index],
+          photo: prepared,
+          previewUrl: URL.createObjectURL(prepared),
         };
         return { ...prev, [activeCategoryId]: catRooms };
       });
+    } catch (err) {
+      toast.error(err instanceof ImagePrepareError ? err.message : "Şəkil hazırlanmadı");
     }
   };
 
@@ -206,6 +235,19 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
       // Set first selected category's cover as global coverPhoto for the gym
       const mainCatId = selectedCategories[0]?.id;
       const globalCoverPhoto = mainCatId ? covers[mainCatId] : null;
+
+      // Ingress/gateway ~64MB — reject early with a clear message (multipart overhead too).
+      const payloadBytes = totalFileBytes([
+        globalCoverPhoto,
+        ...categoryCoversToSend.map((c) => c.file),
+        ...allRoomPhotosToSend.map((r) => r.file),
+      ]);
+      if (payloadBytes > MAX_TOTAL_UPLOAD_BYTES) {
+        return toast.error(
+          `Şəkillərin ümumi ölçüsü çox böyükdür (~${Math.round(payloadBytes / (1024 * 1024))}MB). Daha az və ya kiçik şəkil yükləyin.`,
+        );
+      }
+
       if (globalCoverPhoto) {
         formData.append("coverPhoto", globalCoverPhoto);
       }
@@ -233,7 +275,14 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
 
       onNext?.();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || err.message || "Xəta baş verdi");
+      const msg = String(err?.response?.data?.message || err?.message || "");
+      if (/failed to fetch|networkerror|err_failed/i.test(msg)) {
+        toast.error(
+          "Şəkillər göndərilmədi (şəbəkə/ölçü limiti). Daha az şəkil yükləyin və ya yenidən daxil olun.",
+        );
+      } else {
+        toast.error(msg || "Xəta baş verdi");
+      }
     }
   };
 
@@ -286,7 +335,13 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
                 onClick={() => coverInputRef.current?.click()}
                 className="relative w-full h-[252px] rounded-2xl border border-dashed border-[#99a1af] bg-[#fafafa] flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors overflow-hidden group"
               >
-                <input type="file" ref={coverInputRef} className="hidden" accept="image/jpeg, image/png, image/webp" onChange={handleCoverChange} />
+                <input
+                  type="file"
+                  ref={coverInputRef}
+                  className="hidden"
+                  accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
+                  onChange={handleCoverChange}
+                />
                 {currentCoverPreview ? (
                   <>
                     <img src={currentCoverPreview} alt="Cover" className="w-full h-full object-cover" />
@@ -301,7 +356,9 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
                   </div>
                 )}
               </div>
-              <span className="text-[14px] leading-5 text-[#6a7282] italic">JPG or PNG • Max size 20MB</span>
+              <span className="text-[14px] leading-5 text-[#6a7282] italic">
+                JPG, PNG, WEBP və ya HEIC • avtomatik sıxılır • mənbə max 50MB
+              </span>
             </div>
           </div>
 
@@ -327,8 +384,8 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
                       type="file"
                       ref={el => { roomInputRefs.current[room.id] = el }}
                       className="hidden"
-                      accept="image/jpeg, image/png, image/webp"
-                      onChange={e => handleRoomPhotoChange(index, e)}
+                      accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
+                      onChange={(e) => handleRoomPhotoChange(index, e)}
                     />
 
                     {room.previewUrl ? (
