@@ -43,9 +43,11 @@ export function useUserStatisticsQuery() {
   const locale = useI18nStore((s) => s.locale)
   return useQuery({
     queryKey: [...queryKeys.customers.statistics, locale],
-    queryFn: getUserStatistics,
-    staleTime: 0,
-    refetchOnMount: 'always',
+    // Server Caffeine is event-invalidated on freeze/lifecycle; keep a short client staleTime.
+    // Do not pass RQ's QueryFunctionContext into getUserStatistics (would coerce to refresh=true).
+    queryFn: () => getUserStatistics(false),
+    staleTime: 30_000,
+    refetchOnMount: true,
   })
 }
 
