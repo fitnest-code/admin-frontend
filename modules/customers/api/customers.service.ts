@@ -53,6 +53,19 @@ export function updateCustomerEntryLimit(userId: string, body: UpdateEntryLimitB
   )
 }
 
+export function freezeCustomerSubscription(userId: string, days: number) {
+  return apiPost<CustomerCurrentSubscription>(
+    `/api/v1/admin/subscriptions/users/${userId}/freeze`,
+    { days },
+  )
+}
+
+export function unfreezeCustomerSubscription(userId: string) {
+  return apiPost<CustomerCurrentSubscription>(
+    `/api/v1/admin/subscriptions/users/${userId}/unfreeze`,
+  )
+}
+
 export async function getCustomerById(id: string): Promise<CustomerProfile> {
   const data = await apiGet<CustomerDetailApiResponse>(`/api/v1/admin/users/${id}`)
   

@@ -98,6 +98,7 @@ export interface UserPaymentHistoryItem {
 }
 
 export interface CustomerCurrentSubscription {
+  subscriptionId?: number
   packageId: number
   packageName: string
   optionId: number
@@ -108,4 +109,14 @@ export interface CustomerCurrentSubscription {
   endDate: string
   totalEntryLimit: number
   userRemainingLimit: number
+  status?: string
+  currentlyFrozen?: boolean
+  activeFreezeId?: number | null
+  frozenAt?: string | null
+  unfreezesAt?: string | null
+  totalFreezeDays?: number
+  consumedFreezeDays?: number
+  reservedFreezeDays?: number
+  availableFreezeDays?: number
+  canFreeze?: boolean
 }
