@@ -25,8 +25,10 @@ export async function getSubscriptionPackageNames() {
   return []
 }
 
-export function getUserStatistics() {
-  return apiGet<UserStatistics>('/api/v1/admin/users/statistics')
+export function getUserStatistics(refresh = false) {
+  return apiGet<UserStatistics>('/api/v1/admin/users/statistics', {
+    params: refresh ? { refresh: true } : undefined,
+  })
 }
 
 export function getUserQrHistory(userId: string) {
