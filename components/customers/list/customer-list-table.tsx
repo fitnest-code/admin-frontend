@@ -1,29 +1,33 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useLayoutEffect } from 'react'
 import Image from 'next/image'
-import { Check, Eye, Loader2 } from 'lucide-react'
+import { Check, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useT } from '@/lib/i18n'
 import type { CustomerListItem } from '@/modules/customers'
 import { useResizableColumns } from '@/hooks/use-resizable-columns'
 import {
   CUSTOMER_STATUS_STYLES,
-  SUBSCRIPTION_STATUS_TEXT_STYLES,
   getCustomerStatusLabel,
   getSubscriptionStatusLabel,
   normalizeCustomerStatus,
   normalizeSubscriptionStatus,
 } from './customer-list-utils'
 
+const CHECKBOX_COL = 48
+const SUBSCRIPTION_MIN = 128
+const DEFAULT_WIDTHS = [72, 220, 160, 240, 200]
+const MIN_WIDTHS = [52, 120, 110, 140, 120]
+
 function EmptyState() {
   const t = useT()
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card">
-      <div className="grid grid-cols-[2rem_4rem_1fr_1fr_1fr_5rem_6rem] items-center gap-3 border-b border-border bg-[#00B4CC14] px-4 py-3">
+      <div className="grid w-full grid-cols-[2.5rem_minmax(0,0.7fr)_minmax(0,1.6fr)_minmax(0,1.2fr)_minmax(0,1.6fr)_minmax(0,1.3fr)_minmax(0,1fr)] items-center gap-0 border-b border-border bg-[#00B4CC14] px-4 py-3">
         <input type="checkbox" disabled className="h-4 w-4 opacity-40" />
         {[t.lists.colId, t.lists.colName, t.lists.colPhone, t.lists.colEmail, t.lists.colStatus, t.lists.colSubscription].map((header) => (
-          <span key={header} className="text-[11px] font-medium uppercase text-foreground/80">
+          <span key={header} className="text-[11px] font-medium uppercase tracking-wide text-foreground/70">
             {header}
           </span>
         ))}
@@ -109,18 +113,39 @@ export function CustomerTable({
   const t = useT()
   const allOnPage = customers.length > 0 && customers.every((customer) => selected.has(customer.id))
 
-  const { colWidths, tableRef, handleMouseDown } = useResizableColumns(
-    [80, 240, 180, 240, 150],
-    [50, 120, 100, 120, 90]
+  const { colWidths, setColWidths, tableRef, handleMouseDown } = useResizableColumns(
+    DEFAULT_WIDTHS,
+    MIN_WIDTHS,
   )
 
-  // --- Header column definitions (resizable ones) ---
+  // Default view: scale resizable columns so checkbox + columns + subscription fill the card width (no trailing gap).
+  useLayoutEffect(() => {
+    const parent = tableRef.current?.parentElement
+    if (!parent) return
+
+    const fill = () => {
+      const available = parent.clientWidth - CHECKBOX_COL - SUBSCRIPTION_MIN
+      if (available < 400) return
+      setColWidths((prev) => {
+        const sum = prev.reduce((a, b) => a + b, 0)
+        if (sum <= 0 || Math.abs(available - sum) < 8) return prev
+        const scale = available / sum
+        return prev.map((w, i) => Math.max(MIN_WIDTHS[i] ?? 80, Math.round(w * scale)))
+      })
+    }
+
+    fill()
+    const ro = new ResizeObserver(fill)
+    ro.observe(parent)
+    return () => ro.disconnect()
+  }, [setColWidths, tableRef])
+
   const resizableHeaders = [
     { label: t.lists.colId, centerAlign: false },
     { label: t.lists.colName, centerAlign: false },
     { label: t.lists.colPhone, centerAlign: false },
     { label: t.lists.colEmail, centerAlign: false },
-    { label: t.lists.colStatus, centerAlign: true },
+    { label: t.lists.colStatus, centerAlign: false },
   ]
 
   if (isLoading) {
@@ -136,45 +161,50 @@ export function CustomerTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-border bg-card shadow-sm">
-      <table ref={tableRef} className="w-full border-separate border-spacing-0" style={{ tableLayout: "fixed", minWidth: "700px" }}>
+    <div className="w-full overflow-x-auto rounded-lg border border-border bg-card shadow-sm">
+      <table
+        ref={tableRef}
+        className="w-full border-separate border-spacing-0"
+        style={{ tableLayout: 'fixed' }}
+      >
         <colgroup>
-          <col style={{ width: "48px" }} /> {/* checkbox - fixed, no resize */}
-          {colWidths.map((w, i) => <col key={i} style={{ width: `${w}px` }} />)}
-          <col /> {/* subscription - takes remaining space */}
+          <col style={{ width: `${CHECKBOX_COL}px` }} />
+          {colWidths.map((w, i) => (
+            <col key={i} style={{ width: `${w}px` }} />
+          ))}
+          <col />
         </colgroup>
         <thead>
-          <tr className="bg-[#00B4CC]/[0.15] dark:bg-[#00B4CC]/10 text-left border-b border-[#cecfd2]/60 dark:border-border">
-            {/* Checkbox header */}
-            <th className="px-4 py-3">
+          <tr className="border-b border-[#cecfd2]/60 bg-[#00B4CC]/[0.08] text-left dark:border-border dark:bg-[#00B4CC]/10">
+            <th className="px-3 py-3">
               <div className="flex justify-center">
                 {isSelectingAll ? (
                   <Loader2 className="h-4 w-4 animate-spin text-[#00B4CC]" />
                 ) : (
-                  <input type="checkbox" checked={allOnPage} onChange={onToggleAll} className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded" />
+                  <input
+                    type="checkbox"
+                    checked={allOnPage}
+                    onChange={onToggleAll}
+                    className="h-4 w-4 cursor-pointer rounded accent-[#00B4CC]"
+                  />
                 )}
               </div>
             </th>
-            {/* Resizable columns: ID(0), Name(1), Phone(2), Email(3), Status(4) */}
             {resizableHeaders.map((header, index) => (
               <th
                 key={index}
-                className={cn(
-                  "px-4 py-3 text-[11px] font-bold uppercase text-foreground/80 relative",
-                  header.centerAlign && "text-center",
-                )}
+                className="relative px-3 py-3 text-[11px] font-semibold uppercase tracking-wide text-foreground/65"
               >
                 {header.label}
                 <div
                   onMouseDown={(e) => handleMouseDown(index, e)}
-                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
+                  className="group/handle absolute bottom-0 right-0 top-0 z-10 flex w-2 cursor-col-resize items-center justify-center transition-colors hover:bg-[#00B4CC]/20"
                 >
-                  <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
+                  <div className="h-3.5 w-px rounded bg-[#d0d5dd] transition-colors group-hover/handle:bg-[#00B4CC]" />
                 </div>
               </th>
             ))}
-            {/* Subscription header - no resize handle */}
-            <th className="px-4 py-3 text-[11px] font-bold uppercase text-foreground/80">
+            <th className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wide text-foreground/65">
               {t.lists.colSubscription}
             </th>
           </tr>
@@ -183,61 +213,53 @@ export function CustomerTable({
           {customers.map((customer) => {
             const customerStatus = normalizeCustomerStatus(customer.userStatus)
             const subscriptionStatus = normalizeSubscriptionStatus(customer.subscriptionStatus)
-
-            // Account Status Badge Logic
-            const badgeBg = customerStatus === 'active' ? 'bg-[#166728]' 
-              : customerStatus === 'inactive' ? 'bg-[#94979c]' 
-              : customerStatus === 'pending_registration' ? 'bg-[#d97706]' 
-              : customerStatus === 'deleted' ? 'bg-[#991b1b]' 
-              : 'bg-[#c9373a]'
-
-            const badgeText = customerStatus === 'active' ? t.lists.statusActive 
-              : customerStatus === 'inactive' ? t.lists.statusInactive 
-              : customerStatus === 'pending_registration' ? t.lists.statusPendingRegistration 
-              : customerStatus === 'deleted' ? (t.lists.statusDeleted || 'Silinib')
-              : t.lists.statusBlocked
+            const badgeText = getCustomerStatusLabel(customerStatus, t.lists)
 
             return (
               <tr
                 key={customer.id}
                 onClick={() => onView(customer.id)}
                 className={cn(
-                  'border-b border-border last:border-0 hover:bg-secondary/40 transition-all duration-200 cursor-pointer',
+                  'cursor-pointer border-b border-border transition-colors last:border-0 hover:bg-slate-50/80',
                   subscriptionStatus === 'changed' ? 'bg-[#f0fdff]' : 'bg-card',
                 )}
               >
-                {/* Checkbox */}
-                <td className="px-4 py-3">
+                <td className="px-3 py-3">
                   <div className="flex justify-center">
                     <input
                       type="checkbox"
                       checked={selected.has(customer.id)}
                       onChange={() => onToggleOne(customer.id)}
                       onClick={(event) => event.stopPropagation()}
-                      className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded"
+                      className="h-4 w-4 cursor-pointer rounded accent-[#00B4CC]"
                     />
                   </div>
                 </td>
-                {/* ID */}
-                <td className="px-4 py-3 text-sm font-normal text-black truncate">{customer.id}</td>
-                {/* Name */}
-                <td className="px-4 py-3 text-sm font-normal text-black truncate">{customer.fullName}</td>
-                {/* Phone */}
-                <td className="px-4 py-3 text-sm font-normal text-black truncate">{customer.phoneNumber}</td>
-                {/* Email */}
-                <td className="px-4 py-3 text-sm font-normal text-black truncate">{customer.email}</td>
-                {/* Status */}
-                <td className="px-4 py-3">
-                  <div className="flex justify-center">
-                    <div className={cn('inline-flex h-[22px] w-fit items-center justify-center gap-1.5 rounded-full px-3 text-[10px] font-medium uppercase shadow-xs', badgeBg)}>
-                      <div className="w-1 h-1 rounded-full bg-white shrink-0" />
-                      <span>{badgeText}</span>
-                    </div>
-                  </div>
+                <td className="truncate px-3 py-3 text-sm tabular-nums text-foreground/80">
+                  {customer.id}
                 </td>
-                {/* Subscription */}
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-1.5">
+                <td className="truncate px-3 py-3 text-sm font-medium text-foreground">
+                  {customer.fullName}
+                </td>
+                <td className="truncate px-3 py-3 text-sm text-foreground/80">
+                  {customer.phoneNumber}
+                </td>
+                <td className="truncate px-3 py-3 text-sm text-foreground/80">
+                  {customer.email}
+                </td>
+                <td className="px-3 py-3">
+                  <span
+                    title={badgeText}
+                    className={cn(
+                      'inline-flex max-w-full items-center truncate rounded-full px-2.5 py-0.5 text-[11px] font-medium leading-5',
+                      CUSTOMER_STATUS_STYLES[customerStatus],
+                    )}
+                  >
+                    {badgeText}
+                  </span>
+                </td>
+                <td className="px-3 py-3">
+                  <div className="flex min-w-0 items-center gap-1.5">
                     {subscriptionStatus === 'expired' ? (
                       <Image src="/bitmis-status.svg" width={16} height={16} alt="" className="shrink-0" />
                     ) : subscriptionStatus === 'last7days' ? (
@@ -245,11 +267,11 @@ export function CustomerTable({
                     ) : subscriptionStatus === 'frozen' ? (
                       <Image src="/dondurulmus-status.svg" width={16} height={16} alt="" className="shrink-0" />
                     ) : subscriptionStatus === 'active' || subscriptionStatus === 'changed' ? (
-                      <div className="flex h-4 w-4 items-center justify-center rounded-full bg-[#00b4cc]/10 text-[#00B4CC]">
+                      <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#00b4cc]/10 text-[#00B4CC]">
                         <Check size={10} strokeWidth={2.5} />
                       </div>
                     ) : null}
-                    <span className="text-xs font-normal text-black truncate">
+                    <span className="truncate text-xs text-foreground/75">
                       {getSubscriptionStatusLabel(subscriptionStatus, t.lists)}
                     </span>
                   </div>
