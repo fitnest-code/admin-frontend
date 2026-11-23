@@ -13,6 +13,7 @@ import {
   type BmiLead,
   type BmiLeadStatus,
 } from '@/modules/bmi'
+import { AdminDataTable, type AdminDataTableColumn } from '@/components/ui/admin-data-table'
 
 const PAGE_SIZE = 10
 
@@ -344,6 +345,109 @@ export function BmiRequestsList() {
     return Array.from({ length: 4 }, (_, index) => start + index).filter((value) => value <= totalPages)
   }, [page, totalPages])
 
+  const columns: AdminDataTableColumn<BmiLead>[] = useMemo(
+    () => [
+      {
+        id: 'id',
+        label: copy.colId,
+        defaultWidth: 88,
+        minWidth: 56,
+        maxWidth: 120,
+        render: (lead) => <span className="block truncate tabular-nums">{padId(lead.id)}</span>,
+      },
+      {
+        id: 'created',
+        label: copy.colCreated,
+        defaultWidth: 116,
+        minWidth: 96,
+        maxWidth: 140,
+        render: (lead) => <span className="block truncate">{formatDate(lead.createdAt)}</span>,
+      },
+      {
+        id: 'phone',
+        label: copy.colPhone,
+        defaultWidth: 150,
+        minWidth: 120,
+        maxWidth: 200,
+        render: (lead) => <span className="block truncate">{formatAzPhone(lead.phone)}</span>,
+      },
+      {
+        id: 'email',
+        label: copy.colEmail,
+        defaultWidth: 160,
+        minWidth: 120,
+        maxWidth: 280,
+        flex: true,
+        render: (lead) => (
+          <span className="block truncate" title={lead.email || ''}>
+            {lead.email || '—'}
+          </span>
+        ),
+      },
+      {
+        id: 'goal',
+        label: copy.colGoal,
+        defaultWidth: 180,
+        minWidth: 120,
+        maxWidth: 320,
+        flex: true,
+        render: (lead) => <span className="block truncate">{lead.goalTitle}</span>,
+      },
+      {
+        id: 'bmi',
+        label: copy.colBmi,
+        defaultWidth: 72,
+        minWidth: 56,
+        maxWidth: 96,
+        render: (lead) => <span className="block truncate tabular-nums">{Number(lead.bmi).toFixed(1)}</span>,
+      },
+      {
+        id: 'status',
+        label: copy.colStatus,
+        defaultWidth: 140,
+        minWidth: 120,
+        maxWidth: 200,
+        render: (lead) => (
+          <div onClick={(e) => e.stopPropagation()}>
+            <StatusBadge
+              status={lead.status}
+              label={statusLabel(lead.status, copy)}
+              onSelect={(next) => {
+                if (next !== lead.status) updateLead(lead.id, { status: next })
+              }}
+            />
+          </div>
+        ),
+      },
+      {
+        id: 'assignee',
+        label: copy.colAssignee,
+        defaultWidth: 160,
+        minWidth: 120,
+        maxWidth: 240,
+        render: (lead) => (
+          <div onClick={(e) => e.stopPropagation()}>
+            <AssigneeCell
+              lead={lead}
+              people={people}
+              onAssign={(id, name) => updateLead(lead.id, { assigneeUserId: id, assigneeName: name })}
+              onUnassign={() => updateLead(lead.id, { unassign: true })}
+            />
+          </div>
+        ),
+      },
+      {
+        id: 'lastContact',
+        label: copy.colLastContact,
+        defaultWidth: 110,
+        minWidth: 92,
+        maxWidth: 140,
+        render: (lead) => <span className="block truncate">{formatDate(lead.lastContactAt)}</span>,
+      },
+    ],
+    [copy, people],
+  )
+
   return (
     <div className="flex w-full flex-col gap-10">
       <div className="flex flex-col gap-1">
@@ -403,64 +507,15 @@ export function BmiRequestsList() {
         <p className="text-sm text-red-600">{copy.updateError}</p>
       ) : null}
 
-      <div className="overflow-x-auto">
-        <div className="min-w-[1220px]">
-          <div className="flex items-center justify-between rounded-t-xl bg-[rgba(0,180,204,0.15)] px-2.5 py-5 text-base text-black outline outline-1 outline-[#CECFD2] outline-offset-[-1px]">
-            <span className="w-[74px]">{copy.colId}</span>
-            <span className="w-[116px] text-center">{copy.colCreated}</span>
-            <span className="w-[150px] text-center">{copy.colPhone}</span>
-            <span className="w-[160px] text-center">{copy.colEmail}</span>
-            <span className="w-[180px] text-center">{copy.colGoal}</span>
-            <span className="w-[42px] text-center">{copy.colBmi}</span>
-            <span className="w-[123px] text-center">{copy.colStatus}</span>
-            <span className="w-[160px] text-center">{copy.colAssignee}</span>
-            <span className="w-[92px] text-center">{copy.colLastContact}</span>
-          </div>
-
-          {leadsQuery.isLoading ? (
-            <div className="border border-t-0 border-[#ECECED] bg-white px-4 py-10 text-center text-sm text-[#94979C]">
-              {copy.loading}
-            </div>
-          ) : items.length === 0 ? (
-            <div className="border border-t-0 border-[#ECECED] bg-white px-4 py-10 text-center">
-              <p className="text-base font-semibold text-black">{copy.empty}</p>
-              <p className="mt-1 text-sm text-[#94979C]">{copy.emptyDesc}</p>
-            </div>
-          ) : (
-            items.map((lead) => (
-              <div
-                key={lead.id}
-                className="flex min-h-[88px] items-center justify-between border border-t-0 border-[#ECECED] bg-white px-2.5 py-5 text-base text-black"
-              >
-                <span className="w-[74px] text-center">{padId(lead.id)}</span>
-                <span className="w-[116px]">{formatDate(lead.createdAt)}</span>
-                <span className="w-[150px] text-center">{formatAzPhone(lead.phone)}</span>
-                <span className="w-[160px] truncate text-center" title={lead.email || ''}>{lead.email || '—'}</span>
-                <span className="w-[180px] text-center leading-6">{lead.goalTitle}</span>
-                <span className="w-[42px]">{Number(lead.bmi).toFixed(1)}</span>
-                <div className="w-[123px]">
-                  <StatusBadge
-                    status={lead.status}
-                    label={statusLabel(lead.status, copy)}
-                    onSelect={(next) => {
-                      if (next !== lead.status) updateLead(lead.id, { status: next })
-                    }}
-                  />
-                </div>
-                <div className="w-[160px]">
-                  <AssigneeCell
-                    lead={lead}
-                    people={people}
-                    onAssign={(id, name) => updateLead(lead.id, { assigneeUserId: id, assigneeName: name })}
-                    onUnassign={() => updateLead(lead.id, { unassign: true })}
-                  />
-                </div>
-                <span className="w-[92px] text-center">{formatDate(lead.lastContactAt)}</span>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+      <AdminDataTable
+        storageKey="bmi-requests"
+        columns={columns}
+        rows={items}
+        getRowId={(lead) => lead.id}
+        isLoading={leadsQuery.isLoading}
+        emptyTitle={copy.empty}
+        emptyDescription={copy.emptyDesc}
+      />
 
       {totalPages > 1 ? (
         <div className="flex items-center justify-end gap-4">

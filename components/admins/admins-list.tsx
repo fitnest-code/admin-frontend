@@ -11,8 +11,7 @@ import { PAGE_SIZE } from '../customers/list/customer-list-constants'
 import { CustomerBulkActions, EmailModal, PushModal, SmsModal, BlockModal, BulkSendCoinModal } from '../customers/list/customer-message-modals'
 import { CustomerPagination } from '../customers/list/customer-list-table'
 import { normalizeCustomerStatus } from '../customers/list/customer-list-utils'
-import styles from '../partners/partners-list.module.css'
-import { useResizableColumns } from '@/hooks/use-resizable-columns'
+import { AdminDataTable, type AdminDataTableColumn } from '@/components/ui/admin-data-table'
 
 const ADMIN_SORT_OPTIONS = [
   { value: 'newest', label: 'Yeni əlavə olunanlar' },
@@ -130,11 +129,6 @@ export function AdminsList() {
   const [blockOpen, setBlockOpen] = useState(false)
   const [sendCoinOpen, setSendCoinOpen] = useState(false)
 
-  const { colWidths, tableRef, handleMouseDown, activeColIndexRef } = useResizableColumns(
-    [100, 320, 240],
-    [60, 160, 120]
-  )
-
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setDebouncedSearch(search.trim())
@@ -192,7 +186,60 @@ export function AdminsList() {
 
   const total = adminsQuery.data?.total ?? 0
   const allOnPage = sorted.length > 0 && sorted.every((admin) => selected.has(admin.id))
+  const someOnPage = sorted.some((admin) => selected.has(admin.id))
   const selectedUsers = useMemo(() => Array.from(selected.values()), [selected])
+
+  const columns: AdminDataTableColumn<CustomerListItem>[] = useMemo(
+    () => [
+      {
+        id: 'id',
+        label: t.lists.colId,
+        defaultWidth: 88,
+        minWidth: 56,
+        maxWidth: 160,
+        render: (row) => <span className="block truncate tabular-nums">{row.id}</span>,
+      },
+      {
+        id: 'name',
+        label: t.lists.colName,
+        defaultWidth: 220,
+        minWidth: 120,
+        maxWidth: 420,
+        flex: true,
+        render: (row) => (
+          <span className="block truncate" title={row.fullName || ''}>
+            {row.fullName}
+          </span>
+        ),
+      },
+      {
+        id: 'role',
+        label: t.lists.colRole,
+        defaultWidth: 160,
+        minWidth: 120,
+        maxWidth: 240,
+        render: (row) => (
+          <div className="flex items-center">
+            <div className="flex h-[22px] w-fit items-center justify-center gap-1.5 rounded-full bg-[#00B4CC]/10 px-3 text-[10px] font-medium uppercase text-[#00B4CC]">
+              <Image src="/admin.svg" width={12} height={12} alt="" className="shrink-0" />
+              <span>{getRoleLabel(row.role)}</span>
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: 'phone',
+        label: t.lists.colPhone,
+        defaultWidth: 160,
+        minWidth: 110,
+        maxWidth: 280,
+        render: (row) => (
+          <span className="block truncate">{row.phoneNumber || '+994 00 000 00 00'}</span>
+        ),
+      },
+    ],
+    [t],
+  )
 
   return (
     <div className="flex flex-col gap-5 font-sans">
@@ -230,109 +277,23 @@ export function AdminsList() {
         onOpenSendCoin={() => setSendCoinOpen(true)}
       />
 
-      {/* Table */}
-      {adminsQuery.isLoading ? (
-        <div className="overflow-hidden rounded-xl border border-border bg-card px-4 py-16 text-center text-sm text-muted-foreground animate-pulse">
-          {t.lists.adminsLoading}
-        </div>
-      ) : sorted.length === 0 ? (
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
-          <table className="w-full table-fixed border-collapse">
-            <colgroup>
-              <col style={{ width: 48 }} />
-              <col style={{ width: colWidths[0] }} />
-              <col style={{ width: colWidths[1] }} />
-              <col style={{ width: colWidths[2] }} />
-              <col />
-            </colgroup>
-            <thead>
-              <tr className="border-b border-border bg-[#00B4CC14]">
-                <th className="px-4 py-3 text-center">
-                  <input type="checkbox" disabled className="h-4 w-4 opacity-40" />
-                </th>
-                {['ID', 'Ad / Soyad', 'Rol', 'Telefon'].map((header) => (
-                  <th key={header} className="px-2 py-3 text-left text-[11px] font-medium uppercase text-foreground/80">
-                    {header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-          </table>
-          <div className="flex flex-col items-center gap-3 py-20 text-center">
-            <p className="text-base font-semibold text-foreground">{t.lists.adminsEmpty}</p>
-            <p className="text-sm text-muted-foreground max-w-xs">
-              {t.lists.adminsEmptyDesc}
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-          <table ref={tableRef} className="w-full table-fixed border-collapse" style={{ userSelect: activeColIndexRef.current !== -1 ? 'none' : undefined }}>
-            <colgroup>
-              <col style={{ width: 48 }} />
-              <col style={{ width: colWidths[0] }} />
-              <col style={{ width: colWidths[1] }} />
-              <col style={{ width: colWidths[2] }} />
-              <col />
-            </colgroup>
-            <thead>
-              <tr className="border-b border-[#cecfd2]/60 dark:border-border bg-[#00B4CC]/[0.15] dark:bg-[#00B4CC]/10 rounded-t-lg">
-                <th className="px-4 py-3 text-center">
-                  <input type="checkbox" checked={allOnPage} onChange={toggleAll} className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded" />
-                </th>
-                {['ID', 'Ad / Soyad', 'Rol'].map((header, idx) => (
-                  <th key={header} className="relative px-2 py-3 text-left text-[11px] font-bold uppercase text-foreground/80">
-                    {header}
-                    <span
-                      onMouseDown={(e) => handleMouseDown(idx, e)}
-                      className="absolute right-0 top-0 bottom-0 w-[5px] cursor-col-resize select-none hover:bg-[#00B4CC]/30 transition-colors"
-                    />
-                  </th>
-                ))}
-                <th className="px-2 py-3 text-left text-[11px] font-bold uppercase text-foreground/80">
-                  Telefon
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.map((admin) => (
-                <tr key={admin.id} className="border-b border-border last:border-0 hover:bg-secondary/40 transition-all duration-200 bg-card cursor-pointer" onClick={() => router.push(`/admins/${admin.id}`)}>
-                  <td className="px-4 py-3 text-center">
-                    <input
-                      type="checkbox"
-                      checked={selected.has(admin.id)}
-                      onChange={() => toggleOne(admin.id)}
-                      onClick={(event) => event.stopPropagation()}
-                      className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded"
-                    />
-                  </td>
-                  <td className="px-2 py-3 text-sm font-normal text-black truncate">{admin.id}</td>
-                  <td className="px-2 py-3 text-sm font-normal text-black truncate" title={admin.fullName || ''}>
-                    {admin.fullName}
-                  </td>
-                  <td className="px-2 py-3">
-                    <div className="flex items-center">
-                      <div className="flex h-[22px] w-fit items-center justify-center gap-1.5 rounded-full bg-[#00B4CC]/10 px-3 text-[10px] font-medium uppercase text-[#00B4CC]">
-                        <Image
-                          src="/admin.svg"
-                          width={12}
-                          height={12}
-                          alt=""
-                          className="shrink-0"
-                        />
-                        <span>{getRoleLabel(admin.role)}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-2 py-3 text-sm font-normal text-black truncate">
-                    {admin.phoneNumber || '+994 00 000 00 00'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <AdminDataTable
+        storageKey="admins"
+        columns={columns}
+        rows={sorted}
+        getRowId={(row) => row.id}
+        isLoading={adminsQuery.isLoading}
+        emptyTitle={t.lists.adminsEmpty}
+        emptyDescription={t.lists.adminsEmptyDesc}
+        onRowClick={(row) => router.push(`/admins/${row.id}`)}
+        selection={{
+          headerChecked: allOnPage,
+          headerIndeterminate: someOnPage && !allOnPage,
+          onToggleAll: toggleAll,
+          isRowSelected: (id) => selected.has(Number(id)),
+          onToggleRow: (id) => toggleOne(Number(id)),
+        }}
+      />
 
       {adminsQuery.isError && (
         <p className="text-sm text-red-500">{t.lists.adminsError}</p>

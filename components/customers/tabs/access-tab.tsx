@@ -5,7 +5,7 @@ import { ChevronDown, Check, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useCustomerQrHistoryQuery } from '@/modules/customers/hooks/use-customers-query'
 import type { QrHistoryItem } from '@/modules/customers/types/customer.types'
-import { useResizableColumns } from '@/hooks/use-resizable-columns'
+import { AdminDataTable, type AdminDataTableColumn } from '@/components/ui/admin-data-table'
 
 const PAGE_SIZE = 5
 
@@ -51,11 +51,6 @@ export function AccessTab({ userId }: { userId: string }) {
 
   const { data = [], isLoading, isError } = useCustomerQrHistoryQuery(userId)
 
-  const { colWidths, tableRef, handleMouseDown } = useResizableColumns(
-    [160, 200, 130, 200],
-    [140, 150, 100, 150]
-  )
-
   useEffect(() => {
     function h(e: MouseEvent) {
       if (sortRef.current && !sortRef.current.contains(e.target as Node)) setSortOpen(false)
@@ -81,6 +76,82 @@ export function AccessTab({ userId }: { userId: string }) {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const rows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
   const currentSortLabel = SORT_OPTIONS.find((o) => o.value === sort)?.label ?? 'Sırala'
+
+  const columns: AdminDataTableColumn<QrHistoryItem>[] = useMemo(
+    () => [
+      {
+        id: 'datetime',
+        label: 'Tarix / Saat',
+        defaultWidth: 150,
+        minWidth: 120,
+        maxWidth: 200,
+        render: (row) => (
+          <span className="block truncate whitespace-nowrap" title={row.dateTime}>
+            {row.dateTime}
+          </span>
+        ),
+      },
+      {
+        id: 'gym',
+        label: 'Zal Adı',
+        defaultWidth: 180,
+        minWidth: 140,
+        maxWidth: 320,
+        flex: true,
+        render: (row) => (
+          <span className="block truncate whitespace-nowrap" title={row.gymName}>
+            {row.gymName}
+          </span>
+        ),
+      },
+      {
+        id: 'result',
+        label: 'Nəticə',
+        defaultWidth: 130,
+        minWidth: 100,
+        maxWidth: 180,
+        render: (row) => (
+          <span
+            className={cn(
+              'inline-flex w-fit max-w-full truncate rounded-full px-3 py-1 text-xs font-semibold',
+              row.status === 'Uğurlu' ? 'bg-green-600 text-white' : 'bg-red-500 text-white',
+            )}
+          >
+            • {row.status === 'Uğurlu' ? 'Təsdiqləndı' : 'Rədd edildi'}
+          </span>
+        ),
+      },
+      {
+        id: 'reason',
+        label: 'Səbəb',
+        defaultWidth: 180,
+        minWidth: 120,
+        maxWidth: 320,
+        flex: true,
+        render: (row) => {
+          const label = reasonLabel(row)
+          return (
+            <span className="block truncate whitespace-nowrap" title={label}>
+              {label}
+            </span>
+          )
+        },
+      },
+      {
+        id: 'platform',
+        label: 'Platforma',
+        defaultWidth: 130,
+        minWidth: 100,
+        maxWidth: 200,
+        render: (row) => (
+          <span className="block truncate whitespace-nowrap" title={row.platform}>
+            {row.platform}
+          </span>
+        ),
+      },
+    ],
+    [],
+  )
 
   function handleSearch(val: string) {
     setSearch(val)
@@ -127,108 +198,18 @@ export function AccessTab({ userId }: { userId: string }) {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto rounded-xl border border-border">
-        <table ref={tableRef} className="w-full text-sm border-separate border-spacing-0" style={{ tableLayout: "fixed", minWidth: "750px" }}>
-          <colgroup>
-            <col style={{ width: `${colWidths[0]}px` }} />
-            <col style={{ width: `${colWidths[1]}px` }} />
-            <col style={{ width: `${colWidths[2]}px` }} />
-            <col style={{ width: `${colWidths[3]}px` }} />
-            <col />
-          </colgroup>
-          <thead>
-            <tr className="bg-[#E8F9FB] text-left">
-              <th className="px-4 py-3 font-semibold text-foreground whitespace-nowrap relative">
-                Tarix / Saat
-                <div
-                  onMouseDown={(e) => handleMouseDown(0, e)}
-                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
-                >
-                  <div className="w-[2px] h-4 bg-[#cecfd2] dark:bg-border group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-                </div>
-              </th>
-              <th className="px-4 py-3 font-semibold text-foreground whitespace-nowrap relative">
-                Zal Adı
-                <div
-                  onMouseDown={(e) => handleMouseDown(1, e)}
-                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
-                >
-                  <div className="w-[2px] h-4 bg-[#cecfd2] dark:bg-border group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-                </div>
-              </th>
-              <th className="px-4 py-3 font-semibold text-foreground whitespace-nowrap relative">
-                Nəticə
-                <div
-                  onMouseDown={(e) => handleMouseDown(2, e)}
-                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
-                >
-                  <div className="w-[2px] h-4 bg-[#cecfd2] dark:bg-border group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-                </div>
-              </th>
-              <th className="px-4 py-3 font-semibold text-foreground whitespace-nowrap relative">
-                Səbəb
-                <div
-                  onMouseDown={(e) => handleMouseDown(3, e)}
-                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
-                >
-                  <div className="w-[2px] h-4 bg-[#cecfd2] dark:bg-border group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-                </div>
-              </th>
-              <th className="px-4 py-3 font-semibold text-foreground whitespace-nowrap relative">Platforma</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {isLoading && Array.from({ length: 4 }).map((_, i) => (
-              <tr key={i} className="bg-card">
-                {Array.from({ length: 5 }).map((_, j) => (
-                  <td key={j} className="px-4 py-3">
-                    <div className="h-4 w-full animate-pulse rounded bg-secondary" />
-                  </td>
-                ))}
-              </tr>
-            ))}
-            {isError && (
-              <tr>
-                <td colSpan={5} className="py-16 text-center text-sm text-muted-foreground">
-                  Giriş tarixçəsi yüklənmədi.
-                </td>
-              </tr>
-            )}
-            {!isLoading && !isError && rows.length === 0 && (
-              <tr>
-                <td colSpan={5} className="py-16 text-center text-sm text-muted-foreground">
-                  Heç bir giriş qeydi tapılmadı.
-                </td>
-              </tr>
-            )}
-            {!isLoading && !isError && rows.map((row, i) => (
-              <tr key={i} className="bg-card hover:bg-secondary/30 transition-colors">
-                <td className="px-4 py-3 overflow-hidden">
-                  <span className="text-foreground whitespace-nowrap truncate block" title={row.dateTime}>{row.dateTime}</span>
-                </td>
-                <td className="px-4 py-3 overflow-hidden">
-                  <span className="text-foreground whitespace-nowrap truncate block" title={row.gymName}>{row.gymName}</span>
-                </td>
-                <td className="px-4 py-3 overflow-hidden">
-                  <span className={cn(
-                    'rounded-full px-3 py-1 text-xs font-semibold truncate block w-fit',
-                    row.status === 'Uğurlu' ? 'bg-green-600 text-white' : 'bg-red-500 text-white',
-                  )}>
-                    • {row.status === 'Uğurlu' ? 'Təsdiqləndı' : 'Rədd edildi'}
-                  </span>
-                </td>
-                <td className="px-4 py-3 overflow-hidden">
-                  <span className="text-foreground whitespace-nowrap truncate block" title={reasonLabel(row)}>{reasonLabel(row)}</span>
-                </td>
-                <td className="px-4 py-3 overflow-hidden">
-                  <span className="text-foreground whitespace-nowrap truncate block" title={row.platform}>{row.platform}</span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {isError ? (
+        <p className="py-8 text-center text-sm text-muted-foreground">Giriş tarixçəsi yüklənmədi.</p>
+      ) : (
+        <AdminDataTable
+          storageKey="customer-access"
+          columns={columns}
+          rows={rows}
+          getRowId={(row) => `${row.dateTime}-${row.gymName}-${row.platform}`}
+          isLoading={isLoading}
+          emptyTitle="Heç bir giriş qeydi tapılmadı."
+        />
+      )}
 
       <Pagination page={page} totalPages={totalPages} onChange={setPage} />
     </div>

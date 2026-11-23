@@ -583,6 +583,12 @@ const az = {
     colStatus: "Status",
     colSubscription: "Abunəlik",
     tableColumnHint: "Sütun kənarlarını sürükləyərək ölçünü dəyişin · tutacaqlarla sıranı dəyişin",
+    tableView: "Cədvəl görünüşü",
+    tableReset: "Sıfırla",
+    tableColumns: "Sütunlar",
+    tableVisible: "{count} görünür",
+    tableMoveLeft: "{column} sütununu sola köçür",
+    tableMoveRight: "{column} sütununu sağa köçür",
     colRole: "Rol",
     colGym: "Zal adı",
     // Status badges

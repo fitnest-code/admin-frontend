@@ -16,7 +16,6 @@ import { CustomerFilters, CustomerStats } from './list/customer-list-controls'
 import { CustomerBulkActions, EmailModal, PushModal, SmsModal, BlockModal, BulkSendCoinModal } from './list/customer-message-modals'
 import { CustomerPagination, CustomerTable } from './list/customer-list-table'
 import {
-  sortCustomers,
   type CustomerSortValue,
   normalizeCustomerStatus,
   normalizeSubscriptionStatus,
@@ -62,15 +61,16 @@ export function CustomersList() {
   })
   const packageNamesQuery = useSubscriptionPackageNamesQuery()
   const statisticsQuery = useUserStatisticsQuery()
+  // Server already returns the current page in sort order — no client re-sort (avoids
+  // fighting pagination and a second pass over the same 10 rows).
   const customers = customersQuery.data?.items ?? []
-  const sorted = useMemo(() => sortCustomers(customers, sortBy), [customers, sortBy])
 
   useEffect(() => {
     setSelected(new Map())
   }, [search, pkg, duration, subStatus])
 
   async function toggleAll() {
-    const allOnPage = sorted.length > 0 && sorted.every((customer) => selected.has(customer.id))
+    const allOnPage = customers.length > 0 && customers.every((customer) => selected.has(customer.id))
     // Header check selects every matching customer; uncheck must clear the whole Map
     // (previously only removed the current page, leaving thousands still selected).
     if (allOnPage) {
@@ -111,13 +111,18 @@ export function CustomersList() {
       if (next.has(id)) {
         next.delete(id)
       } else {
-        const customer = sorted.find((c) => c.id === id)
+        const customer = customers.find((c) => c.id === id)
         if (customer) {
           next.set(id, customer)
         }
       }
       return next
     })
+  }
+
+  function handleSortChange(value: CustomerSortValue | null) {
+    setSortBy(value)
+    setPage(1) // sort must restart at page 1 so server pages stay consistent
   }
 
   const total = customersQuery.data?.total ?? 0
@@ -213,7 +218,7 @@ export function CustomersList() {
           setPage(1)
         }}
         sortBy={sortBy}
-        onSortChange={setSortBy}
+        onSortChange={handleSortChange}
       />
 
       <CustomerBulkActions 
@@ -228,7 +233,7 @@ export function CustomersList() {
       />
 
       <CustomerTable
-        customers={sorted}
+        customers={customers}
         isLoading={customersQuery.isLoading}
         selected={new Set(selected.keys())}
         onToggleAll={toggleAll}
@@ -236,7 +241,7 @@ export function CustomersList() {
         onView={(id) => router.push(`/customers/${id}`)}
         isSelectingAll={isSelectingAll}
         sortBy={sortBy}
-        onSortChange={setSortBy}
+        onSortChange={handleSortChange}
       />
 
       {customersQuery.isError && (

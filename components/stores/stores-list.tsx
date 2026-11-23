@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Search, ChevronDown, Check, MoreVertical, Plus, Loader2, Eye, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -15,7 +15,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu'
-import { useResizableColumns } from '@/hooks/use-resizable-columns'
+import { AdminDataTable, type AdminDataTableColumn } from '@/components/ui/admin-data-table'
 
 const PAGE_SIZE = 10
 
@@ -58,9 +58,88 @@ export function StoresList() {
   const stores = data?.items ?? []
   const total = data?.total ?? 0
 
-  const { colWidths, tableRef, handleMouseDown } = useResizableColumns(
-    [220, 300, 220],
-    [150, 150, 150]
+  const columns: AdminDataTableColumn<AdminStoreListItem>[] = useMemo(
+    () => [
+      {
+        id: 'name',
+        label: 'Mağaza adı',
+        defaultWidth: 200,
+        minWidth: 140,
+        maxWidth: 360,
+        flex: true,
+        render: (store) => (
+          <span className="block truncate" title={store.name}>
+            {store.name}
+          </span>
+        ),
+      },
+      {
+        id: 'address',
+        label: 'Ünvan',
+        defaultWidth: 260,
+        minWidth: 160,
+        maxWidth: 480,
+        flex: true,
+        render: (store) => (
+          <span className="block truncate" title={store.fullAddress}>
+            {store.fullAddress}
+          </span>
+        ),
+      },
+      {
+        id: 'phone',
+        label: 'Telefon nömrəsi',
+        defaultWidth: 180,
+        minWidth: 120,
+        maxWidth: 280,
+        render: (store) => (
+          <span className="block truncate" title={store.phone}>
+            {store.phone}
+          </span>
+        ),
+      },
+      {
+        id: 'actions',
+        label: 'Ətraflı',
+        defaultWidth: 88,
+        minWidth: 72,
+        maxWidth: 120,
+        reorderable: false,
+        hideable: false,
+        render: (store) => (
+          <div className="relative flex justify-center" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200 outline-none"
+                  aria-label="Ətraflı seçimlər"
+                >
+                  <MoreVertical size={20} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[180px] flex flex-col gap-3 rounded-[12px] border border-[#ECECED] bg-white p-3 shadow-lg">
+                <DropdownMenuItem
+                  onClick={() => router.push(`/stores/${store.id}`)}
+                  className="flex w-full items-center gap-2 border-b border-[#ECECED] pb-3 text-base font-normal text-black hover:opacity-70 transition-opacity cursor-pointer focus:bg-transparent px-0 py-0 rounded-none"
+                >
+                  <Eye size={16} className="text-[#333333]" />
+                  <span className="leading-none">Detallı bax</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setDeleteId(store.id)}
+                  className="flex w-full items-center gap-2 text-base font-normal text-[#F10303] hover:opacity-70 transition-opacity cursor-pointer focus:bg-transparent px-0 py-0"
+                >
+                  <Trash2 size={16} />
+                  <span className="leading-none">Sil</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        ),
+      },
+    ],
+    [router],
   )
 
   function handleDelete() {
@@ -106,95 +185,33 @@ export function StoresList() {
         </button>
       </div>
 
-      {/* Cədvəl Bölməsi - menyunun kəsilməməsi üçün overflow-hidden çıxarıldı */}
-      <div className="overflow-x-auto rounded-xl border border-border bg-card">
-        <table ref={tableRef} className="w-full border-separate border-spacing-0" style={{ tableLayout: "fixed", minWidth: "750px" }}>
-          <colgroup>
-            <col style={{ width: `${colWidths[0]}px` }} />
-            <col style={{ width: `${colWidths[1]}px` }} />
-            <col style={{ width: `${colWidths[2]}px` }} />
-            <col />
-          </colgroup>
-          <thead>
-            <tr className="bg-[#00B4CC]/10 text-left">
-              <th className="px-4 py-3 text-xs font-bold text-[#111827] uppercase tracking-wider relative">
-                Mağaza adı
-                <div
-                  onMouseDown={(e) => handleMouseDown(0, e)}
-                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
-                >
-                  <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-                </div>
-              </th>
-              <th className="px-4 py-3 text-xs font-bold text-[#111827] uppercase tracking-wider relative">
-                Ünvan
-                <div
-                  onMouseDown={(e) => handleMouseDown(1, e)}
-                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
-                >
-                  <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-                </div>
-              </th>
-              <th className="px-4 py-3 text-xs font-bold text-[#111827] uppercase tracking-wider relative">
-                Telefon nömrəsi
-                <div
-                  onMouseDown={(e) => handleMouseDown(2, e)}
-                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
-                >
-                  <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-                </div>
-              </th>
-              <th className="px-4 py-3 text-xs font-bold text-[#111827] uppercase tracking-wider text-center">Ətraflı</th>
-            </tr>
-          </thead>
+      <AdminDataTable
+        storageKey="stores"
+        columns={columns}
+        rows={stores}
+        getRowId={(row) => row.id}
+        isLoading={isLoading}
+        emptyTitle={debouncedSearch ? 'Axtarışa uyğun mağaza tapılmadı.' : 'Siyahı boşdur.'}
+        onRowClick={(store) => router.push(`/stores/${store.id}`)}
+      />
 
-          {/* Body */}
-          <tbody>
-            {isLoading ? (
-              <tr>
-                <td colSpan={4} className="py-32 text-center">
-                  <div className="flex flex-col items-center justify-center gap-3">
-                    <Loader2 size={32} className="animate-spin text-[#00B4CC]" />
-                    <p className="text-sm text-muted-foreground animate-pulse">Mağazalar yüklənir...</p>
-                  </div>
-                </td>
-              </tr>
-            ) : stores.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="py-32 text-center text-sm text-muted-foreground italic">
-                  {debouncedSearch ? "Axtarışa uyğun mağaza tapılmadı." : "Siyahı boşdur."}
-                </td>
-              </tr>
-            ) : (
-              stores.map((s) => (
-                <StoreRow
-                  key={s.id}
-                  store={s}
-                  onView={() => router.push(`/stores/${s.id}`)}
-                  onDelete={() => setDeleteId(s.id)}
-                />
-              ))
-            )}
-          </tbody>
-        </table>
-
-        {total > PAGE_SIZE && !isLoading && (
-          <div className="flex items-center justify-center gap-1 border-t border-border px-4 py-4">
-            {Array.from({ length: Math.ceil(total / PAGE_SIZE) }, (_, i) => i + 1).map((p) => (
-              <button
-                key={p}
-                onClick={() => setPage(p)}
-                className={cn(
-                  'flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors',
-                  p === page ? 'bg-[#00B4CC] text-white shadow-sm' : 'text-foreground hover:bg-secondary',
-                )}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      {total > PAGE_SIZE && !isLoading && stores.length > 0 && (
+        <div className="flex items-center justify-center gap-1 border border-border rounded-lg px-4 py-4 bg-card">
+          {Array.from({ length: Math.ceil(total / PAGE_SIZE) }, (_, i) => i + 1).map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => setPage(p)}
+              className={cn(
+                'flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors',
+                p === page ? 'bg-[#00B4CC] text-white shadow-sm' : 'text-foreground hover:bg-secondary',
+              )}
+            >
+              {p}
+            </button>
+          ))}
+        </div>
+      )}
 
       {isError && (
         <div className="p-3 bg-red-50 border border-red-100 rounded-lg text-red-600 text-sm text-center font-medium">
@@ -218,66 +235,6 @@ export function StoresList() {
         type={modalConfig.type}
       />
     </div>
-  )
-}
-
-// ── StoreRow Component (Zallardakı dizayna tam uyğun) ─────────────────────────
-function StoreRow({
-  store,
-  onView,
-  onDelete,
-}: {
-  store: AdminStoreListItem
-  onView: () => void
-  onDelete: () => void
-}) {
-  return (
-    <tr
-      onClick={onView}
-      className="hover:bg-secondary/40 border-b border-border transition-colors relative cursor-pointer"
-    >
-      <td className="px-4 py-3.5 text-sm font-normal text-black overflow-hidden">
-        <span className="truncate block" title={store.name}>{store.name}</span>
-      </td>
-      <td className="px-4 py-3.5 text-sm text-black overflow-hidden">
-        <span className="line-clamp-1 block" title={store.fullAddress}>{store.fullAddress}</span>
-      </td>
-      <td className="px-4 py-3.5 text-sm text-black overflow-hidden">
-        <span className="truncate block" title={store.phone}>{store.phone}</span>
-      </td>
-      <td className="px-4 py-3.5 text-center">
-        {/* Action menu */}
-        <div className="relative flex justify-center" onClick={(e) => e.stopPropagation()}>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200 outline-none"
-                aria-label="Ətraflı seçimlər"
-              >
-                <MoreVertical size={20} />
-              </button>
-            </DropdownMenuTrigger>
-
-            <DropdownMenuContent align="end" className="w-[180px] flex flex-col gap-3 rounded-[12px] border border-[#ECECED] bg-white p-3 shadow-lg">
-              <DropdownMenuItem
-                onClick={onView}
-                className="flex w-full items-center gap-2 border-b border-[#ECECED] pb-3 text-base font-normal text-black hover:opacity-70 transition-opacity cursor-pointer focus:bg-transparent px-0 py-0 rounded-none"
-              >
-                <Eye size={16} className="text-[#333333]" />
-                <span className="leading-none">Detallı bax</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={onDelete}
-                className="flex w-full items-center gap-2 text-base font-normal text-[#F10303] hover:opacity-70 transition-opacity cursor-pointer focus:bg-transparent px-0 py-0"
-              >
-                <Trash2 size={16} />
-                <span className="leading-none">Sil</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </td>
-    </tr>
   )
 }
 

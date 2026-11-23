@@ -11,8 +11,7 @@ import { PAGE_SIZE } from '../customers/list/customer-list-constants'
 import { CustomerBulkActions, EmailModal, PushModal, SmsModal, BlockModal, BulkSendCoinModal } from '../customers/list/customer-message-modals'
 import { CustomerPagination } from '../customers/list/customer-list-table'
 import { normalizeCustomerStatus } from '../customers/list/customer-list-utils'
-import styles from '../partners/partners-list.module.css'
-import { useResizableColumns } from '@/hooks/use-resizable-columns'
+import { AdminDataTable, type AdminDataTableColumn } from '@/components/ui/admin-data-table'
 
 const STAFF_SORT_OPTIONS = [
   { value: 'newest', label: 'Yeni əlavə olunanlar' },
@@ -122,11 +121,6 @@ export function FitnestStaffList() {
   const [blockOpen, setBlockOpen] = useState(false)
   const [sendCoinOpen, setSendCoinOpen] = useState(false)
 
-  const { colWidths, tableRef, handleMouseDown } = useResizableColumns(
-    [100, 320, 240],
-    [60, 160, 120]
-  )
-
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setDebouncedSearch(search.trim())
@@ -182,16 +176,59 @@ export function FitnestStaffList() {
 
   const total = staffQuery.data?.total ?? 0
   const allOnPage = sorted.length > 0 && sorted.every((s) => selected.has(s.id))
+  const someOnPage = sorted.some((s) => selected.has(s.id))
   const selectedUsers = useMemo(() => Array.from(selected.values()), [selected])
 
-  // Resize handle element shared across resizable headers
-  const resizeHandle = (colIndex: number) => (
-    <div
-      onMouseDown={(e) => handleMouseDown(colIndex, e)}
-      className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00B4CC]/30 group/handle flex items-center justify-center transition-colors z-10"
-    >
-      <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00B4CC] transition-colors rounded" />
-    </div>
+  const columns: AdminDataTableColumn<CustomerListItem>[] = useMemo(
+    () => [
+      {
+        id: 'id',
+        label: t.lists.colId,
+        defaultWidth: 88,
+        minWidth: 56,
+        maxWidth: 160,
+        render: (row) => <span className="block truncate tabular-nums">{row.id}</span>,
+      },
+      {
+        id: 'name',
+        label: t.lists.colName,
+        defaultWidth: 220,
+        minWidth: 120,
+        maxWidth: 420,
+        flex: true,
+        render: (row) => (
+          <span className="block truncate" title={row.fullName || ''}>
+            {row.fullName}
+          </span>
+        ),
+      },
+      {
+        id: 'role',
+        label: t.lists.colRole,
+        defaultWidth: 160,
+        minWidth: 120,
+        maxWidth: 240,
+        render: () => (
+          <div className="flex items-center">
+            <div className="flex h-[22px] w-fit items-center justify-center gap-1.5 rounded-full bg-[#00B4CC]/10 px-3 text-[10px] font-medium uppercase text-[#00B4CC]">
+              <Image src="/admin.svg" width={12} height={12} alt="" className="shrink-0" />
+              <span>{t.lists.staffRoleLabel}</span>
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: 'phone',
+        label: t.lists.colPhone,
+        defaultWidth: 160,
+        minWidth: 110,
+        maxWidth: 280,
+        render: (row) => (
+          <span className="block truncate">{row.phoneNumber || '+994 00 000 00 00'}</span>
+        ),
+      },
+    ],
+    [t],
   )
 
   return (
@@ -212,7 +249,13 @@ export function FitnestStaffList() {
             className="h-[40px] w-full rounded-lg border border-border bg-card pl-11 pr-4 text-sm font-medium outline-none focus:border-[#00B4CC] transition-all duration-200 shadow-sm"
           />
         </div>
-        <SortDropdown value={sortBy} onChange={setSortBy} />
+        <SortDropdown
+          value={sortBy}
+          onChange={(val) => {
+            setSortBy(val)
+            setPage(1)
+          }}
+        />
       </div>
 
       <CustomerBulkActions
@@ -224,113 +267,23 @@ export function FitnestStaffList() {
         onOpenSendCoin={() => setSendCoinOpen(true)}
       />
 
-      {/* Table */}
-      {staffQuery.isLoading ? (
-        <div className="overflow-hidden rounded-xl border border-border bg-card px-4 py-16 text-center text-sm text-muted-foreground">
-          {t.lists.staffLoading}
-        </div>
-      ) : sorted.length === 0 ? (
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
-          <div className="overflow-x-auto">
-            <table className="w-full border-separate border-spacing-0" style={{ tableLayout: 'fixed', minWidth: '500px' }}>
-              <colgroup>
-                <col style={{ width: '48px' }} />
-                {colWidths.map((w, i) => <col key={i} style={{ width: `${w}px` }} />)}
-                <col />
-              </colgroup>
-              <thead>
-                <tr className="bg-[#00B4CC]/[0.15] dark:bg-[#00B4CC]/10 text-left border-b border-border">
-                  <th className="px-4 py-3">
-                    <input type="checkbox" disabled className="h-4 w-4 opacity-40" />
-                  </th>
-                  <th className="px-4 py-3 text-[11px] font-medium uppercase text-foreground/80">ID</th>
-                  <th className="px-4 py-3 text-[11px] font-medium uppercase text-foreground/80">Ad / Soyad</th>
-                  <th className="px-4 py-3 text-[11px] font-medium uppercase text-foreground/80">Rol</th>
-                  <th className="px-4 py-3 text-[11px] font-medium uppercase text-foreground/80">Telefon</th>
-                </tr>
-              </thead>
-            </table>
-          </div>
-          <div className="flex flex-col items-center gap-3 py-20 text-center">
-            <p className="text-base font-semibold text-foreground">{t.lists.staffEmpty}</p>
-            <p className="text-sm text-muted-foreground max-w-xs">
-              {t.lists.staffEmptyDesc}
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border border-border bg-card shadow-sm">
-          <table ref={tableRef} className="w-full border-separate border-spacing-0" style={{ tableLayout: 'fixed', minWidth: '500px' }}>
-            <colgroup>
-              <col style={{ width: '48px' }} />
-              {colWidths.map((w, i) => <col key={i} style={{ width: `${w}px` }} />)}
-              <col />
-            </colgroup>
-            <thead>
-              <tr className="bg-[#00B4CC]/[0.15] dark:bg-[#00B4CC]/10 text-left border-b border-[#cecfd2]/60 dark:border-border">
-                <th className="px-4 py-3">
-                  <input type="checkbox" checked={allOnPage} onChange={toggleAll} className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded" />
-                </th>
-                <th className="px-4 py-3 text-[11px] font-bold uppercase text-foreground/80 relative">
-                  {t.lists.colId}
-                  {resizeHandle(0)}
-                </th>
-                <th className="px-4 py-3 text-[11px] font-bold uppercase text-foreground/80 relative">
-                  {t.lists.colName}
-                  {resizeHandle(1)}
-                </th>
-                <th className="px-4 py-3 text-[11px] font-bold uppercase text-foreground/80 relative">
-                  {t.lists.colRole}
-                  {resizeHandle(2)}
-                </th>
-                <th className="px-4 py-3 text-[11px] font-bold uppercase text-foreground/80">
-                  {t.lists.colPhone}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.map((member) => (
-                <tr
-                  key={member.id}
-                  className="border-b border-border last:border-0 hover:bg-secondary/40 transition-all duration-200 bg-card cursor-pointer"
-                  onClick={() => router.push(`/fitnest-staff/${member.id}`)}
-                >
-                  <td className="px-4 py-3 text-center">
-                    <input
-                      type="checkbox"
-                      checked={selected.has(member.id)}
-                      onChange={() => toggleOne(member.id)}
-                      onClick={(event) => event.stopPropagation()}
-                      className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded"
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-sm font-normal text-black truncate">{member.id}</td>
-                  <td className="px-4 py-3 text-sm font-normal text-black truncate" title={member.fullName || ''}>
-                    {member.fullName}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center">
-                      <div className="flex h-[22px] w-fit items-center justify-center gap-1.5 rounded-full bg-[#00B4CC]/10 px-3 text-[10px] font-medium uppercase text-[#00B4CC]">
-                        <Image
-                          src="/admin.svg"
-                          width={12}
-                          height={12}
-                          alt=""
-                          className="shrink-0"
-                        />
-                        <span>{t.lists.staffRoleLabel}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-sm font-normal text-black truncate">
-                    {member.phoneNumber || '+994 00 000 00 00'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <AdminDataTable
+        storageKey="staff"
+        columns={columns}
+        rows={sorted}
+        getRowId={(row) => row.id}
+        isLoading={staffQuery.isLoading}
+        emptyTitle={t.lists.staffEmpty}
+        emptyDescription={t.lists.staffEmptyDesc}
+        onRowClick={(row) => router.push(`/fitnest-staff/${row.id}`)}
+        selection={{
+          headerChecked: allOnPage,
+          headerIndeterminate: someOnPage && !allOnPage,
+          onToggleAll: toggleAll,
+          isRowSelected: (id) => selected.has(Number(id)),
+          onToggleRow: (id) => toggleOne(Number(id)),
+        }}
+      />
 
       {staffQuery.isError && (
         <p className="text-sm text-red-500">{t.lists.staffError}</p>

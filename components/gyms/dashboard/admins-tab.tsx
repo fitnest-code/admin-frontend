@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useMemo } from "react";
 import Image from "next/image";
 import { X, Loader2, Eye, EyeOff, Edit, Trash, KeyRound } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
@@ -12,6 +12,7 @@ import { ConfirmDeleteModal } from "../modals/confirm-delete-modal";
 import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 
 import { useT } from "@/lib/i18n";
+import { AdminDataTable, type AdminDataTableColumn } from "@/components/ui/admin-data-table";
 
 export function AdminsTab() {
   const t = useT();
@@ -33,51 +34,6 @@ export function AdminsTab() {
     type: "success",
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-
-  // Resizable column state
-  const [colWidths, setColWidths] = useState<number[]>([130, 80, 180, 160, 200]);
-  const startXRef = useRef<number>(0);
-  const startWidthRef = useRef<number>(0);
-  const activeColIndexRef = useRef<number>(-1);
-  const tableRef = useRef<HTMLTableElement>(null);
-  const containerWidthRef = useRef<number>(0);
-  const mouseMoveRef = useRef<(e: MouseEvent) => void>(null);
-  const mouseUpRef = useRef<() => void>(null);
-  const minWidths = [90, 60, 120, 100, 120];
-
-  mouseMoveRef.current = (e: MouseEvent) => {
-    if (activeColIndexRef.current === -1) return;
-    const deltaX = e.clientX - startXRef.current;
-    const minW = minWidths[activeColIndexRef.current] || 100;
-    const sumOthers = colWidths.reduce((acc, w, idx) => idx !== activeColIndexRef.current ? acc + w : acc, 0);
-    const maxW = Math.max(minW, containerWidthRef.current - sumOthers - 90);
-    const newWidth = Math.min(maxW, Math.max(minW, startWidthRef.current + deltaX));
-    setColWidths((prev) => { const copy = [...prev]; copy[activeColIndexRef.current] = newWidth; return copy; });
-  };
-
-  mouseUpRef.current = () => {
-    activeColIndexRef.current = -1;
-    if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current);
-    if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current);
-  };
-
-  const handleMouseDown = (index: number, e: React.MouseEvent) => {
-    e.preventDefault(); e.stopPropagation();
-    activeColIndexRef.current = index;
-    startXRef.current = e.clientX;
-    startWidthRef.current = colWidths[index];
-    if (tableRef.current) containerWidthRef.current = tableRef.current.parentElement?.getBoundingClientRect().width || tableRef.current.getBoundingClientRect().width;
-    else containerWidthRef.current = 800;
-    if (mouseMoveRef.current) document.addEventListener("mousemove", mouseMoveRef.current);
-    if (mouseUpRef.current) document.addEventListener("mouseup", mouseUpRef.current);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (mouseMoveRef.current) document.removeEventListener("mousemove", mouseMoveRef.current);
-      if (mouseUpRef.current) document.removeEventListener("mouseup", mouseUpRef.current);
-    };
-  }, []);
 
   const [form, setForm] = useState({
     name: "",
@@ -195,14 +151,126 @@ export function AdminsTab() {
     });
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex-1 py-20 flex flex-col justify-center items-center text-slate-400 gap-3">
-        <Loader2 className="animate-spin" size={32} />
-        <span className="font-medium font-sans">{t.admin.adminsLoading}</span>
-      </div>
-    );
-  }
+  const adminRows = admins ?? [];
+
+  const columns: AdminDataTableColumn<any>[] = useMemo(
+    () => [
+      {
+        id: "role",
+        label: t.common.role,
+        defaultWidth: 140,
+        minWidth: 120,
+        maxWidth: 180,
+        render: (admin) => (
+          <div className="inline-flex w-[120px] items-center justify-center gap-2 rounded border border-[#ececed] bg-[#00b4cc] px-2 py-0.5 text-white">
+            <div className="relative h-4 w-4 shrink-0">
+              <Image
+                src={admin.role === "Super admin" ? "/superAdmin.svg" : "/admin.svg"}
+                fill
+                alt="Role"
+                className={cn("object-contain", admin.role === "Super admin" ? "p-[2px]" : "p-[1px]")}
+              />
+            </div>
+            <span className="truncate text-[13px] font-medium leading-[20px]">
+              {admin.role === "Super admin" ? t.admin.superAdmin : t.admin.adminRole}
+            </span>
+          </div>
+        ),
+      },
+      {
+        id: "id",
+        label: t.common.id,
+        defaultWidth: 90,
+        minWidth: 70,
+        maxWidth: 120,
+        render: (admin) => <span className="block truncate tabular-nums">{String(admin.id).padStart(6, "0")}</span>,
+      },
+      {
+        id: "name",
+        label: `${t.common.name} / ${t.common.surname}`,
+        defaultWidth: 200,
+        minWidth: 140,
+        maxWidth: 320,
+        flex: true,
+        render: (admin) => (
+          <span className="block truncate">
+            {admin.name} {admin.surname}
+          </span>
+        ),
+      },
+      {
+        id: "phone",
+        label: t.common.phone,
+        defaultWidth: 160,
+        minWidth: 120,
+        maxWidth: 220,
+        render: (admin) => <span className="block truncate">{admin.phone || "+994 00 000 00 00"}</span>,
+      },
+      {
+        id: "email",
+        label: t.common.email,
+        defaultWidth: 200,
+        minWidth: 140,
+        maxWidth: 320,
+        flex: true,
+        render: (admin) => <span className="block truncate">{admin.email}</span>,
+      },
+      {
+        id: "actions",
+        label: t.common.more,
+        defaultWidth: 72,
+        minWidth: 64,
+        maxWidth: 96,
+        reorderable: false,
+        hideable: false,
+        render: (admin) => (
+          <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button type="button" className="mx-auto flex h-8 w-8 items-center justify-center transition-opacity hover:opacity-70">
+                  <Image src="/more.png" width={20} height={20} alt="More" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[160px]">
+                <DropdownMenuItem
+                  onClick={() => {
+                    setEditingAdminId(admin.id);
+                    setForm({
+                      name: admin.name,
+                      surname: admin.surname,
+                      phoneNumber: admin.phone || "",
+                      email: admin.email || "",
+                      password: "",
+                      role: admin.role || "Admin",
+                    });
+                    setFormErrors({});
+                    setModalOpen(true);
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Edit size={16} className="text-[#6a7282]" /> Məlumatı yenilə
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setResetPasswordAdminId({ id: admin.id, userId: admin.userId });
+                    setForm({ ...form, password: "" });
+                    setFormErrors({});
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <KeyRound size={16} className="text-[#6a7282]" /> Şifrəni yenilə
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setDeleteAdminId(admin.id)} className="flex items-center gap-2 text-red-600">
+                  <Trash size={16} /> {t.common.delete}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        ),
+      },
+    ],
+    [t, form],
+  );
 
   return (
     <div className="flex flex-col gap-6 py-2 font-sans text-black">
@@ -214,115 +282,14 @@ export function AdminsTab() {
           <h2 className="text-[18px] font-semibold leading-[28px] text-black">{t.admin.title}</h2>
         </div>
 
-        {/* Table Section */}
-        <div className="w-full flex flex-col items-start">
-          <table ref={tableRef} className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
-            <colgroup>
-              {colWidths.map((w, i) => (
-                <col key={i} style={{ width: `${w}px` }} />
-              ))}
-              <col style={{ width: '50px' }} />
-            </colgroup>
-            <thead>
-              <tr className="bg-[#00b4cc]/10 border border-[#ececed] rounded-t-lg">
-                {[
-                  t.common.role,
-                  t.common.id,
-                  `${t.common.name} / ${t.common.surname}`,
-                  t.common.phone,
-                  t.common.email,
-                ].map((label, i) => (
-                  <th
-                    key={i}
-                    className="text-[14px] leading-[20px] font-semibold text-black text-left px-[16px] py-3.5 relative select-none"
-                  >
-                    {label}
-                    <span
-                      onMouseDown={(e) => handleMouseDown(i, e)}
-                      className="absolute right-0 top-0 bottom-0 w-[5px] cursor-col-resize hover:bg-[#00b4cc]/30 transition-colors"
-                    />
-                  </th>
-                ))}
-                <th className="text-[14px] leading-[20px] font-semibold text-black text-center px-1 py-3.5">
-                  {t.common.more}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {admins?.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="bg-white border-x border-b border-[#ececed] p-8 text-center text-slate-400 text-sm">
-                    {t.admin.noAdmins}
-                  </td>
-                </tr>
-              ) : (
-                admins?.map((admin: any) => (
-                  <tr key={admin.id} className="bg-white border-x border-b border-[#ececed] hover:bg-slate-50 transition-colors text-[14px]">
-                    {/* Role Badge */}
-                    <td className="px-[16px] py-3">
-                      <div className="inline-flex w-[120px] items-center justify-center bg-[#00b4cc] border border-[#ececed] rounded-[4px] px-2 py-0.5 gap-2 text-white">
-                        <div className="w-4 h-4 relative shrink-0">
-                          <Image 
-                            src={admin.role === "Super admin" ? "/superAdmin.svg" : "/admin.svg"} 
-                            fill 
-                            alt="Role" 
-                            className={cn("object-contain", admin.role === "Super admin" ? "p-[2px]" : "p-[1px]")}
-                          />
-                        </div>
-                        <span className="text-[13px] font-medium leading-[20px] truncate">
-                          {admin.role === "Super admin" ? t.admin.superAdmin : t.admin.adminRole}
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* ID */}
-                    <td className="px-[16px] py-3 text-[16px] leading-[24px]">{String(admin.id).padStart(6, '0')}</td>
-
-                    {/* Name */}
-                    <td className="px-[16px] py-3 text-[16px] leading-[24px] truncate">{admin.name} {admin.surname}</td>
-
-                    {/* Phone */}
-                    <td className="px-[16px] py-3 text-[16px] leading-[24px] truncate">{admin.phone || "+994 00 000 00 00"}</td>
-
-                    {/* Email */}
-                    <td className="px-[16px] py-3 text-[16px] leading-[24px] truncate">{admin.email}</td>
-
-                    {/* Actions */}
-                    <td className="px-1 py-3 text-center">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button className="w-8 h-8 flex items-center justify-center hover:opacity-70 transition-opacity mx-auto">
-                            <Image src="/more.png" width={20} height={20} alt="More" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-[160px]">
-                          <DropdownMenuItem onClick={() => {
-                            setEditingAdminId(admin.id);
-                            setForm({ name: admin.name, surname: admin.surname, phoneNumber: admin.phone || "", email: admin.email || "", password: "", role: admin.role || "Admin" });
-                            setFormErrors({});
-                            setModalOpen(true);
-                          }} className="flex items-center gap-2">
-                            <Edit size={16} className="text-[#6a7282]" /> Məlumatı yenilə
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => {
-                            setResetPasswordAdminId({ id: admin.id, userId: admin.userId });
-                            setForm({ ...form, password: "" });
-                            setFormErrors({});
-                          }} className="flex items-center gap-2">
-                            <KeyRound size={16} className="text-[#6a7282]" /> Şifrəni yenilə
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setDeleteAdminId(admin.id)} className="flex items-center gap-2 text-red-600">
-                            <Trash size={16} /> {t.common.delete}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <AdminDataTable
+          storageKey="gym-admins"
+          columns={columns}
+          rows={adminRows}
+          getRowId={(admin) => admin.id}
+          isLoading={isLoading}
+          emptyTitle={t.admin.noAdmins}
+        />
 
         {/* Footer Action */}
         <div className="w-full flex justify-end mt-1">

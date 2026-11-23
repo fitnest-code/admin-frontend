@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { 
   ChevronDown, 
   ChevronLeft, 
@@ -24,14 +24,7 @@ import type { DateRange } from 'react-day-picker'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar as DatePicker } from '@/components/ui/calendar'
 import { SubscriptionBadge } from '@/components/ui/subscription-badge'
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table'
+import { AdminDataTable, type AdminDataTableColumn } from '@/components/ui/admin-data-table'
 import { cn } from '@/lib/utils'
 import { useT, useI18nStore } from '@/lib/i18n'
 import { az, enUS, ru } from 'date-fns/locale'
@@ -237,6 +230,51 @@ export function GymPaymentsPage() {
     return 'Bronze'
   }
 
+  const columns: AdminDataTableColumn<any>[] = useMemo(
+    () => [
+      {
+        id: 'gymName',
+        label: t.reports.gymName,
+        defaultWidth: 240,
+        minWidth: 160,
+        maxWidth: 420,
+        flex: true,
+        render: (row) => <span className="block truncate font-medium">{row.gymName}</span>,
+      },
+      {
+        id: 'qrCount',
+        label: t.reports.qrCount,
+        defaultWidth: 120,
+        minWidth: 90,
+        maxWidth: 160,
+        render: (row) => <span className="block truncate text-center">{row.qrCount}</span>,
+      },
+      {
+        id: 'subscription',
+        label: t.reports.gymSubscription,
+        defaultWidth: 160,
+        minWidth: 120,
+        maxWidth: 220,
+        render: (row) => (
+          <div className="flex justify-center">
+            <SubscriptionBadge type={getTier(row.subscription)} />
+          </div>
+        ),
+      },
+      {
+        id: 'amount',
+        label: t.reports.amount,
+        defaultWidth: 120,
+        minWidth: 100,
+        maxWidth: 160,
+        render: (row) => <span className="block truncate text-center font-semibold">{row.baseAmount} ₼</span>,
+      },
+    ],
+    [t],
+  )
+
+  const someOnPage = tableData.some((row) => selected.has(`${row.gymId}_${row.packageId}`))
+
   return (
     <div className="flex flex-col gap-6 font-sans text-black">
       {/* Title block */}
@@ -403,78 +441,24 @@ export function GymPaymentsPage() {
         </div>
       </div>
 
-      {/* Table Section */}
-      <div className="w-full overflow-hidden rounded-[12px] border border-[#ececed] bg-white shadow-3xs">
-        {loading ? (
-          <div className="flex items-center justify-center py-10 text-[14px] text-gray-500 font-medium">
-            {t.common.loading}
-          </div>
-        ) : (
-          <Table className="w-full border-collapse">
-            <TableHeader>
-              <TableRow className="bg-[#00B4CC]/5 hover:bg-[#00B4CC]/5 border-b border-[#ececed]">
-                <TableHead className="h-[48px] w-[50px] px-4 text-center border-r border-[#ececed]">
-                  <input
-                    type="checkbox"
-                    checked={allOnPage}
-                    onChange={toggleAll}
-                    className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded"
-                  />
-                </TableHead>
-                <TableHead className="h-[48px] px-6 text-left text-[14px] font-semibold text-black border-r border-[#ececed]">
-                  {t.reports.gymName}
-                </TableHead>
-                <TableHead className="h-[48px] px-6 text-center text-[14px] font-semibold text-black border-r border-[#ececed] w-[20%]">
-                  {t.reports.qrCount}
-                </TableHead>
-                <TableHead className="h-[48px] px-6 text-center text-[14px] font-semibold text-black border-r border-[#ececed] w-[25%]">
-                  {t.reports.gymSubscription}
-                </TableHead>
-                <TableHead className="h-[48px] px-6 text-center text-[14px] font-semibold text-black w-[20%]">
-                  {t.reports.amount}
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tableData.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center text-gray-500 text-[14px] font-medium">
-                    {t.common.noData}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                tableData.map((row) => (
-                  <TableRow 
-                    key={row.id} 
-                    className="border-b border-[#ececed] last:border-0 hover:bg-[#00B4CC]/2 transition-colors h-[56px]"
-                  >
-                    <TableCell className="px-4 text-center border-r border-[#ececed] w-[50px]">
-                      <input
-                        type="checkbox"
-                        checked={selected.has(`${row.gymId}_${row.packageId}`)}
-                        onChange={() => toggleOne(row)}
-                        className="h-4 w-4 accent-[#00B4CC] cursor-pointer rounded"
-                      />
-                    </TableCell>
-                    <TableCell className="px-6 text-left text-[14px] font-medium text-black border-r border-[#ececed]">
-                      {row.gymName}
-                    </TableCell>
-                    <TableCell className="px-6 text-center text-[14px] font-medium text-black border-r border-[#ececed]">
-                      {row.qrCount}
-                    </TableCell>
-                    <TableCell className="px-6 text-center border-r border-[#ececed]">
-                      <SubscriptionBadge type={getTier(row.subscription)} />
-                    </TableCell>
-                    <TableCell className="px-6 text-center text-[14px] font-semibold text-black">
-                      {row.baseAmount} ₼
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        )}
-      </div>
+      <AdminDataTable
+        storageKey="gym-payments-report"
+        columns={columns}
+        rows={tableData}
+        getRowId={(row) => `${row.gymId}_${row.packageId}`}
+        isLoading={loading}
+        emptyTitle={t.common.noData}
+        selection={{
+          headerChecked: allOnPage,
+          headerIndeterminate: someOnPage && !allOnPage,
+          onToggleAll: toggleAll,
+          isRowSelected: (id) => selected.has(String(id)),
+          onToggleRow: (id) => {
+            const row = tableData.find((item) => `${item.gymId}_${item.packageId}` === String(id))
+            if (row) toggleOne(row)
+          },
+        }}
+      />
     </div>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import Image from 'next/image'
 import {
   Calendar,
@@ -17,8 +17,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as DatePicker } from '@/components/ui/calendar'
 import { addMonths, format, getMonth, getYear, setMonth, setYear } from 'date-fns'
 import type { DateRange } from 'react-day-picker'
-import { usePaymentsAnalytics, useRequestTransfer, useAdminPaymentsHistory } from '@/lib/query/use-payments-analytics'
-import { useResizableColumns } from '@/hooks/use-resizable-columns'
+import {
+  usePaymentsAnalytics,
+  useRequestTransfer,
+  useAdminPaymentsHistory,
+  type PaymentRecordResponse,
+} from '@/lib/query/use-payments-analytics'
+import { AdminDataTable, type AdminDataTableColumn } from '@/components/ui/admin-data-table'
 
 const FINANCE_TABS = [
   'Hesabatlıq',
@@ -819,23 +824,6 @@ function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
   const [currentPage, setCurrentPage] = useState(1)
   const PER_PAGE = 10
 
-  const initialWidths = useMemo(() => [140, 120, 130, 170, 130, 110, 140, 110, 150, 130, 40], [])
-  const minWidths = useMemo(() => [100, 90, 90, 120, 90, 80, 100, 80, 100, 90, 40], [])
-  const { colWidths, tableRef, handleMouseDown } = useResizableColumns(initialWidths, minWidths)
-
-  const headers = [
-    'Kart sahibi',
-    'Ödəniş növü',
-    'Ödəniş üsulu',
-    'Təsvir',
-    'RRN',
-    'Məbləğ ↑',
-    'Tarix ↑',
-    'Komissiya ↑',
-    'Əməliyyat Komissiyası ↑',
-    'Kartın nömrəsi',
-  ]
-
   const { data: paymentsList, isLoading } = useAdminPaymentsHistory()
 
   const rows = paymentsList ?? []
@@ -874,6 +862,133 @@ function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
   const totalSum = useMemo(() => {
     return filteredRows.reduce((acc, curr) => acc + (curr.amount || 0), 0)
   }, [filteredRows])
+
+  const expandedRow = expanded !== null ? paginatedRows.find((row) => row.paymentId === expanded) : undefined
+
+  const historyColumns: AdminDataTableColumn<PaymentRecordResponse>[] = useMemo(
+    () => [
+      {
+        id: 'owner',
+        label: 'Kart sahibi',
+        defaultWidth: 130,
+        minWidth: 100,
+        maxWidth: 220,
+        render: (row) => <span className="block truncate">{row.owner || '-'}</span>,
+      },
+      {
+        id: 'cardBrand',
+        label: 'Ödəniş növü',
+        defaultWidth: 120,
+        minWidth: 90,
+        maxWidth: 180,
+        render: (row) => <span className="block truncate">{row.cardBrand || 'Google Pay'}</span>,
+      },
+      {
+        id: 'type',
+        label: 'Ödəniş üsulu',
+        defaultWidth: 120,
+        minWidth: 90,
+        maxWidth: 180,
+        render: (row) => <span className="block truncate">{row.type || 'API qoşulma'}</span>,
+      },
+      {
+        id: 'description',
+        label: 'Təsvir',
+        defaultWidth: 160,
+        minWidth: 120,
+        maxWidth: 280,
+        flex: true,
+        render: (row) => (
+          <span className="block truncate" title={row.description || 'Abunəlik Ödənişi'}>
+            {row.description || 'Abunəlik Ödənişi'}
+          </span>
+        ),
+      },
+      {
+        id: 'rrn',
+        label: 'RRN',
+        defaultWidth: 120,
+        minWidth: 90,
+        maxWidth: 200,
+        render: (row) => <span className="block truncate">{row.transactionId || '-'}</span>,
+      },
+      {
+        id: 'amount',
+        label: 'Məbləğ',
+        defaultWidth: 110,
+        minWidth: 90,
+        maxWidth: 160,
+        render: (row) => (
+          <span className="block truncate">
+            {row.amount ? `${row.amount.toFixed(2)} ${row.currency || 'AZN'}` : '0.00 AZN'}
+          </span>
+        ),
+      },
+      {
+        id: 'date',
+        label: 'Tarix',
+        defaultWidth: 130,
+        minWidth: 100,
+        maxWidth: 180,
+        render: (row) => (
+          <span className="block truncate">
+            {row.occurredAt ? format(new Date(row.occurredAt), 'dd.MM.yyyy HH:mm') : '-'}
+          </span>
+        ),
+      },
+      {
+        id: 'commission',
+        label: 'Komissiya',
+        defaultWidth: 100,
+        minWidth: 80,
+        maxWidth: 140,
+        render: () => <span className="block truncate">₼ 0.00</span>,
+      },
+      {
+        id: 'opCommission',
+        label: 'Əməliyyat Komissiyası',
+        defaultWidth: 140,
+        minWidth: 100,
+        maxWidth: 200,
+        render: () => <span className="block truncate">₼ 0.00</span>,
+      },
+      {
+        id: 'pan',
+        label: 'Kartın nömrəsi',
+        defaultWidth: 130,
+        minWidth: 100,
+        maxWidth: 180,
+        render: (row) => <span className="block truncate">{row.maskedPan || '**** 4127'}</span>,
+      },
+      {
+        id: 'expand',
+        label: '',
+        defaultWidth: 48,
+        minWidth: 40,
+        maxWidth: 56,
+        reorderable: false,
+        hideable: false,
+        render: (row) => {
+          const isOpen = expanded === row.paymentId
+          return (
+            <div className="flex justify-center">
+              <button
+                type="button"
+                className="inline-flex items-center justify-center text-[#8a8a8a] cursor-pointer hover:text-[#00b4cc]"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  setExpanded(isOpen ? null : row.paymentId)
+                }}
+              >
+                {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+              </button>
+            </div>
+          )
+        },
+      },
+    ],
+    [expanded],
+  )
 
   return (
     <section className="w-full rounded-xl bg-white border border-[#ececed] p-4 sm:p-5 flex flex-col gap-5">
@@ -928,110 +1043,46 @@ function PaymentHistoryTab({ periodRange }: { periodRange?: DateRange }) {
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-lg border border-[#ececed] bg-white shadow-sm">
-        <table ref={tableRef} className="w-full border-separate border-spacing-0" style={{ tableLayout: 'fixed', minWidth: '1300px' }}>
-          <colgroup>
-            {colWidths.map((w, i) => (
-              <col key={i} style={{ width: `${w}px` }} />
-            ))}
-          </colgroup>
-          <thead>
-            <tr className="bg-[#00b4cc]/15 dark:bg-[#00b4cc]/10 text-left">
-              {headers.map((h, i) => (
-                <th key={i} className="px-3.5 py-3 text-xs font-bold uppercase text-foreground/80 relative select-none">
-                  {h}
-                  <div
-                    onMouseDown={(e) => handleMouseDown(i, e)}
-                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[#00b4cc]/30 group/handle flex items-center justify-center transition-colors z-10"
-                  >
-                    <div className="w-[2px] h-4 bg-[#cecfd2] group-hover/handle:bg-[#00b4cc] transition-colors rounded" />
-                  </div>
-                </th>
-              ))}
-              <th className="px-2 py-3 text-xs font-bold uppercase text-foreground/80 text-center" />
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <tr>
-                <td colSpan={11} className="py-12 text-center text-[#00b4cc]">
-                  <div className="flex items-center justify-center gap-2">
-                    <Loader2 className="animate-spin" size={24} />
-                    <span>Yüklənir...</span>
-                  </div>
-                </td>
-              </tr>
-            ) : paginatedRows.length > 0 ? (
-              paginatedRows.map((row) => {
-                const isOpen = expanded === row.paymentId
-                const dateStr = row.occurredAt ? format(new Date(row.occurredAt), 'dd.MM.yyyy HH:mm') : '-'
-                return (
-                  <Fragment key={row.paymentId}>
-                    <tr className="hover:bg-secondary/40 border-b border-[#ececed] transition-all duration-200 text-sm text-[#4b5563]">
-                      <td className="px-3.5 py-3.5 truncate">{row.owner || '-'}</td>
-                      <td className="px-3.5 py-3.5 truncate">{row.cardBrand || 'Google Pay'}</td>
-                      <td className="px-3.5 py-3.5 truncate">{row.type || 'API qoşulma'}</td>
-                      <td className="px-3.5 py-3.5 truncate" title={row.description || 'Abunəlik Ödənişi'}>
-                        {row.description || 'Abunəlik Ödənişi'}
-                      </td>
-                      <td className="px-3.5 py-3.5 truncate">{row.transactionId || '-'}</td>
-                      <td className="px-3.5 py-3.5 truncate">
-                        {row.amount ? `${row.amount.toFixed(2)} ${row.currency || 'AZN'}` : '0.00 AZN'}
-                      </td>
-                      <td className="px-3.5 py-3.5 truncate">{dateStr}</td>
-                      <td className="px-3.5 py-3.5 truncate">₼ 0.00</td>
-                      <td className="px-3.5 py-3.5 truncate">₼ 0.00</td>
-                      <td className="px-3.5 py-3.5 truncate">{row.maskedPan || '**** 4127'}</td>
-                      <td className="px-2 py-3.5 text-center">
-                        <button
-                          type="button"
-                          className="inline-flex items-center justify-center text-[#8a8a8a] cursor-pointer hover:text-[#00b4cc]"
-                          onClick={() => setExpanded(isOpen ? null : row.paymentId)}
-                        >
-                          {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                        </button>
-                      </td>
-                    </tr>
+      <AdminDataTable
+        storageKey="payments-history"
+        columns={historyColumns}
+        rows={paginatedRows}
+        getRowId={(row) => row.paymentId}
+        isLoading={isLoading}
+        emptyTitle="Seçilmiş dövr üçün heç bir məlumat tapılmadı."
+      />
 
-                    {isOpen && (
-                      <tr>
-                        <td colSpan={11} className="border-b border-[#ececed] bg-[#fafafa] px-5 py-4 text-xs sm:text-sm text-[#4b5563]">
-                          <div className="grid grid-cols-1 gap-2 md:max-w-[460px]">
-                            <InfoLine label="RRN" value={row.transactionId || '-'} />
-                            <InfoLine label="Tarix" value={dateStr} />
-                            <InfoLine label="Komissiya" value="₼ 0.00" />
-                            <InfoLine label="Əməliyyat komissiyası" value="₼ 0.00" />
-                            <InfoLine label="Kartın nömrəsi" value={row.maskedPan || '**** **** **** 4127'} />
-                            <div className="flex items-center justify-between py-1">
-                              <span className="text-xs text-[#4b5563]">Ödəniş qəbzi</span>
-                              <button
-                                type="button"
-                                className="inline-flex items-center gap-1.5 rounded-[8px] border border-[#00b4cc] px-3 py-1 text-xs font-medium text-[#00b4cc] hover:bg-[#00b4cc]/10 transition-colors cursor-pointer"
-                              >
-                                <Image src="/Downloadİcon.svg" alt="" width={14} height={14} />
-                                Yüklə
-                              </button>
-                            </div>
-                            <InfoLine label="Yerinə yetirdi" value="API" />
-                            <InfoLine label="Operator" value="-//-" />
-                            <InfoLine label="Ödəniş mənbəyi" value="-//-" />
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </Fragment>
-                )
-              })
-            ) : (
-              <tr>
-                <td colSpan={11} className="px-3 py-10 text-center text-sm text-[#7a7a7a]">
-                  Seçilmiş dövr üçün heç bir məlumat tapılmadı.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      {expandedRow ? (
+        <div className="rounded-lg border border-[#ececed] bg-[#fafafa] px-5 py-4 text-xs sm:text-sm text-[#4b5563]">
+          <div className="grid grid-cols-1 gap-2 md:max-w-[460px]">
+            <InfoLine label="RRN" value={expandedRow.transactionId || '-'} />
+            <InfoLine
+              label="Tarix"
+              value={
+                expandedRow.occurredAt
+                  ? format(new Date(expandedRow.occurredAt), 'dd.MM.yyyy HH:mm')
+                  : '-'
+              }
+            />
+            <InfoLine label="Komissiya" value="₼ 0.00" />
+            <InfoLine label="Əməliyyat komissiyası" value="₼ 0.00" />
+            <InfoLine label="Kartın nömrəsi" value={expandedRow.maskedPan || '**** **** **** 4127'} />
+            <div className="flex items-center justify-between py-1">
+              <span className="text-xs text-[#4b5563]">Ödəniş qəbzi</span>
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 rounded-[8px] border border-[#00b4cc] px-3 py-1 text-xs font-medium text-[#00b4cc] hover:bg-[#00b4cc]/10 transition-colors cursor-pointer"
+              >
+                <Image src="/Downloadİcon.svg" alt="" width={14} height={14} />
+                Yüklə
+              </button>
+            </div>
+            <InfoLine label="Yerinə yetirdi" value="API" />
+            <InfoLine label="Operator" value="-//-" />
+            <InfoLine label="Ödəniş mənbəyi" value="-//-" />
+          </div>
+        </div>
+      ) : null}
 
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-1 border-t border-[#ececed] px-4 py-3 bg-white">
