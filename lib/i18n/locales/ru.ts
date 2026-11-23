@@ -572,6 +572,7 @@ const ru: TranslationKeys = {
     colEmail: "Email",
     colStatus: "Статус",
     colSubscription: "Подписка",
+    tableColumnHint: "Тяните края столбцов для размера · маркеры — чтобы менять порядок",
     colRole: "Роль",
     colGym: "Название зала",
     statusActive: "Активный",

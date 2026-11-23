@@ -71,39 +71,37 @@ export function CustomersList() {
 
   async function toggleAll() {
     const allOnPage = sorted.length > 0 && sorted.every((customer) => selected.has(customer.id))
-
+    // Header check selects every matching customer; uncheck must clear the whole Map
+    // (previously only removed the current page, leaving thousands still selected).
     if (allOnPage) {
-      setSelected((prev) => {
-        const next = new Map(prev)
-        sorted.forEach((customer) => next.delete(customer.id))
+      setSelected(new Map())
+      return
+    }
+
+    setIsSelectingAll(true)
+    try {
+      const res = await getCustomers({
+        page: 0,
+        size: 100000, // Fetch all matching users matching search & filters
+        search: debouncedSearch || undefined,
+        packageId: pkg ?? undefined,
+        packageDuration: duration ?? undefined,
+        subscriptionStatus: subStatus ?? undefined,
+        sort: sortBy ?? undefined,
+        roles: ['ROLE_USER'],
+      })
+      const allItems = res?.items ?? []
+      setSelected(() => {
+        const next = new Map<number, CustomerListItem>()
+        allItems.forEach((customer) => {
+          next.set(customer.id, customer)
+        })
         return next
       })
-    } else {
-      setIsSelectingAll(true)
-      try {
-        const res = await getCustomers({
-          page: 0,
-          size: 100000, // Fetch all matching users matching search & filters
-          search: debouncedSearch || undefined,
-          packageId: pkg ?? undefined,
-          packageDuration: duration ?? undefined,
-          subscriptionStatus: subStatus ?? undefined,
-          sort: sortBy ?? undefined,
-          roles: ['ROLE_USER'],
-        })
-        const allItems = res?.items ?? []
-        setSelected((prev) => {
-          const next = new Map(prev)
-          allItems.forEach((customer) => {
-            next.set(customer.id, customer)
-          })
-          return next
-        })
-      } catch (err) {
-        console.error("Failed to select all customers:", err)
-      } finally {
-        setIsSelectingAll(false)
-      }
+    } catch (err) {
+      console.error('Failed to select all customers:', err)
+    } finally {
+      setIsSelectingAll(false)
     }
   }
 
@@ -237,6 +235,8 @@ export function CustomersList() {
         onToggleOne={toggleOne}
         onView={(id) => router.push(`/customers/${id}`)}
         isSelectingAll={isSelectingAll}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
       />
 
       {customersQuery.isError && (

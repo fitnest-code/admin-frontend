@@ -572,6 +572,7 @@ const en: TranslationKeys = {
     colEmail: "Email",
     colStatus: "Status",
     colSubscription: "Subscription",
+    tableColumnHint: "Drag column edges to resize · grips to reorder",
     colRole: "Role",
     colGym: "Gym name",
     statusActive: "Active",
