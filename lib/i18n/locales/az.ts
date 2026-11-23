@@ -582,6 +582,7 @@ const az = {
     colEmail: "Email",
     colStatus: "Status",
     colSubscription: "Abunəlik",
+    tableColumnHint: "Sütun kənarlarını sürükləyərək ölçünü dəyişin · tutacaqlarla sıranı dəyişin",
     colRole: "Rol",
     colGym: "Zal adı",
     // Status badges
