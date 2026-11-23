@@ -92,13 +92,21 @@ export function useUpdateEntryLimitMutation(userId: string) {
   })
 }
 
+async function refreshCustomerStats(queryClient: ReturnType<typeof useQueryClient>) {
+  // Bust user-backend Caffeine cache so "Dondurulmuş Status" updates immediately after freeze.
+  await getUserStatistics(true)
+  await queryClient.invalidateQueries({ queryKey: queryKeys.customers.statistics })
+  await queryClient.invalidateQueries({ queryKey: queryKeys.customers.all })
+}
+
 export function useFreezeCustomerSubscriptionMutation(userId: string) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (days: number) => freezeCustomerSubscription(userId, days),
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.customers.subscription(userId) })
       queryClient.invalidateQueries({ queryKey: queryKeys.customers.byId(userId) })
+      await refreshCustomerStats(queryClient)
     },
   })
 }
@@ -107,9 +115,10 @@ export function useUnfreezeCustomerSubscriptionMutation(userId: string) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: () => unfreezeCustomerSubscription(userId),
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.customers.subscription(userId) })
       queryClient.invalidateQueries({ queryKey: queryKeys.customers.byId(userId) })
+      await refreshCustomerStats(queryClient)
     },
   })
 }
