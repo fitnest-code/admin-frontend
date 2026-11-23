@@ -175,6 +175,16 @@ export function workMinutes(hours: WorkingHours): Map<Day, Set<number>> {
   }
   return result;
 }
+const hhmm = (n: number) =>
+  `${String(Math.floor(n / 60)).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}`;
+
+/** Per-package schedule card shown in the Stripe-like editor. */
+export type PackageAccessWindow = {
+  days: Day[];
+  start: string;
+  end: string;
+};
+
 export function defaultRules(hours: WorkingHours, priceTier: Tier): TimeRule[] {
   const grouped = new Map<string, TimeRule>();
   for (const [day, minutes] of workMinutes(hours)) {
@@ -183,8 +193,6 @@ export function defaultRules(hours: WorkingHours, priceTier: Tier): TimeRule[] {
       const first = sorted[i];
       let last = first;
       while (sorted[i + 1] === last + 1) last = sorted[++i];
-      const hhmm = (n: number) =>
-        `${String(Math.floor(n / 60)).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}`;
       const key = `${first}-${last}`;
       const existing = grouped.get(key);
       if (existing) existing.days.push(day);
@@ -202,6 +210,150 @@ export function defaultRules(hours: WorkingHours, priceTier: Tier): TimeRule[] {
   }
   return [...grouped.values()];
 }
+
+/** Expand API TimeRules into per-package windows (old policies load into the new UI). */
+export function decomposeTimeRules(
+  rules: TimeRule[],
+): Record<Tier, PackageAccessWindow[]> {
+  const out = Object.fromEntries(TIERS.map((t) => [t, [] as PackageAccessWindow[]])) as Record<
+    Tier,
+    PackageAccessWindow[]
+  >;
+  for (const r of rules) {
+    for (const tier of r.allowedTiers) {
+      if (!out[tier]) continue;
+      out[tier].push({
+        days: [...r.days].sort((a, b) => DAYS.indexOf(a) - DAYS.indexOf(b)),
+        start: toTime24(r.start),
+        end: toTime24(r.end),
+      });
+    }
+  }
+  for (const tier of TIERS) out[tier] = normalizePackageWindows(out[tier]);
+  return out;
+}
+
+/** Merge same-package cards: overlapping/adjacent times per day, then same hours across days. */
+export function normalizePackageWindows(
+  windows: PackageAccessWindow[],
+): PackageAccessWindow[] {
+  type Seg = { day: Day; start: number; end: number };
+  const segs: Seg[] = [];
+  for (const w of windows) {
+    const start = minute(w.start);
+    const end = effectiveEndMinute(start, minute(w.end));
+    if (!w.days.length || !Number.isFinite(start) || !Number.isFinite(end) || start > end)
+      continue;
+    for (const day of w.days) segs.push({ day, start, end });
+  }
+  const byDay = new Map<Day, { start: number; end: number }[]>();
+  for (const day of DAYS) byDay.set(day, []);
+  for (const s of segs) byDay.get(s.day)!.push({ start: s.start, end: s.end });
+  for (const day of DAYS) {
+    const list = byDay.get(day)!.sort((a, b) => a.start - b.start || a.end - b.end);
+    const merged: { start: number; end: number }[] = [];
+    for (const cur of list) {
+      const prev = merged[merged.length - 1];
+      // Adjacent minutes (prev.end+1 === cur.start) collapse into one card.
+      if (prev && cur.start <= prev.end + 1)
+        prev.end = Math.max(prev.end, cur.end);
+      else merged.push({ ...cur });
+    }
+    byDay.set(day, merged);
+  }
+  const grouped = new Map<string, Day[]>();
+  for (const day of DAYS) {
+    for (const r of byDay.get(day)!) {
+      const key = `${r.start}-${r.end}`;
+      const days = grouped.get(key) ?? [];
+      days.push(day);
+      grouped.set(key, days);
+    }
+  }
+  return [...grouped.entries()]
+    .sort((a, b) => {
+      const [as, ae] = a[0].split("-").map(Number);
+      const [bs, be] = b[0].split("-").map(Number);
+      return as - bs || ae - be;
+    })
+    .map(([key, days]) => {
+      const [start, end] = key.split("-").map(Number);
+      return {
+        days: days.sort((a, b) => DAYS.indexOf(a) - DAYS.indexOf(b)),
+        start: hhmm(start),
+        end: hhmm(end),
+      };
+    });
+}
+
+/** Compile per-package windows into non-overlapping API TimeRules (priceTier = lowest allowed). */
+export function compileTimeRules(
+  perPackage: Partial<Record<Tier, PackageAccessWindow[]>>,
+): TimeRule[] {
+  const dayMasks = Object.fromEntries(DAYS.map((d) => [d, new Array<number>(1440).fill(0)])) as Record<
+    Day,
+    number[]
+  >;
+  for (const tier of TIERS) {
+    const bit = 1 << TIERS.indexOf(tier);
+    for (const w of perPackage[tier] ?? []) {
+      const start = minute(w.start);
+      const end = effectiveEndMinute(start, minute(w.end));
+      if (!Number.isFinite(start) || !Number.isFinite(end) || start > end) continue;
+      for (const day of w.days) {
+        for (let n = start; n <= end && n < 1440; n++) dayMasks[day][n] |= bit;
+      }
+    }
+  }
+  const grouped = new Map<string, TimeRule>();
+  for (const day of DAYS) {
+    const mask = dayMasks[day];
+    let i = 0;
+    while (i < 1440) {
+      while (i < 1440 && mask[i] === 0) i++;
+      if (i >= 1440) break;
+      const bits = mask[i];
+      const first = i;
+      while (i + 1 < 1440 && mask[i + 1] === bits) i++;
+      const last = i;
+      i++;
+      const allowedTiers = TIERS.filter((t) => bits & (1 << TIERS.indexOf(t)));
+      if (!allowedTiers.length) continue;
+      const priceTier = allowedTiers.reduce((a, b) =>
+        TIERS.indexOf(a) <= TIERS.indexOf(b) ? a : b,
+      );
+      const key = `${first}-${last}-${allowedTiers.join(",")}`;
+      const existing = grouped.get(key);
+      if (existing) existing.days.push(day);
+      else
+        grouped.set(key, {
+          days: [day],
+          start: hhmm(first),
+          end: hhmm(last),
+          allowedTiers,
+          priceTier,
+        });
+    }
+  }
+  return [...grouped.values()].map((r) => ({
+    ...r,
+    days: r.days.sort((a, b) => DAYS.indexOf(a) - DAYS.indexOf(b)),
+  }));
+}
+
+export function setPackageWindows(
+  draft: PolicyDraft,
+  tier: Tier,
+  windows: PackageAccessWindow[],
+): PolicyDraft {
+  const current = decomposeTimeRules(draft.timeRules);
+  current[tier] = normalizePackageWindows(windows);
+  return {
+    ...draft,
+    timeRules: compileTimeRules(current),
+  };
+}
+
 export type PolicyIssue = {
   code:
     | "included"
@@ -280,7 +432,8 @@ export function validatePolicy(
       for (let n = start; n <= end && n < 1440; n++) if (n >= 0) counts[n]++;
     }
     if (counts.some((n) => n > 1)) issues.push({ code: "overlap" });
-    if (expected && counts.some((n, i) => n > 0 !== expected.get(day)!.has(i)))
+    // Gaps are allowed; only reject minutes that sit outside gym work hours.
+    if (expected && counts.some((n, i) => n > 0 && !expected.get(day)!.has(i)))
       issues.push({ code: "coverage" });
   }
   return issues.filter(

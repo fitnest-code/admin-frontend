@@ -42,29 +42,26 @@ const az = {
     "Mövcud paket və xidmətlərinizdən hazırlandı. Əsas zal seçimini ayrıca aktivləşdirin.",
   mapping:
     "Dörd paketin ID-si tapılmadı. Paketlər bölməsində Bronze, Silver, Gold və Platinum adlarını yoxlayın.",
-  inheritance:
-    "Gold və Platinum abunəçiləri aşağı paketə daxil olan zala da girə bilər. Saat qaydası giriş anında tətbiq olunan qiyməti müəyyən edir.",
-  settlement:
-    "Hər abunəlik ayında 1–12 giriş: giriş sayı × bir giriş qiyməti. Əsas zalda 13–30 giriş: aylıq qiymət. Əsas zalda gündə 1 giriş.",
-  timeTitle: "Saat aralığı qaydaları",
-  timeSubtitle:
-    "İş saatları daxilində kimin girəcəyini və hansı qiymətin tətbiq olunacağını seçin.",
-  timeOff:
-    "Saat qaydaları bağlıdır. Daxil olan paketlər bütün iş saatlarında giriş edə bilər.",
-  enableTime: "Saata görə fərqli qaydalar",
-  addRange: "Aralıq əlavə et",
+  inheritance: "Yuxarı paket aşağı paketə daxil olan zallara da girə bilər.",
+  settlement: "1–12 giriş: giriş qiyməti. Əsas zalda 13–30: aylıq qiymət.",
+  timeTitle: "Giriş saatları",
+  timeSubtitle: "Hər paket üçün gün və saat seçin. Boş saatlarda giriş yoxdur.",
+  timeOff: "Saat limiti yoxdur — daxil olan paketlər bütün iş saatlarında girə bilər.",
+  enableTime: "Saat limiti",
+  addRange: "Saat əlavə et",
   resetHours: "İş saatlarından doldur",
-  workHours: "İş saatlarına keç",
-  days: "Həftənin günləri",
+  workHours: "İş saatları",
+  days: "Günlər",
   start: "Başlama",
   end: "Bitmə",
   allowed: "Daxil ola bilən paketlər",
   rate: "Tətbiq olunan qiymət",
   remove: "Sil",
   edit: "Düzəliş et",
-  coverageOk: "Aralıqlar üst-üstə düşmür və iş saatlarını tam əhatə edir.",
+  coverageOk: "Saatlar iş saatları daxilindədir.",
   preview: "Giriş qaydasına baxış",
   denied: "Giriş bağlıdır",
+  noPackageHours: "Hələ saat yoxdur.",
   perMonth: "/ ay",
   categories: "Paketə daxil olan kateqoriyalar",
   categoryHelp: "Dəyişiklik yalnız seçilmiş paketə aiddir.",
@@ -130,11 +127,9 @@ const az = {
     "Bir giriş qiyməti 0 və ya müsbət, maksimum 2 onluq rəqəm olmalıdır.",
   errorMonthly:
     "Əsas zal üçün aylıq qiyməti daxil edin (maksimum 2 onluq rəqəm).",
-  errorRanges:
-    "Hər aralıqda günlər, başlanğıc, bitmə və paketlər seçilməlidir. Gecə aralığını iki günə bölün.",
+  errorRanges: "Hər saat kartında günlər, başlama və bitmə seçilməlidir.",
   errorOverlap: "Saat aralıqları üst-üstə düşür.",
-  errorCoverage:
-    "Aralıqlar zalın iş saatlarını boşluqsuz və dəqiq əhatə etməlidir.",
+  errorCoverage: "Saatlar zalın iş saatlarından kənara çıxa bilməz.",
   errorHours: "Əvvəlcə zalın iş saatlarını təyin edin.",
   errorTier:
     "Qiymət paketi zala daxil olmalıdır; daha aşağı paket həmin qiymət aralığına buraxıla bilməz.",
@@ -182,29 +177,26 @@ const en: Record<keyof typeof az, string> = {
     "Prepared from your existing packages and services. Enable primary gym selection when ready.",
   mapping:
     "Could not resolve all four package IDs. Check Bronze, Silver, Gold and Platinum in Packages.",
-  inheritance:
-    "Gold and Platinum members can access gyms included in a lower tier. Time rules determine the rate at the moment of entry.",
-  settlement:
-    "Each subscription month: 1–12 visits use per-entry pricing; 13–30 primary-gym visits use the monthly rate. One primary-gym entry per day.",
-  timeTitle: "Time-based access",
-  timeSubtitle:
-    "Choose who can enter and which rate applies during working hours.",
-  timeOff:
-    "Time rules are off. Included members can enter throughout working hours.",
-  enableTime: "Use time-based rules",
-  addRange: "Add time range",
+  inheritance: "Higher tiers can also enter gyms included in a lower tier.",
+  settlement: "1–12 visits: entry price. Primary gym 13–30: monthly rate.",
+  timeTitle: "Access hours",
+  timeSubtitle: "Set days and hours per package. Uncovered hours deny entry.",
+  timeOff: "No hour limits — included packages can enter all working hours.",
+  enableTime: "Limit by hours",
+  addRange: "Add hours",
   resetHours: "Use working hours",
-  workHours: "Edit working hours",
-  days: "Days of the week",
+  workHours: "Working hours",
+  days: "Days",
   start: "From",
   end: "Until",
   allowed: "Allowed packages",
   rate: "Applied rate",
   remove: "Remove",
   edit: "Edit",
-  coverageOk: "Ranges do not overlap and cover all working hours.",
+  coverageOk: "Hours are within working hours.",
   preview: "Access preview",
   denied: "Entry denied",
+  noPackageHours: "No hours yet.",
   perMonth: "/ month",
   categories: "Categories included in this package",
   categoryHelp: "Changes apply only to the selected package.",
@@ -269,11 +261,9 @@ const en: Record<keyof typeof az, string> = {
   errorPrice:
     "Entry price must be zero or positive, with up to 2 decimal places.",
   errorMonthly: "Enter the primary monthly price, with up to 2 decimal places.",
-  errorRanges:
-    "Choose days, valid start/end times and packages for every range. Split overnight ranges across two days.",
+  errorRanges: "Each hours card needs days, start and end.",
   errorOverlap: "Time ranges overlap.",
-  errorCoverage:
-    "Ranges must cover exactly the gym’s working hours, with no gaps.",
+  errorCoverage: "Hours must stay inside the gym’s working hours.",
   errorHours: "Set the gym’s working hours first.",
   errorTier:
     "The price tier must be included; lower tiers cannot enter its time range.",
@@ -321,28 +311,26 @@ const ru: Record<keyof typeof az, string> = {
     "Подготовлено из текущих пакетов и услуг. При необходимости включите выбор основного зала.",
   mapping:
     "Не найдены ID четырёх пакетов. Проверьте Bronze, Silver, Gold и Platinum в разделе пакетов.",
-  inheritance:
-    "Владельцы Gold и Platinum могут посещать залы младших пакетов. Тариф определяется правилом на момент входа.",
-  settlement:
-    "За месяц подписки: 1–12 посещений оплачиваются по входам; 13–30 в основном зале — по месячному тарифу. Один вход в основной зал в день.",
-  timeTitle: "Правила по времени",
-  timeSubtitle: "Настройте доступ и тариф в пределах часов работы.",
-  timeOff:
-    "Правила по времени выключены. Включённые пакеты доступны во все часы работы.",
-  enableTime: "Разные правила по времени",
-  addRange: "Добавить интервал",
+  inheritance: "Старшие пакеты могут входить в залы младших пакетов.",
+  settlement: "1–12 визитов: цена входа. Основной зал 13–30: месячный тариф.",
+  timeTitle: "Часы доступа",
+  timeSubtitle: "Дни и часы для каждого пакета. Пустые часы — без входа.",
+  timeOff: "Лимита по часам нет — включённые пакеты входят во все часы работы.",
+  enableTime: "Лимит по часам",
+  addRange: "Добавить часы",
   resetHours: "Заполнить по часам работы",
-  workHours: "Изменить часы работы",
-  days: "Дни недели",
+  workHours: "Часы работы",
+  days: "Дни",
   start: "Начало",
   end: "Конец",
   allowed: "Допущенные пакеты",
   rate: "Применяемый тариф",
   remove: "Удалить",
   edit: "Изменить",
-  coverageOk: "Интервалы не пересекаются и охватывают все часы работы.",
+  coverageOk: "Часы в пределах часов работы.",
   preview: "Проверка доступа",
   denied: "Вход запрещён",
+  noPackageHours: "Часов пока нет.",
   perMonth: "/ месяц",
   categories: "Категории пакета",
   categoryHelp: "Изменения относятся только к выбранному пакету.",
@@ -410,11 +398,9 @@ const ru: Record<keyof typeof az, string> = {
     "Цена входа должна быть неотрицательной, до 2 знаков после запятой.",
   errorMonthly:
     "Укажите месячный тариф основного зала, до 2 знаков после запятой.",
-  errorRanges:
-    "Укажите дни, время начала/окончания и пакеты для каждого интервала. Разделите ночные интервалы по дням.",
+  errorRanges: "В каждой карточке укажите дни, начало и конец.",
   errorOverlap: "Временные интервалы пересекаются.",
-  errorCoverage:
-    "Интервалы должны точно охватывать часы работы зала без пропусков.",
+  errorCoverage: "Часы не могут выходить за пределы часов работы зала.",
   errorHours: "Сначала задайте часы работы зала.",
   errorTier:
     "Тарифный пакет должен быть включён; младшие пакеты не допускаются в его интервал.",

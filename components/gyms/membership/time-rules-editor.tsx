@@ -1,30 +1,29 @@
 "use client";
-import { useState } from "react";
-import { Plus, RotateCcw, Trash2, Clock } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { SubscriptionBadge } from "@/components/ui/subscription-badge";
 import { TimeInput24 } from "@/components/ui/time-input-24";
+import { SubscriptionBadge } from "@/components/ui/subscription-badge";
 import {
   DAYS,
-  TIERS,
+  type Day,
   type PolicyDraft,
-  type TimeRule,
-  type WorkingHours,
   type Tier,
+  type WorkingHours,
 } from "@/lib/types/membership";
 import {
-  defaultRules,
-  effectiveEndMinute,
-  minute,
-  tierAdmitted,
+  decomposeTimeRules,
+  setPackageWindows,
   tierName,
-  validatePolicy,
+  type PackageAccessWindow,
 } from "@/lib/membership/policy";
 import { membershipDays, useMembershipCopy } from "@/lib/i18n/membership";
 import { useI18nStore } from "@/lib/i18n";
 import { Notice } from "./shared";
 import styles from "./membership.module.css";
-import { useMembershipEditorState } from "@/lib/membership/editor-state";
+
+function emptyWindow(): PackageAccessWindow {
+  return { days: [DAYS[0]], start: "09:00", end: "17:00" };
+}
 
 export function TimeRulesEditor({
   draft,
@@ -41,33 +40,23 @@ export function TimeRulesEditor({
 }) {
   const c = useMembershipCopy();
   const locale = useI18nStore((s) => s.locale);
-  const [previewTier, setPreviewTier] = useState<Tier>("BRONZE");
-  const [previewDay, setPreviewDay] = useState(DAYS[0]);
-  const [previewTime, setPreviewTime] = useState("17:00");
   const included = draft.packages.filter((p) => p.included);
-  const firstTier = included[0]?.tier ?? "BRONZE";
-  const update = (index: number, patch: Partial<TimeRule>) =>
-    onChange({
-      ...draft,
-      timeRules: draft.timeRules.map((r, i) =>
-        i === index ? { ...r, ...patch } : r,
-      ),
-    });
-  const reset = () => {
-    if (hours)
-      onChange({ ...draft, timeRules: defaultRules(hours, firstTier) });
+  const byTier = decomposeTimeRules(draft.timeRules);
+
+  const write = (tier: Tier, windows: PackageAccessWindow[]) =>
+    onChange(setPackageWindows(draft, tier, windows));
+
+  const patchWindow = (
+    tier: Tier,
+    index: number,
+    patch: Partial<PackageAccessWindow>,
+  ) => {
+    const windows = byTier[tier].map((w, i) =>
+      i === index ? { ...w, ...patch } : w,
+    );
+    write(tier, windows);
   };
-  const coverage = validatePolicy(draft, hours).filter((i) =>
-    ["ranges", "overlap", "coverage", "hours", "tier"].includes(i.code),
-  );
-  const match = draft.timeRules.find(
-    (r) =>
-      r.days.includes(previewDay) &&
-      minute(previewTime) >= minute(r.start) &&
-      minute(previewTime) <=
-        effectiveEndMinute(minute(r.start), minute(r.end)),
-  );
-  const price = match && draft.packages.find((p) => p.tier === match.priceTier);
+
   return (
     <section className={styles.panel} aria-labelledby="time-rules-heading">
       <div className={styles.heading}>
@@ -84,14 +73,7 @@ export function TimeRulesEditor({
             checked={draft.timeRulesEnabled}
             disabled={disabled}
             onCheckedChange={(value) =>
-              onChange({
-                ...draft,
-                timeRulesEnabled: value,
-                timeRules:
-                  value && !draft.timeRules.length && hours
-                    ? defaultRules(hours, firstTier)
-                    : draft.timeRules,
-              })
+              onChange({ ...draft, timeRulesEnabled: value })
             }
           />
         </label>
@@ -99,229 +81,105 @@ export function TimeRulesEditor({
       {!draft.timeRulesEnabled ? (
         <Notice>{c.timeOff}</Notice>
       ) : (
-        <>
-          <div className={styles.rules}>
-            {draft.timeRules.map((r, index) => (
-              <div
-                key={index}
-                className={styles.rule}
-                aria-label={`${c.timeTitle} ${index + 1}`}
-              >
-                <div className={styles.label}>
-                  {c.days}
-                  <div className={styles.days}>
-                    {DAYS.map((day, d) => (
-                      <button
-                        type="button"
-                        key={day}
-                        aria-label={`${day} ${index + 1}`}
-                        aria-pressed={r.days.includes(day)}
-                        disabled={disabled}
-                        className={styles.day}
-                        onClick={() =>
-                          update(index, {
-                            days: DAYS.filter((x) =>
-                              x === day
-                                ? !r.days.includes(x)
-                                : r.days.includes(x),
-                            ),
-                          })
-                        }
-                      >
-                        {membershipDays[locale][d]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <label className={styles.label}>
-                  {c.start}
-                  <TimeInput24
-                    aria-label={`${c.start} ${index + 1}`}
-                    className={styles.input}
-                    value={r.start}
+        <div className={styles.packageHours}>
+          {!included.length && (
+            <Notice tone="warning">{c.errorIncluded}</Notice>
+          )}
+          {included.map((pkg) => {
+            const windows = byTier[pkg.tier] ?? [];
+            return (
+              <div key={pkg.tier} className={styles.packageBlock}>
+                <div className={styles.packageBlockHead}>
+                  <SubscriptionBadge type={tierName(pkg.tier)} />
+                  <button
+                    type="button"
+                    className={styles.ghost}
                     disabled={disabled}
-                    onChange={(start) => update(index, { start })}
-                  />
-                </label>
-                <label className={styles.label}>
-                  {c.end}
-                  <TimeInput24
-                    aria-label={`${c.end} ${index + 1}`}
-                    className={styles.input}
-                    value={r.end}
-                    disabled={disabled}
-                    onChange={(end) => update(index, { end })}
-                  />
-                </label>
-                <div className={styles.label}>
-                  {c.allowed}
-                  <div className={styles.tiers}>
-                    {TIERS.map((tier) => (
-                      <button
-                        type="button"
-                        key={tier}
-                        aria-pressed={r.allowedTiers.includes(tier)}
-                        disabled={
-                          disabled ||
-                          TIERS.indexOf(tier) < TIERS.indexOf(r.priceTier)
-                        }
-                        className={styles.tierChoice}
-                        onClick={() =>
-                          update(index, {
-                            allowedTiers: TIERS.filter((t) =>
-                              t === tier
-                                ? !r.allowedTiers.includes(t)
-                                : r.allowedTiers.includes(t),
-                            ),
-                          })
-                        }
-                      >
-                        {tierName(tier)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <label className={styles.label}>
-                  {c.rate}
-                  <select
-                    aria-label={`${c.rate} ${index + 1}`}
-                    className={styles.select}
-                    value={r.priceTier}
-                    disabled={disabled}
-                    onChange={(e) => {
-                      const tier = e.target.value as Tier;
-                      update(index, {
-                        priceTier: tier,
-                        allowedTiers: TIERS.filter(
-                          (t) => TIERS.indexOf(t) >= TIERS.indexOf(tier),
-                        ),
-                      });
-                    }}
+                    onClick={() => write(pkg.tier, [...windows, emptyWindow()])}
                   >
-                    {included.map((p) => (
-                      <option key={p.tier} value={p.tier}>
-                        {tierName(p.tier)} · {p.entryPrice || "—"} AZN
-                      </option>
+                    <Plus size={14} />
+                    {c.addRange}
+                  </button>
+                </div>
+                {!windows.length ? (
+                  <p className={styles.emptyHint}>{c.noPackageHours}</p>
+                ) : (
+                  <div className={styles.windowList}>
+                    {windows.map((w, index) => (
+                      <div
+                        key={`${pkg.tier}-${index}-${w.start}-${w.end}`}
+                        className={styles.windowCard}
+                        aria-label={`${tierName(pkg.tier)} ${index + 1}`}
+                      >
+                        <div className={styles.days}>
+                          {DAYS.map((day, d) => (
+                            <button
+                              type="button"
+                              key={day}
+                              aria-label={`${day} ${pkg.tier} ${index + 1}`}
+                              aria-pressed={w.days.includes(day)}
+                              disabled={disabled}
+                              className={styles.day}
+                              onClick={() => {
+                                const days = DAYS.filter((x) =>
+                                  x === day
+                                    ? !w.days.includes(x)
+                                    : w.days.includes(x),
+                                ) as Day[];
+                                patchWindow(pkg.tier, index, { days });
+                              }}
+                            >
+                              {membershipDays[locale][d]}
+                            </button>
+                          ))}
+                        </div>
+                        <div className={styles.windowTimes}>
+                          <TimeInput24
+                            aria-label={`${c.start} ${pkg.tier} ${index + 1}`}
+                            className={styles.input}
+                            value={w.start}
+                            disabled={disabled}
+                            onChange={(start) =>
+                              patchWindow(pkg.tier, index, { start })
+                            }
+                          />
+                          <span className={styles.muted}>–</span>
+                          <TimeInput24
+                            aria-label={`${c.end} ${pkg.tier} ${index + 1}`}
+                            className={styles.input}
+                            value={w.end}
+                            disabled={disabled}
+                            onChange={(end) =>
+                              patchWindow(pkg.tier, index, { end })
+                            }
+                          />
+                          <button
+                            type="button"
+                            className={styles.iconDanger}
+                            aria-label={`${c.remove} ${pkg.tier} ${index + 1}`}
+                            disabled={disabled}
+                            onClick={() =>
+                              write(
+                                pkg.tier,
+                                windows.filter((_, i) => i !== index),
+                              )
+                            }
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
                     ))}
-                  </select>
-                </label>
-                <button
-                  type="button"
-                  className={styles.danger}
-                  style={{ padding: 7, alignSelf: "end" }}
-                  aria-label={`${c.remove} ${index + 1}`}
-                  disabled={disabled}
-                  onClick={() =>
-                    onChange({
-                      ...draft,
-                      timeRules: draft.timeRules.filter((_, i) => i !== index),
-                    })
-                  }
-                >
-                  <Trash2 size={14} />
-                </button>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
-          <div className={styles.heading}>
-            <div className={styles.actions}>
-              <button
-                type="button"
-                className={styles.button}
-                disabled={disabled || !included.length}
-                onClick={() =>
-                  onChange({
-                    ...draft,
-                    timeRules: [
-                      ...draft.timeRules,
-                      {
-                        days: [],
-                        start: "",
-                        end: "",
-                        allowedTiers: TIERS.filter(
-                          (t) => TIERS.indexOf(t) >= TIERS.indexOf(firstTier),
-                        ),
-                        priceTier: firstTier,
-                      },
-                    ],
-                  })
-                }
-              >
-                <Plus size={15} />
-                {c.addRange}
-              </button>
-              <button
-                type="button"
-                className={styles.secondary}
-                disabled={disabled || !hours}
-                onClick={() => {
-                  if (!draft.timeRules.length) reset();
-                  else
-                    useMembershipEditorState.getState().requestDiscard(reset);
-                }}
-              >
-                <RotateCcw size={14} />
-                {c.resetHours}
-              </button>
-            </div>
-            <button type="button" onClick={onWorkHours} className={styles.link}>
-              {c.workHours}
-            </button>
-          </div>
-          {!coverage.length && <Notice tone="success">{c.coverageOk}</Notice>}
-          <details className={styles.preview}>
-            <summary className={styles.summary}>{c.preview}</summary>
-            <div className={`${styles.actions} mt-3`}>
-              <select
-                aria-label={c.package}
-                className={styles.select}
-                style={{ width: 120 }}
-                value={previewTier}
-                onChange={(e) => setPreviewTier(e.target.value as Tier)}
-              >
-                {TIERS.map((t) => (
-                  <option key={t}>{t}</option>
-                ))}
-              </select>
-              <select
-                aria-label={c.days}
-                className={styles.select}
-                style={{ width: 100 }}
-                value={previewDay}
-                onChange={(e) =>
-                  setPreviewDay(e.target.value as typeof previewDay)
-                }
-              >
-                {DAYS.map((day, i) => (
-                  <option key={day} value={day}>
-                    {membershipDays[locale][i]}
-                  </option>
-                ))}
-              </select>
-              <TimeInput24
-                aria-label={c.preview}
-                className={styles.input}
-                style={{ width: 110 }}
-                value={previewTime}
-                onChange={setPreviewTime}
-              />
-              {match && tierAdmitted(match.allowedTiers, previewTier) && price ? (
-                <span className={styles.inline}>
-                  <SubscriptionBadge type={tierName(price.tier)} />
-                  <span>
-                    {price.entryPrice || "—"} AZN ·{" "}
-                    {price.primaryMonthlyPrice || "—"} AZN {c.perMonth}
-                  </span>
-                </span>
-              ) : (
-                <span className={styles.pill}>
-                  <Clock size={13} />
-                  {c.denied}
-                </span>
-              )}
-            </div>
-          </details>
-        </>
+            );
+          })}
+          <button type="button" onClick={onWorkHours} className={styles.link}>
+            {c.workHours}
+          </button>
+          {!hours && <Notice tone="warning">{c.errorHours}</Notice>}
+        </div>
       )}
     </section>
   );

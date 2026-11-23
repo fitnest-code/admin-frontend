@@ -64,6 +64,7 @@ export function membershipError(error: unknown, copy: MembershipCopy): string {
     PRIMARY_GYM_NOT_CONFIGURED: copy.setupRequired,
     INVALID_SERVICE_KEY: copy.setupRequired,
     TIME_RULES_MUST_COVER_WORK_HOURS: copy.errorCoverage,
+    TIME_RULES_OUTSIDE_WORK_HOURS: copy.errorCoverage,
     OVERLAPPING_TIME_RULES: copy.errorOverlap,
     TIME_PRIMARY_PRICE_REQUIRED: copy.errorMonthly,
     PRIMARY_PRICE_REQUIRED: copy.errorMonthly,
