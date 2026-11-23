@@ -172,7 +172,16 @@ export function MembershipPolicyEditor({
   };
   const requestSave = () => {
     setAttempted(true);
-    if (issues.length) return;
+    if (issues.length) {
+      toast.error(c.fixValidation);
+      const unique = [
+        ...new Set(issues.map((issue) => issueText(issue.code, c))),
+      ];
+      for (const msg of unique.slice(0, 4)) toast.error(msg);
+      if (unique.length > 4)
+        toast.error(`+${unique.length - 4}`);
+      return;
+    }
     if (affected.length) setReview(true);
     else void persist();
   };
