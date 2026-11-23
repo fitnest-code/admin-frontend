@@ -1,7 +1,16 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
+const path = require("node:path");
+const Module = require("node:module");
 const ts = require("typescript");
+const root = path.join(__dirname, "..");
+const originalResolve = Module._resolveFilename;
+Module._resolveFilename = function (request, parent, isMain, options) {
+  if (request.startsWith("@/"))
+    request = path.join(root, request.slice(2));
+  return originalResolve.call(this, request, parent, isMain, options);
+};
 require.extensions[".ts"] = (module, filename) =>
   module._compile(
     ts.transpileModule(fs.readFileSync(filename, "utf8"), {
@@ -24,6 +33,10 @@ const {
   minute,
   effectiveEndMinute,
   tierAdmitted,
+  decomposeTimeRules,
+  normalizePackageWindows,
+  compileTimeRules,
+  setPackageWindows,
 } = require("../lib/membership/policy.ts");
 const { TIERS, DAYS } = require("../lib/types/membership.ts");
 const names = TIERS.map((name, i) => ({ name, id: (i + 1) * 10 }));
@@ -91,10 +104,60 @@ test("equal endpoints are overlapping", () => {
   d.timeRules[0].end = "17:00";
   assert.ok(validatePolicy(d, hours).some((i) => i.code === "overlap"));
 });
-test("one-minute gaps are detected", () => {
+test("work-hour gaps are allowed; outside work hours is coverage error", () => {
   const d = draft();
   d.timeRules[0].end = "16:58";
+  assert.deepEqual(
+    validatePolicy(d, hours).filter((i) => i.code === "coverage"),
+    [],
+  );
+  d.timeRules[0].start = "00:00";
   assert.ok(validatePolicy(d, hours).some((i) => i.code === "coverage"));
+});
+
+test("decompose/normalize/compile round-trips and merges adjacent silver cards", () => {
+  const rules = [
+    {
+      days: ["MONDAY"],
+      start: "09:00",
+      end: "12:00",
+      allowedTiers: ["SILVER"],
+      priceTier: "SILVER",
+    },
+    {
+      days: ["MONDAY"],
+      start: "12:01",
+      end: "15:00",
+      allowedTiers: ["SILVER"],
+      priceTier: "SILVER",
+    },
+    {
+      days: ["TUESDAY"],
+      start: "09:00",
+      end: "15:00",
+      allowedTiers: ["SILVER"],
+      priceTier: "SILVER",
+    },
+  ];
+  const silver = normalizePackageWindows(decomposeTimeRules(rules).SILVER);
+  assert.equal(silver.length, 1);
+  assert.deepEqual(silver[0].days, ["MONDAY", "TUESDAY"]);
+  assert.equal(silver[0].start, "09:00");
+  assert.equal(silver[0].end, "15:00");
+  const compiled = compileTimeRules({ SILVER: silver });
+  assert.equal(compiled.length, 1);
+  assert.deepEqual(compiled[0].allowedTiers, ["SILVER"]);
+  assert.deepEqual(compiled[0].days, ["MONDAY", "TUESDAY"]);
+});
+
+test("setPackageWindows preserves other tiers when editing silver", () => {
+  const d = draft();
+  const next = setPackageWindows(d, "SILVER", [
+    { days: ["WEDNESDAY"], start: "10:00", end: "11:00" },
+  ]);
+  const windows = decomposeTimeRules(next.timeRules);
+  assert.deepEqual(windows.SILVER[0].days, ["WEDNESDAY"]);
+  assert.ok(windows.BRONZE.some((w) => w.start === "00:01"));
 });
 test("entry price rejects negative and excessive decimal precision", () => {
   for (const price of ["-1", "4.123", "Infinity", ""]) {
@@ -169,8 +232,10 @@ test("exclusive period end is displayed as previous date without browser timezon
   assert.equal(formatMembershipEndDate("2026-03-01T00:00:00"), "28.02.2026");
 });
 test("invalid clock input is rejected", () => {
-  for (const s of ["24:00", "09:60", "9:00", ""])
+  // "9:00" normalizes to 09:00 via toTime24; reject only truly invalid values.
+  for (const s of ["24:00", "09:60", ""])
     assert.ok(Number.isNaN(minute(s)));
+  assert.equal(minute("9:00"), 9 * 60);
 });
 const {
   useMembershipEditorState,

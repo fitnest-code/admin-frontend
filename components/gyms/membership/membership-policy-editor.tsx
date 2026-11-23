@@ -333,10 +333,9 @@ export function MembershipPolicyEditor({
             </tbody>
           </table>
         </div>
-        <div className="mt-4">
-          <Notice>{c.inheritance}</Notice>
-        </div>
-        <p className={styles.subtitle}>{c.settlement}</p>
+        <p className={styles.hint}>
+          {c.inheritance} {c.settlement}
+        </p>
       </section>
       <TimeRulesEditor
         draft={draft}
