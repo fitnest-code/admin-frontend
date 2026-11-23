@@ -12,12 +12,18 @@ export type CustomerSortValue =
 export type UiCustomerStatus = 'active' | 'inactive' | 'blocked' | 'deleted' | 'pending_registration'
 export type UiSubscriptionStatus = 'active' | 'expired' | 'changed' | 'last7days' | 'frozen' | 'none'
 
+/** Soft Stripe-like chips: muted fill, dark text, quiet ring — not solid candy pills. */
 export const CUSTOMER_STATUS_STYLES: Record<UiCustomerStatus, string> = {
-  active: 'bg-green-600 text-white',
-  inactive: 'bg-[#6B7280] text-white',
-  blocked: 'bg-[#c9373a] text-white',
-  deleted: 'bg-[#991b1b] text-white',
-  pending_registration: 'bg-amber-500 text-white',
+  active:
+    'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/15',
+  inactive:
+    'bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-500/10',
+  blocked:
+    'bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/15',
+  deleted:
+    'bg-rose-50 text-rose-800 ring-1 ring-inset ring-rose-600/15',
+  pending_registration:
+    'bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-600/15',
 }
 
 export const SUBSCRIPTION_STATUS_TEXT_STYLES: Record<UiSubscriptionStatus, string> = {

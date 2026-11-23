@@ -7,7 +7,12 @@ import { ArrowLeft, Ban, Bell, Coins, Mail, MessageSquare, Upload, UserCog, Tras
 import { resetDeviceLimit, blockUser, unblockUser } from '@/modules/customers/api/customers.service'
 import { cn } from '@/lib/utils'
 import type { CustomerProfile } from '@/modules/customers'
-import { getCustomerStatusLabel, normalizeCustomerStatus, type UiCustomerStatus } from './list/customer-list-utils'
+import {
+  CUSTOMER_STATUS_STYLES,
+  getCustomerStatusLabel,
+  normalizeCustomerStatus,
+  type UiCustomerStatus,
+} from './list/customer-list-utils'
 import { useT } from '@/lib/i18n'
 import { PushModal, SmsModal, EmailModal, BlockModal } from './list/customer-message-modals'
 import { ChangeRoleModal } from './modals/change-role-modal'
@@ -31,13 +36,7 @@ const CUSTOMER_TABS = [
   { key: 'access', labelKey: 'tabAccess' },
 ] as const
 
-const STATUS_STYLES = {
-  active: 'bg-[#166728] text-white',
-  inactive: 'bg-[#6B7280] text-white',
-  blocked: 'bg-[#c9373a] text-white',
-  deleted: 'bg-[#991b1b] text-white',
-  pending_registration: 'bg-amber-600 text-white',
-} satisfies Record<UiCustomerStatus, string>
+const STATUS_STYLES = CUSTOMER_STATUS_STYLES
 
 function formatValue(value: string | number | null | undefined, fallback: string, suffix?: string) {
   if (value === null || value === undefined || value === '') return fallback
@@ -192,16 +191,14 @@ export function CustomerDetail({ customer: initialCustomer }: { customer: Custom
               <h1 className="text-[20px] font-bold tracking-tight text-foreground">
                 {fullName}
               </h1>
-              <div className={cn('flex items-center gap-1.5 rounded-full px-3 py-0.5 text-[10px] font-bold uppercase shadow-2xs', STATUS_STYLES[status])}>
-                <span className="h-1 w-1 rounded-full bg-white animate-pulse" />
-                <span>
-                  {status === 'active' 
-                    ? t.details.activeStatus 
-                    : status === 'inactive' 
-                      ? t.details.inactiveStatus 
-                      : t.details.blockedStatus}
-                </span>
-              </div>
+              <span
+                className={cn(
+                  'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium leading-5',
+                  STATUS_STYLES[status],
+                )}
+              >
+                {getCustomerStatusLabel(status, t.lists)}
+              </span>
             </div>
             {customer.subscriptionStatus && (
               <span className="text-xs font-medium text-muted-foreground">
