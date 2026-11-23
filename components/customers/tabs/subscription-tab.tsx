@@ -1,9 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Calendar, Check, Clock, Minus, Pencil, Plus, ShieldCheck, X } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Calendar, Check, Clock, Minus, Pencil, Plus, ShieldCheck, Snowflake, X } from 'lucide-react'
 import { toast } from 'sonner'
-import { useCustomerCurrentSubscriptionQuery, useUpdateEntryLimitMutation } from '@/modules/customers/hooks/use-customers-query'
+import {
+  useCustomerCurrentSubscriptionQuery,
+  useFreezeCustomerSubscriptionMutation,
+  useUnfreezeCustomerSubscriptionMutation,
+  useUpdateEntryLimitMutation,
+} from '@/modules/customers/hooks/use-customers-query'
 import { useAuthStore } from '@/lib/store/auth-store'
 import { cn } from '@/lib/utils'
 import { PrimaryGymCard } from '../membership/primary-gym-card'
@@ -42,23 +47,43 @@ function SkeletonRow() {
 }
 
 export function SubscriptionTab({ userId }: { userId: string }) {
-  const [isFrozen, setIsFrozen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [draftRemaining, setDraftRemaining] = useState(0)
+  const [selectedDays, setSelectedDays] = useState(1)
   const { data, isLoading, isError } = useCustomerCurrentSubscriptionQuery(userId)
   const updateLimit = useUpdateEntryLimitMutation(userId)
+  const freezeMutation = useFreezeCustomerSubscriptionMutation(userId)
+  const unfreezeMutation = useUnfreezeCustomerSubscriptionMutation(userId)
 
-  // Only the system admin (ROLE_ADMIN) may edit the entry limit — not gym / super admins.
+  // Only the system admin (ROLE_ADMIN) may edit / freeze — not gym / super admins.
   const userRole = useAuthStore((s) => s.user?.role)?.toUpperCase()
   const isAdmin = userRole === 'ROLE_ADMIN' || userRole === 'ADMIN'
 
   const serverRemaining = data?.userRemainingLimit ?? 0
+  const availableFreezeDays = data?.availableFreezeDays ?? 0
+  const currentlyFrozen = Boolean(data?.currentlyFrozen)
+  const canFreeze = Boolean(data?.canFreeze) && availableFreezeDays > 0
+
+  const dayOptions = useMemo(() => {
+    const max = Math.max(0, availableFreezeDays)
+    return Array.from({ length: max }, (_, i) => i + 1)
+  }, [availableFreezeDays])
 
   useEffect(() => {
     if (!isEditing) {
       setDraftRemaining(serverRemaining)
     }
   }, [serverRemaining, isEditing])
+
+  useEffect(() => {
+    if (dayOptions.length === 0) {
+      setSelectedDays(1)
+      return
+    }
+    setSelectedDays((prev) =>
+      dayOptions.includes(prev) ? prev : dayOptions[dayOptions.length - 1],
+    )
+  }, [dayOptions])
 
   if (isLoading) {
     return (
@@ -99,6 +124,7 @@ export function SubscriptionTab({ userId }: { userId: string }) {
     ? Math.min(100, Math.max(0, Math.round((displayedRemaining / displayedTotal) * 100)))
     : 0
   const isDirty = draftRemaining !== serverRemaining
+  const busy = freezeMutation.isPending || unfreezeMutation.isPending
 
   const handleStartEdit = () => {
     setDraftRemaining(serverRemaining)
@@ -129,10 +155,39 @@ export function SubscriptionTab({ userId }: { userId: string }) {
     )
   }
 
+  const handleFreeze = () => {
+    if (!canFreeze) {
+      toast.error(
+        availableFreezeDays <= 0
+          ? 'Bu abunəlik üçün qalan dondurma günü yoxdur.'
+          : 'Abunəlik hazırda dondurula bilməz.',
+      )
+      return
+    }
+    freezeMutation.mutate(selectedDays, {
+      onSuccess: () => {
+        toast.success(`Abunəlik ${selectedDays} günlüyə donduruldu`)
+      },
+      onError: (err) => {
+        toast.error(err instanceof Error ? err.message : 'Abunəlik dondurulmadı')
+      },
+    })
+  }
+
+  const handleUnfreeze = () => {
+    unfreezeMutation.mutate(undefined, {
+      onSuccess: () => {
+        toast.success('Abunəlik yenidən aktivləşdirildi')
+      },
+      onError: (err) => {
+        toast.error(err instanceof Error ? err.message : 'Dondurma bitirilmədi')
+      },
+    })
+  }
+
   return (
     <div className="flex flex-col gap-5">
     <div className="flex flex-col rounded-2xl bg-white border border-border p-7 shadow-xs gap-6 animate-in fade-in-50 duration-300">
-      {/* Container Header */}
       <div className="flex items-center justify-between border-b border-border pb-3.5">
         <h2 className="text-lg font-bold text-foreground tracking-tight">Abunəlik məlumatları</h2>
         {isAdmin && !isEditing && (
@@ -146,28 +201,39 @@ export function SubscriptionTab({ userId }: { userId: string }) {
         )}
       </div>
 
-      {/* Subscription Tier Banner Container */}
       <div className="flex flex-col gap-6">
-        {/* Tier Name & Quick Badging */}
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-2.5">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#00B4CC]/10 text-[#00B4CC]">
               <ShieldCheck size={20} />
             </div>
-            <h3 className="text-xl font-bold tracking-tight text-foreground">
-              {data.packageName || 'Bronze'}
-            </h3>
+            <div className="flex flex-col gap-0.5">
+              <h3 className="text-xl font-bold tracking-tight text-foreground">
+                {data.packageName || 'Bronze'}
+              </h3>
+              {data.status && (
+                <span className="text-xs font-medium text-muted-foreground">
+                  Status: {data.status}
+                </span>
+              )}
+            </div>
           </div>
 
-          {/* Real-time Expiration Counter Indicator */}
-          {daysLeft <= 7 && daysLeft >= 0 && (
-            <div className="flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600 animate-pulse">
-              <Clock size={13} /> Son {daysLeft} gün
-            </div>
-          )}
+          <div className="flex items-center gap-2 flex-wrap">
+            {currentlyFrozen && (
+              <div className="flex items-center gap-1.5 rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1 text-xs font-semibold text-sky-700">
+                <Snowflake size={13} /> Dondurulub
+                {data.unfreezesAt ? ` · ${formatDate(data.unfreezesAt)}` : ''}
+              </div>
+            )}
+            {daysLeft <= 7 && daysLeft >= 0 && !currentlyFrozen && (
+              <div className="flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600 animate-pulse">
+                <Clock size={13} /> Son {daysLeft} gün
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Selected Plan Duration & Price Flex Row */}
         <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-6 rounded-xl bg-[#FAFAFA] p-4.5 border border-border/60">
           <div className="flex flex-col gap-1">
             <span className="text-xs font-medium text-muted-foreground">Seçilmiş plan:</span>
@@ -179,7 +245,6 @@ export function SubscriptionTab({ userId }: { userId: string }) {
           </div>
         </div>
 
-        {/* Date Details Flex Rows */}
         <div className="flex flex-col gap-4 border-t border-border/40 pt-4">
           <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-4">
             <div className="flex items-center gap-2.5">
@@ -198,7 +263,6 @@ export function SubscriptionTab({ userId }: { userId: string }) {
           </div>
         </div>
 
-        {/* Remaining Entry Limit Custom Multi-Layer Progress Indicator */}
         <div className="flex flex-col gap-2.5 border-t border-border/40 pt-4">
           <div className="flex items-center justify-between text-sm">
             <span className="font-medium text-muted-foreground">Qalıq Limit:</span>
@@ -233,7 +297,6 @@ export function SubscriptionTab({ userId }: { userId: string }) {
             )}
           </div>
 
-          {/* Custom Track */}
           <div className="h-2.5 w-full rounded-full bg-secondary overflow-hidden p-0.5">
             <div
               className="h-full rounded-full bg-[#00B4CC] transition-all duration-500 ease-out"
@@ -242,28 +305,81 @@ export function SubscriptionTab({ userId }: { userId: string }) {
           </div>
         </div>
 
-        {/* Subscription Status State Control (Freeze) Toggle Switch */}
-        <div className="flex items-center justify-between border-t border-border/40 pt-4">
-          <span className="text-sm font-medium text-muted-foreground">Abunəliyi dondur</span>
-          <button
-            role="switch"
-            aria-checked={isFrozen}
-            onClick={() => setIsFrozen((v) => !v)}
-            className={cn(
-              'relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors duration-200 ease-in-out focus:outline-none',
-              isFrozen ? 'bg-[#00B4CC]' : 'bg-border/80',
+        {/* Freeze controls — duration from this subscription's available days */}
+        <div className="flex flex-col gap-3 border-t border-border/40 pt-4">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-sm font-medium text-foreground">Abunəliyi dondur</span>
+              <span className="text-xs text-muted-foreground">
+                Qalan hüquq: {availableFreezeDays} gün
+                {typeof data.totalFreezeDays === 'number'
+                  ? ` · cəmi ${data.totalFreezeDays}`
+                  : ''}
+              </span>
+            </div>
+            {currentlyFrozen && isAdmin && (
+              <button
+                type="button"
+                onClick={handleUnfreeze}
+                disabled={busy}
+                className="rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-[#FAFAFA] disabled:opacity-50"
+              >
+                {unfreezeMutation.isPending ? 'Açılır…' : 'Dondurmanı bitir'}
+              </button>
             )}
-          >
-            <span
-              className={cn(
-                'pointer-events-none inline-block h-5 w-5 translate-y-0.5 rounded-full bg-white shadow-xs transition-transform duration-200 ease-in-out',
-                isFrozen ? 'translate-x-5' : 'translate-x-0.5',
+          </div>
+
+          {!currentlyFrozen && isAdmin && (
+            <>
+              {canFreeze ? (
+                <>
+                  <div className="flex flex-wrap gap-2">
+                    {dayOptions.map((d) => (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => setSelectedDays(d)}
+                        disabled={busy}
+                        className={cn(
+                          'min-w-10 rounded-lg border px-3 py-1.5 text-sm font-semibold tabular-nums transition-colors',
+                          selectedDays === d
+                            ? 'border-[#00B4CC] bg-[#00B4CC] text-white'
+                            : 'border-border bg-white text-foreground hover:bg-[#FAFAFA]',
+                        )}
+                      >
+                        {d}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleFreeze}
+                    disabled={busy || !dayOptions.includes(selectedDays)}
+                    className="self-start flex items-center gap-1.5 rounded-lg bg-[#00B4CC] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#00a2b8] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Snowflake size={15} />
+                    {freezeMutation.isPending
+                      ? 'Dondurulur…'
+                      : `${selectedDays} gün dondur`}
+                  </button>
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  {availableFreezeDays <= 0
+                    ? 'Bu abunəlik üçün dondurma günü qalmayıb.'
+                    : 'Abunəlik hazırda dondurula bilməz.'}
+                </p>
               )}
-            />
-          </button>
+            </>
+          )}
+
+          {!isAdmin && (
+            <p className="text-xs text-muted-foreground">
+              Dondurma yalnız sistem admin tərəfindən edilə bilər.
+            </p>
+          )}
         </div>
 
-        {/* Edit Actions */}
         {isEditing && (
           <div className="flex items-center justify-end gap-3 border-t border-border/40 pt-4">
             <button

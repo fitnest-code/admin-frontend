@@ -2,7 +2,7 @@
 
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/query/query-keys'
-import { getCustomerById, getCustomerCurrentSubscription, getCustomers, getSubscriptionPackageNames, getUserPaymentHistory, getUserQrHistory, getUserStatistics, hardDeleteUser, updateCustomerEntryLimit, type UpdateEntryLimitBody } from '@/modules/customers/api/customers.service'
+import { freezeCustomerSubscription, getCustomerById, getCustomerCurrentSubscription, getCustomers, getSubscriptionPackageNames, getUserPaymentHistory, getUserQrHistory, getUserStatistics, hardDeleteUser, unfreezeCustomerSubscription, updateCustomerEntryLimit, type UpdateEntryLimitBody } from '@/modules/customers/api/customers.service'
 import { useI18nStore } from '@/lib/i18n'
 import type { GetCustomersParams } from '@/modules/customers/types/customer.types'
 
@@ -88,6 +88,28 @@ export function useUpdateEntryLimitMutation(userId: string) {
     mutationFn: (body: UpdateEntryLimitBody) => updateCustomerEntryLimit(userId, body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.customers.subscription(userId) })
+    },
+  })
+}
+
+export function useFreezeCustomerSubscriptionMutation(userId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (days: number) => freezeCustomerSubscription(userId, days),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.customers.subscription(userId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.customers.byId(userId) })
+    },
+  })
+}
+
+export function useUnfreezeCustomerSubscriptionMutation(userId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => unfreezeCustomerSubscription(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.customers.subscription(userId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.customers.byId(userId) })
     },
   })
 }
