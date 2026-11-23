@@ -75,8 +75,8 @@ export function StepImages({ onNext }: { onNext?: () => void }) {
           });
         }
 
-        // Load rooms
-        step5Photos.rooms.forEach((r) => {
+        // Load rooms (rooms may be missing after partial store restore)
+        ;(step5Photos.rooms ?? []).forEach((r) => {
           if (r.categoryId) {
             const list = initialRoomPhotos[r.categoryId];
             if (list) {
