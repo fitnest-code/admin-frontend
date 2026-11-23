@@ -34,7 +34,8 @@ export function TimeInput24({ value, onChange, onBlur, ...rest }: Props) {
       onChange={(e) => onChange(e.target.value)}
       onBlur={(e) => {
         const next = toTime24(e.target.value);
-        onChange(isTime24(next) ? next : "");
+        // Invalid blur used to clear to "" and membership normalize dropped the row.
+        onChange(isTime24(next) ? next : value);
         onBlur?.(e);
       }}
     />

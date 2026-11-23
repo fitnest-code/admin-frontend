@@ -29,13 +29,15 @@ export function resolveTier(name: string): Tier | undefined {
   return names[name.trim().toLocaleLowerCase()];
 }
 export function toDraft(policy: MembershipPolicy): PolicyDraft {
+  const timeRules = (policy.timeRules ?? []).map((r) => ({
+    ...r,
+    start: toTime24(r.start),
+    end: toTime24(r.end),
+  }));
   return {
     ...policy,
-    timeRules: (policy.timeRules ?? []).map((r) => ({
-      ...r,
-      start: toTime24(r.start),
-      end: toTime24(r.end),
-    })),
+    timeRules,
+    packageWindows: decomposeTimeRules(timeRules),
     packages: TIERS.map(
       (tier) => policy.packages.find((p) => p.tier === tier)!,
     ).map((p) => ({
@@ -48,13 +50,23 @@ export function toDraft(policy: MembershipPolicy): PolicyDraft {
   };
 }
 export function fromDraft(draft: PolicyDraft): MembershipPolicy {
+  const windows = editorWindows(draft);
+  const timeRules = compileTimeRules(
+    Object.fromEntries(
+      TIERS.map((t) => [
+        t,
+        normalizePackageWindows((windows[t] ?? []).filter(isCompleteWindow)),
+      ]),
+    ) as Record<Tier, PackageAccessWindow[]>,
+  ).map((r) => ({
+    ...r,
+    start: toTime24(r.start),
+    end: toTime24(r.end),
+  }));
   return {
-    ...draft,
-    timeRules: draft.timeRules.map((r) => ({
-      ...r,
-      start: toTime24(r.start),
-      end: toTime24(r.end),
-    })),
+    version: draft.version,
+    timeRulesEnabled: draft.timeRulesEnabled,
+    timeRules,
     packages: draft.packages.map((p) => ({
       ...p,
       entryPrice: p.entryPrice.trim() === "" ? 0 : Number(p.entryPrice),
@@ -87,6 +99,10 @@ export function importLegacy(
     version: 0,
     timeRulesEnabled: false,
     timeRules: [],
+    packageWindows: Object.fromEntries(TIERS.map((t) => [t, []])) as unknown as Record<
+      Tier,
+      PackageAccessWindow[]
+    >,
     packages: TIERS.map((tier) => {
       const existing = subscriptions.find((p) => p.packageId === ids.get(tier));
       return {
@@ -184,6 +200,49 @@ export type PackageAccessWindow = {
   start: string;
   end: string;
 };
+
+/** Window ready to compile into API timeRules (incomplete cards stay visible in the editor). */
+export function isCompleteWindow(w: PackageAccessWindow): boolean {
+  const start = minute(w.start);
+  const end = effectiveEndMinute(start, minute(w.end));
+  return (
+    w.days.length > 0 &&
+    Number.isFinite(start) &&
+    Number.isFinite(end) &&
+    start <= end
+  );
+}
+
+/** Editable cards for the UI — prefer draft.packageWindows over compiled timeRules. */
+export function editorWindows(
+  draft: PolicyDraft,
+): Record<Tier, PackageAccessWindow[]> {
+  if (draft.packageWindows) {
+    return Object.fromEntries(
+      TIERS.map((t) => [t, [...(draft.packageWindows?.[t] ?? [])]]),
+    ) as Record<Tier, PackageAccessWindow[]>;
+  }
+  return decomposeTimeRules(draft.timeRules);
+}
+
+/** Suggest a non-colliding default so "Add range" is visibly a new card. */
+export function nextEmptyWindow(
+  existing: PackageAccessWindow[],
+): PackageAccessWindow {
+  const candidates: PackageAccessWindow[] = [
+    { days: [DAYS[0]], start: "09:00", end: "17:00" },
+    { days: [DAYS[0]], start: "17:00", end: "21:00" },
+    { days: [DAYS[1]], start: "09:00", end: "17:00" },
+    { days: [DAYS[2]], start: "09:00", end: "17:00" },
+  ];
+  const key = (w: PackageAccessWindow) =>
+    `${w.days.join(",")}|${toTime24(w.start)}|${toTime24(w.end)}`;
+  const used = new Set(existing.map(key));
+  for (const c of candidates) {
+    if (!used.has(key(c))) return { days: [...c.days], start: c.start, end: c.end };
+  }
+  return { days: [DAYS[0]], start: "09:00", end: "17:00" };
+}
 
 export function defaultRules(hours: WorkingHours, priceTier: Tier): TimeRule[] {
   const grouped = new Map<string, TimeRule>();
@@ -346,11 +405,23 @@ export function setPackageWindows(
   tier: Tier,
   windows: PackageAccessWindow[],
 ): PolicyDraft {
-  const current = decomposeTimeRules(draft.timeRules);
-  current[tier] = normalizePackageWindows(windows);
+  // Keep raw cards (including incomplete / duplicate defaults) so Add range does not vanish.
+  const current = editorWindows(draft);
+  current[tier] = windows.map((w) => ({
+    days: [...w.days],
+    start: w.start,
+    end: w.end,
+  }));
+  const forCompile = Object.fromEntries(
+    TIERS.map((t) => [
+      t,
+      normalizePackageWindows((current[t] ?? []).filter(isCompleteWindow)),
+    ]),
+  ) as Record<Tier, PackageAccessWindow[]>;
   return {
     ...draft,
-    timeRules: compileTimeRules(current),
+    packageWindows: current,
+    timeRules: compileTimeRules(forCompile),
   };
 }
 

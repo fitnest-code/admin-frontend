@@ -39,8 +39,20 @@ export interface PackageDraft
   entryPrice: string;
   primaryMonthlyPrice: string;
 }
+/** Editor-only schedule card (not sent to API; compiled into timeRules on save). */
+export interface PackageAccessWindowDraft {
+  days: Day[];
+  start: string;
+  end: string;
+}
 export interface PolicyDraft extends Omit<MembershipPolicy, "packages"> {
   packages: PackageDraft[];
+  /**
+   * Source of truth while editing package hours. Round-tripping only through
+   * compiled timeRules merges identical/overlapping cards and makes "Add range"
+   * look like the new row vanished.
+   */
+  packageWindows?: Partial<Record<Tier, PackageAccessWindowDraft[]>>;
 }
 export interface NotificationContent {
   title: string;

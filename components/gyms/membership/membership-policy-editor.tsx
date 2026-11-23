@@ -131,8 +131,14 @@ export function MembershipPolicyEditor({
   }, [dirty, gymId]);
   const issues = draft ? validatePolicy(draft, hours.data ?? undefined) : [];
   const affected = draft ? disabledPackageIds(baseline, fromDraft(draft)) : [];
-  const update = (next: PolicyDraft) => {
-    setDraft(next);
+  const update = (
+    next: PolicyDraft | ((prev: PolicyDraft) => PolicyDraft),
+  ) => {
+    setDraft((prev) => {
+      if (!prev) return prev;
+      const resolved = typeof next === "function" ? next(prev) : next;
+      return resolved;
+    });
     setServerError(null);
   };
   const patch = (tier: PackageDraft["tier"], values: Partial<PackageDraft>) => {
