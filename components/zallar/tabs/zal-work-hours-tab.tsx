@@ -9,6 +9,7 @@ import { IGymWorkHoursPayload, IWorkHour, IRestDay } from "@/lib/types/working-h
 import { cn } from "@/lib/utils";
 import { SuccessAnimationModal } from "@/components/ui/success-animation-modal";
 import { useI18nStore } from "@/lib/i18n";
+import { CategoryHoursSection } from "@/components/gyms/category-offerings/category-hours-section";
 
 type GenderTab = "generalWorkHours" | "workHoursMan" | "workHoursWoman";
 
@@ -355,7 +356,10 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
     }
   });
 
+  const parsedGymId = gymId != null ? Number(gymId) : 0;
+
   return (
+    <div className="flex flex-col gap-5">
     <div className="w-full bg-white rounded-[12px] border border-[#ECECED] p-5 sm:p-7 flex flex-col gap-9 font-sans text-black">
       <div className="flex flex-col gap-10">
         
@@ -644,6 +648,8 @@ export function ZalWorkHoursTab({ gymId }: ZalWorkHoursTabProps) {
         message={successMessage}
         type={modalType}
       />
+    </div>
+    {parsedGymId > 0 ? <CategoryHoursSection gymId={parsedGymId} /> : null}
     </div>
   );
 }

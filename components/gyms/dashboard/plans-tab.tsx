@@ -2,7 +2,8 @@
 import { useGymStore } from "@/lib/store/gym-store";
 import type { Gym } from "@/lib/gyms-data";
 import { MembershipPolicyEditor } from "../membership/membership-policy-editor";
-import { CategoryOfferingsEditor } from "../category-offerings/category-offerings-editor";
+import { CategoryPricesSection } from "../category-offerings/category-prices-section";
+import { CategoryServicesSection } from "../category-offerings/category-services-section";
 
 export function PlansTab({
   gym,
@@ -15,14 +16,19 @@ export function PlansTab({
   const setCurrentTab = useGymStore((s) => s.setCurrentTab);
   const gymId = Number(gym?.id ?? storeId);
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <MembershipPolicyEditor
         key={gymId}
         gymId={gymId}
         gymName={gym?.name ?? ""}
         onWorkHours={onWorkHours ?? (() => setCurrentTab("workingHours"))}
       />
-      {gymId > 0 ? <CategoryOfferingsEditor gymId={gymId} /> : null}
+      {gymId > 0 ? (
+        <>
+          <CategoryPricesSection gymId={gymId} />
+          <CategoryServicesSection gymId={gymId} />
+        </>
+      ) : null}
     </div>
   );
 }
