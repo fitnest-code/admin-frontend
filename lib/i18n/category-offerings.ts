@@ -39,12 +39,12 @@ const az = {
   clearHours: "Saatları təmizlə",
   analyticsTitle: "Kateqoriya üzrə girişlər",
   analyticsSubtitle:
-    "QR seçiminə görə girişlər. Legacy: kateqoriya seçilməmiş köhnə skanlar.",
+    "QR seçiminə görə girişlər. Kateqoriya seçilmədən baş vermiş skanlar ayrıca göstərilir.",
   category: "Kateqoriya",
   okScans: "Uğurlu",
   failScans: "Uğursuz",
   revenue: "Məbləğ",
-  legacy: "Legacy",
+  legacy: "Kateqoriya seçilmədən baş vermiş skanlar",
   total: "Cəmi",
   noAnalytics: "Bu dövr üçün kateqoriya məlumatı yoxdur.",
   days: {
@@ -93,12 +93,12 @@ const en: typeof az = {
   clearHours: "Clear hours",
   analyticsTitle: "Entries by category",
   analyticsSubtitle:
-    "Scans by QR category. Legacy: older scans without a category.",
+    "Entries by QR category. Scans without a category are listed separately.",
   category: "Category",
   okScans: "Successful",
   failScans: "Failed",
   revenue: "Revenue",
-  legacy: "Legacy",
+  legacy: "Scans without a category",
   total: "Total",
   noAnalytics: "No category data for this period.",
   days: {
@@ -148,12 +148,12 @@ const ru: typeof az = {
   clearHours: "Очистить часы",
   analyticsTitle: "Входы по категориям",
   analyticsSubtitle:
-    "Сканы по категории QR. Legacy: старые сканы без выбора категории.",
+    "Входы по категории QR. Сканы без выбора категории показаны отдельно.",
   category: "Категория",
   okScans: "Успешно",
   failScans: "Ошибки",
   revenue: "Сумма",
-  legacy: "Legacy",
+  legacy: "Сканы без выбора категории",
   total: "Итого",
   noAnalytics: "Нет данных по категориям за этот период.",
   days: {
