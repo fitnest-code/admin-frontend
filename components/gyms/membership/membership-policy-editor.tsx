@@ -361,12 +361,14 @@ export function MembershipPolicyEditor({
         onWorkHours={onWorkHours}
         disabled={save.isPending}
       />
-      <CategoryEditor
-        draft={draft}
-        onChange={update}
-        suggestions={services.data?.map((s) => s.name) ?? []}
-        disabled={save.isPending}
-      />
+      {draft.packages.some((p) => p.included) ? (
+        <CategoryEditor
+          draft={draft}
+          onChange={update}
+          suggestions={services.data?.map((s) => s.name) ?? []}
+          disabled={save.isPending}
+        />
+      ) : null}
       {attempted && issues.length > 0 && (
         <Notice tone="error">
           <ul className={styles.validation}>

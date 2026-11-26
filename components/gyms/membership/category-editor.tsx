@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import {
   Dialog,
@@ -29,10 +29,20 @@ export function CategoryEditor({
   disabled: boolean;
 }) {
   const c = useMembershipCopy();
-  const [tier, setTier] = useState<Tier>("BRONZE");
+  const includedTiers = useMemo(
+    () =>
+      TIERS.filter((t) => draft.packages.some((p) => p.tier === t && p.included)),
+    [draft.packages],
+  );
+  const [tier, setTier] = useState<Tier>(includedTiers[0] ?? "BRONZE");
   const [editing, setEditing] = useState<number | "new" | null>(null);
   const [name, setName] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
+  useEffect(() => {
+    if (!includedTiers.includes(tier) && includedTiers[0]) {
+      setTier(includedTiers[0]);
+    }
+  }, [includedTiers, tier]);
   const categories =
     draft.packages.find((p) => p.tier === tier)?.categories ?? [];
   const available = suggestions.filter(
@@ -110,7 +120,7 @@ export function CategoryEditor({
         </button>
       </div>
       <div className={styles.tabs} role="tablist" aria-label={c.package}>
-        {TIERS.map((t) => (
+        {includedTiers.map((t) => (
           <button
             type="button"
             key={t}
