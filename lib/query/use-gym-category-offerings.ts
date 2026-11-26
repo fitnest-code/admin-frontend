@@ -6,8 +6,6 @@ import type {
   GymCategoryAnalyticsResponse,
   GymCategoryPriceRequest,
   GymCategoryPriceRow,
-  GymCategoryServiceItem,
-  GymCategoryServicesRequest,
   GymCategoryWorkHour,
   GymCategoryWorkHoursRequest,
 } from "@/lib/types/category-offerings";
@@ -16,8 +14,6 @@ export const categoryPricesKey = (gymId: number, categoryId: number) =>
   ["gym-category-prices", gymId, categoryId] as const;
 export const categoryHoursKey = (gymId: number, categoryId: number) =>
   ["gym-category-hours", gymId, categoryId] as const;
-export const categoryServicesKey = (gymId: number, categoryId: number) =>
-  ["gym-category-services", gymId, categoryId] as const;
 export const categoryAnalyticsKey = (
   gymId: number,
   startDate?: string,
@@ -68,28 +64,6 @@ export function useSaveCategoryWorkHours(gymId: number, categoryId: number) {
       apiPut<GymCategoryWorkHour[]>(`${base(gymId, categoryId)}/work-hours`, body),
     onSuccess: (data) => {
       client.setQueryData(categoryHoursKey(gymId, categoryId), data);
-    },
-  });
-}
-
-export function useCategoryServices(gymId: number, categoryId: number) {
-  return useQuery({
-    queryKey: categoryServicesKey(gymId, categoryId),
-    enabled: gymId > 0 && categoryId > 0,
-    retry: false,
-    refetchOnWindowFocus: false,
-    queryFn: () =>
-      apiGet<GymCategoryServiceItem[]>(`${base(gymId, categoryId)}/services`),
-  });
-}
-
-export function useSaveCategoryServices(gymId: number, categoryId: number) {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: (body: GymCategoryServicesRequest) =>
-      apiPut<GymCategoryServiceItem[]>(`${base(gymId, categoryId)}/services`, body),
-    onSuccess: (data) => {
-      client.setQueryData(categoryServicesKey(gymId, categoryId), data);
     },
   });
 }

@@ -3,7 +3,6 @@ import { useGymStore } from "@/lib/store/gym-store";
 import type { Gym } from "@/lib/gyms-data";
 import { MembershipPolicyEditor } from "../membership/membership-policy-editor";
 import { CategoryPricesSection } from "../category-offerings/category-prices-section";
-import { CategoryServicesSection } from "../category-offerings/category-services-section";
 
 export function PlansTab({
   gym,
@@ -23,12 +22,7 @@ export function PlansTab({
         gymName={gym?.name ?? ""}
         onWorkHours={onWorkHours ?? (() => setCurrentTab("workingHours"))}
       />
-      {gymId > 0 ? (
-        <>
-          <CategoryPricesSection gymId={gymId} />
-          <CategoryServicesSection gymId={gymId} />
-        </>
-      ) : null}
+      {gymId > 0 ? <CategoryPricesSection gymId={gymId} /> : null}
     </div>
   );
 }

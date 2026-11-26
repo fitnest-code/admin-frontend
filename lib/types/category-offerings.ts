@@ -35,16 +35,6 @@ export interface GymCategoryWorkHoursRequest {
   workHours: GymCategoryWorkHour[];
 }
 
-export interface GymCategoryServiceItem {
-  id: number;
-  name: string;
-  iconUrl?: string | null;
-}
-
-export interface GymCategoryServicesRequest {
-  serviceIds: number[];
-}
-
 export interface GymCategoryAnalyticsRow {
   categoryKey: string;
   categoryId: number | null;

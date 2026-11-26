@@ -9,7 +9,6 @@ const az = {
   sub: "Alt",
   prices: "Qiymətlər",
   hours: "İş saatları",
-  services: "Xidmətlər",
   pricesTitle: "Kateqoriya qiymətləri",
   pricesSubtitle: "Alt kateqoriya qiymətləri QR seçiminə tətbiq olunur.",
   pricesMainOnlyHint:
@@ -20,12 +19,8 @@ const az = {
   hoursSubtitle:
     "Kateqoriya üçün xüsusi saatlar. Boş saxlanılsa, zalın ümumi saatları istifadə olunur.",
   hoursRowHint: "Xüsusi saatları redaktə et",
-  servicesTitle: "Kateqoriya xidmətləri",
-  servicesSubtitle: "Hər kateqoriyaya bağlı xidmətləri seçin.",
-  servicesRowHint: "Xidmətləri redaktə et",
   editPrices: "Qiymətləri redaktə et",
   editHours: "Saatları redaktə et",
-  editServices: "Xidmətləri redaktə et",
   package: "Paket",
   entry: "Bir giriş",
   monthly: "Aylıq",
@@ -42,8 +37,6 @@ const az = {
   hoursHelp:
     "Boş saxlayıb yadda saxlasanız, zalın ümumi iş saatlarından istifadə olunur.",
   clearHours: "Saatları təmizlə",
-  servicesHelp: "Bu kateqoriyaya bağlı xidmətləri seçin.",
-  noServices: "Xidmət tapılmadı.",
   analyticsTitle: "Kateqoriya üzrə girişlər",
   analyticsSubtitle:
     "QR seçiminə görə girişlər. “Legacy” — kateqoriya seçilməmiş köhnə skanlar.",
@@ -72,7 +65,6 @@ const en: typeof az = {
   sub: "Sub",
   prices: "Prices",
   hours: "Work hours",
-  services: "Services",
   pricesTitle: "Category prices",
   pricesSubtitle: "Subcategory prices apply when picked at QR scan.",
   pricesMainOnlyHint:
@@ -83,12 +75,8 @@ const en: typeof az = {
   hoursSubtitle:
     "Optional hours per category. Leave empty to use the gym’s general hours.",
   hoursRowHint: "Edit custom hours",
-  servicesTitle: "Category services",
-  servicesSubtitle: "Services linked to each category.",
-  servicesRowHint: "Edit services",
   editPrices: "Edit prices",
   editHours: "Edit hours",
-  editServices: "Edit services",
   package: "Package",
   entry: "Single entry",
   monthly: "Monthly",
@@ -105,8 +93,6 @@ const en: typeof az = {
   hoursHelp:
     "Save empty to fall back to the gym’s general work hours.",
   clearHours: "Clear hours",
-  servicesHelp: "Choose services linked to this category.",
-  noServices: "No services found.",
   analyticsTitle: "Entries by category",
   analyticsSubtitle:
     "Scans by QR category. “Legacy” = scans without a category picker.",
@@ -135,7 +121,6 @@ const ru: typeof az = {
   sub: "Под",
   prices: "Цены",
   hours: "Часы работы",
-  services: "Услуги",
   pricesTitle: "Цены категорий",
   pricesSubtitle: "Цены подкатегории применяются при выборе в QR.",
   pricesMainOnlyHint:
@@ -146,12 +131,8 @@ const ru: typeof az = {
   hoursSubtitle:
     "Опциональные часы для категории. Пусто = общие часы зала.",
   hoursRowHint: "Изменить часы",
-  servicesTitle: "Услуги категорий",
-  servicesSubtitle: "Услуги, связанные с каждой категорией.",
-  servicesRowHint: "Изменить услуги",
   editPrices: "Изменить цены",
   editHours: "Изменить часы",
-  editServices: "Изменить услуги",
   package: "Пакет",
   entry: "Разовый вход",
   monthly: "Месячный",
@@ -168,8 +149,6 @@ const ru: typeof az = {
   hoursHelp:
     "Пустой список при сохранении использует общие часы зала.",
   clearHours: "Очистить часы",
-  servicesHelp: "Выберите услуги этой категории.",
-  noServices: "Услуги не найдены.",
   analyticsTitle: "Входы по категориям",
   analyticsSubtitle:
     "Сканы по категории QR. «Legacy» — без выбора категории.",
