@@ -1,3 +1,5 @@
+import { useI18nStore } from "@/lib/i18n";
+
 export class ApiError extends Error {
   status: number;
   payload: unknown;
@@ -266,10 +268,13 @@ export async function apiRequest<T>(
     requestHeaders.set("Accept", "application/json");
   }
 
-  if (typeof window !== "undefined") {
-    const storedLang = localStorage.getItem("fitnest-language");
-    if (storedLang && !requestHeaders.has("Accept-Language")) {
-      requestHeaders.set("Accept-Language", storedLang);
+  if (typeof window !== "undefined" && !requestHeaders.has("Accept-Language")) {
+    // Prefer live i18n store so UI language and API entity names stay aligned.
+    const lang =
+      useI18nStore.getState()?.locale ||
+      localStorage.getItem("fitnest-language");
+    if (lang === "AZ" || lang === "EN" || lang === "RU") {
+      requestHeaders.set("Accept-Language", lang);
     }
   }
 

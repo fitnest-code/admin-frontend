@@ -93,9 +93,11 @@ export function CategoryEditor({
       <div className={styles.heading}>
         <div>
           <h2 id="category-heading" className={styles.title}>
-            {tierName(tier)} · {c.categories}
+            {c.servicesTitle}
           </h2>
-          <p className={styles.subtitle}>{c.categoryHelp}</p>
+          <p className={styles.subtitle}>
+            {tierName(tier)}. {c.servicesSubtitle}
+          </p>
         </div>
         <button
           type="button"
@@ -104,7 +106,7 @@ export function CategoryEditor({
           onClick={openNew}
         >
           <Plus size={15} />
-          {c.addCategory}
+          {c.addService}
         </button>
       </div>
       <div className={styles.tabs} role="tablist" aria-label={c.package}>
@@ -145,7 +147,7 @@ export function CategoryEditor({
             </button>
           </div>
         ))}
-        {!categories.length && <p className={styles.muted}>{c.noCategories}</p>}
+        {!categories.length && <p className={styles.muted}>{c.noServices}</p>}
       </div>
       <Dialog
         open={editing !== null}
@@ -159,10 +161,10 @@ export function CategoryEditor({
         <DialogContent className={styles.dialog}>
           <DialogHeader>
             <DialogTitle>
-              {editing === "new" ? c.addCategory : c.edit}
+              {editing === "new" ? c.addService : c.edit}
             </DialogTitle>
             <DialogDescription>
-              {tierName(tier)} · {c.categoryHelp}
+              {tierName(tier)}. {c.servicesSubtitle}
             </DialogDescription>
           </DialogHeader>
           <form
@@ -173,7 +175,7 @@ export function CategoryEditor({
             }}
           >
             <label className={styles.label}>
-              {c.categoryName}
+              {c.serviceName}
               <input
                 className={styles.input}
                 value={name}
@@ -181,7 +183,7 @@ export function CategoryEditor({
                 autoFocus
                 required={editing !== "new" || selected.length === 0}
                 placeholder={
-                  editing === "new" ? c.categoryOrSelect : undefined
+                  editing === "new" ? c.serviceOrSelect : undefined
                 }
                 onChange={(e) => setName(e.target.value)}
               />
@@ -193,11 +195,11 @@ export function CategoryEditor({
             )}
             {editing === "new" && available.length > 0 && (
               <div>
-                <p className={styles.muted}>{c.selectCategories}</p>
+                <p className={styles.muted}>{c.selectServices}</p>
                 <div
                   className={styles.chips}
                   role="group"
-                  aria-label={c.selectCategories}
+                  aria-label={c.selectServices}
                 >
                   {available.map((s) => {
                     const on = selected.some((v) => sameName(v, s));

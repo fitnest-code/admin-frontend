@@ -4,23 +4,23 @@ import { useI18nStore } from "@/lib/i18n";
 
 const az = {
   emptyCategories:
-    "Bu zalda kateqoriya yoxdur. Əvvəlcə “Zal məlumatları”nda kateqoriya əlavə edin.",
+    "Bu zalda kateqoriya yoxdur. Əvvəlcə Zal məlumatlarında əlavə edin.",
   main: "Əsas",
   sub: "Alt",
   prices: "Qiymətlər",
   hours: "İş saatları",
   pricesTitle: "Kateqoriya qiymətləri",
-  pricesSubtitle: "Alt kateqoriya qiymətləri QR seçiminə tətbiq olunur.",
+  pricesSubtitle: "Alt kateqoriya üçün paket üzrə giriş və aylıq qiymət.",
   pricesMainOnlyHint:
-    "Yalnız əsas kateqoriya var — qiymətlər yuxarıdakı abunəlik cədvəlindən gəlir.",
-  mainPriceRowHint: "Abunəlik siyasətindən (yalnız baxış)",
+    "Yalnız əsas kateqoriya var. Qiymətlər yuxarıdakı cədvəldən götürülür.",
+  mainPriceRowHint: "Abunəlik cədvəlindən, yalnız baxış",
   subPriceRowHint: "Paket üzrə giriş və aylıq qiymət",
   hoursTitle: "Kateqoriya iş saatları",
   hoursSubtitle:
-    "Kateqoriya üçün xüsusi saatlar. Boş saxlanılsa, zalın ümumi saatları istifadə olunur.",
-  hoursRowHint: "Xüsusi saatları redaktə et",
-  editPrices: "Qiymətləri redaktə et",
-  editHours: "Saatları redaktə et",
+    "Kateqoriya üçün ayrıca saatlar. Boş saxlanılsa, zalın ümumi saatları keçərlidir.",
+  hoursRowHint: "Saatları dəyiş",
+  editPrices: "Qiymətləri dəyiş",
+  editHours: "Saatları dəyiş",
   package: "Paket",
   entry: "Bir giriş",
   monthly: "Aylıq",
@@ -32,14 +32,14 @@ const az = {
   loading: "Yüklənir…",
   failed: "Məlumatları yükləmək mümkün olmadı.",
   mainPriceNote:
-    "Əsas kateqoriya qiymətləri abunəlik siyasətindən gəlir və burada yalnız oxunur.",
-  subPriceHelp: "Hər paket üçün giriş və aylıq qiyməti təyin edin.",
+    "Əsas kateqoriya qiymətləri abunəlik cədvəlindən gəlir və burada dəyişdirilmir.",
+  subPriceHelp: "Hər paket üçün giriş və aylıq qiyməti yazın.",
   hoursHelp:
-    "Boş saxlayıb yadda saxlasanız, zalın ümumi iş saatlarından istifadə olunur.",
+    "Boş saxlayıb yadda saxlasanız, zalın ümumi iş saatları istifadə olunur.",
   clearHours: "Saatları təmizlə",
   analyticsTitle: "Kateqoriya üzrə girişlər",
   analyticsSubtitle:
-    "QR seçiminə görə girişlər. “Legacy” — kateqoriya seçilməmiş köhnə skanlar.",
+    "QR seçiminə görə girişlər. Legacy: kateqoriya seçilməmiş köhnə skanlar.",
   category: "Kateqoriya",
   okScans: "Uğurlu",
   failScans: "Uğursuz",
@@ -59,22 +59,21 @@ const az = {
 };
 
 const en: typeof az = {
-  emptyCategories:
-    "This gym has no categories yet. Add them in Info first.",
+  emptyCategories: "This gym has no categories yet. Add them under Gym info.",
   main: "Main",
   sub: "Sub",
   prices: "Prices",
   hours: "Work hours",
   pricesTitle: "Category prices",
-  pricesSubtitle: "Subcategory prices apply when picked at QR scan.",
+  pricesSubtitle: "Entry and monthly price per package for each subcategory.",
   pricesMainOnlyHint:
-    "Main category only — prices come from the membership table above.",
-  mainPriceRowHint: "From membership policy (view only)",
-  subPriceRowHint: "Single entry and monthly per package",
+    "Main category only. Prices come from the table above.",
+  mainPriceRowHint: "From membership table, view only",
+  subPriceRowHint: "Entry and monthly price per package",
   hoursTitle: "Category work hours",
   hoursSubtitle:
-    "Optional hours per category. Leave empty to use the gym’s general hours.",
-  hoursRowHint: "Edit custom hours",
+    "Optional hours for a category. Empty means the gym work hours apply.",
+  hoursRowHint: "Edit hours",
   editPrices: "Edit prices",
   editHours: "Edit hours",
   package: "Package",
@@ -88,21 +87,20 @@ const en: typeof az = {
   loading: "Loading…",
   failed: "Failed to load data.",
   mainPriceNote:
-    "Main category prices come from membership policy and are read-only here.",
-  subPriceHelp: "Set single-entry and monthly prices per package.",
-  hoursHelp:
-    "Save empty to fall back to the gym’s general work hours.",
+    "Main category prices come from the membership table and cannot be edited here.",
+  subPriceHelp: "Set entry and monthly price for each package.",
+  hoursHelp: "Save empty to use the gym work hours.",
   clearHours: "Clear hours",
   analyticsTitle: "Entries by category",
   analyticsSubtitle:
-    "Scans by QR category. “Legacy” = scans without a category picker.",
+    "Scans by QR category. Legacy: older scans without a category.",
   category: "Category",
   okScans: "Successful",
   failScans: "Failed",
   revenue: "Revenue",
   legacy: "Legacy",
   total: "Total",
-  noAnalytics: "No category breakdown for this period.",
+  noAnalytics: "No category data for this period.",
   days: {
     MONDAY: "Mon",
     TUESDAY: "Tue",
@@ -116,20 +114,20 @@ const en: typeof az = {
 
 const ru: typeof az = {
   emptyCategories:
-    "У зала ещё нет категорий. Сначала добавьте их во вкладке «Информация».",
+    "У зала пока нет категорий. Добавьте их во вкладке «Информация».",
   main: "Основная",
   sub: "Под",
   prices: "Цены",
   hours: "Часы работы",
   pricesTitle: "Цены категорий",
-  pricesSubtitle: "Цены подкатегории применяются при выборе в QR.",
+  pricesSubtitle: "Разовая и месячная цена по пакетам для подкатегории.",
   pricesMainOnlyHint:
-    "Только основная категория — цены из таблицы абонемента выше.",
-  mainPriceRowHint: "Из политики абонемента (только просмотр)",
-  subPriceRowHint: "Разовый вход и месяц по пакетам",
+    "Только основная категория. Цены берутся из таблицы выше.",
+  mainPriceRowHint: "Из таблицы абонемента, только просмотр",
+  subPriceRowHint: "Разовая и месячная цена по пакетам",
   hoursTitle: "Часы категорий",
   hoursSubtitle:
-    "Опциональные часы для категории. Пусто = общие часы зала.",
+    "Отдельные часы для категории. Пусто значит общие часы зала.",
   hoursRowHint: "Изменить часы",
   editPrices: "Изменить цены",
   editHours: "Изменить часы",
@@ -144,21 +142,20 @@ const ru: typeof az = {
   loading: "Загрузка…",
   failed: "Не удалось загрузить данные.",
   mainPriceNote:
-    "Цены основной категории берутся из политики абонемента и здесь только для чтения.",
+    "Цены основной категории берутся из таблицы абонемента и здесь не меняются.",
   subPriceHelp: "Укажите разовую и месячную цену для каждого пакета.",
-  hoursHelp:
-    "Пустой список при сохранении использует общие часы зала.",
+  hoursHelp: "Пустой список при сохранении использует общие часы зала.",
   clearHours: "Очистить часы",
   analyticsTitle: "Входы по категориям",
   analyticsSubtitle:
-    "Сканы по категории QR. «Legacy» — без выбора категории.",
+    "Сканы по категории QR. Legacy: старые сканы без выбора категории.",
   category: "Категория",
   okScans: "Успешно",
   failScans: "Ошибки",
   revenue: "Сумма",
   legacy: "Legacy",
   total: "Итого",
-  noAnalytics: "Нет разбивки по категориям за этот период.",
+  noAnalytics: "Нет данных по категориям за этот период.",
   days: {
     MONDAY: "Пн",
     TUESDAY: "Вт",

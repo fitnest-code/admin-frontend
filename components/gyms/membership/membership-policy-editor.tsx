@@ -34,6 +34,7 @@ import { ApiError } from "@/lib/api/client";
 import { Busy, Notice, issueText, membershipError } from "./shared";
 import { TimeRulesEditor } from "./time-rules-editor";
 import { CategoryEditor } from "./category-editor";
+import { CategoryPricesSection } from "../category-offerings/category-prices-section";
 import { DisablePrimaryDialog } from "./disable-primary-dialog";
 import styles from "./membership.module.css";
 import { UnsavedChangesDialog } from "./unsaved-changes-dialog";
@@ -243,13 +244,13 @@ export function MembershipPolicyEditor({
     <div className={styles.root}>
       <UnsavedChangesDialog />
       {policy.data === null && <Notice>{c.newPolicy}</Notice>}
-      <section className={styles.panel} aria-labelledby="membership-heading">
+      <section className={styles.panel} aria-labelledby="prices-heading">
         <div className={styles.heading}>
           <div>
-            <h2 id="membership-heading" className={styles.title}>
-              {c.title}
+            <h2 id="prices-heading" className={styles.title}>
+              {c.pricesTitle}
             </h2>
-            <p className={styles.subtitle}>{c.subtitle}</p>
+            <p className={styles.subtitle}>{c.pricesSubtitle}</p>
           </div>
           <span className={styles.pill}>
             <Check size={13} />
@@ -331,7 +332,7 @@ export function MembershipPolicyEditor({
                         aria-label={`${tierName(p.tier)} ${c.monthly}`}
                         inputMode="decimal"
                         type="text"
-                        placeholder={p.primaryEnabled ? "0.00" : "—"}
+                        placeholder={p.primaryEnabled ? "0.00" : "-"}
                         disabled={
                           !p.included || !p.primaryEnabled || save.isPending
                         }
@@ -352,6 +353,7 @@ export function MembershipPolicyEditor({
           {c.inheritance} {c.settlement}
         </p>
       </section>
+      {gymId > 0 ? <CategoryPricesSection gymId={gymId} /> : null}
       <TimeRulesEditor
         draft={draft}
         hours={hours.data ?? undefined}
