@@ -50,9 +50,7 @@ function PriceModal({
   const packages = useSubscriptionPackages();
   const prices = useCategoryPrices(gymId, chip.categoryId);
   const save = useSaveCategoryPrice(gymId, chip.categoryId);
-  const [draft, setDraft] = useState<
-    Record<number, { singlePrice: string; unlimitedPrice: string }>
-  >({});
+  const [draft, setDraft] = useState<Record<number, string>>({});
   const [dirty, setDirty] = useState(false);
 
   const included = useMemo(() => new Set(includedPackageIds), [includedPackageIds]);
@@ -66,13 +64,10 @@ function PriceModal({
 
   useEffect(() => {
     if (!open) return;
-    const next: typeof draft = {};
+    const next: Record<number, string> = {};
     for (const pkg of packageList) {
       const row = (prices.data ?? []).find((p) => p.packageId === pkg.id);
-      next[pkg.id] = {
-        singlePrice: money(row?.singlePrice),
-        unlimitedPrice: money(row?.unlimitedPrice),
-      };
+      next[pkg.id] = money(row?.singlePrice);
     }
     setDraft(next);
     setDirty(false);
@@ -81,23 +76,16 @@ function PriceModal({
   const onSaveAll = async () => {
     try {
       for (const pkg of packageList) {
-        const row = draft[pkg.id];
-        if (!row) continue;
-        const singlePrice = parseMoney(row.singlePrice);
-        const unlimitedPrice = parseMoney(row.unlimitedPrice);
-        if (
-          (row.singlePrice.trim() && singlePrice == null) ||
-          (row.unlimitedPrice.trim() && unlimitedPrice == null) ||
-          (singlePrice != null && singlePrice < 0) ||
-          (unlimitedPrice != null && unlimitedPrice < 0)
-        ) {
+        const raw = draft[pkg.id] ?? "";
+        const singlePrice = parseMoney(raw);
+        if ((raw.trim() && singlePrice == null) || (singlePrice != null && singlePrice < 0)) {
           toast.error(copy.saveFailed);
           return;
         }
         await save.mutateAsync({
           packageId: pkg.id,
           singlePrice,
-          unlimitedPrice,
+          unlimitedPrice: null,
           effectiveFrom: monthStartIso(),
         });
       }
@@ -128,49 +116,26 @@ function PriceModal({
           ) : packageList.length === 0 ? (
             <p className={styles.muted}>{copy.noIncludedPackages}</p>
           ) : (
-            <div className={styles.fieldGrid}>
-              <div className={styles.fieldRow}>
+            <div className={styles.fieldGridSingle}>
+              <div className={styles.fieldRowSingle}>
                 <span className={styles.fieldLabel}>{copy.package}</span>
                 <span className={styles.fieldLabel}>{copy.entry}</span>
-                <span className={styles.fieldLabel}>{copy.monthly}</span>
               </div>
               {packageList.map((pkg) => {
-                const row = draft[pkg.id] ?? {
-                  singlePrice: "",
-                  unlimitedPrice: "",
-                };
+                const value = draft[pkg.id] ?? "";
                 return (
-                  <div key={pkg.id} className={styles.fieldRow}>
+                  <div key={pkg.id} className={styles.fieldRowSingle}>
                     <div className={styles.pkgName}>{pkg.name}</div>
                     <label className={styles.price}>
                       <input
                         inputMode="decimal"
                         disabled={save.isPending}
-                        value={row.singlePrice}
+                        value={value}
                         placeholder="0.00"
                         onChange={(e) => {
                           setDraft((prev) => ({
                             ...prev,
-                            [pkg.id]: { ...row, singlePrice: e.target.value },
-                          }));
-                          setDirty(true);
-                        }}
-                      />
-                      <span>₼</span>
-                    </label>
-                    <label className={styles.price}>
-                      <input
-                        inputMode="decimal"
-                        disabled={save.isPending}
-                        value={row.unlimitedPrice}
-                        placeholder="0.00"
-                        onChange={(e) => {
-                          setDraft((prev) => ({
-                            ...prev,
-                            [pkg.id]: {
-                              ...row,
-                              unlimitedPrice: e.target.value,
-                            },
+                            [pkg.id]: e.target.value,
                           }));
                           setDirty(true);
                         }}

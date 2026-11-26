@@ -10,11 +10,11 @@ const az = {
   prices: "Qiymətlər",
   hours: "İş saatları",
   pricesTitle: "Kateqoriya qiymətləri",
-  pricesSubtitle: "Alt kateqoriya üçün paket üzrə giriş və aylıq qiymət.",
+  pricesSubtitle: "Alt kateqoriya üçün paket üzrə bir giriş qiyməti.",
   pricesMainOnlyHint:
     "Yalnız əsas kateqoriya var. Qiymətlər yuxarıdakı cədvəldən götürülür.",
   mainPriceRowHint: "Abunəlik cədvəlindən, yalnız baxış",
-  subPriceRowHint: "Paket üzrə giriş və aylıq qiymət",
+  subPriceRowHint: "Paket üzrə bir giriş qiyməti",
   hoursTitle: "Kateqoriya iş saatları",
   hoursSubtitle:
     "Kateqoriya üçün ayrıca saatlar. Boş saxlanılsa, zalın ümumi saatları keçərlidir.",
@@ -35,7 +35,7 @@ const az = {
     "Əsas kateqoriya qiymətləri abunəlik cədvəlindən gəlir və burada dəyişdirilmir.",
   noIncludedPackages:
     "Əvvəlcə yuxarıda ən azı bir paketi daxil edin. Qiymətlər yalnız daxil olan paketlər üçün təyin olunur.",
-  subPriceHelp: "Hər paket üçün giriş və aylıq qiyməti yazın.",
+  subPriceHelp: "Hər paket üçün bir giriş qiymətini yazın.",
   hoursHelp:
     "Boş saxlayıb yadda saxlasanız, zalın ümumi iş saatları istifadə olunur.",
   clearHours: "Saatları təmizlə",
@@ -67,11 +67,11 @@ const en: typeof az = {
   prices: "Prices",
   hours: "Work hours",
   pricesTitle: "Category prices",
-  pricesSubtitle: "Entry and monthly price per package for each subcategory.",
+  pricesSubtitle: "Single entry price per package for each subcategory.",
   pricesMainOnlyHint:
     "Main category only. Prices come from the table above.",
   mainPriceRowHint: "From membership table, view only",
-  subPriceRowHint: "Entry and monthly price per package",
+  subPriceRowHint: "Single entry price per package",
   hoursTitle: "Category work hours",
   hoursSubtitle:
     "Optional hours for a category. Empty means the gym work hours apply.",
@@ -92,7 +92,7 @@ const en: typeof az = {
     "Main category prices come from the membership table and cannot be edited here.",
   noIncludedPackages:
     "Include at least one package above first. Prices are set only for included packages.",
-  subPriceHelp: "Set entry and monthly price for each package.",
+  subPriceHelp: "Set the single entry price for each package.",
   hoursHelp: "Save empty to use the gym work hours.",
   clearHours: "Clear hours",
   analyticsTitle: "Entries by category",
@@ -124,11 +124,11 @@ const ru: typeof az = {
   prices: "Цены",
   hours: "Часы работы",
   pricesTitle: "Цены категорий",
-  pricesSubtitle: "Разовая и месячная цена по пакетам для подкатегории.",
+  pricesSubtitle: "Разовая цена входа по пакетам для подкатегории.",
   pricesMainOnlyHint:
     "Только основная категория. Цены берутся из таблицы выше.",
   mainPriceRowHint: "Из таблицы абонемента, только просмотр",
-  subPriceRowHint: "Разовая и месячная цена по пакетам",
+  subPriceRowHint: "Разовая цена входа по пакетам",
   hoursTitle: "Часы категорий",
   hoursSubtitle:
     "Отдельные часы для категории. Пусто значит общие часы зала.",
@@ -149,7 +149,7 @@ const ru: typeof az = {
     "Цены основной категории берутся из таблицы абонемента и здесь не меняются.",
   noIncludedPackages:
     "Сначала включите хотя бы один пакет выше. Цены задаются только для включённых пакетов.",
-  subPriceHelp: "Укажите разовую и месячную цену для каждого пакета.",
+  subPriceHelp: "Укажите разовую цену входа для каждого пакета.",
   hoursHelp: "Пустой список при сохранении использует общие часы зала.",
   clearHours: "Очистить часы",
   analyticsTitle: "Входы по категориям",
