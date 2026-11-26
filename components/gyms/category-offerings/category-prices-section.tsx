@@ -36,16 +36,17 @@ function parseMoney(raw: string): number | null {
 function PriceModal({
   gymId,
   chip,
+  includedPackageIds,
   open,
   onClose,
 }: {
   gymId: number;
   chip: GymCategoryChip;
+  includedPackageIds: number[];
   open: boolean;
   onClose: () => void;
 }) {
   const copy = useCategoryOfferingsCopy();
-  const readOnly = chip.role === "MAIN";
   const packages = useSubscriptionPackages();
   const prices = useCategoryPrices(gymId, chip.categoryId);
   const save = useSaveCategoryPrice(gymId, chip.categoryId);
@@ -54,9 +55,13 @@ function PriceModal({
   >({});
   const [dirty, setDirty] = useState(false);
 
+  const included = useMemo(() => new Set(includedPackageIds), [includedPackageIds]);
   const packageList = useMemo(
-    () => [...(packages.data ?? [])].sort((a, b) => a.id - b.id),
-    [packages.data],
+    () =>
+      [...(packages.data ?? [])]
+        .filter((pkg) => included.has(pkg.id))
+        .sort((a, b) => a.id - b.id),
+    [packages.data, included],
   );
 
   useEffect(() => {
@@ -100,7 +105,9 @@ function PriceModal({
       setDirty(false);
       onClose();
     } catch (e) {
-      toast.error(e instanceof ApiError && e.message ? e.message : copy.saveFailed);
+      toast.error(
+        e instanceof ApiError && e.message ? e.message : copy.saveFailed,
+      );
     }
   };
 
@@ -113,13 +120,13 @@ function PriceModal({
           </DialogTitle>
         </DialogHeader>
         <div className={styles.modalBody}>
-          <p className={styles.modalHint}>
-            {readOnly ? copy.mainPriceNote : copy.subPriceHelp}
-          </p>
+          <p className={styles.modalHint}>{copy.subPriceHelp}</p>
           {prices.isLoading || packages.isLoading ? (
             <div className={styles.busy}>{copy.loading}</div>
           ) : prices.isError || packages.isError ? (
             <div className={styles.busy}>{copy.failed}</div>
+          ) : packageList.length === 0 ? (
+            <p className={styles.muted}>{copy.noIncludedPackages}</p>
           ) : (
             <div className={styles.fieldGrid}>
               <div className={styles.fieldRow}>
@@ -138,8 +145,9 @@ function PriceModal({
                     <label className={styles.price}>
                       <input
                         inputMode="decimal"
-                        disabled={readOnly || save.isPending}
+                        disabled={save.isPending}
                         value={row.singlePrice}
+                        placeholder="0.00"
                         onChange={(e) => {
                           setDraft((prev) => ({
                             ...prev,
@@ -153,8 +161,9 @@ function PriceModal({
                     <label className={styles.price}>
                       <input
                         inputMode="decimal"
-                        disabled={readOnly || save.isPending}
+                        disabled={save.isPending}
                         value={row.unlimitedPrice}
+                        placeholder="0.00"
                         onChange={(e) => {
                           setDraft((prev) => ({
                             ...prev,
@@ -177,7 +186,7 @@ function PriceModal({
             <button type="button" className={styles.secondary} onClick={onClose}>
               {copy.cancel}
             </button>
-            {!readOnly ? (
+            {packageList.length > 0 ? (
               <button
                 type="button"
                 className={styles.button}
@@ -201,14 +210,22 @@ function PriceModal({
   );
 }
 
-export function CategoryPricesSection({ gymId }: { gymId: number }) {
+export function CategoryPricesSection({
+  gymId,
+  includedPackageIds = [],
+}: {
+  gymId: number;
+  /** Only these packages get subcategory prices; empty = no editable packages yet. */
+  includedPackageIds?: number[];
+}) {
   const copy = useCategoryOfferingsCopy();
   const { chips, isLoading, isError, hasSubs } = useGymCategoryChips(gymId);
   const [editing, setEditing] = useState<GymCategoryChip | null>(null);
 
-  // Only show when gym has subcategory offerings to configure (or dual-main picker).
-  const visible = chips.filter((c) => c.role === "SUB" || chips.length > 1);
-  if (!isLoading && !isError && visible.length === 0) return null;
+  // Dual-main / multi-offer gyms still need the section; MAIN rows stay view-only (no pencil).
+  const showSection =
+    hasSubs || chips.filter((c) => c.role === "MAIN").length > 1;
+  if (!isLoading && !isError && !showSection) return null;
 
   return (
     <section className={styles.root}>
@@ -223,35 +240,48 @@ export function CategoryPricesSection({ gymId }: { gymId: number }) {
           <div className={styles.busy}>{copy.loading}</div>
         ) : isError ? (
           <div className={styles.busy}>{copy.failed}</div>
-        ) : !hasSubs && visible.every((c) => c.role === "MAIN") ? (
+        ) : !hasSubs ? (
           <p className={styles.muted}>{copy.pricesMainOnlyHint}</p>
+        ) : includedPackageIds.length === 0 ? (
+          <p className={styles.muted}>{copy.noIncludedPackages}</p>
         ) : (
           <div className={styles.list}>
-            {visible.map((chip) => (
-              <div key={chip.categoryId} className={styles.row}>
-                <div className={styles.rowMain}>
-                  <div className={styles.rowName}>{chip.name}</div>
-                  <div className={styles.rowMeta}>
-                    {chip.role === "MAIN"
-                      ? copy.mainPriceRowHint
-                      : copy.subPriceRowHint}
+            {chips
+              .filter((c) => c.role === "SUB" || chips.length > 1)
+              .map((chip) => {
+                const editable = chip.role === "SUB";
+                return (
+                  <div key={chip.categoryId} className={styles.row}>
+                    <div className={styles.rowMain}>
+                      <div className={styles.rowName}>{chip.name}</div>
+                      <div className={styles.rowMeta}>
+                        {editable
+                          ? copy.subPriceRowHint
+                          : copy.mainPriceRowHint}
+                      </div>
+                    </div>
+                    <span
+                      className={`${styles.badge} ${
+                        editable ? styles.badgeSub : ""
+                      }`}
+                    >
+                      {editable ? copy.sub : copy.main}
+                    </span>
+                    {editable ? (
+                      <button
+                        type="button"
+                        className={styles.iconBtn}
+                        aria-label={copy.editPrices}
+                        onClick={() => setEditing(chip)}
+                      >
+                        <Pencil size={15} />
+                      </button>
+                    ) : (
+                      <span className={styles.iconBtnSpacer} aria-hidden />
+                    )}
                   </div>
-                </div>
-                <span
-                  className={`${styles.badge} ${chip.role === "SUB" ? styles.badgeSub : ""}`}
-                >
-                  {chip.role === "MAIN" ? copy.main : copy.sub}
-                </span>
-                <button
-                  type="button"
-                  className={styles.iconBtn}
-                  aria-label={copy.editPrices}
-                  onClick={() => setEditing(chip)}
-                >
-                  <Pencil size={15} />
-                </button>
-              </div>
-            ))}
+                );
+              })}
           </div>
         )}
       </div>
@@ -259,6 +289,7 @@ export function CategoryPricesSection({ gymId }: { gymId: number }) {
         <PriceModal
           gymId={gymId}
           chip={editing}
+          includedPackageIds={includedPackageIds}
           open
           onClose={() => setEditing(null)}
         />

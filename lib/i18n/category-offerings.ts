@@ -33,6 +33,8 @@ const az = {
   failed: "Məlumatları yükləmək mümkün olmadı.",
   mainPriceNote:
     "Əsas kateqoriya qiymətləri abunəlik cədvəlindən gəlir və burada dəyişdirilmir.",
+  noIncludedPackages:
+    "Əvvəlcə yuxarıda ən azı bir paketi daxil edin. Qiymətlər yalnız daxil olan paketlər üçün təyin olunur.",
   subPriceHelp: "Hər paket üçün giriş və aylıq qiyməti yazın.",
   hoursHelp:
     "Boş saxlayıb yadda saxlasanız, zalın ümumi iş saatları istifadə olunur.",
@@ -88,6 +90,8 @@ const en: typeof az = {
   failed: "Failed to load data.",
   mainPriceNote:
     "Main category prices come from the membership table and cannot be edited here.",
+  noIncludedPackages:
+    "Include at least one package above first. Prices are set only for included packages.",
   subPriceHelp: "Set entry and monthly price for each package.",
   hoursHelp: "Save empty to use the gym work hours.",
   clearHours: "Clear hours",
@@ -143,6 +147,8 @@ const ru: typeof az = {
   failed: "Не удалось загрузить данные.",
   mainPriceNote:
     "Цены основной категории берутся из таблицы абонемента и здесь не меняются.",
+  noIncludedPackages:
+    "Сначала включите хотя бы один пакет выше. Цены задаются только для включённых пакетов.",
   subPriceHelp: "Укажите разовую и месячную цену для каждого пакета.",
   hoursHelp: "Пустой список при сохранении использует общие часы зала.",
   clearHours: "Очистить часы",

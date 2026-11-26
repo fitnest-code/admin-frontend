@@ -111,6 +111,11 @@
   background: #eff9fc;
 }
 
+.iconBtnSpacer {
+  width: 34px;
+  height: 34px;
+}
+
 .muted {
   color: #8b94a4;
   font-size: 12px;
