@@ -34,6 +34,7 @@ import { ApiError } from "@/lib/api/client";
 import { Busy, Notice, issueText, membershipError } from "./shared";
 import { TimeRulesEditor } from "./time-rules-editor";
 import { CategoryEditor } from "./category-editor";
+import { CategoryPricesSection } from "../category-offerings/category-prices-section";
 import { DisablePrimaryDialog } from "./disable-primary-dialog";
 import styles from "./membership.module.css";
 import { UnsavedChangesDialog } from "./unsaved-changes-dialog";
@@ -243,13 +244,13 @@ export function MembershipPolicyEditor({
     <div className={styles.root}>
       <UnsavedChangesDialog />
       {policy.data === null && <Notice>{c.newPolicy}</Notice>}
-      <section className={styles.panel} aria-labelledby="membership-heading">
+      <section className={styles.panel} aria-labelledby="prices-heading">
         <div className={styles.heading}>
           <div>
-            <h2 id="membership-heading" className={styles.title}>
-              {c.title}
+            <h2 id="prices-heading" className={styles.title}>
+              {c.pricesTitle}
             </h2>
-            <p className={styles.subtitle}>{c.subtitle}</p>
+            <p className={styles.subtitle}>{c.pricesSubtitle}</p>
           </div>
           <span className={styles.pill}>
             <Check size={13} />
@@ -310,38 +311,46 @@ export function MembershipPolicyEditor({
                     </label>
                   </td>
                   <td>
-                    <div className={styles.price}>
-                      <input
-                        aria-label={`${tierName(p.tier)} ${c.entry}`}
-                        inputMode="decimal"
-                        type="text"
-                        placeholder="0.00"
-                        disabled={!p.included || save.isPending}
-                        value={p.included ? p.entryPrice : ""}
-                        onChange={(e) =>
-                          patch(p.tier, { entryPrice: e.target.value })
-                        }
-                      />
-                      <span>AZN</span>
-                    </div>
+                    {p.included ? (
+                      <div className={styles.price}>
+                        <input
+                          aria-label={`${tierName(p.tier)} ${c.entry}`}
+                          inputMode="decimal"
+                          type="text"
+                          placeholder="0.00"
+                          disabled={save.isPending}
+                          value={p.entryPrice}
+                          onChange={(e) =>
+                            patch(p.tier, { entryPrice: e.target.value })
+                          }
+                        />
+                        <span>AZN</span>
+                      </div>
+                    ) : (
+                      <span className={styles.muted}>-</span>
+                    )}
                   </td>
                   <td>
-                    <div className={styles.price}>
-                      <input
-                        aria-label={`${tierName(p.tier)} ${c.monthly}`}
-                        inputMode="decimal"
-                        type="text"
-                        placeholder={p.primaryEnabled ? "0.00" : "—"}
-                        disabled={
-                          !p.included || !p.primaryEnabled || save.isPending
-                        }
-                        value={p.included ? p.primaryMonthlyPrice : ""}
-                        onChange={(e) =>
-                          patch(p.tier, { primaryMonthlyPrice: e.target.value })
-                        }
-                      />
-                      <span>AZN</span>
-                    </div>
+                    {p.included && p.primaryEnabled ? (
+                      <div className={styles.price}>
+                        <input
+                          aria-label={`${tierName(p.tier)} ${c.monthly}`}
+                          inputMode="decimal"
+                          type="text"
+                          placeholder="0.00"
+                          disabled={save.isPending}
+                          value={p.primaryMonthlyPrice}
+                          onChange={(e) =>
+                            patch(p.tier, {
+                              primaryMonthlyPrice: e.target.value,
+                            })
+                          }
+                        />
+                        <span>AZN</span>
+                      </div>
+                    ) : (
+                      <span className={styles.muted}>-</span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -352,6 +361,14 @@ export function MembershipPolicyEditor({
           {c.inheritance} {c.settlement}
         </p>
       </section>
+      {gymId > 0 ? (
+        <CategoryPricesSection
+          gymId={gymId}
+          includedPackageIds={draft.packages
+            .filter((p) => p.included)
+            .map((p) => p.packageId)}
+        />
+      ) : null}
       <TimeRulesEditor
         draft={draft}
         hours={hours.data ?? undefined}
@@ -359,12 +376,14 @@ export function MembershipPolicyEditor({
         onWorkHours={onWorkHours}
         disabled={save.isPending}
       />
-      <CategoryEditor
-        draft={draft}
-        onChange={update}
-        suggestions={services.data?.map((s) => s.name) ?? []}
-        disabled={save.isPending}
-      />
+      {draft.packages.some((p) => p.included) ? (
+        <CategoryEditor
+          draft={draft}
+          onChange={update}
+          suggestions={services.data?.map((s) => s.name) ?? []}
+          disabled={save.isPending}
+        />
+      ) : null}
       {attempted && issues.length > 0 && (
         <Notice tone="error">
           <ul className={styles.validation}>

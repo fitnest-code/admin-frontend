@@ -14,11 +14,13 @@ export function PlansTab({
   const setCurrentTab = useGymStore((s) => s.setCurrentTab);
   const gymId = Number(gym?.id ?? storeId);
   return (
-    <MembershipPolicyEditor
-      key={gymId}
-      gymId={gymId}
-      gymName={gym?.name ?? ""}
-      onWorkHours={onWorkHours ?? (() => setCurrentTab("workingHours"))}
-    />
+    <div className="flex flex-col gap-5">
+      <MembershipPolicyEditor
+        key={gymId}
+        gymId={gymId}
+        gymName={gym?.name ?? ""}
+        onWorkHours={onWorkHours ?? (() => setCurrentTab("workingHours"))}
+      />
+    </div>
   );
 }

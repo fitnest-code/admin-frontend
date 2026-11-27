@@ -14,6 +14,7 @@ import { format } from 'date-fns'
 import { az } from 'date-fns/locale'
 import { DateRange } from 'react-day-picker'
 import type { GymEntranceHistoryAdminResponse } from '@/lib/types/gym'
+import { CategoryAnalyticsTable } from '@/components/gyms/category-offerings/category-analytics-table'
 
 interface AnalitikaTabProps {
   gymId?: string | number
@@ -270,6 +271,14 @@ export function AnalitikaTab({ gymId }: AnalitikaTabProps) {
     <div className="w-full rounded-[12px] bg-white border border-[#ececed] flex flex-col items-start p-4 sm:p-6 gap-8 font-sans shadow-sm">
       <div className="self-stretch flex flex-col items-start gap-8">
         
+        {gymId ? (
+          <CategoryAnalyticsTable
+            gymId={gymId}
+            startDate={startDate || undefined}
+            endDate={endDate || undefined}
+          />
+        ) : null}
+
         {/* Zal analitikas Section Header */}
         <div className="self-stretch border-b border-[#ececed] flex items-center justify-between pb-2">
           <div className="text-[18px] leading-[28px] font-bold text-black tracking-tight">Zal analitikası</div>

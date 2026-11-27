@@ -20,7 +20,7 @@ import { useI18nStore } from "@/lib/i18n";
 import { toast } from "sonner";
 import { AZ_CITIES, BAKI_RAYONS, isBakiCity } from "@/lib/constants/az-cities";
 import { apiGet, apiPost } from "@/lib/api/client";
-import { emptyLanguageRecord, useLanguages } from "@/lib/query/use-languages";
+import { useLanguages } from "@/lib/query/use-languages";
 import styles from "./info-tab.module.css";
 
 interface InfoTabProps {
@@ -155,13 +155,11 @@ export function InfoTab({ gymId }: InfoTabProps) {
   const locale = useI18nStore((s) => s.locale);
   const lt = LOCAL_TRANSLATIONS[locale] || LOCAL_TRANSLATIONS.AZ;
 
-  // --- Translation state (AZ/EN/RU) ---
+  // --- Translation state (descriptions only; gym name is language-invariant) ---
   const [infoLangTab, setInfoLangTab] = useState<string>(primaryLang);
-  const [gymNames, setGymNames] = useState<Record<string, string>>(() => emptyLanguageRecord(languages));
   const [gymCatDescs, setGymCatDescs] = useState<Record<string, Record<number, string>>>(() =>
     Object.fromEntries(languages.map((lang) => [lang, {}]))
   );
-  const [initialGymNames, setInitialGymNames] = useState<Record<string, string>>(() => emptyLanguageRecord(languages));
   const [initialGymCatDescs, setInitialGymCatDescs] = useState<Record<string, Record<number, string>>>(() =>
     Object.fromEntries(languages.map((lang) => [lang, {}]))
   );
@@ -318,7 +316,6 @@ export function InfoTab({ gymId }: InfoTabProps) {
     JSON.stringify(formData) !== initialDataStr || 
     hasRoomNameChanges || 
     JSON.stringify(catDescriptions) !== initialDescsStr ||
-    JSON.stringify(gymNames) !== JSON.stringify(initialGymNames) ||
     JSON.stringify(gymCatDescs) !== JSON.stringify(initialGymCatDescs)
   );
 
@@ -369,8 +366,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
         setRoomNames(names);
       }
 
-      // Sync AZ translations
-      setGymNames((prev) => ({ ...emptyLanguageRecord(languages), ...prev, [primaryLang]: gymInfo.name || "" }));
+      // Sync AZ category descriptions
       const azDescs: Record<number, string> = {};
       const syncCats = [
         ...(gymInfo.mainCategories || []),
@@ -391,24 +387,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
     if (isEditing && gymId && !translationsLoaded) {
       const fetchTranslations = async () => {
         try {
-          // Fetch gym name translations
-          const nameRes = await apiGet<any[]>('/admin/translations', {
-            params: { entityType: 'GYM', entityId: String(gymId), fieldName: 'name' }
-          });
-          const nameList = Array.isArray(nameRes) ? nameRes : (nameRes as any)?.data || [];
-          const newNames: Record<string, string> = { ...gymNames };
-          nameList.forEach((item: any) => {
-            if (item.languageCode && item.fieldName === 'name') {
-              const lang = String(item.languageCode).toUpperCase();
-              if (languages.includes(lang)) {
-                newNames[lang] = item.fieldValue || '';
-              }
-            }
-          });
-          setGymNames(newNames);
-          setInitialGymNames(newNames);
-
-          // Fetch gym description translations
+          // Gym name is language-invariant (same AZ/EN/RU). Only descriptions are translated.
           const descRes = await apiGet<any[]>('/admin/translations', {
             params: { entityType: 'GYM', entityId: String(gymId) }
           });
@@ -419,6 +398,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
               const lang = item.languageCode.toUpperCase();
               if (lang === primaryLang) return;
               if (!languages.includes(lang)) return;
+              if (item.fieldName === 'name') return;
               if (!newDescs[lang]) newDescs[lang] = {};
               if (item.fieldName === 'description') {
                 // General description (used as fallback)
@@ -442,7 +422,6 @@ export function InfoTab({ gymId }: InfoTabProps) {
     if (!isEditing) {
       setTranslationsLoaded(false);
       setInfoLangTab(primaryLang);
-      setInitialGymNames(emptyLanguageRecord(languages));
       setInitialGymCatDescs(Object.fromEntries(languages.map((lang) => [lang, {}])));
     }
   }, [isEditing, gymId, translationsLoaded, languages, primaryLang]);
@@ -614,19 +593,7 @@ export function InfoTab({ gymId }: InfoTabProps) {
   const saveGymTranslations = async () => {
     if (!gymId) return;
     const payload: any[] = [];
-    // Gym name translations (EN, RU)
-    for (const lang of languages.filter((l) => l !== primaryLang)) {
-      const val = gymNames[lang];
-      if (val && val.trim()) {
-        payload.push({
-          entityType: "GYM",
-          entityId: String(gymId),
-          fieldName: "name",
-          languageCode: lang,
-          fieldValue: val.trim(),
-        });
-      }
-    }
+    // Gym name is not translated — one value on the gym entity for all languages.
     for (const lang of languages.filter((l) => l !== primaryLang)) {
       const descs = gymCatDescs[lang] || {};
       for (const [catId, val] of Object.entries(descs)) {
@@ -1040,9 +1007,9 @@ export function InfoTab({ gymId }: InfoTabProps) {
             </div>
           )}
 
-          {/* Zal adı */}
+          {/* Zal adı — one name for AZ/EN/RU (not per-language) */}
           <div className="flex flex-col items-start gap-3 w-full">
-            <div className="self-stretch relative leading-[24px]">{lt.gymName} {isEditing && infoLangTab !== primaryLang ? `(${infoLangTab})` : ""}</div>
+            <div className="self-stretch relative leading-[24px]">{lt.gymName}</div>
             <div className={cn(
               "self-stretch h-[44px] rounded-lg border flex items-center p-[0px_12px] text-sm transition-colors",
               isEditing ? "bg-white border-[#ececed] focus-within:border-[#00B4CC]" : "bg-[#fafafa] border-[#ececed]"
@@ -1050,16 +1017,9 @@ export function InfoTab({ gymId }: InfoTabProps) {
               <input 
                 type="text" 
                 name="name"
-                value={infoLangTab === primaryLang ? formData.name : (gymNames[infoLangTab] || "")}
-                onChange={(e) => {
-                  if (infoLangTab === primaryLang) {
-                    handleChange(e);
-                  } else {
-                    setGymNames(prev => ({ ...prev, [infoLangTab]: e.target.value }));
-                  }
-                }}
+                value={formData.name}
+                onChange={handleChange}
                 readOnly={!isEditing}
-                placeholder={infoLangTab === primaryLang ? "" : `Name (${infoLangTab})`}
                 className="bg-transparent text-foreground outline-none w-full h-full"
               />
             </div>

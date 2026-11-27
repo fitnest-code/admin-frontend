@@ -1,0 +1,349 @@
+/* Category offerings — split by tab; list + modal, FitNest membership tokens. */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  color: #152033;
+  font-size: 14px;
+}
+
+.panel {
+  border: 1px solid #e5e9ee;
+  background: #fff;
+  border-radius: 14px;
+  padding: 20px 22px;
+  box-shadow: 0 1px 2px #10182805;
+}
+
+.heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -0.25px;
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  color: #6a768b;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #e8ecf1;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.rowMain {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.rowName {
+  font-size: 13px;
+  font-weight: 600;
+  color: #152033;
+}
+
+.rowMeta {
+  font-size: 11px;
+  color: #8b94a4;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #f5f6f9;
+  color: #6a768b;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.badgeSub {
+  background: #eff9fc;
+  color: #00859b;
+}
+
+.iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #e1e6ec;
+  border-radius: 8px;
+  background: #fff;
+  color: #6a768b;
+  cursor: pointer;
+}
+
+.iconBtn:hover {
+  border-color: #00afc6;
+  color: #00859b;
+  background: #eff9fc;
+}
+
+.iconBtnSpacer {
+  width: 34px;
+  height: 34px;
+}
+
+.muted {
+  color: #8b94a4;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.busy {
+  color: #6a768b;
+  font-size: 13px;
+  padding: 6px 0;
+}
+
+/* Modal shell (matches membership dialog feel) */
+.dialog {
+  max-height: 90vh;
+  overflow-y: auto;
+  color: #152033;
+}
+
+.modalBody {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 4px;
+}
+
+.modalHint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: #6a768b;
+}
+
+.fieldGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fieldGridSingle {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fieldRow {
+  display: grid;
+  grid-template-columns: minmax(100px, 1.1fr) 1fr 1fr;
+  gap: 10px;
+  align-items: end;
+}
+
+.fieldRowSingle {
+  display: grid;
+  grid-template-columns: minmax(100px, 1.4fr) 1fr;
+  gap: 10px;
+  align-items: end;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6a768b;
+}
+
+.input {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid #dce2ea;
+  border-radius: 8px;
+  padding: 9px 10px;
+  font-size: 13px;
+  color: #152033;
+  background: #fff;
+}
+
+.input:focus {
+  outline: 3px solid #00afc650;
+  outline-offset: 2px;
+  border-color: #00afc6;
+}
+
+.input:disabled {
+  background: #f7f8fa;
+  color: #8b94a4;
+}
+
+.price {
+  display: flex;
+  align-items: center;
+  border: 1px solid #dce2ea;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.price input {
+  width: 100%;
+  border: 0;
+  padding: 9px 10px;
+  font-size: 13px;
+  outline: 0;
+  background: transparent;
+  color: #152033;
+}
+
+.price span {
+  padding-right: 10px;
+  color: #8b94a4;
+  font-size: 11px;
+}
+
+.price:focus-within {
+  border-color: #00afc6;
+  box-shadow: 0 0 0 2px #00afc61a;
+}
+
+.dayRow {
+  display: grid;
+  grid-template-columns: 72px 1fr 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.dayLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #253148;
+}
+
+.serviceGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+}
+
+.serviceItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid #e5e9ee;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  background: #fff;
+}
+
+.serviceItem input {
+  accent-color: #00afc6;
+  width: 15px;
+  height: 15px;
+}
+
+.serviceOn {
+  border-color: #00afc6;
+  background: #eff9fc;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.button,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.button {
+  background: #00afc6;
+  color: #fff;
+}
+
+.button:hover {
+  background: #009aaf;
+}
+
+.secondary {
+  background: #fff;
+  color: #253148;
+  border-color: #dce2ea;
+}
+
+.secondary:hover {
+  background: #f6f8fb;
+}
+
+.button:disabled,
+.secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pkgName {
+  font-size: 13px;
+  font-weight: 600;
+  padding-bottom: 8px;
+}
+
+@media (max-width: 640px) {
+  .row {
+    grid-template-columns: 1fr auto;
+  }
+  .badge {
+    display: none;
+  }
+  .fieldRow,
+  .dayRow {
+    grid-template-columns: 1fr;
+  }
+}

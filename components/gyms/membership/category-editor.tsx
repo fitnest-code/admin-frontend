@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import {
   Dialog,
@@ -29,10 +29,20 @@ export function CategoryEditor({
   disabled: boolean;
 }) {
   const c = useMembershipCopy();
-  const [tier, setTier] = useState<Tier>("BRONZE");
+  const includedTiers = useMemo(
+    () =>
+      TIERS.filter((t) => draft.packages.some((p) => p.tier === t && p.included)),
+    [draft.packages],
+  );
+  const [tier, setTier] = useState<Tier>(includedTiers[0] ?? "BRONZE");
   const [editing, setEditing] = useState<number | "new" | null>(null);
   const [name, setName] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
+  useEffect(() => {
+    if (!includedTiers.includes(tier) && includedTiers[0]) {
+      setTier(includedTiers[0]);
+    }
+  }, [includedTiers, tier]);
   const categories =
     draft.packages.find((p) => p.tier === tier)?.categories ?? [];
   const available = suggestions.filter(
@@ -93,9 +103,11 @@ export function CategoryEditor({
       <div className={styles.heading}>
         <div>
           <h2 id="category-heading" className={styles.title}>
-            {tierName(tier)} · {c.categories}
+            {c.servicesTitle}
           </h2>
-          <p className={styles.subtitle}>{c.categoryHelp}</p>
+          <p className={styles.subtitle}>
+            {tierName(tier)}. {c.servicesSubtitle}
+          </p>
         </div>
         <button
           type="button"
@@ -104,11 +116,11 @@ export function CategoryEditor({
           onClick={openNew}
         >
           <Plus size={15} />
-          {c.addCategory}
+          {c.addService}
         </button>
       </div>
       <div className={styles.tabs} role="tablist" aria-label={c.package}>
-        {TIERS.map((t) => (
+        {includedTiers.map((t) => (
           <button
             type="button"
             key={t}
@@ -145,7 +157,7 @@ export function CategoryEditor({
             </button>
           </div>
         ))}
-        {!categories.length && <p className={styles.muted}>{c.noCategories}</p>}
+        {!categories.length && <p className={styles.muted}>{c.noServices}</p>}
       </div>
       <Dialog
         open={editing !== null}
@@ -159,10 +171,10 @@ export function CategoryEditor({
         <DialogContent className={styles.dialog}>
           <DialogHeader>
             <DialogTitle>
-              {editing === "new" ? c.addCategory : c.edit}
+              {editing === "new" ? c.addService : c.edit}
             </DialogTitle>
             <DialogDescription>
-              {tierName(tier)} · {c.categoryHelp}
+              {tierName(tier)}. {c.servicesSubtitle}
             </DialogDescription>
           </DialogHeader>
           <form
@@ -173,7 +185,7 @@ export function CategoryEditor({
             }}
           >
             <label className={styles.label}>
-              {c.categoryName}
+              {c.serviceName}
               <input
                 className={styles.input}
                 value={name}
@@ -181,7 +193,7 @@ export function CategoryEditor({
                 autoFocus
                 required={editing !== "new" || selected.length === 0}
                 placeholder={
-                  editing === "new" ? c.categoryOrSelect : undefined
+                  editing === "new" ? c.serviceOrSelect : undefined
                 }
                 onChange={(e) => setName(e.target.value)}
               />
@@ -193,11 +205,11 @@ export function CategoryEditor({
             )}
             {editing === "new" && available.length > 0 && (
               <div>
-                <p className={styles.muted}>{c.selectCategories}</p>
+                <p className={styles.muted}>{c.selectServices}</p>
                 <div
                   className={styles.chips}
                   role="group"
-                  aria-label={c.selectCategories}
+                  aria-label={c.selectServices}
                 >
                   {available.map((s) => {
                     const on = selected.some((v) => sameName(v, s));
