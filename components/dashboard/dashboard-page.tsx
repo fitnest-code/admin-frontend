@@ -1,330 +1,510 @@
 'use client'
 
-import { useState } from 'react'
-import { StatCard } from './stat-card'
-import dynamic from 'next/dynamic'
-import { STAT_ICONS } from '@/lib/dashboard-data'
+import { useMemo, useState } from 'react'
+import Link from 'next/link'
+import {
+  Download,
+  Info,
+  RefreshCw,
+  TrendingDown,
+  TrendingUp,
+  Users,
+  UserCheck,
+  UserPlus,
+  Percent,
+  QrCode,
+  Sun,
+  Moon,
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { SelectDropdown } from '@/components/ui/select-dropdown'
 import {
   formatCurrencyCompact,
   formatDashboardValue,
-  signedPercentageChange,
+  getLocalDateRangeForPeriod,
   type DashboardPeriod,
 } from '@/modules/dashboard/period'
-import {
-  useDashboardKpiSummaryQuery,
-  useDashboardQrScansQuery,
-  useDashboardV2SummaryQuery,
-} from '@/modules/dashboard/hooks'
-import { SelectDropdown } from '@/components/ui/select-dropdown'
-import { PERIOD_OPTIONS } from '@/lib/dashboard-data'
+import { useDashboardV2SummaryQuery } from '@/modules/dashboard/hooks'
+import type { DashboardV2PackageCard, DashboardV2TopGym } from '@/modules/dashboard/types'
 
-const RevenueChart = dynamic(() => import('./revenue-chart').then((m) => m.RevenueChart), {
-  ssr: false,
-  loading: () => <div className="h-64 w-full bg-slate-50 animate-pulse rounded-xl border border-border" />,
-})
+const PERIOD_SEGMENTS: Array<{ value: DashboardPeriod; label: string }> = [
+  { value: 'daily', label: 'Gün' },
+  { value: 'weekly', label: 'Həftə' },
+  { value: 'monthly', label: 'Ay' },
+]
 
-const CustomerGrowthChart = dynamic(() => import('./customer-growth-chart').then((m) => m.CustomerGrowthChart), {
-  ssr: false,
-  loading: () => <div className="h-64 w-full bg-slate-50 animate-pulse rounded-xl border border-border" />,
-})
+const TIER_BAR: Record<string, string> = {
+  bronze: 'bg-[#B87333]',
+  silver: 'bg-[#9CA3AF]',
+  gold: 'bg-[#D4A017]',
+  platinum: 'bg-[#1E3A5F]',
+}
 
-const KPI_TITLES = [
-  'Aktiv Müştərilər',
-  'Partnyorlar',
-  'Aktiv Abunəliklər',
-  'QR oxunma',
-] as const
+function formatManat(value: number): string {
+  return `${Math.round(value).toLocaleString('az-AZ')} ₼`
+}
 
-function StatCardSkeleton() {
+function TrendPill({
+  value,
+  suffix = '%',
+  invert = false,
+}: {
+  value: number | null | undefined
+  suffix?: string
+  invert?: boolean
+}) {
+  if (value == null || Number.isNaN(value)) return null
+  const positive = invert ? value <= 0 : value >= 0
   return (
-    <article className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5 shadow-sm animate-pulse">
-      <div className="flex items-center gap-2">
-        <div className="h-8 w-8 rounded-lg bg-secondary" />
-        <div className="h-4 w-28 rounded bg-secondary" />
-      </div>
-      <div className="h-8 w-20 rounded bg-secondary" />
-      <div className="flex items-center justify-between gap-2">
-        <div className="h-4 w-16 rounded bg-secondary" />
-        <div className="h-7 w-[88px] rounded bg-secondary" />
-      </div>
-    </article>
+    <span
+      className={cn(
+        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
+        positive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500',
+      )}
+    >
+      {positive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+      {value >= 0 ? '+' : ''}
+      {value.toFixed(1)}
+      {suffix}
+    </span>
   )
 }
 
-function StatCardError({ title }: { title: string }) {
+function Sparkline({ color = '#00B4CC' }: { color?: string }) {
   return (
-    <article className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5 shadow-sm">
-      <span className="text-sm font-medium text-muted-foreground">{title}</span>
-      <p className="text-xs text-destructive">Məlumat yüklənmədi</p>
-    </article>
+    <svg viewBox="0 0 80 28" className="h-7 w-20" aria-hidden="true">
+      <polyline
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        points="0,22 12,18 24,20 36,12 48,14 60,8 80,4"
+      />
+    </svg>
   )
 }
 
-function V2MetricCard({
+function MetricCard({
   title,
   value,
   trend,
-  subtitle,
+  trendSuffix,
+  invertTrend,
+  icon: Icon,
+  sparkColor,
+  footer,
 }: {
   title: string
   value: string
   trend?: number | null
-  subtitle?: string
+  trendSuffix?: string
+  invertTrend?: boolean
+  icon?: React.ComponentType<{ size?: number; className?: string }>
+  sparkColor?: string
+  footer?: string
 }) {
   return (
-    <article className="flex flex-col gap-2 rounded-xl border border-border bg-card p-5 shadow-sm">
-      <span className="text-sm font-medium text-muted-foreground">{title}</span>
-      <p className="text-2xl font-bold text-foreground">{value}</p>
-      {trend != null && (
-        <p className={`text-xs font-medium ${trend >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
-          {trend >= 0 ? '+' : ''}
-          {trend.toFixed(1)}%
-        </p>
-      )}
-      {subtitle ? <p className="text-xs text-muted-foreground">{subtitle}</p> : null}
+    <article className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2">
+          {Icon ? (
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#E6F8FB]">
+              <Icon size={16} className="text-[#00B4CC]" />
+            </span>
+          ) : null}
+          <span className="text-sm font-medium text-muted-foreground">{title}</span>
+        </div>
+        <Info size={14} className="text-muted-foreground/60" aria-hidden />
+      </div>
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <p className="text-2xl font-bold tracking-tight text-foreground">{value}</p>
+          <div className="mt-1.5 flex items-center gap-2">
+            <TrendPill value={trend} suffix={trendSuffix} invert={invertTrend} />
+          </div>
+          {footer ? <p className="mt-1 text-[11px] text-muted-foreground">{footer}</p> : null}
+        </div>
+        <Sparkline color={sparkColor} />
+      </div>
     </article>
   )
 }
 
-export function DashboardPage() {
-  const [periods, setPeriods] = useState<DashboardPeriod[]>([
-    'monthly', 'monthly', 'monthly', 'monthly',
-  ])
-  const [v2Period, setV2Period] = useState<DashboardPeriod>('monthly')
+function PackageCard({ card }: { card: DashboardV2PackageCard }) {
+  const key = (card.packageName || '').toLowerCase()
+  const bar = TIER_BAR[key] ?? 'bg-[#00B4CC]'
+  return (
+    <article className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-semibold text-foreground">{card.packageName}</p>
+        <span className="text-xs text-muted-foreground">payı {card.sharePct.toFixed(0)}%</span>
+      </div>
+      <div className="flex items-baseline gap-2">
+        <p className="text-3xl font-bold text-foreground">{card.activeCount}</p>
+      </div>
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+        <div className={cn('h-full rounded-full', bar)} style={{ width: `${Math.min(card.sharePct, 100)}%` }} />
+      </div>
+      <div className="grid grid-cols-3 gap-2 text-center text-[11px]">
+        <div>
+          <p className="text-muted-foreground">Son 7 gün</p>
+          <p className="mt-0.5 font-semibold text-foreground">{card.last7DaysCount}</p>
+        </div>
+        <div>
+          <p className="text-muted-foreground">Dondurulmuş</p>
+          <p className="mt-0.5 font-semibold text-foreground">{card.frozenCount}</p>
+        </div>
+        <div>
+          <p className="text-muted-foreground">30 gündə bitir</p>
+          <p className="mt-0.5 font-semibold text-foreground">{card.endingIn30DaysCount}</p>
+        </div>
+      </div>
+      {card.revenue != null ? (
+        <p className="border-t border-border pt-2 text-sm text-muted-foreground">
+          Gəlir <span className="font-semibold text-foreground">{formatManat(card.revenue)}</span>
+        </p>
+      ) : null}
+    </article>
+  )
+}
 
-  const kpiQuery = useDashboardKpiSummaryQuery()
-  const qrPeriod = periods[3]
-  const qrQuery = useDashboardQrScansQuery(qrPeriod)
-  const v2Query = useDashboardV2SummaryQuery(v2Period)
-
-  function handlePeriodChange(index: number, value: string) {
-    setPeriods((prev) =>
-      prev.map((p, i) => (i === index ? (value as DashboardPeriod) : p)),
-    )
-  }
-
-  function renderKpiCard(index: 0 | 1 | 2) {
-    const period = periods[index]
-    const Icon = STAT_ICONS[index]
-    const title = KPI_TITLES[index]
-
-    if (kpiQuery.isLoading) {
-      return <StatCardSkeleton key={title} />
-    }
-
-    if (kpiQuery.isError) {
-      return <StatCardError key={title} title={title} />
-    }
-
-    const kpi = kpiQuery.data
-    if (!kpi) {
-      return <StatCardSkeleton key={title} />
-    }
-
-    const metric =
-      index === 0
-        ? kpi.activeCustomers
-        : index === 1
-          ? kpi.partners
-          : kpi.activeSubscriptions
-
-    return (
-      <StatCard
-        key={title}
-        title={title}
-        value={formatDashboardValue(metric.totalValue)}
-        trend={signedPercentageChange(metric.percentageChange, metric.isPositiveTrend)}
-        icon={Icon}
-        period={period}
-        onPeriodChange={(v) => handlePeriodChange(index, v)}
-      />
-    )
-  }
-
-  function renderQrCard() {
-    const period = periods[3]
-    const Icon = STAT_ICONS[3]
-    const title = KPI_TITLES[3]
-
-    if (qrQuery.isLoading) {
-      return <StatCardSkeleton key={title} />
-    }
-
-    if (qrQuery.isError) {
-      return <StatCardError key={title} title={title} />
-    }
-
-    const qr = qrQuery.data
-    const pct = qr?.percentageChange ?? 0
-    const positive = qr?.isPositiveTrend ?? true
-
-    return (
-      <StatCard
-        key={title}
-        title={title}
-        value={formatDashboardValue(qr?.count ?? 0)}
-        trend={signedPercentageChange(pct, positive)}
-        icon={Icon}
-        period={period}
-        onPeriodChange={(v) => handlePeriodChange(3, v)}
-      />
-    )
-  }
-
-  const v2 = v2Query.data
-  const incomeTrend =
-    v2?.income?.incomeDeltaPct != null
-      ? signedPercentageChange(v2.income.incomeDeltaPct, v2.income.incomePositiveTrend)
-      : null
-  const subTrend =
-    v2?.subscriptions?.activeDeltaPct != null
-      ? signedPercentageChange(
-          v2.subscriptions.activeDeltaPct,
-          v2.subscriptions.activePositiveTrend,
-        )
-      : null
+function TopGymsTable({ gyms }: { gyms: DashboardV2TopGym[] }) {
+  const [limit, setLimit] = useState('10')
+  const rows = useMemo(() => gyms.slice(0, Number(limit) || 10), [gyms, limit])
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-xl font-bold text-foreground text-balance">Dashboard</h1>
-        <p className="text-sm text-muted-foreground leading-relaxed mt-0.5">
-          FitNest idarəetmə paneli
-        </p>
+    <section className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
+        <div>
+          <h3 className="text-base font-semibold text-foreground">Top zallar</h3>
+          <p className="text-xs text-muted-foreground">
+            Sütun başlığına kliklə: sırala · sətrə kliklə: zalın dashboard-u
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>Göstər</span>
+            <SelectDropdown
+              value={limit}
+              onChange={setLimit}
+              options={[
+                { value: '5', label: 'Top 5' },
+                { value: '10', label: 'Top 10' },
+                { value: '20', label: 'Top 20' },
+              ]}
+            />
+          </div>
+          <Link href="/gyms" className="text-sm font-medium text-[#00B4CC] hover:underline">
+            Bütün zallar →
+          </Link>
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[900px] text-sm">
+          <thead className="bg-secondary/40 text-left text-xs text-muted-foreground">
+            <tr>
+              <th className="px-4 py-3 font-medium">#</th>
+              <th className="px-4 py-3 font-medium">Zal</th>
+              <th className="px-4 py-3 font-medium">Kateqoriya</th>
+              <th className="px-4 py-3 font-medium">Paketlər</th>
+              <th className="px-4 py-3 font-medium">QR girişlər</th>
+              <th className="px-4 py-3 font-medium">Unikal müştəri</th>
+              <th className="px-4 py-3 font-medium">Əsas zal seçən</th>
+              <th className="px-4 py-3 font-medium">Hesablanmış ödəniş</th>
+              <th className="px-4 py-3 font-medium">Trend</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((gym, index) => (
+              <tr key={gym.gymId} className="border-t border-border hover:bg-secondary/20">
+                <td className="px-4 py-3 text-muted-foreground">{index + 1}</td>
+                <td className="px-4 py-3">
+                  <Link href={`/gyms/${gym.gymId}`} className="font-medium text-[#00B4CC] hover:underline">
+                    {gym.gymName}
+                  </Link>
+                </td>
+                <td className="px-4 py-3">{gym.category || '—'}</td>
+                <td className="px-4 py-3">{gym.packages || '—'}</td>
+                <td className="px-4 py-3 font-medium">{gym.qrCount}</td>
+                <td className="px-4 py-3">{gym.uniqueCustomers}</td>
+                <td className="px-4 py-3">{gym.primaryGymSelectors}</td>
+                <td className="px-4 py-3">{formatCurrencyCompact(gym.amount)} ₼</td>
+                <td className="px-4 py-3">
+                  <TrendPill value={gym.trendPct} />
+                </td>
+              </tr>
+            ))}
+            {rows.length === 0 ? (
+              <tr>
+                <td colSpan={9} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                  Məlumat yoxdur
+                </td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  )
+}
+
+export function DashboardPage() {
+  const [period, setPeriod] = useState<DashboardPeriod>('monthly')
+  const query = useDashboardV2SummaryQuery(period)
+  const data = query.data
+  const range = getLocalDateRangeForPeriod(period)
+
+  const finance = data?.finance
+  const customers = data?.customers
+  const subscriptions = data?.subscriptions
+  const packageCards = data?.packageCards ?? []
+  const qr = data?.qr
+  const topGyms = data?.topGyms ?? []
+
+  return (
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">FitNest idarəetmə paneli</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="rounded-xl border border-border bg-card px-3 py-2 text-sm text-muted-foreground">
+            {range.dateFrom} – {range.dateTo}
+          </div>
+          <div className="inline-flex rounded-xl border border-border bg-card p-1">
+            {PERIOD_SEGMENTS.map((seg) => (
+              <button
+                key={seg.value}
+                type="button"
+                onClick={() => setPeriod(seg.value)}
+                className={cn(
+                  'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
+                  period === seg.value
+                    ? 'bg-[#00B4CC] text-white'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {seg.label}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => query.refetch()}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+          >
+            <RefreshCw size={14} />
+            Yenilə
+          </button>
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+          >
+            <Download size={14} />
+            İxrac
+          </button>
+        </div>
       </div>
 
-      <section
-        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
-        aria-label="Əsas göstəricilər"
-      >
-        {renderKpiCard(0)}
-        {renderKpiCard(1)}
-        {renderKpiCard(2)}
-        {renderQrCard()}
+      {data?.blockErrors?.length ? (
+        <p className="text-xs text-amber-600">Qismən yükləndi: {data.blockErrors.join(', ')}</p>
+      ) : null}
+
+      {/* Maliyyə */}
+      <section className="flex flex-col gap-4">
+        <h2 className="text-base font-semibold text-foreground">Maliyyə</h2>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <MetricCard
+            title="Ümumi gəlir"
+            value={formatManat(finance?.totalIncome ?? 0)}
+            trend={finance?.incomeDeltaPct}
+            sparkColor="#00B4CC"
+          />
+          <MetricCard
+            title="Zallara öhdəlik"
+            value={formatManat(finance?.totalObligation ?? 0)}
+            trend={finance?.obligationDeltaPct}
+            invertTrend
+            sparkColor="#F97316"
+          />
+          <article className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5 shadow-sm lg:row-span-1">
+            <div className="flex items-start justify-between">
+              <span className="text-sm font-medium text-muted-foreground">Xalis qalıq</span>
+              <Info size={14} className="text-muted-foreground/60" />
+            </div>
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <p className="text-3xl font-bold text-foreground">
+                  {formatManat(finance?.netBalance ?? 0)}
+                </p>
+                <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                  <TrendPill value={finance?.netDeltaPct} />
+                  <span className="text-xs text-muted-foreground">
+                    marja {(finance?.marginPct ?? 0).toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+              <Sparkline />
+            </div>
+            <p className="rounded-lg bg-secondary/50 px-3 py-2 text-xs text-muted-foreground">
+              {formatManat(finance?.totalIncome ?? 0)} − {formatManat(finance?.totalObligation ?? 0)} ={' '}
+              <span className="font-semibold text-foreground">
+                {formatManat(finance?.netBalance ?? 0)}
+              </span>
+            </p>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+              <div className="flex h-full w-full">
+                <div
+                  className="h-full bg-orange-400"
+                  style={{
+                    width: `${
+                      (finance?.totalIncome ?? 0) > 0
+                        ? Math.min(
+                            100,
+                            ((finance?.totalObligation ?? 0) / (finance?.totalIncome ?? 1)) * 100,
+                          )
+                        : 0
+                    }%`,
+                  }}
+                />
+                <div className="h-full flex-1 bg-[#00B4CC]" />
+              </div>
+            </div>
+            <ul className="space-y-2">
+              {(finance?.obligationGyms ?? []).slice(0, 4).map((gym) => (
+                <li key={gym.gymId} className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    {gym.gymName}
+                    <span className="ml-2 text-xs">({gym.qrCount} giriş)</span>
+                  </span>
+                  <span className="font-medium text-foreground">{formatManat(gym.amount)}</span>
+                </li>
+              ))}
+            </ul>
+          </article>
+        </div>
       </section>
 
-      <section className="flex flex-col gap-4" aria-label="Dashboard V2 göstəriciləri">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-base font-semibold text-foreground">Əməliyyat xülasəsi</h2>
-            <p className="text-xs text-muted-foreground">
-              Gəlir, öhdəliklər, abunəliklər və top zallar
-            </p>
-          </div>
-          <SelectDropdown
-            value={v2Period}
-            onChange={(v) => setV2Period(v as DashboardPeriod)}
-            options={PERIOD_OPTIONS}
-            className="w-[140px]"
+      {/* Müştərilər */}
+      <section className="flex flex-col gap-4">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-base font-semibold text-foreground">Müştərilər</h2>
+          <p className="text-xs text-muted-foreground">Kartlar Müştərilər və Hesabatlar modullarından</p>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricCard
+            title="Ümumi müştərilər"
+            value={formatDashboardValue(customers?.totalCustomers ?? 0)}
+            trend={customers?.totalDeltaPct}
+            icon={Users}
+          />
+          <MetricCard
+            title="Aktiv istifadəçi"
+            value={formatDashboardValue(customers?.activeCustomers ?? 0)}
+            trend={customers?.activeDeltaPct}
+            icon={UserCheck}
+          />
+          <MetricCard
+            title="Yeni qeydiyyatlar"
+            value={formatDashboardValue(customers?.newRegistrations ?? 0)}
+            trend={customers?.newDeltaPct}
+            icon={UserPlus}
+            footer="Son 7 gündə bitən abunəliklər (proxy)"
+          />
+          <MetricCard
+            title="Konversiya"
+            value={`${(customers?.conversionPct ?? 0).toFixed(1)}%`}
+            trend={customers?.conversionDeltaPp}
+            trendSuffix=" pp"
+            icon={Percent}
           />
         </div>
-
-        {v2Query.isLoading ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-          </div>
-        ) : v2Query.isError ? (
-          <p className="text-sm text-destructive">Xülasə yüklənmədi</p>
-        ) : (
-          <>
-            {v2?.blockErrors?.length ? (
-              <p className="text-xs text-amber-600">
-                Qismən yükləndi: {v2.blockErrors.join(', ')}
-              </p>
-            ) : null}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <V2MetricCard
-                title="Gəlir"
-                value={formatCurrencyCompact(v2?.income?.totalIncome ?? 0)}
-                trend={incomeTrend}
-                subtitle={
-                  v2?.income
-                    ? `Refund: ${formatCurrencyCompact(v2.income.refundAmount)} · BNPL: ${formatCurrencyCompact(v2.income.pendingBnplAmount)}`
-                    : undefined
-                }
-              />
-              <V2MetricCard
-                title="Zal öhdəlikləri"
-                value={formatCurrencyCompact(v2?.obligations?.totalObligation ?? 0)}
-                subtitle={
-                  v2?.obligations
-                    ? `${v2.obligations.gyms.length} zal`
-                    : undefined
-                }
-              />
-              <V2MetricCard
-                title="Aktiv / Dondurulmuş"
-                value={`${formatDashboardValue(v2?.subscriptions?.activeCount ?? 0)} / ${formatDashboardValue(v2?.subscriptions?.frozenCount ?? 0)}`}
-                trend={subTrend}
-                subtitle={
-                  v2?.subscriptions
-                    ? `Bitən: ${v2.subscriptions.endedInPeriod} · Yenilənən: ${v2.subscriptions.renewedInPeriod}`
-                    : undefined
-                }
-              />
-              <V2MetricCard
-                title="Top zal"
-                value={v2?.topGyms?.[0]?.gymName ?? '—'}
-                subtitle={
-                  v2?.topGyms?.[0]
-                    ? `${formatCurrencyCompact(v2.topGyms[0].amount)} · ${v2.topGyms[0].qrCount} QR`
-                    : undefined
-                }
-              />
-            </div>
-
-            {v2?.subscriptions?.packageCards?.length ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {v2.subscriptions.packageCards.map((card) => (
-                  <article
-                    key={card.packageId}
-                    className="rounded-xl border border-border bg-card px-4 py-3"
-                  >
-                    <p className="text-xs text-muted-foreground">{card.packageName}</p>
-                    <p className="text-sm font-semibold text-foreground mt-1">
-                      {card.activeCount} aktiv · {card.frozenCount} dondurulmuş
-                    </p>
-                  </article>
-                ))}
-              </div>
-            ) : null}
-
-            {v2?.topGyms?.length ? (
-              <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-secondary/40 text-left text-muted-foreground">
-                    <tr>
-                      <th className="px-4 py-2 font-medium">Zal</th>
-                      <th className="px-4 py-2 font-medium">QR</th>
-                      <th className="px-4 py-2 font-medium">Məbləğ</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {v2.topGyms.slice(0, 5).map((gym) => (
-                      <tr key={gym.gymId} className="border-t border-border">
-                        <td className="px-4 py-2">{gym.gymName}</td>
-                        <td className="px-4 py-2">{gym.qrCount}</td>
-                        <td className="px-4 py-2">{formatCurrencyCompact(gym.amount)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : null}
-          </>
-        )}
       </section>
 
-      <section
-        className="grid grid-cols-1 gap-4 lg:grid-cols-2"
-        aria-label="Analitika qrafikləri"
-      >
-        <RevenueChart />
-        <CustomerGrowthChart />
+      {/* Abunəliklər */}
+      <section className="flex flex-col gap-4">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-base font-semibold text-foreground">Abunəliklər</h2>
+          <p className="text-xs text-muted-foreground">Karta kliklə: həmin statusdakı müştərilərin siyahısı</p>
+        </div>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+          <MetricCard
+            title="Son 7 gün"
+            value={formatDashboardValue(subscriptions?.last7DaysCount ?? 0)}
+          />
+          <MetricCard
+            title="Aktiv"
+            value={formatDashboardValue(subscriptions?.activeCount ?? 0)}
+            trend={subscriptions?.activeDeltaPct}
+          />
+          <MetricCard
+            title="Dondurulmuş"
+            value={formatDashboardValue(subscriptions?.frozenCount ?? 0)}
+            sparkColor="#F97316"
+          />
+          <MetricCard
+            title="Bitmiş"
+            value={formatDashboardValue(subscriptions?.endedInPeriod ?? 0)}
+            sparkColor="#F97316"
+          />
+          <MetricCard
+            title="Yenilənən"
+            value={formatDashboardValue(subscriptions?.renewedInPeriod ?? 0)}
+          />
+        </div>
       </section>
+
+      {/* Package cards */}
+      <section className="flex flex-col gap-4">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-base font-semibold text-foreground">Aktiv abunəliklər — paketlər üzrə</h2>
+          <p className="text-xs text-muted-foreground">Paket kartına kliklə: həmin paketin müştəri siyahısı</p>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {packageCards.map((card) => (
+            <PackageCard key={card.packageId} card={card} />
+          ))}
+          {packageCards.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Paket məlumatı yoxdur</p>
+          ) : null}
+        </div>
+      </section>
+
+      {/* QR */}
+      <section className="flex flex-col gap-4">
+        <h2 className="text-base font-semibold text-foreground">QR girişlər</h2>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <MetricCard
+            title="Ümumi QR giriş"
+            value={formatDashboardValue(qr?.totalScans ?? 0)}
+            trend={qr?.totalDeltaPct}
+            icon={QrCode}
+            footer="əvvəlki dövrə nisbətən"
+          />
+          <MetricCard
+            title="Light Mode skan"
+            value={formatDashboardValue(qr?.lightScans ?? 0)}
+            trend={qr?.lightDeltaPct}
+            icon={Sun}
+          />
+          <MetricCard
+            title="Dark Mode skan"
+            value={formatDashboardValue(qr?.darkScans ?? 0)}
+            trend={qr?.darkDeltaPct}
+            icon={Moon}
+          />
+        </div>
+        <TopGymsTable gyms={topGyms} />
+      </section>
+
+      {query.isLoading ? (
+        <p className="text-sm text-muted-foreground">Yüklənir…</p>
+      ) : null}
+      {query.isError ? (
+        <p className="text-sm text-destructive">Dashboard məlumatı yüklənmədi</p>
+      ) : null}
     </div>
   )
 }
