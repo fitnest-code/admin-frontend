@@ -62,6 +62,9 @@ export interface DashboardV2FinanceBlock {
     qrCount: number
     amount: number
   }>
+  incomeSparkline: number[]
+  obligationSparkline: number[]
+  netSparkline: number[]
 }
 
 export interface DashboardV2CustomersBlock {
@@ -83,6 +86,7 @@ export interface DashboardV2SubscriptionsBlock {
   renewedInPeriod: number
   activeDeltaPct: number | null
   activePositiveTrend: boolean
+  sparkline: number[]
 }
 
 export interface DashboardV2PackageCard {
@@ -103,6 +107,7 @@ export interface DashboardV2QrBlock {
   lightDeltaPct: number | null
   darkScans: number
   darkDeltaPct: number | null
+  sparkline: number[]
 }
 
 export interface DashboardV2TopGym {
