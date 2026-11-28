@@ -22,6 +22,41 @@ export interface DateRangeParams {
   endDate: string
 }
 
+export interface LocalDateRangeParams {
+  dateFrom: string
+  dateTo: string
+}
+
+/** Inclusive LocalDate window (Asia/Baku calendar days) for Dashboard V2 APIs. */
+export function getLocalDateRangeForPeriod(period: DashboardPeriod): LocalDateRangeParams {
+  const end = new Date()
+  const start = new Date()
+
+  switch (period) {
+    case 'daily':
+      start.setDate(end.getDate() - 1)
+      break
+    case 'weekly':
+      start.setDate(end.getDate() - 7)
+      break
+    case 'monthly':
+      start.setDate(end.getDate() - 29)
+      break
+    case 'yearly':
+      start.setFullYear(end.getFullYear() - 1)
+      break
+  }
+
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const toLocalDate = (d: Date) =>
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+
+  return {
+    dateFrom: toLocalDate(start),
+    dateTo: toLocalDate(end),
+  }
+}
+
 /** Date windows for income / QR report queries (ISO LocalDateTime). */
 export function getDateRangeForPeriod(period: DashboardPeriod): DateRangeParams {
   const end = new Date()

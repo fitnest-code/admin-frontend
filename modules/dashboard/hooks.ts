@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/query/query-keys'
 import {
   fetchCustomerGrowth,
+  fetchDashboardV2Summary,
   fetchIncomeReport,
   fetchKpiSummary,
   fetchQrScans,
@@ -38,6 +39,14 @@ export function useDashboardCustomerGrowthQuery(period: DashboardPeriod) {
   return useQuery({
     queryKey: queryKeys.dashboard.customerGrowth(period),
     queryFn: () => fetchCustomerGrowth(period),
+    staleTime: 60_000,
+  })
+}
+
+export function useDashboardV2SummaryQuery(period: DashboardPeriod) {
+  return useQuery({
+    queryKey: queryKeys.dashboard.v2Summary(period),
+    queryFn: () => fetchDashboardV2Summary(period),
     staleTime: 60_000,
   })
 }

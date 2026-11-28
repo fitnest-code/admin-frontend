@@ -5,6 +5,7 @@ import { StatCard } from './stat-card'
 import dynamic from 'next/dynamic'
 import { STAT_ICONS } from '@/lib/dashboard-data'
 import {
+  formatCurrencyCompact,
   formatDashboardValue,
   signedPercentageChange,
   type DashboardPeriod,
@@ -12,7 +13,10 @@ import {
 import {
   useDashboardKpiSummaryQuery,
   useDashboardQrScansQuery,
+  useDashboardV2SummaryQuery,
 } from '@/modules/dashboard/hooks'
+import { SelectDropdown } from '@/components/ui/select-dropdown'
+import { PERIOD_OPTIONS } from '@/lib/dashboard-data'
 
 const RevenueChart = dynamic(() => import('./revenue-chart').then((m) => m.RevenueChart), {
   ssr: false,
@@ -56,14 +60,42 @@ function StatCardError({ title }: { title: string }) {
   )
 }
 
+function V2MetricCard({
+  title,
+  value,
+  trend,
+  subtitle,
+}: {
+  title: string
+  value: string
+  trend?: number | null
+  subtitle?: string
+}) {
+  return (
+    <article className="flex flex-col gap-2 rounded-xl border border-border bg-card p-5 shadow-sm">
+      <span className="text-sm font-medium text-muted-foreground">{title}</span>
+      <p className="text-2xl font-bold text-foreground">{value}</p>
+      {trend != null && (
+        <p className={`text-xs font-medium ${trend >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
+          {trend >= 0 ? '+' : ''}
+          {trend.toFixed(1)}%
+        </p>
+      )}
+      {subtitle ? <p className="text-xs text-muted-foreground">{subtitle}</p> : null}
+    </article>
+  )
+}
+
 export function DashboardPage() {
   const [periods, setPeriods] = useState<DashboardPeriod[]>([
     'monthly', 'monthly', 'monthly', 'monthly',
   ])
+  const [v2Period, setV2Period] = useState<DashboardPeriod>('monthly')
 
   const kpiQuery = useDashboardKpiSummaryQuery()
   const qrPeriod = periods[3]
   const qrQuery = useDashboardQrScansQuery(qrPeriod)
+  const v2Query = useDashboardV2SummaryQuery(v2Period)
 
   function handlePeriodChange(index: number, value: string) {
     setPeriods((prev) =>
@@ -139,6 +171,19 @@ export function DashboardPage() {
     )
   }
 
+  const v2 = v2Query.data
+  const incomeTrend =
+    v2?.income?.incomeDeltaPct != null
+      ? signedPercentageChange(v2.income.incomeDeltaPct, v2.income.incomePositiveTrend)
+      : null
+  const subTrend =
+    v2?.subscriptions?.activeDeltaPct != null
+      ? signedPercentageChange(
+          v2.subscriptions.activeDeltaPct,
+          v2.subscriptions.activePositiveTrend,
+        )
+      : null
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -156,6 +201,121 @@ export function DashboardPage() {
         {renderKpiCard(1)}
         {renderKpiCard(2)}
         {renderQrCard()}
+      </section>
+
+      <section className="flex flex-col gap-4" aria-label="Dashboard V2 göstəriciləri">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold text-foreground">Əməliyyat xülasəsi</h2>
+            <p className="text-xs text-muted-foreground">
+              Gəlir, öhdəliklər, abunəliklər və top zallar
+            </p>
+          </div>
+          <SelectDropdown
+            value={v2Period}
+            onChange={(v) => setV2Period(v as DashboardPeriod)}
+            options={PERIOD_OPTIONS}
+            className="w-[140px]"
+          />
+        </div>
+
+        {v2Query.isLoading ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </div>
+        ) : v2Query.isError ? (
+          <p className="text-sm text-destructive">Xülasə yüklənmədi</p>
+        ) : (
+          <>
+            {v2?.blockErrors?.length ? (
+              <p className="text-xs text-amber-600">
+                Qismən yükləndi: {v2.blockErrors.join(', ')}
+              </p>
+            ) : null}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <V2MetricCard
+                title="Gəlir"
+                value={formatCurrencyCompact(v2?.income?.totalIncome ?? 0)}
+                trend={incomeTrend}
+                subtitle={
+                  v2?.income
+                    ? `Refund: ${formatCurrencyCompact(v2.income.refundAmount)} · BNPL: ${formatCurrencyCompact(v2.income.pendingBnplAmount)}`
+                    : undefined
+                }
+              />
+              <V2MetricCard
+                title="Zal öhdəlikləri"
+                value={formatCurrencyCompact(v2?.obligations?.totalObligation ?? 0)}
+                subtitle={
+                  v2?.obligations
+                    ? `${v2.obligations.gyms.length} zal`
+                    : undefined
+                }
+              />
+              <V2MetricCard
+                title="Aktiv / Dondurulmuş"
+                value={`${formatDashboardValue(v2?.subscriptions?.activeCount ?? 0)} / ${formatDashboardValue(v2?.subscriptions?.frozenCount ?? 0)}`}
+                trend={subTrend}
+                subtitle={
+                  v2?.subscriptions
+                    ? `Bitən: ${v2.subscriptions.endedInPeriod} · Yenilənən: ${v2.subscriptions.renewedInPeriod}`
+                    : undefined
+                }
+              />
+              <V2MetricCard
+                title="Top zal"
+                value={v2?.topGyms?.[0]?.gymName ?? '—'}
+                subtitle={
+                  v2?.topGyms?.[0]
+                    ? `${formatCurrencyCompact(v2.topGyms[0].amount)} · ${v2.topGyms[0].qrCount} QR`
+                    : undefined
+                }
+              />
+            </div>
+
+            {v2?.subscriptions?.packageCards?.length ? (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {v2.subscriptions.packageCards.map((card) => (
+                  <article
+                    key={card.packageId}
+                    className="rounded-xl border border-border bg-card px-4 py-3"
+                  >
+                    <p className="text-xs text-muted-foreground">{card.packageName}</p>
+                    <p className="text-sm font-semibold text-foreground mt-1">
+                      {card.activeCount} aktiv · {card.frozenCount} dondurulmuş
+                    </p>
+                  </article>
+                ))}
+              </div>
+            ) : null}
+
+            {v2?.topGyms?.length ? (
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-secondary/40 text-left text-muted-foreground">
+                    <tr>
+                      <th className="px-4 py-2 font-medium">Zal</th>
+                      <th className="px-4 py-2 font-medium">QR</th>
+                      <th className="px-4 py-2 font-medium">Məbləğ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {v2.topGyms.slice(0, 5).map((gym) => (
+                      <tr key={gym.gymId} className="border-t border-border">
+                        <td className="px-4 py-2">{gym.gymName}</td>
+                        <td className="px-4 py-2">{gym.qrCount}</td>
+                        <td className="px-4 py-2">{formatCurrencyCompact(gym.amount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
+          </>
+        )}
       </section>
 
       <section
