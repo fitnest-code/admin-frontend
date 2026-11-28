@@ -70,7 +70,30 @@ function TrendPill({
   )
 }
 
-function Sparkline({ color = '#00B4CC' }: { color?: string }) {
+function sparkPoints(values: number[] | undefined | null): string {
+  if (!values || values.length === 0) {
+    return '0,24 80,24'
+  }
+  const max = Math.max(...values, 0.0001)
+  const min = Math.min(...values, 0)
+  const span = Math.max(max - min, 0.0001)
+  const n = values.length
+  return values
+    .map((v, i) => {
+      const x = n === 1 ? 40 : (i / (n - 1)) * 80
+      const y = 24 - ((v - min) / span) * 20
+      return `${x.toFixed(1)},${y.toFixed(1)}`
+    })
+    .join(' ')
+}
+
+function Sparkline({
+  color = '#00B4CC',
+  values,
+}: {
+  color?: string
+  values?: number[] | null
+}) {
   return (
     <svg viewBox="0 0 80 28" className="h-7 w-20" aria-hidden="true">
       <polyline
@@ -79,7 +102,7 @@ function Sparkline({ color = '#00B4CC' }: { color?: string }) {
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        points="0,22 12,18 24,20 36,12 48,14 60,8 80,4"
+        points={sparkPoints(values)}
       />
     </svg>
   )
@@ -93,6 +116,7 @@ function MetricCard({
   invertTrend,
   icon: Icon,
   sparkColor,
+  sparkline,
   footer,
 }: {
   title: string
@@ -102,6 +126,7 @@ function MetricCard({
   invertTrend?: boolean
   icon?: React.ComponentType<{ size?: number; className?: string }>
   sparkColor?: string
+  sparkline?: number[] | null
   footer?: string
 }) {
   return (
@@ -125,7 +150,7 @@ function MetricCard({
           </div>
           {footer ? <p className="mt-1 text-[11px] text-muted-foreground">{footer}</p> : null}
         </div>
-        <Sparkline color={sparkColor} />
+        <Sparkline color={sparkColor} values={sparkline} />
       </div>
     </article>
   )
@@ -321,6 +346,7 @@ export function DashboardPage() {
             value={formatManat(finance?.totalIncome ?? 0)}
             trend={finance?.incomeDeltaPct}
             sparkColor="#00B4CC"
+            sparkline={finance?.incomeSparkline}
           />
           <MetricCard
             title="Zallara öhdəlik"
@@ -328,6 +354,7 @@ export function DashboardPage() {
             trend={finance?.obligationDeltaPct}
             invertTrend
             sparkColor="#F97316"
+            sparkline={finance?.obligationSparkline}
           />
           <article className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5 shadow-sm lg:row-span-1">
             <div className="flex items-start justify-between">
@@ -346,7 +373,7 @@ export function DashboardPage() {
                   </span>
                 </div>
               </div>
-              <Sparkline />
+              <Sparkline values={finance?.netSparkline} />
             </div>
             <p className="rounded-lg bg-secondary/50 px-3 py-2 text-xs text-muted-foreground">
               {formatManat(finance?.totalIncome ?? 0)} − {formatManat(finance?.totalObligation ?? 0)} ={' '}
@@ -433,25 +460,30 @@ export function DashboardPage() {
           <MetricCard
             title="Son 7 gün"
             value={formatDashboardValue(subscriptions?.last7DaysCount ?? 0)}
+            sparkline={subscriptions?.sparkline}
           />
           <MetricCard
             title="Aktiv"
             value={formatDashboardValue(subscriptions?.activeCount ?? 0)}
             trend={subscriptions?.activeDeltaPct}
+            sparkline={subscriptions?.sparkline}
           />
           <MetricCard
             title="Dondurulmuş"
             value={formatDashboardValue(subscriptions?.frozenCount ?? 0)}
             sparkColor="#F97316"
+            sparkline={subscriptions?.sparkline}
           />
           <MetricCard
             title="Bitmiş"
             value={formatDashboardValue(subscriptions?.endedInPeriod ?? 0)}
             sparkColor="#F97316"
+            sparkline={subscriptions?.sparkline}
           />
           <MetricCard
             title="Yenilənən"
             value={formatDashboardValue(subscriptions?.renewedInPeriod ?? 0)}
+            sparkline={subscriptions?.sparkline}
           />
         </div>
       </section>
@@ -482,18 +514,21 @@ export function DashboardPage() {
             trend={qr?.totalDeltaPct}
             icon={QrCode}
             footer="əvvəlki dövrə nisbətən"
+            sparkline={qr?.sparkline}
           />
           <MetricCard
             title="Light Mode skan"
             value={formatDashboardValue(qr?.lightScans ?? 0)}
             trend={qr?.lightDeltaPct}
             icon={Sun}
+            sparkline={qr?.sparkline}
           />
           <MetricCard
             title="Dark Mode skan"
             value={formatDashboardValue(qr?.darkScans ?? 0)}
             trend={qr?.darkDeltaPct}
             icon={Moon}
+            sparkline={qr?.sparkline}
           />
         </div>
         <TopGymsTable gyms={topGyms} />
