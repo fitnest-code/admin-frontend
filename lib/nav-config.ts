@@ -73,7 +73,11 @@ export const NAV_ITEMS: NavItem[] = [
     labelKey: "payments",
     icon: CreditCard,
     href: "/odenisler",
-    iconPath: `${ICONS}/money-send.svg`
+    iconPath: `${ICONS}/money-send.svg`,
+    children: [
+      { key: "payments-analytics", labelKey: "paymentsAnalytics", href: "/odenisler" },
+      { key: "birbank-bol-ode", labelKey: "birbankBolOde", href: "/odenisler/birbank-bol-ode" },
+    ],
   },
   {
     key: "campaign",
