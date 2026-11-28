@@ -42,25 +42,47 @@ export interface CustomerGrowthResponse {
   overallGrowthPercentage: number
 }
 
-/** Dashboard V2 summary (parallel APIs — does not replace kpi-summary). */
-export interface DashboardV2IncomeBlock {
+/** Dashboard V2 summary — matches Maliyyə / Müştərilər / Abunəliklər / QR mockups. */
+export interface DashboardV2FinanceBlock {
   totalIncome: number
   incomeDeltaPct: number | null
   incomePositiveTrend: boolean
+  totalObligation: number
+  obligationDeltaPct: number | null
+  obligationPositiveTrend: boolean
+  netBalance: number
+  netDeltaPct: number | null
+  netPositiveTrend: boolean
+  marginPct: number
   refundAmount: number
   pendingBnplAmount: number
+  obligationGyms: Array<{
+    gymId: number
+    gymName: string
+    qrCount: number
+    amount: number
+  }>
 }
 
-export interface DashboardV2GymRow {
-  gymId: number
-  gymName: string
-  qrCount: number
-  amount: number
+export interface DashboardV2CustomersBlock {
+  totalCustomers: number
+  totalDeltaPct: number | null
+  activeCustomers: number
+  activeDeltaPct: number | null
+  newRegistrations: number
+  newDeltaPct: number | null
+  conversionPct: number
+  conversionDeltaPp: number | null
 }
 
-export interface DashboardV2ObligationsBlock {
-  totalObligation: number
-  gyms: DashboardV2GymRow[]
+export interface DashboardV2SubscriptionsBlock {
+  last7DaysCount: number
+  activeCount: number
+  frozenCount: number
+  endedInPeriod: number
+  renewedInPeriod: number
+  activeDeltaPct: number | null
+  activePositiveTrend: boolean
 }
 
 export interface DashboardV2PackageCard {
@@ -68,23 +90,40 @@ export interface DashboardV2PackageCard {
   packageName: string
   activeCount: number
   frozenCount: number
+  last7DaysCount: number
+  endingIn30DaysCount: number
+  sharePct: number
+  revenue: number | null
 }
 
-export interface DashboardV2SubscriptionsBlock {
-  activeCount: number
-  frozenCount: number
-  endedInPeriod: number
-  renewedInPeriod: number
-  activeDeltaPct: number | null
-  activePositiveTrend: boolean
-  packageCards: DashboardV2PackageCard[]
+export interface DashboardV2QrBlock {
+  totalScans: number
+  totalDeltaPct: number | null
+  lightScans: number
+  lightDeltaPct: number | null
+  darkScans: number
+  darkDeltaPct: number | null
+}
+
+export interface DashboardV2TopGym {
+  gymId: number
+  gymName: string
+  category: string | null
+  packages: string | null
+  qrCount: number
+  uniqueCustomers: number
+  primaryGymSelectors: number
+  amount: number
+  trendPct: number | null
 }
 
 export interface DashboardV2SummaryResponse {
-  income: DashboardV2IncomeBlock | null
-  obligations: DashboardV2ObligationsBlock | null
+  finance: DashboardV2FinanceBlock | null
+  customers: DashboardV2CustomersBlock | null
   subscriptions: DashboardV2SubscriptionsBlock | null
-  topGyms: DashboardV2GymRow[]
+  packageCards: DashboardV2PackageCard[]
+  qr: DashboardV2QrBlock | null
+  topGyms: DashboardV2TopGym[]
   blockErrors: string[]
   dateFrom: string
   dateTo: string
