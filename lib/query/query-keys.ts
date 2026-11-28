@@ -50,4 +50,11 @@ export const queryKeys = {
     detail: (id: string | number) => ['bol-ode', 'detail', id] as const,
     history: (id: string | number) => ['bol-ode', 'history', id] as const,
   },
+  dashboard: {
+    all: ['dashboard'] as const,
+    kpiSummary: () => ['dashboard', 'kpi-summary'] as const,
+    qrScans: (period: string) => ['dashboard', 'qr-scans', period] as const,
+    income: (period: string) => ['dashboard', 'income', period] as const,
+    customerGrowth: (period: string) => ['dashboard', 'customer-growth', period] as const,
+  },
 } as const
