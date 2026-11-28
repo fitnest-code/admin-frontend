@@ -46,6 +46,7 @@ export function CategoryAnalyticsTable({
             <div className={styles.analyticsTotals}>
               <div>
                 <strong>{copy.total}</strong>
+                {' '}
                 {copy.okScans}: {query.data.totalSuccessfulScans}
               </div>
               <div>
