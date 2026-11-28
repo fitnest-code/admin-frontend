@@ -56,5 +56,6 @@ export const queryKeys = {
     qrScans: (period: string) => ['dashboard', 'qr-scans', period] as const,
     income: (period: string) => ['dashboard', 'income', period] as const,
     customerGrowth: (period: string) => ['dashboard', 'customer-growth', period] as const,
+    v2Summary: (period: string) => ['dashboard', 'v2-summary', period] as const,
   },
 } as const
